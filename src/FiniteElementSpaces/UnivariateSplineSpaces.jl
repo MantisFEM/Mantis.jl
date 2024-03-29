@@ -139,8 +139,14 @@ Returns the reference Bernstein polynomials of `bspline`.
 # Returns
 - `::ElementSpaces.Bernstein`: Bernstein polynomials.
 """
-function get_local_basis(bspline::BSplineSpace, xi::Vector{Float64}, nderivatives::Int)
-    return bspline.polynomials(xi, nderivatives)
+function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
+    local_basis = bspline.polynomials(xi, nderivatives)
+    el_size = get_element_size(bspline, element_id)
+    for r = 0:nderivatives
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] ./ el_size^r
+    end
+    
+    return local_basis
 end
 
 """
@@ -204,10 +210,9 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 """
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
-    local_basis = get_local_basis(bspline, xi, nderivatives)
-    el_size = get_element_size(bspline, element_id)
+    local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
     for r = 0:nderivatives
-        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients ./ el_size^r
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end
 
     return local_basis, basis_indices
