@@ -32,8 +32,9 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B1)
 end
 
 breakpoints = [0.0, 0.5, 0.6, 1.0]
+deg = 4
 patch2 = Mantis.Mesh.Patch1D(breakpoints)
-B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, 4, [-1, 1, 3, -1])
+B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg, [-1, 1, 3, -1])
 x, _ = Mantis.Quadrature.gauss_legendre(deg+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B2)
     # check extraction coefficients
