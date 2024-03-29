@@ -11,7 +11,13 @@
 struct MultiPatchSpace{n,m} <: AbstractFiniteElementSpace{n} where {m}
     function_spaces::NTuple{m, AbstractFiniteElementSpace{n}}
     extraction_op::ExtractionOperator
+    data::Dict
 end
+
+# methods for multipatch space
+# 1. iterating over elements
+# 2. getters for extraction operators
+# 3. getters for local basis
 
 function get_num_elements(mp_space::MultiPatchSpace)
     return get_num_elements(mp_space.extraction_op)
