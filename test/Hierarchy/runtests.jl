@@ -2,6 +2,6 @@ module HierarchyTests
 
 using Test
 
-@testset "RefinementOperators" begin include("RefinementOperatorTests.jl") end
+@testset "KnotInsertion" begin include("KnotInsertionTest.jl") end
 
 end

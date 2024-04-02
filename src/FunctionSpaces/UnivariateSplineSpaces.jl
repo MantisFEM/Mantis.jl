@@ -285,6 +285,27 @@ function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, n
     return local_basis, basis_indices
 end
 
+"""
+Evalue with refinement.
+"""
+function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, refinement_operator::Vector{Array{Float64}}, refinement_index::Int)
+    local_basis, basis_indices = evaluate(bspline, element_id, xi, nderivatives)
+    local_basis = refine_basis_evaluation!(local_basis, bspline, refinement_operator[refinement_index], nderivatives)
+
+    return local_basis, basis_indices
+end
+
+function refine_basis_evaluation!(local_basis::Array{Float64, 3}, bspline::BSplineSpace, refinement_operator::Array{Float64}, nderivatives::Int)
+    p = bspline.knot_vector.polynomial_degree
+    refined_basis = zeros(size(local_basis))
+
+    for r = 0:nderivatives, i in 1:p+1, j in 1:p+1
+        refined_basis[:,i,r+1] .+= @views refinement_operator[i, j] .* local_basis[:,j,r+1]
+    end
+
+    return refined_basis
+end
+
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
     return evaluate(bspline, element_id, [xi], nderivatives)
 end

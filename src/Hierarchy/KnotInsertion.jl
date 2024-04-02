@@ -58,7 +58,7 @@ function element_knot_insertion_operators(polynomial_degree::Int, n_subdivisions
     fine_patch = Mesh.Patch1D(collect(range(0.0, 1.0, n_subdivisions+1)))
     
     coarse_multiplicity = fill(polynomial_degree+1, 2)
-    fine_multiplicity = fill(polynomial_degree, n_subdivisions+1)
+    fine_multiplicity = fill(maximum((polynomial_degree, 1)), n_subdivisions+1)
     fine_multiplicity[1] = polynomial_degree + 1
     fine_multiplicity[end] = polynomial_degree + 1
 
