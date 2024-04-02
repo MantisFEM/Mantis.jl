@@ -70,7 +70,79 @@ function get_element_size(knot_vector::KnotVector, element_id::Int)
     return Mesh.get_element_size(knot_vector.patch_1d, element_id)
 end
 
+"""
+    get_knot_length(knot_vector::KnotVector)
 
+Determines the length of `knot_vector` by summing the multiplicites of each knot vector.
+
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+# Returns
+- `::Int`: Length of the knot vector.
+"""
+function get_knot_length(knot_vector::KnotVector)
+    return sum(knot_vector.multiplicity)
+end
+
+
+"""
+    get_knot_index(knot_vector::KnotVector, full_index::Int)
+
+Retrives the breakpoint index corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `index::Int`: Index of breakpoint corresponding to `full_index`.
+"""
+function get_knot_index(knot_vector::KnotVector, full_index::Int)
+    index = 1
+
+    for i in 1:(size(knot_vector.patch_1d)+1)
+        for _ in 1:knot_vector.multiplicity[i]
+            if index == full_index
+                return i
+            end
+
+            index += 1
+        end
+    end
+
+    return error("Index out of bounds.")
+end
+
+"""
+    get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
+
+Retrives the breakpoint corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `::Float64`: Breakpoint corresponding to `full_index`.
+"""
+function get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
+    index = get_knot_index(knot_vector, full_index)
+    return Mesh.get_breakpoints(knot_vector.patch_1d)[index]
+end
+
+"""
+    get_knot_multiplicity(knot_vector::KnotVector, full_index::Int)
+
+Retrives the multiplicity of the breakpoint corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `::Int`: Multiplicity of the breakpoint corresponding to `full_index`.
+"""
+function get_knot_multiplicity(knot_vector::KnotVector, full_index::Int)
+    index = get_knot_index(knot_vector, full_index)
+    return knot_vector.multiplicity[index]
+end
 
 """
     struct BSplineSpace
