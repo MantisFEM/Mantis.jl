@@ -7,5 +7,7 @@ include("Mesh/mesh.jl")  # Creates Module Mesh
 include("ElementSpaces/ElementSpaces.jl")  # Creates Module ElementSpaces
 include("Quadrature/Quadrature.jl")  # Creates Module Quadrature
 include("FiniteElementSpaces/FiniteElementSpaces.jl")  # Creates Module FiniteElementSpaces
+include("FunctionSpaces/FunctionSpaces.jl")  # Creates Module FunctionSpaces
+include("Hierarchy/Hierarchy.jl")  # Creates Module Hierarchy
 
 end
