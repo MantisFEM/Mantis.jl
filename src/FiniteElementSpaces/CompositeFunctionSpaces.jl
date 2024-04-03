@@ -14,7 +14,7 @@ struct MultiPatchSpace{n,m} <: AbstractFiniteElementSpace{n} where {m}
     mp_config::Dict
     data::Dict
 
-    function MultiPatchSpace(function_spaces::NTuple{m,AbstractFunctionSpace{1}}, extraction_op::ExtractionOperator, data::Dict) where {m}
+    function MultiPatchSpace(function_spaces::NTuple{m,AbstractFiniteElementSpace{1}}, extraction_op::ExtractionOperator, data::Dict) where {m}
         # build 1D topology
         patch_neighbours = [-1 (1:m-1)...
                             (2:m)... -1]
