@@ -81,12 +81,12 @@ with given `polynomial_degree` and `regularity` per breakpoint.
 # Fields
 - `knot_vector::KnotVector`: 1-dimensional knot vector.
 - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
-- `polynomials::Polynomials.Bernstein`: Refence Bernstein polynomials.
+- `polynomials::ElementSpaces.Bernstein`: Refence Bernstein polynomials.
 """
-struct BSplineSpace<:AbstractFunctionSpace{1}
+struct BSplineSpace<:AbstractFiniteElementSpace{1}
     knot_vector::KnotVector
     extraction_op::ExtractionOperator
-    polynomials::Polynomials.Bernstein
+    polynomials::ElementSpaces.Bernstein
     
     function BSplineSpace(patch_1d::Mesh.Patch1D, polynomial_degree::Int, regularity::Vector{Int})
         # Check for errors in the construction 
@@ -110,7 +110,7 @@ struct BSplineSpace<:AbstractFunctionSpace{1}
         
         knot_vector = create_knot_vector(patch_1d, polynomial_degree, regularity, "regularity")
 
-        new(knot_vector, extract_bspline_to_bernstein(knot_vector), Polynomials.Bernstein(polynomial_degree))
+        new(knot_vector, extract_bspline_to_bernstein(knot_vector), ElementSpaces.Bernstein(polynomial_degree))
     end
 end
 
@@ -137,10 +137,16 @@ Returns the reference Bernstein polynomials of `bspline`.
 # Arguments
 - `bspline::BSplineSpace`: A univariate B-Spline function space.
 # Returns
-- `::Polynomials.Bernstein`: Bernstein polynomials.
+- `::ElementSpaces.Bernstein`: Bernstein polynomials.
 """
-function get_local_basis(bspline::BSplineSpace, xi::Vector{Float64}, nderivatives::Int)
-    return bspline.polynomials(xi, nderivatives)
+function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
+    local_basis = bspline.polynomials(xi, nderivatives)
+    el_size = get_element_size(bspline, element_id)
+    for r = 0:nderivatives
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] ./ el_size^r
+    end
+    
+    return local_basis
 end
 
 """
@@ -204,10 +210,9 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 """
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
-    local_basis = get_local_basis(bspline, xi, nderivatives)
-    el_size = get_element_size(bspline, element_id)
+    local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
     for r = 0:nderivatives
-        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients ./ el_size^r
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end
 
     return local_basis, basis_indices
@@ -251,41 +256,27 @@ function evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float
 end
 
 """
-    struct GTBSplineSpace
+    GTBSplineSpace constructor
 
 """
-struct GTBSplineSpace<:AbstractFunctionSpace{1}
-    gtb_splines::MultiPatchSpace{1,m} where {m}
-    regularity::Vector{Int}
-
-    function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int}) where {m}
-        if length(regularity) != m
-            msg1 = "Number of regularity conditions should be equal to the number of bspline interfaces."
-            msg2 = " You have $(m) interfaces and $(length(regularity)) regularity conditions."
+function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int}) where {m}
+    if length(regularity) != m
+        msg1 = "Number of regularity conditions should be equal to the number of bspline interfaces."
+        msg2 = " You have $(m) interfaces and $(length(regularity)) regularity conditions."
+        throw(ArgumentError(msg1*msg2))
+    end
+    for i in 1:m
+        j = i
+        k = i+1
+        if i == m
+            k = 1
+        end
+        polynomial_degree = min(get_polynomial_degree(bsplines[j]), get_polynomial_degree(bsplines[k]))
+        if polynomial_degree < regularity[i]
+            msg1 = "Minimal polynomial degrees must be greater than or equal to the regularity."
+            msg2 = " The minimal degree is $polynomial_degree and there is regularity $regularity[i] in index $i."
             throw(ArgumentError(msg1*msg2))
         end
-        for i in 1:m
-            j = i
-            k = i+1
-            if i == m
-                k = 1
-            end
-            polynomial_degree = min(get_polynomial_degree(bsplines[j]), get_polynomial_degree(bsplines[k]))
-            if polynomial_degree < regularity[i]
-                msg1 = "Minimal polynomial degrees must be greater than or equal to the regularity."
-                msg2 = " The minimal degree is $polynomial_degree and there is regularity $regularity[i] in index $i."
-                throw(ArgumentError(msg1*msg2))
-            end
-        end
-
-        new(MultiPatchSpace(bsplines, extract_gtbspline_to_bspline(bsplines, regularity)), regularity)
     end
-end
-
-function get_num_elements(gtb_space::GTBSplineSpace)
-    return get_num_elements(gtb_space.gtb_splines)
-end
-
-function get_extraction(gtb_space::GTBSplineSpace, element_id::Int)
-    return get_extraction(gtb_space.gtb_splines, element_id)
+    return UnstructuredSpace(bsplines, extract_gtbspline_to_bspline(bsplines, regularity), Dict("regularity" => regularity))
 end

@@ -3,21 +3,21 @@ This (sub-)module provides a collection of scalar function spaces.
 
 The exported names are:
 """
-module FunctionSpaces
+module FiniteElementSpaces
 
 import .. Mesh
-import .. Polynomials
+import .. ElementSpaces
 import SparseArrays
 
 """
-    AbstractFunctionSpace
+    AbstractFiniteElementSpace
 
 Supertype for all scalar function spaces.
 """
-abstract type AbstractFunctionSpace{n} end
+abstract type AbstractFiniteElementSpace{n} end
 
 # Getters for the function spaces
-get_n(f::AbstractFunctionSpace{n}) where {n} = n
+get_n(f::AbstractFiniteElementSpace{n}) where {n} = n
 
 """
     struct ExtractionOperator

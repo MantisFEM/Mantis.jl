@@ -1,4 +1,4 @@
-module FunctionSpacesTests
+module FiniteElementSpacesTests
 
 using Test
 

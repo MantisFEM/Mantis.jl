@@ -1,11 +1,11 @@
-module LagrangePolynomialsTests
+module LagrangeElementSpacesTests
 
 import Mantis
 
 import LinearAlgebra
 using Test
 
-# Lobatto-Legendre polynomials ----------------------------------------------------------
+# Gauss-Lobatto-Legendre polynomials ----------------------------------------------------
 # Reference data
 p_reference = [1, 2, 3, 4, 5, 20]  # polynomial degrees of reference data
 ll_nodes_reference = [[-1.0, 1.0],  # p = 1
@@ -106,22 +106,62 @@ ll_evaluation = [
 
 # Perform the tests 
 for p_idx in eachindex(p_reference)
-    p = p_reference[p_idx]
-    ll_polynomial = Mantis.Polynomials.LobattoLegendre(p)
+    p = p_reference[p_idx]  # define the polynomial degree
+    ll_polynomial = Mantis.ElementSpaces.LobattoLegendre(p)  # generate the polynomials
+    xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
 
-    # Test that nodes are generate as expected
+    # Test that nodes are generated as expected
     @test ll_polynomial.nodes ≈ ll_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.Polynomials.evaluate(ll_polynomial, ll_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.ElementSpaces.evaluate(ll_polynomial, ll_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
 
-    # Test if polynomial basis evaluation at evenly spaces nodes gives expected results
-    @test Mantis.Polynomials.evaluate(ll_polynomial, [range(0.0, 1.0, length=11)...]) ≈ ll_evaluation[p_idx] atol = 1e-11
+    # Test if polynomial basis evaluation at evenly spaced nodes 
+    ll_eval =  Mantis.ElementSpaces.evaluate(ll_polynomial, xi_evaluate)
+
+    # Check correctness of results
+    @test view(ll_eval, :, :, 1) ≈ ll_evaluation[p_idx] atol = 1e-11
+end
+
+# Perform derivative tests
+degrees_to_test = 1:25 
+for p in degrees_to_test
+  ll_polynomial = Mantis.ElementSpaces.LobattoLegendre(p)  # generate the polynomials
+  xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
+  
+  # Test if polynomial basis evaluation at evenly spaced nodes 
+  # Check only for first and second derivatives (we do not use higher orders)
+  ll_eval =  Mantis.ElementSpaces.evaluate(ll_polynomial, xi_evaluate, 2)
+
+  # Partition of unity
+  @test all(isapprox.(sum(view(ll_eval, :, :, 1), dims=2), 1.0, atol = 5e-14))
+
+  # Zero sum of first order derivatives
+  @test all(isapprox.(abs.(sum(view(ll_eval, :, :, 2), dims=2)), 0.0, atol = 5e-13)) 
+
+  # Test correctness of evaluation and derivatives
+  # Check the first and second derivatives with respect to polynomial
+  #   f = x^{p} + x^{p-1}
+  #   df/dx = p x^{p-1} + (p-1) x^{p-2}
+  #   d2f/dx2 = p(p-1) x^{p-2} + (p-1)(p-2) x^{p-3}
+  f = (x::Float64,p::Int64,m::Int64) -> (p - m >= 0 ? 1.0 : 0.0) * prod(LinRange(p:-1:(p-m+1))) * (p-m > 0 ? x^(p-m) : 1.0) + (p - 1 - m >= 0 ? 1.0 : 0.0)* prod(LinRange((p-1):-1:(p-m))) * (p-1-m > 0 ? x^(p-1-m) : 1.0)
+  
+  # Evaluate f at the evenly spaced points 
+  f_nodes = f.(ll_polynomial.nodes, p, 0)  # the polynomial at nodes
+  f_eval = f.(xi_evaluate, p, 0)  # the polynomial at evaluation points
+  df_dx_eval = f.(xi_evaluate, p, 1)  # the first derivative at evaluation points
+  d2f_dx2_eval = f.(xi_evaluate, p, 2)  # the second derivative at evaluation points
+
+  # Use the basis to compute the first and second derivatives and check if they match
+  @test isapprox(maximum(abs.(view(ll_eval, :, :, 2) * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
+  # Second order derivative tests to be done in the future
+  # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
+
 end
 
 # ---------------------------------------------------------------------------------------
 
-# Gauss-Lobatto-Legendre polynomials ----------------------------------------------------
+# Gauss-Legendre polynomials ----------------------------------------------------
 p_reference = [1, 2, 3, 4, 5, 20]  # polynomial degrees of reference data
 gl_nodes_reference = [[-0.5773502691896258, 0.5773502691896258],  # p = 1
                       [-0.7745966692414834, 0.0, 0.7745966692414834],  # p = 2
@@ -220,16 +260,53 @@ gl_evaluation = [
 # Test nodes
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]
-    gl_polynomial = Mantis.Polynomials.GaussLegendre(p)
+    gl_polynomial = Mantis.ElementSpaces.GaussLegendre(p)
 
     # Test that nodes are generate as expected
     @test gl_polynomial.nodes ≈ gl_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.Polynomials.evaluate(gl_polynomial, gl_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.ElementSpaces.evaluate(gl_polynomial, gl_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
 
     # Test if polynomial basis evaluation at evenly spaces nodes gives expected results
-    @test Mantis.Polynomials.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...]) ≈ gl_evaluation[p_idx] atol = 1e-11
+    @test Mantis.ElementSpaces.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...]) ≈ gl_evaluation[p_idx] atol = 1e-11
+end
+
+# Perform derivative tests
+degrees_to_test = 1:25 
+for p in degrees_to_test
+  gl_polynomial = Mantis.ElementSpaces.GaussLegendre(p)  # generate the polynomials
+  xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
+  
+  # Test if polynomial basis evaluation at evenly spaced nodes 
+  # Check only for first and second derivatives (we do not use higher orders)
+  gl_eval = Mantis.ElementSpaces.evaluate(gl_polynomial, xi_evaluate, 2)
+  x = 1.0
+
+  # Partition of unity
+  @test all(isapprox.(sum(view(gl_eval, :, :, 1), dims=2), 1.0, atol = 5e-14))
+
+  # Zero sum of first order derivatives
+  @test all(isapprox.(abs.(sum(view(gl_eval, :, :, 2), dims=2)), 0.0, atol = 1e-12)) 
+
+  # Test correctness of evaluation and derivatives
+  # Check the first and second derivatives with respect to polynomial
+  #   f = x^{p} + x^{p-1}
+  #   df/dx = p x^{p-1} + (p-1) x^{p-2}
+  #   d2f/dx2 = p(p-1) x^{p-2} + (p-1)(p-2) x^{p-3}
+  f = (x::Float64,p::Int64,m::Int64) -> (p - m >= 0 ? 1.0 : 0.0) * prod(LinRange(p:-1:(p-m+1))) * (p-m > 0 ? x^(p-m) : 1.0) + (p - 1 - m >= 0 ? 1.0 : 0.0)* prod(LinRange((p-1):-1:(p-m))) * (p-1-m > 0 ? x^(p-1-m) : 1.0)
+  
+  # Evaluate f at the evenly spaced points 
+  f_nodes = f.(gl_polynomial.nodes, p, 0)  # the polynomial at nodes
+  f_eval = f.(xi_evaluate, p, 0)  # the polynomial at evaluation points
+  df_dx_eval = f.(xi_evaluate, p, 1)  # the first derivative at evaluation points
+  d2f_dx2_eval = f.(xi_evaluate, p, 2)  # the second derivative at evaluation points
+
+  # Use the basis to compute the first and second derivatives and check if they match
+  @test isapprox(maximum(abs.(view(gl_eval, :, :, 2) * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
+  # Second order derivative tests to be done in the future
+  # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
+
 end
 # ---------------------------------------------------------------------------------------
 
