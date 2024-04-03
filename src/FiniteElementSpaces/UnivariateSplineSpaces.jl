@@ -210,10 +210,10 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 """
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
-    local_basis = get_local_basis(bspline, xi, nderivatives)
+    local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
     el_size = get_element_size(bspline, element_id)
     for r = 0:nderivatives
-        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients ./ el_size^r
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end
 
     return local_basis, basis_indices
