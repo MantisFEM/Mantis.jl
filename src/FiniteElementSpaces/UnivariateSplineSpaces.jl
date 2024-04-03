@@ -278,5 +278,5 @@ function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int
             throw(ArgumentError(msg1*msg2))
         end
     end
-    return MultiPatchSpace(bsplines, extract_gtbspline_to_bspline(bsplines, regularity), Dict("regularity" => regularity))
+    return UnstructuredSpace(bsplines, extract_gtbspline_to_bspline(bsplines, regularity), Dict("regularity" => regularity))
 end
