@@ -1,6 +1,6 @@
 # UnstructuredSpace constructors
 
-"""
+@doc raw"""
     UnstructuredSpace{n,m} <: AbstractFiniteElementSpace{n}
 
 `n`-variate multi-patch space with `m` patches.
@@ -11,7 +11,7 @@
 - `us_config::Dict`: dictionary that stores some helper functionality (e.g., connectivity) for the unstructured space.
 - `data::Dict`: any auxilliary data that the user wants to store for this unstructured space.
 """
-struct UnstructuredSpace{n} <: AbstractFiniteElementSpace{n} where {n}
+struct UnstructuredSpace{n,m} <: AbstractFiniteElementSpace{n}
     function_spaces::NTuple{m, AbstractFiniteElementSpace{n}}
     extraction_op::ExtractionOperator
     us_config::Dict
@@ -100,7 +100,7 @@ For given global element id `element_id` for a given 1D unstructured space, find
 """
 function get_local_basis(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Vector{Float64}, nderivatives::Int) where {m}
     space_id = get_space_id(us_space, element_id)
-    space_element_id = us_space.us_config["patch_nels"][space_id]
+    space_element_id = element_id - us_space.us_config["patch_nels"][space_id]
     return evaluate(us_space.function_spaces[space_id], space_element_id, xi, nderivatives)
 end
 
