@@ -61,7 +61,6 @@ for el in 1:1:Mantis.FiniteElementSpaces.get_num_elements(GB)
     ex_coeffs, _ = Mantis.FiniteElementSpaces.get_extraction(GB, el)
     @test all(ex_coeffs .>= 0.0) # Test for non-negativity
     @test all(isapprox.(sum(ex_coeffs, dims=2) .- 1.0, 0.0, atol=1e-14)) # Test for partition of unity
-
     # check GTB-spline evaluation
     GB_eval, _ = Mantis.FiniteElementSpaces.evaluate(GB, el, x, 1)
 end
