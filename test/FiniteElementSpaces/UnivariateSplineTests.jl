@@ -8,11 +8,11 @@ import Mantis
 
 using Test
 
-deg = 3
+deg1 = 3
 breakpoints = [0.0, 0.5, 1.0]
 patch1 = Mantis.Mesh.Patch1D(breakpoints)
-B1 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg, [-1, 1, -1])
-x, _ = Mantis.Quadrature.gauss_legendre(deg+1)
+B1 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, 1, -1])
+x, _ = Mantis.Quadrature.gauss_legendre(deg1+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B1)
     # check extraction coefficients
     ex_coeffs, _ = Mantis.FunctionSpaces.get_extraction(B1, el)
@@ -32,10 +32,10 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B1)
 end
 
 breakpoints = [0.0, 0.5, 0.6, 1.0]
-deg = 4
+deg2 = 4
 patch2 = Mantis.Mesh.Patch1D(breakpoints)
-B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg, [-1, 1, 3, -1])
-x, _ = Mantis.Quadrature.gauss_legendre(deg+1)
+B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, 1, 3, -1])
+x, _ = Mantis.Quadrature.gauss_legendre(deg2+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B2)
     # check extraction coefficients
     ex_coeffs, _ = Mantis.FunctionSpaces.get_extraction(B2, el)
@@ -55,9 +55,13 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B2)
 end
 
 GB = Mantis.FunctionSpaces.GTBSplineSpace((B1, B2), [1, -1])
+x, _ = Mantis.Quadrature.gauss_legendre(max(deg1,deg2)+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
     # check extraction coefficients
     ex_coeffs, _ = Mantis.FunctionSpaces.get_extraction(GB, el)
     @test all(ex_coeffs .>= 0.0) # Test for non-negativity
     @test all(isapprox.(sum(ex_coeffs, dims=2) .- 1.0, 0.0, atol=1e-14)) # Test for partition of unity
+
+    # check GTB-spline evaluation
+    GB_eval, _ = Mantis.FunctionSpaces.evaluate(GB, el, x, 1)
 end
