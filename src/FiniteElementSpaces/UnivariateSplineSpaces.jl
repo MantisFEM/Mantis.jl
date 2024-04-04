@@ -201,6 +201,15 @@ function get_extraction(bspline::BSplineSpace, element_id::Int)
     return get_extraction(bspline.extraction_op, element_id)
 end
 
+function get_extraction(bspline::BSplineSpace, element_id::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
+    return get_extraction(bspline.extraction_op, element_id, refinement_operator, fine_element_id)
+end
+
+
+function get_extraction(extraction_op::ExtractionOperator, element_id::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
+    return @views refinement_operator[fine_element_id]' * extraction_op.extraction_coefficients[element_id], extraction_op.basis_indices[element_id]
+end
+
 """
     get_polynomials(bspline::BSplineSpace)
 
@@ -291,6 +300,20 @@ function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, n
     return local_basis, basis_indices
 end
 
+"""
+Evalueate with refinement.
+"""
+function evaluate(bspline::BSplineSpace, coarse_element_id::Int, xi::Vector{Float64}, nderivatives::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
+    extraction_coefficients, basis_indices = get_extraction(bspline, coarse_element_id, refinement_operator, fine_element_id)
+    local_basis = get_local_basis(bspline, xi, nderivatives)
+    el_size = get_element_size(bspline, coarse_element_id)
+    for r = 0:nderivatives
+        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients ./ el_size^r
+    end
+
+    return local_basis, basis_indices
+end
+
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
     return evaluate(bspline, element_id, [xi], nderivatives)
 end
@@ -326,6 +349,17 @@ function evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float
     end
 
     return SparseArrays.sparse(I,J,V,ndofs,nderivatives+1)
+end
+
+function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
+    local_basis, basis_indices = evaluate(bspline, element_id, xi, nderivatives)
+    evaluation = zeros(Float64, (size(local_basis)[1],nderivatives+1) )
+    
+    for r = 0:nderivatives
+        evaluation[:,r+1] .= @views sum(local_basis[:,:,r+1] .* coefficients[basis_indices]', dims=2)
+    end
+
+    return evaluation
 end
 
 """

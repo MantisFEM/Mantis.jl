@@ -6,7 +6,7 @@ The exported names are:
 
 module Hierarchy
 
-import .. FunctionSpaces
+import .. FiniteElementSpaces
 import .. Mesh
 import LinearAlgebra: I
 
