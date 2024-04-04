@@ -1,5 +1,6 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
 
 [compat]
