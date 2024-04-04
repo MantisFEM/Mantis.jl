@@ -1,53 +1,53 @@
 
 @doc raw"""
-    struct Bernstein <: AbstractPolynomials
+    struct Bernstein <: AbstractElementSpace
 
 Concrete type for Bernstein polynomials.
 
 # Fields
 - `p::Int`: Degree of the Bernstein polynomial.
 """
-struct Bernstein <: AbstractPolynomials
+struct Bernstein <: AbstractElementSpace
     "Degree of the polynomial."
     p::Int  # Polynomial degree
 end
 
 @doc raw"""
-    evaluate(polynomial::Bernstein, xi::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+    evaluate(polynomial::Bernstein, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
 
 Compute derivatives up to order `nderivatives` for all Bernstein 
-polynomials of degree `p` at ``\xi`` for ``\xi \in [0.0, 1.0]``. 
+polynomials of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``. 
 
 # Arguments
 - `polynomial::Bernstein`: Bernstein polynomial
-- `xi::Vector{Float64}`: vector of evaluation points ``\in [0.0, 1.0]``.
+- `ξ::Vector{Float64}`: vector of evaluation points ``\in [0.0, 1.0]``.
 - `nderivatives::Int64`: maximum order of derivatives to be computed (nderivatives ``\leq p``).
 
-See also [`evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)`](@ref).
+See also [`evaluate(polynomial::Bernstein, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::Bernstein, xi::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+function evaluate(polynomials::Bernstein, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
     # store the values and derivatives here
-    neval = length(xi)
+    neval = length(ξ)
     ders = zeros(Float64, neval, polynomials.p + 1, nderivatives + 1)
     for i = 1:neval
-        ders[i,:,:] = evaluate(polynomials, xi[i], nderivatives)
+        ders[i,:,:] = evaluate(polynomials, ξ[i], nderivatives)
     end
     return ders
 end
 
 @doc raw"""
-    evaluate(polynomial::Bernstein, xi::Vector{Float64})::Array{Float64}
+    evaluate(polynomial::Bernstein, ξ::Vector{Float64})::Array{Float64}
 
-Compute all Bernstein polynomials of degree `p` at ``\xi`` for ``\xi \in [0.0, 1.0]``.
+Compute all Bernstein polynomials of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``.
 
 # Arguments
 - `polynomial::Bernstein`: Bernstein polynomial
 - `xi::Vector{Float64}`: vector of evaluation points ``\in [0.0, 1.0]``.
 
-See also [`evaluate(polynomial::Bernstein, xi::Vector{Float64}, nderivatives::Int64)`](@ref).
+See also [`evaluate(polynomial::Bernstein, ξ::Vector{Float64}, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomial::Bernstein, xi::Vector{Float64})::Array{Float64}
-    return evaluate(polynomial, xi, 0)
+function evaluate(polynomial::Bernstein, ξ::Vector{Float64})::Array{Float64}
+    return evaluate(polynomial, ξ, 0)
 end
 
 
@@ -171,3 +171,33 @@ function evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)::Arra
     return ders
 end
 
+@doc raw"""
+extract_monomial_to_bernstein(polynomial::Bernstein)::Array{Float64}
+
+Computes transformation matrix T that transforms coefficients of
+a polynomial in terms of the monomial basis into coefficients of
+in terms of the Bernstein basis.
+
+# Arguments
+- `polynomial::Bernstein`: Bernstein polynomial
+"""
+function extract_monomial_to_bernstein(polynomial::Bernstein)::Array{Float64}
+    # degree
+    p = polynomial.p
+
+    # arg checks
+    if p < 0
+        msg = "The Bernstein polynomials must be of degree at least 0."
+        throw(ArgumentError(msg))
+    end
+    
+    # build transformation matrix for mapping coefficients of a polynomial in monomial basis to that of Bernstein
+    T = zeros(Float64, p+1, p+1)
+	for i = 0:p
+		for j = 0:i
+			T[i+1,j+1] = binomial(i, j) / binomial(p, j)
+		end
+	end
+    
+    return T
+end

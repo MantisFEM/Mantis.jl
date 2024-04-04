@@ -54,7 +54,19 @@ To create the docs, follow these steps:
   generate if it doesn't exist yet) a `build/`-directory in the 
   `docs/`-directory[^NoteOnGITtingBuildFolder]. All `.html` files are 
   generated here. *Make sure that you save all changes before running 
-  this command or you won't see the changes!*
+  this command or you won't see the changes!* Should this step fail, see 
+  the next step.
+- If the dependencies of `Mantis.jl` changed, the build may fail when 
+  building in the `docs/`-folder. This is because the `docs/`-folder 
+  defines its own julia environment, since the documentation may have 
+  different dependencies than Mantis itself. To update the environment, 
+  open a terminal in the `docs/`-directory and type `julia` to open 
+  julia. Enter the package manager by typing `]` and activate the 
+  current environment by typing `activate .`. The environment is shown 
+  in parenthesis '()' and should say 'docs'. Type `dev ../../Mantis.jl` 
+  and execute this command. The environment will be updated so that the 
+  latest version of Mantis is available with its updated structure. You 
+  can now redo the previous step.
 - Then you need to create a (local) webserver to view the HTML docs, for 
   which there are a few options, see the [Documenter Docs](https://documenter.juliadocs.org/stable/man/guide/). 
   Since I have `Python` installed, I use the python option. Run

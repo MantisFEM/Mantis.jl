@@ -11,7 +11,7 @@ hierarchical splines. It is free and open source
 !!! note "Note"
     This is just a test!
 
-Self-hype with footnote[^myFootNote1].
+Self-hype with footnote[^myFootNote1] or citation [Shrestha2024](@cite).
 
 [^myFootNote1]: 
     Shrestha, S., Dekker, J., Gerritsma, M., Hulshoff, S., & Akkerman, I. (2024). 'Construction and application of an algebraic dual basis and the Fine-Scale Greens’ Function for computing projections and reconstructing unresolved scales'. Computer Methods in Applied Mechanics and Engineering, 422, 116833. [doi:10.1016/j.cma.2024.116833](https://doi.org/10.1016/j.cma.2024.116833)
@@ -40,3 +40,9 @@ gauss_lobatto
 
 ```@index
 ```
+
+## References
+
+```@bibliography
+```
+
