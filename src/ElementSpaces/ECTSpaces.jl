@@ -1,5 +1,17 @@
 abstract type AbstractECTSpaces <: AbstractElementSpace end
 
+@doc raw"""
+    struct GeneralizedTrigonometric <: AbstractECTSpaces
+
+Concrete type for Generalized Trignometric section space spanned by `<1, x, ..., x^(p-2), cos(wx), sin(wx)>` on `[0,1]`.
+
+# Fields
+- `p::Int`: Degree of the space.
+- `w::Float64`: Weight parameter for the space.
+- `t::Bool`: flag to indicate if critical length is exceeded.
+- `m::Int`: number of terms from the infinite sum used to build the basis.
+- `C::Array{Float64}`: representation matrix for the local basis.
+"""
 struct GeneralizedTrigonometric <: AbstractECTSpaces
     p::Int
     w::Float64
@@ -31,6 +43,18 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
      end
 end
 
+@doc raw"""
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+
+Compute derivatives up to order `nderivatives` for all basis functions of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``. 
+
+# Arguments
+- `gtrig::GeneralizedTrigonometric`: Generalized Trigonometric section space.
+- `ξ::Vector{Float64}`: vector of evaluation points ``\in [0.0, 1.0]``.
+- `nderivatives::Int64`: maximum order of derivatives to be computed (nderivatives ``\leq p``).
+
+See also [`evaluate(gtrig::GeneralizedTrigonometric, ξ::Float64, nderivatives::Int64)`](@ref).
+"""
 function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivatives::Int)::Array{Float64}
     neval = length(xi)
     ders = zeros(Float64, neval, gtrig.p + 1, nderivatives + 1)
@@ -38,10 +62,6 @@ function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivat
         ders[i,:,:] = evaluate(gtrig, xi[i],nderivatives)
     end
     return ders
-end
-
-function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64)
-    return evaluate(gtrig, xi, 0)
 end
 
 function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
@@ -85,7 +105,42 @@ function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::In
         end
     end
     return M
- end
+end
+
+@doc raw"""
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64})::Array{Float64}
+
+Compute all basis function values at `ξ` in ``[0.0, 1.0]``.
+
+# Arguments
+- `gtrig::GeneralizedTrigonometric`:  Generalized Trigonometric section space.
+- `xi::Vector{Float64}`: vector of evaluation points ``\in [0.0, 1.0]``.
+
+See also [`evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivatives::Int64)`](@ref).
+"""
+function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64})
+    return evaluate(gtrig, xi, 0)
+end
+
+function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64)
+    return evaluate(gtrig, xi, 0)
+end
+
+
+@doc raw"""
+    gtrig_representation(p::Int, w::Float64, t::Bool, m::Int)
+
+Build representation matrix for Generalized Trignometric section space of degree `p`, weight `w` and `m` terms.
+
+# Arguments
+- `p::Int`: Degree of the space.
+- `w::Float64`: Weight parameter for the space.
+- `t::Bool`: flag to indicate if critical length is exceeded.
+- `m::Int`: number of terms from the infinite sum used to build the basis.
+
+# Returns:
+- `C::Array{Float64}`: representation matrix for the local basis.
+"""
 
 import LinearAlgebra, ToeplitzMatrices
 
