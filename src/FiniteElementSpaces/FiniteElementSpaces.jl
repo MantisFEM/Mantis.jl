@@ -32,6 +32,10 @@ struct ExtractionOperator
 end
 
 # Getters for extraction operators
+function get_dim(extraction_op::ExtractionOperator)
+    return extraction_op.space_dim
+end
+
 function get_extraction(extraction_op::ExtractionOperator, element_id::Int)
     return @views extraction_op.extraction_coefficients[element_id], extraction_op.basis_indices[element_id]
 end
@@ -40,28 +44,11 @@ function get_num_elements(extraction_op::ExtractionOperator)
     return extraction_op.num_elements
 end
 
-include("CompositeFunctionSpaces.jl")
+# univariate function spaces
 include("UnivariateSplineSpaces.jl")
 include("UnivariateSplineExtractions.jl")
-
-"""
-    create_bspline_space(patch::Mesh.Patch{n}, degree::Vector{Int}, regularity::NTuple{n, Vector{Int}}) where {n}
-
-Create a tensor product space made of only univariate b-spline spaces.
-
-# Arguments
-- `patch::Patch{n}`: Patch on which the b-spline space should be defined.
-- `degree::NTuple{n, Int}`: Polynomial degree per dimension.
-- `regularity::NTuple{n, Vector{Int}}`: Regularity per dimension per breakpoint.
-
-# Returns
-- `TensorProductSpace{n}`: Tensor product space of univariate b-splines.
-"""
-function create_bspline_space(patch::Mesh.Patch{n}, degree::Vector{Int}, regularity::NTuple{n, Vector{Int}}) where {n}
-    f_spaces = NTuple{n, BSplineSpace}(BSplineSpace(patch[i], degree[i], regularity[i]) for i in 1:1:n)
-    return TensorProductSpace{n}(patch, f_spaces)
-end
-
-
+# composite function spaces
+include("UnstructuredSpaces.jl")
+include("TensorProductSpaces.jl")
 
 end

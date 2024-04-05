@@ -174,7 +174,8 @@ Returns the dimension of the univariate function space `bspline`.
 - `::Int`: The dimension of the B-Spline space.
 """
 function get_dim(bspline::BSplineSpace)
-    return size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1))
+    @assert get_dim(bspline.extraction_op) == size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1)) "B-spline dimension incorrect."
+    return get_dim(bspline.extraction_op)
 end
 
 """
@@ -211,7 +212,6 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
     local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
-    el_size = get_element_size(bspline, element_id)
     for r = 0:nderivatives
         local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end
