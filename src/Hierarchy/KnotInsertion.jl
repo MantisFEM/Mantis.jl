@@ -3,37 +3,73 @@ Functions and algorithms used for knot insertion.
 
 """
 
-function subdivide_breakpoints(original_breakpoints::Vector{Float64}, n_subdivisions::Int)
-    num_points = length(original_breakpoints) + (length(original_breakpoints) - 1)* (n_subdivisions - 1)
+# Helper functions to subdivide different objects
 
-    subdivided_breakpoints = Vector{Float64}(undef, num_points)
+"""
+    subdivide_breakpoints(coarse_breakpoints::Vector{Float64}, nsubdivisions::Int)
 
-    step_size = 1 / n_subdivisions
+Subdivides `coarse_breakpoints` by uniformly subdiving each element 'nsubdivisions' times.
 
-    for i in 1:length(original_breakpoints)-1, j in 0:n_subdivisions-1
-        index = (i-1) * n_subdivisions + j + 1
-        subdivided_breakpoints[index] = original_breakpoints[i] + j * step_size * (original_breakpoints[i+1] - original_breakpoints[i])
+# Arguments
+- `coarse_breakpoints::Vector{Float64}`: Coarse set of breakpoints.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `fine_breakpoints::Vector{Float64}`: Fine set of breakpoints.
+"""
+function subdivide_breakpoints(coarse_breakpoints::Vector{Float64}, nsubdivisions::Int)
+    num_points = length(coarse_breakpoints) + (length(coarse_breakpoints) - 1)* (nsubdivisions - 1)
+
+    fine_breakpoints = Vector{Float64}(undef, num_points)
+
+    step_size = 1 / nsubdivisions
+
+    for i in 1:length(coarse_breakpoints)-1, j in 0:nsubdivisions-1
+        index = (i-1) * nsubdivisions + j + 1
+        fine_breakpoints[index] = coarse_breakpoints[i] + j * step_size * (coarse_breakpoints[i+1] - coarse_breakpoints[i])
     end
 
-    subdivided_breakpoints[end] = original_breakpoints[end]
+    fine_breakpoints[end] = coarse_breakpoints[end]
 
-    return subdivided_breakpoints
+    return fine_breakpoints
 end
 
-function subdivide_patch(original_patch::Mesh.Patch1D, n_subdivisions::Int)
-    subdivided_breakpoints = subdivide_breakpoints(Mesh.get_breakpoints(original_patch), n_subdivisions)
-    return Mesh.Patch1D(subdivided_breakpoints)
+"""
+    subdivide_patch(coarse_patch::Mesh.Patch1D, nsubdivisions::Int)
+
+Subdivides `coarse_patch` by uniformly subdiving each element 'nsubdivisions' times.
+
+# Arguments
+- `coarse_patch::Mesh.Patch1D`: Coarse patch.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `fine_patch::Mesh.Patch1D`: Fine patch.
+"""
+function subdivide_patch(coarse_patch::Mesh.Patch1D, nsubdivisions::Int)
+    fine_breakpoints = subdivide_breakpoints(Mesh.get_breakpoints(coarse_patch), nsubdivisions)
+    return Mesh.Patch1D(fine_breakpoints)
 end
 
-function subdivide_multiplicity(original_multiplicity::Vector{Int}, nsubdivisions::Int)
-    mult_length = 1 + length(original_multiplicity)*(nsubdivisions) - nsubdivisions 
+"""
+    subdivide_multiplicity(coarse_multiplicity::Vector{Int}, nsubdivisions::Int)
+
+Subdivides `coarse_multiplicity` by uniformly subdiving each element 'nsubdivisions' times.
+The coarse multiplicities are preserved in the `fine_multiplicity`, and newly inserted ones are given multiplicity 1.
+
+# Arguments
+- `coarse_multiplicity::Vector{Int}`: Coarse multiplicity vector.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `fine_multiplicity::Vector{Int}`: Fine multiplicity.
+"""
+function subdivide_multiplicity(coarse_multiplicity::Vector{Int}, nsubdivisions::Int)
+    mult_length = 1 + length(coarse_multiplicity)*(nsubdivisions) - nsubdivisions 
     
     fine_multiplicity = fill(1, mult_length)
     
     coarse_idx = 1
     for k in eachindex(fine_multiplicity)
         if (k-1)%nsubdivisions + 1 == 1
-            fine_multiplicity[k] = original_multiplicity[coarse_idx]
+            fine_multiplicity[k] = coarse_multiplicity[coarse_idx]
             coarse_idx += 1
         end
     end
@@ -41,14 +77,44 @@ function subdivide_multiplicity(original_multiplicity::Vector{Int}, nsubdivision
     return fine_multiplicity
 end
 
-function subdivide_bspline(original_bspline::FiniteElementSpaces.BSplineSpace, nsubdivisions::Int)
-    fine_patch = subdivide_patch(original_bspline.knot_vector.patch_1d, nsubdivisions)
-    fine_multiplicity = subdivide_multiplicity(original_bspline.knot_vector.multiplicity, nsubdivisions)
-    fine_regularity = original_bspline.knot_vector.polynomial_degree .- fine_multiplicity
+"""
+    subdivide_bspline(coarse_bspline::FiniteElementSpaces.BSplineSpace, nsubdivisions::Int)
 
-    return FiniteElementSpaces.BSplineSpace(fine_patch, original_bspline.knot_vector.polynomial_degree, fine_regularity)
+Subdivides `coarse_bspline` by uniformly subdiving each element 'nsubdivisions' times. The coarse multiplicities
+are preserved in the `fine_multiplicity`, and newly inserted ones are given multiplicity 1.
+
+# Arguments
+- `coarse_bspline::FiniteElementSpaces.BSplineSpace`: Coarse B-spline.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `fine_bspline::FiniteElementSpaces.BSplineSpace`: Fine B-spline.
+"""
+function subdivide_bspline(coarse_bspline::FiniteElementSpaces.BSplineSpace, nsubdivisions::Int)
+    fine_patch = subdivide_patch(FiniteElementSpaces.get_patch(coarse_bspline), nsubdivisions)
+    fine_multiplicity = subdivide_multiplicity(FiniteElementSpaces.get_multiplicity(coarse_bspline), nsubdivisions)
+    fine_regularity = FiniteElementSpaces.get_polynomial_degree(coarse_bspline) .- fine_multiplicity
+
+    return FiniteElementSpaces.BSplineSpace(fine_patch, coarse_bspline.knot_vector.polynomial_degree, fine_regularity)
 end
 
+# Oslo knot insertion algorithms
+
+"""
+    single_knot_insertion_oslo(coarse_knot_vector::FiniteElementSpaces.KnotVector, fine_knot_vector::FiniteElementSpaces.KnotVector, cf::Int, rf::Int)
+
+Algorithm for the coefficients of a change of B-spline representation for a single knot insertion.
+The coarse knot vector is `coarse_knot_vector` and the inserted knot is given by `fine_knot_vector`.
+
+For more information, see [A note on the Oslo Algorithm](https://collections.lib.utah.edu/dl_files/66/d4/66d493df0f5c97cce67e0bc1294363d64dde7f06.pdf).
+
+# Arguments
+- `coarse_knot_vector::FiniteElementSpaces.KnotVector`: Coarse knot vector.
+- `fine_knot_vector::FiniteElementSpaces.KnotVector`: Fine knot vector, with the extra knot.
+- `cf::Int`: Index of the coarse knot vector.
+- `rf::Int`: Index of the fine knot vector such that `get_knot_breakpoint(coarse_knot_vector,cf) <= get_knot_breakpoint(fine_knot_vector,rf) < get_knot_breakpoint(coarse_knot_vector,cf+1)`.
+# Returns 
+- `b::Vector{Float64}`: Coefficients for the change of basis.
+"""
 function single_knot_insertion_oslo(coarse_knot_vector::FiniteElementSpaces.KnotVector, fine_knot_vector::FiniteElementSpaces.KnotVector, cf::Int, rf::Int)
     b = [1.0]
 
@@ -66,6 +132,21 @@ function single_knot_insertion_oslo(coarse_knot_vector::FiniteElementSpaces.Knot
     return b
 end
 
+"""
+    element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, fine_knot_vector::FiniteElementSpaces.KnotVector)
+
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_knot_vector` and the inserted knots are given by `fine_knot_vector`.
+
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_knot_vector::FiniteElementSpaces.KnotVector`: Coarse knot vector.
+- `fine_knot_vector::FiniteElementSpaces.KnotVector`: Fine knot vector, with the extra knots.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
 function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, fine_knot_vector::FiniteElementSpaces.KnotVector)
     m = FiniteElementSpaces.get_knot_length(fine_knot_vector)
     nel = size(fine_knot_vector.patch_1d)
@@ -99,40 +180,135 @@ function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpace
     return R
 end
 
-function element_knot_insertion_operators(coarse_bspline::FiniteElementSpaces.BSplineSpace, n_subdivisions::Int)
-    return element_knot_insertion_operators(coarse_bspline.knot_vector, n_subdivisions)
+"""
+    element_knot_insertion_operators(coarse_bspline::FiniteElementSpaces.BSplineSpace, nsubdivisions::Int)
+
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1.
+
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_bspline::FiniteElementSpaces.BSplineSpace`: Coarse B-spline.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
+function element_knot_insertion_operators(coarse_bspline::FiniteElementSpaces.BSplineSpace, nsubdivisions::Int)
+    return element_knot_insertion_operators(coarse_bspline.knot_vector, nsubdivisions)
 end
 
+"""
+    element_knot_insertion_operators(coarse_bspline::FiniteElementSpaces.BSplineSpace, fine_bspline::FiniteElementSpaces.BSplineSpace)
+
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `fine_bspline.knot_vector`.
+
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_bspline::FiniteElementSpaces.BSplineSpace`: Coarse B-spline.
+- `fine_bspline::FiniteElementSpaces.BSplineSpace`: Fine B-spline, with extra knots.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
 function element_knot_insertion_operators(coarse_bspline::FiniteElementSpaces.BSplineSpace, fine_bspline::FiniteElementSpaces.BSplineSpace)
     return element_knot_insertion_operators(coarse_bspline.knot_vector, fine_bspline.knot_vector)
 end
 
-function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, n_subdivisions::Int, fine_multiplicity::Vector{Int})
-    fine_patch = subdivide_patch(coarse_knot_vector.patch_1d, n_subdivisions)
+"""
+    element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, nsubdivisions::Int, fine_multiplicity::Vector{Int})
+
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity given by `fine_multiplicity`.
+
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_knot_vector::FiniteElementSpaces.KnotVector`: Coarse knot vector.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+ `fine_multiplicity::Vector{Int}`: Multiplicity of each knot in refined knot vector.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
+function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, nsubdivisions::Int, fine_multiplicity::Vector{Int})
+    fine_patch = subdivide_patch(coarse_knot_vector.patch_1d, nsubdivisions)
     fine_knot_vector = FiniteElementSpaces.KnotVector(fine_patch, coarse_knot_vector.polynomial_degree, fine_multiplicity)
     
     return element_knot_insertion_operators(coarse_knot_vector, fine_knot_vector)
 end
 
-function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, n_subdivisions::Int)
-    n_subdivisions > 0 || throw(ArgumentError("Number of subdivions must be greater than 0. 
-    n_subdivisions=$n_subdivisions was given."))
+"""
+    element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, nsubdivisions::Int)
 
-    fine_multiplicity = subdivide_multiplicity(coarse_knot_vector.multiplicity, n_subdivisions)
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1.
 
-    return element_knot_insertion_operators(coarse_knot_vector, n_subdivisions, fine_multiplicity)
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_knot_vector::FiniteElementSpaces.KnotVector`: Coarse knot vector.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
+function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector, nsubdivisions::Int)
+    nsubdivisions > 0 || throw(ArgumentError("Number of subdivions must be greater than 0. 
+    nsubdivisions=$nsubdivisions was given."))
+
+    fine_multiplicity = subdivide_multiplicity(coarse_knot_vector.multiplicity, nsubdivisions)
+
+    return element_knot_insertion_operators(coarse_knot_vector, nsubdivisions, fine_multiplicity)
 end
 
+"""
+    element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector)
+
+Algorithm for the coefficients of a change of B-spline representation for knot insertion 
+of multiple knots, recursively using `single_knot_insertion_oslo()`.
+The coarse knot vector is `coarse_knot_vector` and the finer knot is obtained by bisection.
+
+For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
+
+# Arguments
+- `coarse_knot_vector::FiniteElementSpaces.KnotVector`: Coarse knot vector.
+# Returns 
+- `R::Vector{Array{Float64}}`: Coefficients for the change of basis.
+"""
 function element_knot_insertion_operators(coarse_knot_vector::FiniteElementSpaces.KnotVector)
     return element_knot_insertion_operators(coarse_knot_vector, 2)
 end
 
+# Evaluations with refinement operator
+
+"""
+    evaluate(coarse_bspline::FiniteElementSpaces.BSplineSpace, fine_bspline::FiniteElementSpaces.BSplineSpace, fine_element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64}, refinement_operator::Vector{Array{Float64}}, nsubdivisions::Int)
+
+Evaluates a spline on the element specified by `fine_element_id` and points `xi` and all derivatives up to nderivatives, form a 
+`coarse_bspline` basis with given `coefficients`, with respect to the basis `fine_bspline`.
+
+# Arguments
+- `coarse_bspline::BSplineSpace`: A coarse univariate B-Spline function space.
+- `fine_bspline::BSplineSpace`: A fine univariate B-Spline function space.
+- `fine_element_id::Int`: The id of the element.
+- `xi::Vector{Float64}`: The points where the global basis is evaluated.
+- `nderivatives::Int`: The order upto which derivatives need to be computed.
+- `coefficients::Vector{Float64}`: Coefficients of the spline with basis `coarse_bspline`.
+- `refinement_operator::Vector{Array{Float64}}`: Operator used for basis transformation.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns
+- `::Array{Float64}`: Spline evaluation (size = n_eval_points x nderivatives+1).
+"""
 function evaluate(coarse_bspline::FiniteElementSpaces.BSplineSpace, fine_bspline::FiniteElementSpaces.BSplineSpace, fine_element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64}, refinement_operator::Vector{Array{Float64}}, nsubdivisions::Int)
     coarse_element_id = get_coarser_element(fine_element_id, nsubdivisions)
 
     _, coarse_basis_indices = FiniteElementSpaces.get_extraction(coarse_bspline, coarse_element_id)
     fine_local_basis, _ = FiniteElementSpaces.evaluate(fine_bspline, fine_element_id, xi, nderivatives)
-    evaluation = zeros(Float64, (size(fine_local_basis)[1],nderivatives+1) )
+    evaluation = zeros(Float64, (size(fine_local_basis)[1], nderivatives+1) )
     
     for r = 0:nderivatives
         evaluation[:,r+1] .= @views sum((fine_local_basis[:,:,r+1] * refinement_operator[fine_element_id]') .* coefficients[coarse_basis_indices]', dims=2)

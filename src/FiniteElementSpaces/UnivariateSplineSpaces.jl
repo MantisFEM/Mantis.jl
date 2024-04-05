@@ -66,6 +66,17 @@ function create_knot_vector(patch_1d::Mesh.Patch1D, p::Int, breakpoint_condition
     end
 end
 
+"""
+    get_element_size(knot_vector::KnotVector, element_id::Int)
+
+Returns the size of the element specified by `element_id`.
+
+# Arguments
+- `knot_vector::KnotVector`: The B-Spline function space.
+- `element_id::Int`: The id of the element.
+# Returns
+- `::Float64`: The size of the element.
+"""
 function get_element_size(knot_vector::KnotVector, element_id::Int)
     return Mesh.get_element_size(knot_vector.patch_1d, element_id)
 end
@@ -83,7 +94,6 @@ Determines the length of `knot_vector` by summing the multiplicites of each knot
 function get_knot_length(knot_vector::KnotVector)
     return sum(knot_vector.multiplicity)
 end
-
 
 """
     get_knot_index(knot_vector::KnotVector, full_index::Int)
@@ -201,15 +211,6 @@ function get_extraction(bspline::BSplineSpace, element_id::Int)
     return get_extraction(bspline.extraction_op, element_id)
 end
 
-function get_extraction(bspline::BSplineSpace, element_id::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
-    return get_extraction(bspline.extraction_op, element_id, refinement_operator, fine_element_id)
-end
-
-
-function get_extraction(extraction_op::ExtractionOperator, element_id::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
-    return @views refinement_operator[fine_element_id]' * extraction_op.extraction_coefficients[element_id], extraction_op.basis_indices[element_id]
-end
-
 """
     get_polynomials(bspline::BSplineSpace)
 
@@ -259,6 +260,34 @@ function get_dim(bspline::BSplineSpace)
 end
 
 """
+    get_patch(bspline::BSplineSpace)
+
+Returns the patch of the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Mesh.Patch1D`: The patch of the B-Spline space.
+"""
+function get_patch(bspline::BSplineSpace)
+    return bspline.knot_vector.patch_1d
+end
+
+"""
+    get_patch(bspline::BSplineSpace)
+
+Returns the multiplicity of the knot vector associated with the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
+"""
+function get_multiplicity(bspline::BSplineSpace)
+    return bspline.knot_vector.multiplicity
+end
+
+"""
     get_num_elements(bspline::BSplineSpace)
 
 Returns the number of elements in the underlying partition.
@@ -272,6 +301,17 @@ function get_num_elements(bspline::BSplineSpace)
     return size(bspline.knot_vector.patch_1d)
 end
 
+"""
+    get_element_size(bspline::BSplineSpace, element_id::Int)
+
+Returns the size of the element specified by `element_id`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+- `element_id::Int`: The id of the element.
+# Returns
+- `::Float64`: The size of the element.
+"""
 function get_element_size(bspline::BSplineSpace, element_id::Int)
     return get_element_size(bspline.knot_vector, element_id)
 end
@@ -301,19 +341,18 @@ function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, n
 end
 
 """
-Evalueate with refinement.
+    evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
+
+Evaluates the non-zero `bspline` basis functions on the element specified by `element_id` on point `xi` and all derivatives up to nderivatives.
+
+# Arguments
+- `bspline::BSplineSpace`: A univariate B-Spline function space.
+- `element_id::Int`: The id of the element.
+- `xi::Float64`: The point where the global basis is evaluated.
+- `nderivatives::Int`: The order upto which derivatives need to be computed.
+# Returns
+- `::Array{Float64}`: Global basis functions, size = 1 x degree+1 x nderivatives+1
 """
-function evaluate(bspline::BSplineSpace, coarse_element_id::Int, xi::Vector{Float64}, nderivatives::Int, refinement_operator::Vector{Array{Float64}}, fine_element_id::Int)
-    extraction_coefficients, basis_indices = get_extraction(bspline, coarse_element_id, refinement_operator, fine_element_id)
-    local_basis = get_local_basis(bspline, xi, nderivatives)
-    el_size = get_element_size(bspline, coarse_element_id)
-    for r = 0:nderivatives
-        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients ./ el_size^r
-    end
-
-    return local_basis, basis_indices
-end
-
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
     return evaluate(bspline, element_id, [xi], nderivatives)
 end
@@ -351,6 +390,21 @@ function evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float
     return SparseArrays.sparse(I,J,V,ndofs,nderivatives+1)
 end
 
+"""
+    evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
+
+Evaluates a spline on the element specified by `element_id` and points `xi` and all derivatives up to nderivatives, form a 
+`bspline` basis with given `coefficients`.
+
+# Arguments
+- `bspline::BSplineSpace`: A univariate B-Spline function space.
+- `element_id::Int`: The id of the element.
+- `xi::Vector{Float64}`: The points where the global basis is evaluated.
+- `nderivatives::Int`: The order upto which derivatives need to be computed.
+- `coefficients::Vector{Float64}`: Coefficients of the spline with basis `bspline`.
+# Returns
+- `::Array{Float64}`: Spline evaluation (size = n_eval_points x nderivatives+1).
+"""
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
     local_basis, basis_indices = evaluate(bspline, element_id, xi, nderivatives)
     evaluation = zeros(Float64, (size(local_basis)[1],nderivatives+1) )
@@ -364,7 +418,6 @@ end
 
 """
     GTBSplineSpace constructor
-
 """
 function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int}) where {m}
     if length(regularity) != m
