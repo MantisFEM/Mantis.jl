@@ -4,13 +4,10 @@ This (sub-)module provides functionality related with hierarchical refinment.
 The exported names are:
 """
 
-module Hierarchy
+module HierarchicalFiniteElementSpaces
 
 import .. FiniteElementSpaces
-import .. Mesh
-import LinearAlgebra: I
 
 include("TwoScale.jl")
-include("KnotInsertion.jl")
 
 end

@@ -11,7 +11,7 @@ Creates a `(d, d, ni)` array where each slice along the last dimension is a `(d,
 - `Id::Array{Float64, 3}`: array of identity matrices with size (d, d, ni).
 """
 function create_identity(ni::Int, d::Int)
-    Id = Vector{Array{Float64}}(undef, ni)
+    Id = Vector{Array{Float64, 2}}(undef, ni)
     for i in 1:ni
         Id[i] = zeros(d,d)
         for j in 1:d

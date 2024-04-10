@@ -96,7 +96,7 @@ function get_knot_length(knot_vector::KnotVector)
 end
 
 """
-    get_knot_index(knot_vector::KnotVector, full_index::Int)
+    get_breakpoint_index(knot_vector::KnotVector, full_index::Int)
 
 Retrives the breakpoint index corresponding to `knot_vector` at `full_index`, i.e. the index 
 of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
@@ -106,7 +106,7 @@ of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-
 # Returns
 - `index::Int`: Index of breakpoint corresponding to `full_index`.
 """
-function get_knot_index(knot_vector::KnotVector, full_index::Int)
+function get_breakpoint_index(knot_vector::KnotVector, full_index::Int)
     index = 1
 
     for i in 1:(size(knot_vector.patch_1d)+1)
@@ -122,6 +122,14 @@ function get_knot_index(knot_vector::KnotVector, full_index::Int)
     return error("Index out of bounds.")
 end
 
+function get_first_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
+    return cumsum(knot_vector.multiplicity)[breakpoint_index] - knot_vector.multiplicity[breakpoint_index] + 1
+end
+
+function get_last_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
+    return cumsum(knot_vector.multiplicity)[breakpoint_index]
+end
+
 """
     get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
 
@@ -134,7 +142,7 @@ of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-
 - `::Float64`: Breakpoint corresponding to `full_index`.
 """
 function get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
-    index = get_knot_index(knot_vector, full_index)
+    index = get_breakpoint_index(knot_vector, full_index)
     return Mesh.get_breakpoints(knot_vector.patch_1d)[index]
 end
 
@@ -150,8 +158,28 @@ of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-
 - `::Int`: Multiplicity of the breakpoint corresponding to `full_index`.
 """
 function get_knot_multiplicity(knot_vector::KnotVector, full_index::Int)
-    index = get_knot_index(knot_vector, full_index)
+    index = get_breakpoint_index(knot_vector, full_index)
     return knot_vector.multiplicity[index]
+end
+
+"""
+    get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
+
+Returns the local knot vector necessary to characterize the B-spline identified by `basis_id`.
+
+# Arguments
+- `knot_vector::KnotVector`: The knot vector of the full B-spline basis.
+- `basis_id::Int`: The id of the B-spline.
+# Returns
+- `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
+    local_idx = get_breakpoint_index(knot_vector, basis_id):get_breakpoint_index(knot_vector, basis_id+knot_vector.polynomial_degree+1)
+
+    local_patch = Mesh.Patch1D(Mesh.get_breakpoints(knot_vector.patch_1d)[local_idx])
+    local_multiplicity = knot_vector.multiplicity[local_idx]
+
+    return KnotVector(local_patch, knot_vector.polynomial_degree, local_multiplicity)
 end
 
 """
@@ -229,6 +257,36 @@ function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Floa
     end
     
     return local_basis
+end
+
+"""
+    get_local_knot_vector(bspline::BSplineSpace, basis_id::Int)
+
+Returns the local knot vector necessary to characterize the B-spline identified by `basis_id`.
+
+# Arguments
+- `bspline::BSplineSpace`: The full B-spline basis.
+- `basis_id::Int`: The id of the B-spline.
+# Returns
+- `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(bspline::BSplineSpace, basis_id::Int)
+    return get_local_knot_vector(bspline.knot_vector, basis_id)
+end
+
+"""
+    get_local_knot_vector(bspline::NTuple{n, BSplineSpace}, basis_id::NTuple{n, Int}) where {n}
+
+Returns the local knot vector necessary to characterize the `n`-variate B-spline identified by `basis_id`.
+
+# Arguments
+- `bspline::NTuple{n, BSplineSpace}`: The full B-spline basis.
+- `basis_id::NTuple{n, Int}`: The id of the B-spline.
+# Returns
+- `::NTuple{n, KnotVector}`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(bspline::NTuple{n, BSplineSpace}, basis_id::NTuple{n, Int}) where {n}
+    return ntuple(d -> get_local_knot_vector(bspline[d], basis_id[d]), n)
 end
 
 """
