@@ -19,6 +19,7 @@ abstract type AbstractElementSpace end
 # Listed alphabetically
 include("BernsteinPolynomials.jl")
 include("LagrangePolynomials.jl")
+include("ECTSpaces.jl")
 
 
 # Has to be below the include statements to ensure that all evaluate 
