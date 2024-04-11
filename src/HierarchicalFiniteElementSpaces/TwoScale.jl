@@ -106,49 +106,18 @@ end
 # Getters for basis splines
 
 """
-    get_finer_basis_id(coarse_bspline::FiniteElementSpaces.BSplineSpace, basis_id::Int, nsubdivisions::Int)
-
-Returns the ids of the child B-splines, given `nsubdivisions`, whose support intersection with
-the support of the B-spline identified by `basis_id` is non-empty.
-
-# Arguments
-- `coarse_bspline::FiniteElementSpaces.BSplineSpace`: Parent B-spline.
-- `coarse_basis_id::Int`: Id of the parent B-spline.
-- `nsubdivisions::NTuple{n, Int})`: The number of subdivisions in each dimension.
-# Returns
-- `::Vector{Int}`: Ids of the child B-splines.
-"""
-function get_finer_basis_id(coarse_bspline::FiniteElementSpaces.BSplineSpace, basis_id::Int, nsubdivisions::Int)
-    p = coarse_bspline.knot_vector.polynomial_degree
-    
-    first_coarse_brk_idx = FiniteElementSpaces.get_breakpoint_index(coarse_bspline.knot_vector, basis_id) 
-    last_coarse_brk_idx = FiniteElementSpaces.get_breakpoint_index(coarse_bspline.knot_vector,basis_id+p+1) 
-
-    first_coarse_knot_idx = FiniteElementSpaces.get_first_knot_index(coarse_bspline.knot_vector, first_coarse_brk_idx)
-    last_coarse_knot_idx = FiniteElementSpaces.get_first_knot_index(coarse_bspline.knot_vector, last_coarse_brk_idx)
-
-    first_fine_knot_idx = first_coarse_knot_idx + (first_coarse_brk_idx - 1)*(nsubdivisions - 1)
-    last_fine_knot_idx = last_coarse_knot_idx + (last_coarse_brk_idx - 1)*(nsubdivisions - 1)
-
-    first_fine_basis_id = maximum((1, first_fine_knot_idx - p + coarse_bspline.knot_vector.multiplicity[first_coarse_brk_idx] - 1))
-    last_fine_basis_id = last_fine_knot_idx - 1
-
-    return collect(first_fine_basis_id:last_fine_basis_id)
-end
-
-"""
-    get_finer_basis_id(coarse_basis_id::Int, refinement_operator::FiniteElementSpaces.RefinementOperator)
+    get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FiniteElementSpaces.TwoScaleOperator)
 
 Returns the ids of the child B-splines of `coarse_basis_id`, in terms of the change of basis
-provided by `refinement_operator`.
+provided by `two_scale_operator`.
 
 # Arguments
 - `basis_id::Int`: Id of the parent B-spline.
-- `refinement_operator::FiniteElementSpaces.RefinementOperator`: The refinement operator for
+- `two_scale_operator::FiniteElementSpaces.TwoScaleOperator`: The two-scale operator for
 the change of basis.
 # Returns
-- `::Vector{Int}`: Ids of the child B-splines.
+- `::@view Vector{Int}`: Ids of the child B-splines.
 """
-function get_finer_basis_id(coarse_basis_id::Int, refinement_operator::FiniteElementSpaces.RefinementOperator)
-    return refinement_operator.parent_child[coarse_basis_id]
+function get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FiniteElementSpaces.TwoScaleOperator)
+    return @view two_scale_operator.coarse_to_fine[coarse_basis_id]
 end

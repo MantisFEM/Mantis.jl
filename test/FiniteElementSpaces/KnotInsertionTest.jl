@@ -28,8 +28,8 @@ for p in degrees_for_test
         coarse_x = collect(range(0, 1, nq * nsubdivision + 1))
         
         fine_bspline = Mantis.FiniteElementSpaces.subdivide_bspline(coarse_bspline, nsubdivision)
-        refinement_operator = Mantis.FiniteElementSpaces.element_knot_insertion_operators(coarse_bspline, fine_bspline)
-        fine_coeffs = Mantis.FiniteElementSpaces.get_finer_basis_coeffs(coarse_coeffs, refinement_operator)
+        two_scale_operator = Mantis.FiniteElementSpaces.element_knot_insertion_operators(coarse_bspline, fine_bspline)
+        fine_coeffs = Mantis.FiniteElementSpaces.get_finer_basis_coeffs(coarse_coeffs, two_scale_operator)
         
         for fine_el in 1:size(fine_bspline.knot_vector.patch_1d)
             coarse_el = Mantis.HierarchicalFiniteElementSpaces.get_coarser_element(fine_el, nsubdivision)

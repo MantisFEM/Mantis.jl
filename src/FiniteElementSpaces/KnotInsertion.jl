@@ -3,24 +3,28 @@ Functions and algorithms used for knot insertion.
 
 """
 
-# Refinement Operator structure
+# TwoScaleOperator structure
 
 """
-    struct RefinementOperator
+    struct TwoScaleOperator
 
-Refinement operator for a change of B-spline basis.
+Two-scale operator for a change of B-spline basis.
 
 # Fields
+- `coarse_bspline::BSplineSpace`: Coarse B-spline space.
+- `fine_bspline::BSplineSpace`: Fine B-spline space.
 - `global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}`: Change of basis matrix.
 - `local_extraction_matrix::Vector{Matrix{Float64}}`: Per element change of basis matrix.
 - `coarse_to_fine::Vector{Vector{Int}}`: Relation between coarser and finer basis functions.
 """
-struct RefinementOperator
+struct TwoScaleOperator
+    coarse_bspline::BSplineSpace
+    fine_bspline::BSplineSpace
     global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}
     local_extraction_matrix::Vector{Matrix{Float64}}
     coarse_to_fine::Vector{Vector{Int}}
 
-    function RefinementOperator(global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}, local_extraction_matrix::Vector{Matrix{Float64}})
+    function TwoScaleOperator(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace, global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}, local_extraction_matrix::Vector{Matrix{Float64}})
         ncoarse = size(global_extraction_matrix)[2]
         coarse_to_fine = Vector{Vector{Int}}(undef, ncoarse)
 
@@ -28,7 +32,7 @@ struct RefinementOperator
             coarse_to_fine[i] = global_extraction_matrix.rowval[SparseArrays.nzrange(global_extraction_matrix, i)]
         end
 
-        new(global_extraction_matrix, local_extraction_matrix, coarse_to_fine)
+        new(coarse_bspline, fine_bspline, global_extraction_matrix, local_extraction_matrix, coarse_to_fine)
     end
 end
 
@@ -357,7 +361,7 @@ For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
 - `coarse_knot_vector::KnotVector`: Coarse knot vector.
 - `fine_knot_vector::KnotVector`: Fine knot vector, with the extra knots.
 # Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
+- `::FiniteElementSpaces.TwoScaleOperator`: Coefficients  and coarse-to-fine 
 relations for the change of basis.
 """
 function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_knot_vector::KnotVector)
@@ -374,7 +378,7 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
     rf = 1
     e = 1
 
-    lm = create_identity(nel, p+1)
+    local_extraction_matrix = create_identity(nel, p+1)
 
     offs = 0
 
@@ -388,7 +392,7 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
 
         if e > 1 
             offs = cf - lastcf
-            lm[e][1:p+1-offs, 1:p+1-mult] .= lm[e-1][1+offs:p+1, 1+mult:p+1] 
+            local_extraction_matrix[e][1:p+1-offs, 1:p+1-mult] .= local_extraction_matrix[e-1][1+offs:p+1, 1+mult:p+1] 
         end
 
         for t in p+2-mult:p+1
@@ -396,8 +400,8 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
             gm_columns[sparse_idx] .= cf-p:cf
             gm_rows[sparse_idx] .= rf
 
-            lm[e][:, t] = single_knot_insertion_oslo(coarse_knot_vector, fine_knot_vector, cf, rf)
-            gm_values[sparse_idx] .= lm[e][:, t]
+            local_extraction_matrix[e][:, t] = single_knot_insertion_oslo(coarse_knot_vector, fine_knot_vector, cf, rf)
+            gm_values[sparse_idx] .= local_extraction_matrix[e][:, t]
 
             rf += 1
         end
@@ -405,75 +409,30 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
         e += 1
     end
 
-    global_extraction_matrix = SparseArrays.dropzeros(SparseArrays.sparse(gm_rows, gm_columns, gm_values, rf-1, cf))
+    global_extraction_matrix = SparseArrays.sparse(gm_rows, gm_columns, gm_values, rf-1, cf)
     
-    return FiniteElementSpaces.RefinementOperator(global_extraction_matrix, lm)
+    return global_extraction_matrix, local_extraction_matrix
 end
 
 """
-    element_knot_insertion_operators(coarse_knot_vector::KnotVector, nsubdivisions::Int, fine_multiplicity::Vector{Int})
+    element_knot_insertion_operators(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace)
 
 Algorithm for the coefficients of a change of B-spline representation for knot insertion 
 of multiple knots, recursively using `single_knot_insertion_oslo()`.
-The coarse knot vector is `coarse_knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity given by `fine_multiplicity`.
-
-For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
-
-# Arguments
-- `coarse_knot_vector::KnotVector`: Coarse knot vector.
-- `nsubdivisions::Int`: Number of times each element is subdivided.
-- `fine_multiplicity::Int`: Multiplicity of each new knot in refined knot vector.
-# Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
-relations for the change of basis.
-"""
-function element_knot_insertion_operators(coarse_knot_vector::KnotVector, nsubdivisions::Int, fine_multiplicity::Int)
-    fine_knot_vector = subdivide_knot_vector(coarse_knot_vector, nsubdivisions, fine_multiplicity)
-    
-    return element_knot_insertion_operators(coarse_knot_vector, fine_knot_vector)
-end
-
-"""
-    element_knot_insertion_operators(coarse_knot_vector::KnotVector, nsubdivisions::Int)
-
-Algorithm for the coefficients of a change of B-spline representation for knot insertion 
-of multiple knots, recursively using `single_knot_insertion_oslo()`.
-The coarse knot vector is `coarse_knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1.
-
-For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
-
-# Arguments
-- `coarse_knot_vector::KnotVector`: Coarse knot vector.
-- `nsubdivisions::Int`: Number of times each element is subdivided.
-# Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
-relations for the change of basis.
-"""
-function element_knot_insertion_operators(coarse_knot_vector::KnotVector, nsubdivisions::Int)
-    return element_knot_insertion_operators(coarse_knot_vector, nsubdivisions, 1)
-end
-
-"""
-    element_knot_insertion_operators(coarse_bspline::BSplineSpace, nsubdivisions::Int)
-
-Algorithm for the coefficients of a change of B-spline representation for knot insertion 
-of multiple knots, recursively using `single_knot_insertion_oslo()`.
-The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1.
+The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `fine_bspline.knot_vector`.
 
 For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
 
 # Arguments
 - `coarse_bspline::BSplineSpace`: Coarse B-spline.
-- `nsubdivisions::Int`: Number of times each element is subdivided.
+- `fine_bspline::BSplineSpace`: Fine B-spline, with extra knots.
 # Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
+- `::FiniteElementSpaces.TwoScaleOperator`: Coefficients  and coarse-to-fine 
 relations for the change of basis.
 """
-function element_knot_insertion_operators(coarse_bspline::BSplineSpace, nsubdivisions::Int)
-    nsubdivisions > 0 || throw(ArgumentError("Number of subdivions must be greater than 0. 
-    nsubdivisions=$nsubdivisions was given."))
-
-    return element_knot_insertion_operators(coarse_bspline.knot_vector, nsubdivisions)
+function element_knot_insertion_operators(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace)
+    gm, lm = element_knot_insertion_operators(coarse_bspline.knot_vector, fine_bspline.knot_vector)
+    return TwoScaleOperator(coarse_bspline, fine_bspline, gm, lm)
 end
 
 """
@@ -490,35 +449,36 @@ For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
 - `nsubdivisions::Int`: Number of times each element is subdivided.
 - `fine_multiplicity::Int`: Multiplicity of each new knot in refined knot vector.
 # Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
+- `::FiniteElementSpaces.TwoScaleOperator`: Coefficients  and coarse-to-fine 
 relations for the change of basis.
 """
 function element_knot_insertion_operators(coarse_bspline::BSplineSpace, nsubdivisions::Int, fine_multiplicity::Int)
     nsubdivisions > 0 || throw(ArgumentError("Number of subdivions must be greater than 0. 
     nsubdivisions=$nsubdivisions was given."))
 
-    return element_knot_insertion_operators(coarse_bspline.knot_vector, nsubdivisions, fine_multiplicity)
+    fine_bspline = subdivide_bspline(coarse_bspline, nsubdivisions, fine_multiplicity)
+
+    return element_knot_insertion_operators(coarse_bspline, fine_bspline)
 end
 
 """
-    element_knot_insertion_operators(coarse_bspline::NTuple{n, BSplineSpace}, nsubdivisions::NTuple{n, Int}, fine_multiplicity::NTuple{n, Int}) where {n}
+    element_knot_insertion_operators(coarse_bspline::BSplineSpace, nsubdivisions::Int)
 
 Algorithm for the coefficients of a change of B-spline representation for knot insertion 
 of multiple knots, recursively using `single_knot_insertion_oslo()`.
-The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1,
-across each dimension.
+The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `nsubdivisions`, meaning `nsubdivisions-1` uniformly spaced knots are inserted, between coarse breakpoints, with multiplicity 1.
 
 For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
 
 # Arguments
-- `coarse_bspline::NTuple{n, BSplineSpace}`: Coarse B-spline.
-- `nsubdivisions::NTuple{n, Int}`: Number of times each element is subdivided.
-- `fine_multiplicity::NTuple{n, Int}`: Multiplicity of each new knot in refined knot vector.
+- `coarse_bspline::BSplineSpace`: Coarse B-spline.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
 # Returns 
-- `::NTuple{n, Vector{Array{Float64}}}`: Coefficients for the change of basis.
+- `::FiniteElementSpaces.TwoScaleOperator`: Coefficients  and coarse-to-fine 
+relations for the change of basis.
 """
-function element_knot_insertion_operators(coarse_bspline::NTuple{n, BSplineSpace}, nsubdivisions::NTuple{n, Int}, fine_multiplicity::NTuple{n, Int}) where {n}
-    return ntuple(d -> element_knot_insertion_operators(coarse_bspline.knot_vector[d], nsubdivisions[d], fine_multiplicity[d]), n)
+function element_knot_insertion_operators(coarse_bspline::BSplineSpace, nsubdivisions::Int)
+    return element_knot_insertion_operators(coarse_bspline, nsubdivisions, 1)
 end
 
 """
@@ -561,26 +521,6 @@ function element_knot_insertion_operators(coarse_bspline::NTuple{n, BSplineSpace
 end
 
 """
-    element_knot_insertion_operators(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace)
-
-Algorithm for the coefficients of a change of B-spline representation for knot insertion 
-of multiple knots, recursively using `single_knot_insertion_oslo()`.
-The coarse knot vector is `coarse_bspline.knot_vector` and the inserted knots are given by `fine_bspline.knot_vector`.
-
-For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
-
-# Arguments
-- `coarse_bspline::BSplineSpace`: Coarse B-spline.
-- `fine_bspline::BSplineSpace`: Fine B-spline, with extra knots.
-# Returns 
-- `::FiniteElementSpaces.RefinementOperator`: Coefficients  and coarse-to-fine 
-relations for the change of basis.
-"""
-function element_knot_insertion_operators(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace)
-    return element_knot_insertion_operators(coarse_bspline.knot_vector, fine_bspline.knot_vector)
-end
-
-"""
     element_knot_insertion_operators(coarse_bspline::NTuple{n, BSplineSpace}, fine_bspline::NTuple{n, BSplineSpace}) where {n}
 
 Algorithm for the coefficients of a change of B-spline representation for knot insertion 
@@ -603,16 +543,33 @@ end
 # Getters for change of basis
 
 """
-    get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, refinement_operator::RefinementOperator)
+    get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
 
 Returns the spline coefficients in a refined basis from coefficients in a coarser B-spline basis.
 
 # Arguments
 - `coarse_basis_coeffs::Vector{Float64}`: Coefficients in the coarser basis.
-- `refinement_operator::RefinementOperator`: Refinement operator the change of basis matrix.
+- `two_scale_operator::TwoScaleOperator`: Two-scale operator the change of basis matrix.
 # Returns
 -`::Vector{Float64}`: Coefficients in the finer basis.
 """
-function get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, refinement_operator::RefinementOperator)
-    return refinement_operator.global_extraction_matrix * coarse_basis_coeffs
+function get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
+    return two_scale_operator.global_extraction_matrix * coarse_basis_coeffs
+end
+
+"""
+    get_local_extraction_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
+
+# Arguments 
+- `coarse_el_id::Int`: Id of the coarse element.
+- `fine_el_id::Int`: Id of the fine element.
+- `two_scale_operator::TwoScaleOperator`: Two-scale operator relating two B-spline spaces.
+# Returns
+- `::@views Array{Float64, 2}`: Local change of basis extraction matrix.
+"""
+function get_local_extraction_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
+    _, rows = get_extraction(two_scale_operator.fine_bspline, fine_el_id)
+    _, columns = get_extraction(two_scale_operator.coarse_bspline, coarse_el_id)
+
+    @views two_scale_operator.global_extraction_matrix[rows, columns]
 end
