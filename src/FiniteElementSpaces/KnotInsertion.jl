@@ -405,10 +405,8 @@ function build_two_scale_operator(coarse_knot_vector::KnotVector, fine_knot_vect
         
         e += 1
     end
-
-    global_extraction_matrix = SparseArrays.sparse(gm_rows, gm_columns, gm_values, rf-1, cf)
     
-    return global_extraction_matrix
+    return SparseArrays.sparse(gm_rows, gm_columns, gm_values, rf-1, cf)
 end
 
 """
