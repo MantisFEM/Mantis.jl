@@ -8,6 +8,6 @@ module HierarchicalFiniteElementSpaces
 
 import .. FiniteElementSpaces
 
-include("TwoScale.jl")
+include("HierarchicalRelations.jl")
 
 end

@@ -8,31 +8,29 @@ Functions and algorithms used for knot insertion.
 """
     struct TwoScaleOperator
 
-Two-scale operator for a change of B-spline basis.
+Two-scale operator for a change of basis between two finite element spaces.
 
 # Fields
-- `coarse_bspline::BSplineSpace`: Coarse B-spline space.
-- `fine_bspline::BSplineSpace`: Fine B-spline space.
-- `global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}`: Change of basis matrix.
-- `local_extraction_matrix::Vector{Matrix{Float64}}`: Per element change of basis matrix.
+- `coarse_space::AbstractFiniteElementSpace`: Coarse finite element space.
+- `fine_space::AbstractFiniteElementSpace`: Fine finite element space.
+- `global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}`: Change of basis matrix.
 - `coarse_to_fine::Vector{Vector{Int}}`: Relation between coarser and finer basis functions.
 """
 struct TwoScaleOperator
-    coarse_bspline::BSplineSpace
-    fine_bspline::BSplineSpace
-    global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}
-    local_extraction_matrix::Vector{Matrix{Float64}}
+    coarse_space::AbstractFiniteElementSpace
+    fine_space::AbstractFiniteElementSpace
+    global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}
     coarse_to_fine::Vector{Vector{Int}}
 
-    function TwoScaleOperator(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace, global_extraction_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}, local_extraction_matrix::Vector{Matrix{Float64}})
-        ncoarse = size(global_extraction_matrix)[2]
+    function TwoScaleOperator(coarse_space::S, fine_space::T, global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int64}) where {S<:AbstractFiniteElementSpace, T<:AbstractFiniteElementSpace}
+        ncoarse = size(global_subdiv_matrix)[2]
         coarse_to_fine = Vector{Vector{Int}}(undef, ncoarse)
 
         for i in 1:1:ncoarse
-            coarse_to_fine[i] = global_extraction_matrix.rowval[SparseArrays.nzrange(global_extraction_matrix, i)]
+            coarse_to_fine[i] = global_subdiv_matrix.rowval[SparseArrays.nzrange(global_subdiv_matrix, i)]
         end
 
-        new(coarse_bspline, fine_bspline, global_extraction_matrix, local_extraction_matrix, coarse_to_fine)
+        new(coarse_space, fine_space, global_subdiv_matrix, coarse_to_fine)
     end
 end
 
@@ -238,25 +236,6 @@ function subdivide_knot_vector(coarse_knot_vector::KnotVector, nsubdivisions::In
 end
 
 """
-    subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int)
-
-Subdivides `coarse_bspline` by uniformly subdiving each element 'nsubdivisions' times. The coarse multiplicities
-are preserved in the `fine_multiplicity`, and newly inserted ones are given multiplicity 1.
-
-# Arguments
-- `coarse_bspline::BSplineSpace`: Coarse B-spline.
-- `nsubdivisions::Int`: Number of times each element is subdivided.
-# Returns 
-- `fine_bspline::BSplineSpace`: Fine B-spline.
-"""
-function subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int)
-    fine_knot_vector = subdivide_knot_vector(coarse_bspline.knot_vector, nsubdivisions)
-    p = coarse_bspline.knot_vector.polynomial_degree
-
-    return BSplineSpace(fine_knot_vector.patch_1d, p, p .- fine_knot_vector.multiplicity)
-end
-
-"""
     subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int, fine_multiplicity::Int)
 
 Subdivides `coarse_bspline` by uniformly subdiving each element 'nsubdivisions' times. The coarse multiplicities
@@ -267,13 +246,30 @@ are preserved in the final multiplicity vector, and newly inserted ones are give
 - `nsubdivisions::Int`: Number of times each element is subdivided.
 - `fine_multiplicity::Int`: Multiplicity of each new knot.
 # Returns 
-- `fine_bspline::BSplineSpace`: Fine B-spline.
+- `::TwoScaleOperator`: Two-scale operator for a change of B-spline basis.
 """
 function subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int, fine_multiplicity::Int)
     fine_knot_vector = subdivide_knot_vector(coarse_bspline.knot_vector, nsubdivisions, fine_multiplicity)
     p = coarse_bspline.knot_vector.polynomial_degree
+    fine_bspline = BSplineSpace(fine_knot_vector.patch_1d, p, p .- fine_knot_vector.multiplicity)
 
-    return BSplineSpace(fine_knot_vector.patch_1d, p, p .- fine_knot_vector.multiplicity)
+    return element_knot_insertion_operators(coarse_bspline, fine_bspline)
+end
+
+"""
+    subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int)
+
+Subdivides `coarse_bspline` by uniformly subdiving each element 'nsubdivisions' times. The coarse multiplicities
+are preserved in the `fine_multiplicity`, and newly inserted ones are given multiplicity 1.
+
+# Arguments
+- `coarse_bspline::BSplineSpace`: Coarse B-spline.
+- `nsubdivisions::Int`: Number of times each element is subdivided.
+# Returns 
+- `::TwoScaleOperator`: Two-scale operator for a change of B-spline basis.
+"""
+function subdivide_bspline(coarse_bspline::BSplineSpace, nsubdivisions::Int)
+    return subdivide_bspline(coarse_bspline, nsubdivisions, 1)
 end
 
 """
@@ -373,6 +369,7 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
     gm_values = zeros(Float64, nfine*(p+1))
     gm_rows = zeros(Int, nfine*(p+1))
     gm_columns = similar(gm_rows)
+    sparse_idx = zeros(Int, p+1)
 
     cf = p + 1
     rf = 1
@@ -396,7 +393,7 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
         end
 
         for t in p+2-mult:p+1
-            sparse_idx = (rf-1)*(p+1)+1:rf*(p+1)
+            sparse_idx .= (rf-1)*(p+1)+1:rf*(p+1)
             gm_columns[sparse_idx] .= cf-p:cf
             gm_rows[sparse_idx] .= rf
 
@@ -411,7 +408,7 @@ function element_knot_insertion_operators(coarse_knot_vector::KnotVector, fine_k
 
     global_extraction_matrix = SparseArrays.sparse(gm_rows, gm_columns, gm_values, rf-1, cf)
     
-    return global_extraction_matrix, local_extraction_matrix
+    return global_extraction_matrix
 end
 
 """
@@ -431,8 +428,8 @@ For more information, see [Paper](https://doi.org/10.1016/j.cma.2017.08.017).
 relations for the change of basis.
 """
 function element_knot_insertion_operators(coarse_bspline::BSplineSpace, fine_bspline::BSplineSpace)
-    gm, lm = element_knot_insertion_operators(coarse_bspline.knot_vector, fine_bspline.knot_vector)
-    return TwoScaleOperator(coarse_bspline, fine_bspline, gm, lm)
+    gm = element_knot_insertion_operators(coarse_bspline.knot_vector, fine_bspline.knot_vector)
+    return TwoScaleOperator(coarse_bspline, fine_bspline, gm)
 end
 
 """
@@ -543,7 +540,7 @@ end
 # Getters for change of basis
 
 """
-    get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
+    subdivide_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
 
 Returns the spline coefficients in a refined basis from coefficients in a coarser B-spline basis.
 
@@ -553,12 +550,15 @@ Returns the spline coefficients in a refined basis from coefficients in a coarse
 # Returns
 -`::Vector{Float64}`: Coefficients in the finer basis.
 """
-function get_finer_basis_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
-    return two_scale_operator.global_extraction_matrix * coarse_basis_coeffs
+function subdivide_coeffs(coarse_basis_coeffs::Vector{Float64}, two_scale_operator::TwoScaleOperator)
+    return two_scale_operator.global_subdiv_matrix * coarse_basis_coeffs
 end
 
 """
-    get_local_extraction_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
+    get_local_subdiv_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
+
+Returns the local subdivision matrix necessary to represent functions from a coarser space on
+`coarse_el_id` in terms of finer functions on element `fine_el_id`.
 
 # Arguments 
 - `coarse_el_id::Int`: Id of the coarse element.
@@ -567,9 +567,9 @@ end
 # Returns
 - `::@views Array{Float64, 2}`: Local change of basis extraction matrix.
 """
-function get_local_extraction_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
-    _, rows = get_extraction(two_scale_operator.fine_bspline, fine_el_id)
-    _, columns = get_extraction(two_scale_operator.coarse_bspline, coarse_el_id)
+function get_local_subdiv_matrix(coarse_el_id::Int, fine_el_id::Int, two_scale_operator::TwoScaleOperator)
+    _, rows = get_extraction(two_scale_operator.fine_space, fine_el_id)
+    _, columns = get_extraction(two_scale_operator.coarse_space, coarse_el_id)
 
-    @views two_scale_operator.global_extraction_matrix[rows, columns]
+    @views two_scale_operator.global_subdiv_matrix[rows, columns]
 end

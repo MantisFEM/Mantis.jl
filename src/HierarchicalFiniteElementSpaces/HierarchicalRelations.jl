@@ -1,5 +1,5 @@
 """
-Functions for 2-scale relations between elements and functions.
+Functions for hierarchical relations between elements and functions.
 
 """
 
