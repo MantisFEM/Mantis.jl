@@ -325,7 +325,7 @@ for p in degrees_to_test
   ξ_quad, w_quad = Mantis.Quadrature.gauss_legendre(2 * (p + 1))  # compute the quadrature nodes and weights to compute the integrals 
 
   # Evaluate at the evaluation points
-  ell_poly_eval = Mantis.ElementSpaces.evaluate(ell_poly, ξ_quad, 1)
+  ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ_quad, 1)
 
   # Test integral partition of unity property 
   @test all(isapprox.(transpose(view(ell_poly_eval, :, :, 1))*w_quad, 1.0, atol = 1e-12))
