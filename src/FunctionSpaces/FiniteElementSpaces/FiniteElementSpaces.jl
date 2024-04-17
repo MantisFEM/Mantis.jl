@@ -1,20 +1,9 @@
 """
-This (sub-)module provides a collection of scalar function spaces.
-
-The exported names are:
-"""
-module FiniteElementSpaces
-
-import .. Mesh
-import .. ElementSpaces
-import SparseArrays
-
-"""
     AbstractFiniteElementSpace
 
-Supertype for all scalar function spaces.
+Supertype for all scalar finite element spaces.
 """
-abstract type AbstractFiniteElementSpace{n} end
+abstract type AbstractFiniteElementSpace{n} <: AbstractFunctionSpace end
 
 # Getters for the function spaces
 get_n(f::AbstractFiniteElementSpace{n}) where {n} = n
@@ -47,8 +36,7 @@ end
 # univariate function spaces
 include("UnivariateSplineSpaces.jl")
 include("UnivariateSplineExtractions.jl")
+include("KnotInsertion.jl")
 # composite function spaces
 include("UnstructuredSpaces.jl")
 include("TensorProductSpaces.jl")
-
-end

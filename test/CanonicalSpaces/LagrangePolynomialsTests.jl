@@ -1,4 +1,4 @@
-module LagrangeElementSpacesTests
+module LagrangeCanonicalSpacesTests
 
 import Mantis
 
@@ -107,17 +107,17 @@ ll_evaluation = [
 # Perform the tests 
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]  # define the polynomial degree
-    ll_polynomial = Mantis.ElementSpaces.LobattoLegendre(p)  # generate the polynomials
+    ll_polynomial = Mantis.FunctionSpaces.LobattoLegendre(p)  # generate the polynomials
     xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
 
     # Test that nodes are generated as expected
     @test ll_polynomial.nodes ≈ ll_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.ElementSpaces.evaluate(ll_polynomial, ll_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.FunctionSpaces.evaluate(ll_polynomial, ll_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
 
     # Test if polynomial basis evaluation at evenly spaced nodes 
-    ll_eval =  Mantis.ElementSpaces.evaluate(ll_polynomial, xi_evaluate)
+    ll_eval =  Mantis.FunctionSpaces.evaluate(ll_polynomial, xi_evaluate)
 
     # Check correctness of results
     @test view(ll_eval, :, :, 1) ≈ ll_evaluation[p_idx] atol = 1e-11
@@ -126,12 +126,12 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25 
 for p in degrees_to_test
-  ll_polynomial = Mantis.ElementSpaces.LobattoLegendre(p)  # generate the polynomials
+  ll_polynomial = Mantis.FunctionSpaces.LobattoLegendre(p)  # generate the polynomials
   xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
   
   # Test if polynomial basis evaluation at evenly spaced nodes 
   # Check only for first and second derivatives (we do not use higher orders)
-  ll_eval =  Mantis.ElementSpaces.evaluate(ll_polynomial, xi_evaluate, 2)
+  ll_eval =  Mantis.FunctionSpaces.evaluate(ll_polynomial, xi_evaluate, 2)
 
   # Partition of unity
   @test all(isapprox.(sum(view(ll_eval, :, :, 1), dims=2), 1.0, atol = 5e-14))
@@ -161,7 +161,7 @@ end
 
 # ---------------------------------------------------------------------------------------
 
-# Gauss-Legendre polynomials ----------------------------------------------------
+# Gauss-Legendre polynomials ------------------------------------------------------------
 p_reference = [1, 2, 3, 4, 5, 20]  # polynomial degrees of reference data
 gl_nodes_reference = [[-0.5773502691896258, 0.5773502691896258],  # p = 1
                       [-0.7745966692414834, 0.0, 0.7745966692414834],  # p = 2
@@ -260,27 +260,27 @@ gl_evaluation = [
 # Test nodes
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]
-    gl_polynomial = Mantis.ElementSpaces.GaussLegendre(p)
+    gl_polynomial = Mantis.FunctionSpaces.GaussLegendre(p)
 
     # Test that nodes are generate as expected
     @test gl_polynomial.nodes ≈ gl_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.ElementSpaces.evaluate(gl_polynomial, gl_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, gl_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
 
     # Test if polynomial basis evaluation at evenly spaces nodes gives expected results
-    @test Mantis.ElementSpaces.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...]) ≈ gl_evaluation[p_idx] atol = 1e-11
+    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...]) ≈ gl_evaluation[p_idx] atol = 1e-11
 end
 
 # Perform derivative tests
 degrees_to_test = 1:25 
 for p in degrees_to_test
-  gl_polynomial = Mantis.ElementSpaces.GaussLegendre(p)  # generate the polynomials
+  gl_polynomial = Mantis.FunctionSpaces.GaussLegendre(p)  # generate the polynomials
   xi_evaluate = [range(0.0, 1.0, length=11)...]  # the points where to evaluate for testing
   
   # Test if polynomial basis evaluation at evenly spaced nodes 
   # Check only for first and second derivatives (we do not use higher orders)
-  gl_eval = Mantis.ElementSpaces.evaluate(gl_polynomial, xi_evaluate, 2)
+  gl_eval = Mantis.FunctionSpaces.evaluate(gl_polynomial, xi_evaluate, 2)
   x = 1.0
 
   # Partition of unity
@@ -307,6 +307,57 @@ for p in degrees_to_test
   # Second order derivative tests to be done in the future
   # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
 
+end
+# ---------------------------------------------------------------------------------------
+
+
+# Edge Lobatto-Legendre polynomials -----------------------------------------------------
+degrees_to_test = 0:25
+for p in degrees_to_test
+  # We wish to test
+  # - Partition of unity 
+  # - Integral Kronecker delta property 
+  
+  # Construct the polynomials
+  ell_poly = Mantis.FunctionSpaces.EdgeLobattoLegendre(p)
+  
+  # Compute the evaluation points (quadrature points)
+  ξ_quad, w_quad = Mantis.Quadrature.gauss_legendre(2 * (p + 1))  # compute the quadrature nodes and weights to compute the integrals 
+
+  # Evaluate at the evaluation points
+  ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ_quad, 1)
+
+  # Test integral partition of unity property 
+  @test all(isapprox.(transpose(view(ell_poly_eval, :, :, 1))*w_quad, 1.0, atol = 1e-12))
+
+  # Test integral Kronecker delta property
+  # To avoid evaluating the polynomials many times, we evaluate them at quadrature points
+  # between the Gauss-Lobatto-Legendre nodes
+  
+  # Compute the evaluation points
+  ξ_quad, w_quad = Mantis.Quadrature.gauss_legendre(p + 1)  # compute the quadrature nodes and weights to compute the integrals 
+  ell_nodes = ell_poly.nodes
+  ξ = zeros(Float64, p+1, p+1)  # allocate the memory to store all the quadrature nodes for each interval between nodes
+  for k_interval in 1:(p+1) 
+    Δinterval = ell_nodes[k_interval + 1] - ell_nodes[k_interval] 
+    ξ[:, k_interval] .= ξ_quad * Δinterval .+ ell_nodes[k_interval]  # rescale the nodes to fit inside the interval 
+  end
+
+  # Evaluate the polynomials at the evaluation points 
+  ξ = reshape(ξ, :)  # transform into vector just to use it an input in evaluate
+  ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ, 0)
+  ell_poly_eval = reshape(ell_poly_eval, p+1, p+1, p+1)  # reshape so that we have the quadrature nodes for each interval in a column
+  # Compute the integrals of each basis over each of the intervals 
+  for basis_idx in 1:(p+1) 
+    for interval_idx in 1:(p + 1)
+      Δinterval = ell_nodes[interval_idx + 1] - ell_nodes[interval_idx]
+      if basis_idx == interval_idx 
+        @test all(isapprox.(reshape(view(ell_poly_eval, :, interval_idx, basis_idx), 1, :) * w_quad * Δinterval, 1.0, atol = 1e-12))
+      else
+        @test all(isapprox.(reshape(view(ell_poly_eval, :, interval_idx, basis_idx), 1, :) * w_quad  * Δinterval, 0.0, atol = 1e-12))
+      end
+    end
+  end
 end
 # ---------------------------------------------------------------------------------------
 

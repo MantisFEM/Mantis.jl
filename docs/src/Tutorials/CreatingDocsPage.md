@@ -45,7 +45,7 @@ to include the docstrings into the documentation. An example of what
 this looks like is the following:
 
 ```@meta
-CurrentModule = Mantis.ElementSpaces
+CurrentModule = Mantis.FunctionSpaces
 ```
 
 ```@docs; canonical=false
@@ -84,7 +84,7 @@ I just found out that we can also combine the docstrings from functions
 with the same name but different input by using:
 
 ```@meta
-CurrentModule = Mantis.ElementSpaces
+CurrentModule = Mantis.FunctionSpaces
 ```
 
 ```@docs; canonical=false
