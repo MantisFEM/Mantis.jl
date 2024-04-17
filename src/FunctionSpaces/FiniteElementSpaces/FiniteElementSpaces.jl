@@ -1,7 +1,7 @@
 """
     AbstractFiniteElementSpace
 
-Supertype for all scalar function spaces.
+Supertype for all scalar finite element spaces.
 """
 abstract type AbstractFiniteElementSpace{n} <: AbstractFunctionSpace end
 
@@ -32,6 +32,7 @@ end
 include("CompositeFunctionSpaces.jl")
 include("UnivariateSplineSpaces.jl")
 include("UnivariateSplineExtractions.jl")
+include("KnotInsertion.jl")
 
 """
     create_bspline_space(patch::Mesh.Patch{n}, degree::Vector{Int}, regularity::NTuple{n, Vector{Int}}) where {n}

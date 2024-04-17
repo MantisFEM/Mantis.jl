@@ -66,11 +66,121 @@ function create_knot_vector(patch_1d::Mesh.Patch1D, p::Int, breakpoint_condition
     end
 end
 
+"""
+    get_element_size(knot_vector::KnotVector, element_id::Int)
+
+Returns the size of the element specified by `element_id`.
+
+# Arguments
+- `knot_vector::KnotVector`: The B-Spline function space.
+- `element_id::Int`: The id of the element.
+# Returns
+- `::Float64`: The size of the element.
+"""
 function get_element_size(knot_vector::KnotVector, element_id::Int)
     return Mesh.get_element_size(knot_vector.patch_1d, element_id)
 end
 
+"""
+    get_knot_length(knot_vector::KnotVector)
 
+Determines the length of `knot_vector` by summing the multiplicites of each knot vector.
+
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+# Returns
+- `::Int`: Length of the knot vector.
+"""
+function get_knot_length(knot_vector::KnotVector)
+    return sum(knot_vector.multiplicity)
+end
+
+"""
+    get_breakpoint_index(knot_vector::KnotVector, full_index::Int)
+
+Retrives the breakpoint index corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `index::Int`: Index of breakpoint corresponding to `full_index`.
+"""
+function get_breakpoint_index(knot_vector::KnotVector, full_index::Int)
+    index = 1
+
+    for i in 1:(size(knot_vector.patch_1d)+1)
+        for _ in 1:knot_vector.multiplicity[i]
+            if index == full_index
+                return i
+            end
+
+            index += 1
+        end
+    end
+
+    return error("Index out of bounds.")
+end
+
+function get_first_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
+    return cumsum(knot_vector.multiplicity)[breakpoint_index] - knot_vector.multiplicity[breakpoint_index] + 1
+end
+
+function get_last_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
+    return cumsum(knot_vector.multiplicity)[breakpoint_index]
+end
+
+"""
+    get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
+
+Retrives the breakpoint corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `::Float64`: Breakpoint corresponding to `full_index`.
+"""
+function get_knot_breakpoint(knot_vector::KnotVector, full_index::Int)
+    index = get_breakpoint_index(knot_vector, full_index)
+    return Mesh.get_breakpoints(knot_vector.patch_1d)[index]
+end
+
+"""
+    get_knot_multiplicity(knot_vector::KnotVector, full_index::Int)
+
+Retrives the multiplicity of the breakpoint corresponding to `knot_vector` at `full_index`, i.e. the index 
+of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
+# Arguments
+- `knot_vector::KnotVector`: Knot vector for length calculation.
+- `full_index::Int`: Index in the knot vector.
+# Returns
+- `::Int`: Multiplicity of the breakpoint corresponding to `full_index`.
+"""
+function get_knot_multiplicity(knot_vector::KnotVector, full_index::Int)
+    index = get_breakpoint_index(knot_vector, full_index)
+    return knot_vector.multiplicity[index]
+end
+
+"""
+    get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
+
+Returns the local knot vector necessary to characterize the B-spline identified by `basis_id`.
+
+# Arguments
+- `knot_vector::KnotVector`: The knot vector of the full B-spline basis.
+- `basis_id::Int`: The id of the B-spline.
+# Returns
+- `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
+    local_idx = get_breakpoint_index(knot_vector, basis_id):get_breakpoint_index(knot_vector, basis_id+knot_vector.polynomial_degree+1)
+
+    local_patch = Mesh.Patch1D(Mesh.get_breakpoints(knot_vector.patch_1d)[local_idx])
+    local_multiplicity = knot_vector.multiplicity[local_idx]
+
+    return KnotVector(local_patch, knot_vector.polynomial_degree, local_multiplicity)
+end
 
 """
     struct BSplineSpace
@@ -150,6 +260,36 @@ function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Floa
 end
 
 """
+    get_local_knot_vector(bspline::BSplineSpace, basis_id::Int)
+
+Returns the local knot vector necessary to characterize the B-spline identified by `basis_id`.
+
+# Arguments
+- `bspline::BSplineSpace`: The full B-spline basis.
+- `basis_id::Int`: The id of the B-spline.
+# Returns
+- `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(bspline::BSplineSpace, basis_id::Int)
+    return get_local_knot_vector(bspline.knot_vector, basis_id)
+end
+
+"""
+    get_local_knot_vector(bspline::NTuple{n, BSplineSpace}, basis_id::NTuple{n, Int}) where {n}
+
+Returns the local knot vector necessary to characterize the `n`-variate B-spline identified by `basis_id`.
+
+# Arguments
+- `bspline::NTuple{n, BSplineSpace}`: The full B-spline basis.
+- `basis_id::NTuple{n, Int}`: The id of the B-spline.
+# Returns
+- `::NTuple{n, KnotVector}`: The knot vector of the B-spline identified by `basis_id`.
+"""
+function get_local_knot_vector(bspline::NTuple{n, BSplineSpace}, basis_id::NTuple{n, Int}) where {n}
+    return ntuple(d -> get_local_knot_vector(bspline[d], basis_id[d]), n)
+end
+
+"""
     get_polynomial_degree(bspline::BSplineSpace)
 
 Returns the degree of Bsplines
@@ -178,6 +318,34 @@ function get_dim(bspline::BSplineSpace)
 end
 
 """
+    get_patch(bspline::BSplineSpace)
+
+Returns the patch of the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Mesh.Patch1D`: The patch of the B-Spline space.
+"""
+function get_patch(bspline::BSplineSpace)
+    return bspline.knot_vector.patch_1d
+end
+
+"""
+    get_patch(bspline::BSplineSpace)
+
+Returns the multiplicity of the knot vector associated with the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
+"""
+function get_multiplicity(bspline::BSplineSpace)
+    return bspline.knot_vector.multiplicity
+end
+
+"""
     get_num_elements(bspline::BSplineSpace)
 
 Returns the number of elements in the underlying partition.
@@ -191,6 +359,17 @@ function get_num_elements(bspline::BSplineSpace)
     return size(bspline.knot_vector.patch_1d)
 end
 
+"""
+    get_element_size(bspline::BSplineSpace, element_id::Int)
+
+Returns the size of the element specified by `element_id`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+- `element_id::Int`: The id of the element.
+# Returns
+- `::Float64`: The size of the element.
+"""
 function get_element_size(bspline::BSplineSpace, element_id::Int)
     return get_element_size(bspline.knot_vector, element_id)
 end
@@ -219,6 +398,19 @@ function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, n
     return local_basis, basis_indices
 end
 
+"""
+    evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
+
+Evaluates the non-zero `bspline` basis functions on the element specified by `element_id` on point `xi` and all derivatives up to nderivatives.
+
+# Arguments
+- `bspline::BSplineSpace`: A univariate B-Spline function space.
+- `element_id::Int`: The id of the element.
+- `xi::Float64`: The point where the global basis is evaluated.
+- `nderivatives::Int`: The order upto which derivatives need to be computed.
+# Returns
+- `::Array{Float64}`: Global basis functions, size = 1 x degree+1 x nderivatives+1
+"""
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
     return evaluate(bspline, element_id, [xi], nderivatives)
 end
@@ -257,8 +449,33 @@ function evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float
 end
 
 """
-    GTBSplineSpace constructor
+    evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
 
+Evaluates a spline on the element specified by `element_id` and points `xi` and all derivatives up to nderivatives, form a 
+`bspline` basis with given `coefficients`.
+
+# Arguments
+- `bspline::BSplineSpace`: A univariate B-Spline function space.
+- `element_id::Int`: The id of the element.
+- `xi::Vector{Float64}`: The points where the global basis is evaluated.
+- `nderivatives::Int`: The order upto which derivatives need to be computed.
+- `coefficients::Vector{Float64}`: Coefficients of the spline with basis `bspline`.
+# Returns
+- `::Array{Float64}`: Spline evaluation (size = n_eval_points x nderivatives+1).
+"""
+function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
+    local_basis, basis_indices = evaluate(bspline, element_id, xi, nderivatives)
+    evaluation = zeros(Float64, (size(local_basis)[1],nderivatives+1) )
+    
+    for r = 0:nderivatives
+        evaluation[:,r+1] .= @views sum(local_basis[:,:,r+1] .* coefficients[basis_indices]', dims=2)
+    end
+
+    return evaluation
+end
+
+"""
+    GTBSplineSpace constructor
 """
 function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int}) where {m}
     if length(regularity) != m
