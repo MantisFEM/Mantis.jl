@@ -2,8 +2,8 @@ using LinearAlgebra
 
 import PolynomialBases
 
-abstract type AbstractLagrangePolynomials <: AbstractElementSpace end
-abstract type AbstractEdgePolynomials <: AbstractElementSpace end
+abstract type AbstractLagrangePolynomials <: AbstractCanonicalSpace end
+abstract type AbstractEdgePolynomials <: AbstractCanonicalSpace end
 
 struct LobattoLegendre <: AbstractLagrangePolynomials
     p::Int  # Polynomial degree
