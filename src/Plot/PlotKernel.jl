@@ -1,5 +1,5 @@
 
-function plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::String = "default", n_subcells::Int64 = 1, degree::Int64 = 1) where {G <: AbstractGeometry, F <: AbstractFunction}
+function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::String = "default", n_subcells::Int64 = 1, degree::Int64 = 1) where {G <: AbstractGeometry, F <: AbstractFunction}
     # This function generates points per plotted cell, so connectivity is lost, this is what requires less information
     # from the mesh. Each computational element is sampled at n_subsamples (minimum is 2 per direction). These subsamples 
     # create a structured grid, each cell of this refined grid is plotted.
@@ -141,8 +141,4 @@ function plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::Str
             vtk["point_data", WriteVTK.VTKPointData()] = point_data
         end
     end
-end
-
-function plot(field::F; kwargs...) where {F <: AbstractFunction}
-    plot(field.geometry, field; kwargs...)
 end
