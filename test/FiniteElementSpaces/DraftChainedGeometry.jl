@@ -82,11 +82,11 @@ end
 ####### A SPECIFIC INSTANCE OF A NEW FEM SPACE: ELEMENT SPACE
 
 struct NewElementSpace <: AbstractFunctionSpace
-    polynomials::Mantis.ElementSpaces.Bernstein
+    polynomials::Mantis.CanonicalSpaces.Bernstein
     geometry::AbstractGeometry
 
     function NewElementSpace(p)
-        polynomials = Mantis.ElementSpaces.Bernstein(p)
+        polynomials = Mantis.CanonicalSpaces.Bernstein(p)
         map(xi) = xi
         dmap(xi) = 1.0*ones(size(xi))
         new(polynomials, AnalGeometry(map, dmap))
@@ -94,11 +94,11 @@ struct NewElementSpace <: AbstractFunctionSpace
 end
 
 function evaluate_val(fem_space::NewElementSpace, ::Int, ξ::Vector{Float64})
-    return Mantis.ElementSpaces.evaluate(fem_space.polynomials, ξ, 0)[:,:,1], 1:fem_space.polynomials.p+1, ξ
+    return Mantis.CanonicalSpaces.evaluate(fem_space.polynomials, ξ, 0)[:,:,1], 1:fem_space.polynomials.p+1, ξ
 end
 
 function evaluate_der(fem_space::NewElementSpace, ::Int, ξ::Vector{Float64})
-    return Mantis.ElementSpaces.evaluate(fem_space.polynomials, ξ, 1)[:,:,2], 1:fem_space.polynomials.p+1, ξ
+    return Mantis.CanonicalSpaces.evaluate(fem_space.polynomials, ξ, 1)[:,:,2], 1:fem_space.polynomials.p+1, ξ
 end
 
 function get_num_elements(::NewElementSpace)

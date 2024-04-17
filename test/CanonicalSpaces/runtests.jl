@@ -1,4 +1,4 @@
-module ElementSpacesTests
+module CanonicalSpacesTests
 
 using Test
 

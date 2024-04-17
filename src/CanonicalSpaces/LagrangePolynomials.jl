@@ -2,7 +2,7 @@ using LinearAlgebra
 
 import PolynomialBases
 
-abstract type AbstractLagrangePolynomials <: AbstractElementSpace end
+abstract type AbstractLagrangePolynomials <: AbstractCanonicalSpace end
 
 
 struct LobattoLegendre <: AbstractLagrangePolynomials

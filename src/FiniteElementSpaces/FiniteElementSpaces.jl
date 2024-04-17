@@ -6,7 +6,7 @@ The exported names are:
 module FiniteElementSpaces
 
 import .. Mesh
-import .. ElementSpaces
+import .. CanonicalSpaces
 import SparseArrays
 
 """
