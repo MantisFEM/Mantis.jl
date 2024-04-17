@@ -1,4 +1,4 @@
-abstract type AbstractECTSpaces <: AbstractElementSpace end
+abstract type AbstractECTSpaces <: AbstractCanonicalSpace end
 
 @doc raw"""
     struct GeneralizedTrigonometric <: AbstractECTSpaces

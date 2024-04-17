@@ -6,7 +6,7 @@ The exported names are:
 
 module HierarchicalFiniteElementSpaces
 
-import .. FiniteElementSpaces
+import .. FunctionSpaces
 
 include("HierarchicalRelations.jl")
 

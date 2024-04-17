@@ -106,18 +106,18 @@ end
 # Getters for basis splines
 
 """
-    get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FiniteElementSpaces.TwoScaleOperator)
+    get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FunctionSpaces.TwoScaleOperator)
 
 Returns the ids of the child B-splines of `coarse_basis_id`, in terms of the change of basis
 provided by `two_scale_operator`.
 
 # Arguments
 - `basis_id::Int`: Id of the parent B-spline.
-- `two_scale_operator::FiniteElementSpaces.TwoScaleOperator`: The two-scale operator for
+- `two_scale_operator::FunctionSpaces.TwoScaleOperator`: The two-scale operator for
 the change of basis.
 # Returns
 - `::@view Vector{Int}`: Ids of the child B-splines.
 """
-function get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FiniteElementSpaces.TwoScaleOperator)
+function get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FunctionSpaces.TwoScaleOperator)
     return @view two_scale_operator.coarse_to_fine[coarse_basis_id]
 end

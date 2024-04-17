@@ -191,12 +191,12 @@ with given `polynomial_degree` and `regularity` per breakpoint.
 # Fields
 - `knot_vector::KnotVector`: 1-dimensional knot vector.
 - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
-- `polynomials::ElementSpaces.Bernstein`: Refence Bernstein polynomials.
+- `polynomials::Bernstein`: Refence Bernstein polynomials.
 """
 struct BSplineSpace<:AbstractFiniteElementSpace{1}
     knot_vector::KnotVector
     extraction_op::ExtractionOperator
-    polynomials::ElementSpaces.Bernstein
+    polynomials::Bernstein
     
     function BSplineSpace(patch_1d::Mesh.Patch1D, polynomial_degree::Int, regularity::Vector{Int})
         # Check for errors in the construction 
@@ -220,7 +220,7 @@ struct BSplineSpace<:AbstractFiniteElementSpace{1}
         
         knot_vector = create_knot_vector(patch_1d, polynomial_degree, regularity, "regularity")
 
-        new(knot_vector, extract_bspline_to_bernstein(knot_vector), ElementSpaces.Bernstein(polynomial_degree))
+        new(knot_vector, extract_bspline_to_bernstein(knot_vector), Bernstein(polynomial_degree))
     end
 end
 
@@ -247,7 +247,7 @@ Returns the reference Bernstein polynomials of `bspline`.
 # Arguments
 - `bspline::BSplineSpace`: A univariate B-Spline function space.
 # Returns
-- `::ElementSpaces.Bernstein`: Bernstein polynomials.
+- `::Bernstein`: Bernstein polynomials.
 """
 function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     local_basis = bspline.polynomials(xi, nderivatives)

@@ -12,8 +12,8 @@ for p in degrees_to_test
     sum_all = zeros(size(x))
     sum_all2 = zeros(size(x))
 
-    b = Mantis.ElementSpaces.GeneralizedTrigonometric(p, Wt)
-    b_eval = Mantis.ElementSpaces.evaluate(b, x, 1)
+    b = Mantis.FunctionSpaces.GeneralizedTrigonometric(p, Wt)
+    b_eval = Mantis.FunctionSpaces.evaluate(b, x, 1)
 
     # Positivity of the polynomials
     @test minimum(b_eval[:,:,1]) >= 0.0
@@ -36,7 +36,7 @@ for p in degrees_to_test
         d2f_dx2_eval = -Wt * Wt * cos.(Wt * x) - Wt * Wt * sin.(Wt * x)
         
         # interpolate via collocation
-        b_eval = Mantis.ElementSpaces.evaluate(b, x, 2)
+        b_eval = Mantis.FunctionSpaces.evaluate(b, x, 2)
         coeff_b = b_eval[:,:,1] \ f_eval
 
         # Check that the values match f ...

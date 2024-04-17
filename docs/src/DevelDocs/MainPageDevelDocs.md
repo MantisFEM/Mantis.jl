@@ -15,9 +15,9 @@ on parts of the code that are not designed for public access.
     different structure.
 
 
-## All functions and stuff from Mantis.ElementSpaces
+## All functions and stuff from Mantis.CanonicalSpaces
 ```@autodocs
-Modules = [Mantis.ElementSpaces]
+Modules = [Mantis.CanonicalSpaces]
 ```
 
 ## All functions and stuff from Mantis.Quadrature
