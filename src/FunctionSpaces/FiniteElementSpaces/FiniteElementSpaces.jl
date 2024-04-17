@@ -1,20 +1,9 @@
 """
-This (sub-)module provides a collection of scalar function spaces.
-
-The exported names are:
-"""
-module FiniteElementSpaces
-
-import .. Mesh
-import .. CanonicalSpaces
-import SparseArrays
-
-"""
     AbstractFiniteElementSpace
 
 Supertype for all scalar function spaces.
 """
-abstract type AbstractFiniteElementSpace{n} end
+abstract type AbstractFiniteElementSpace{n} <: AbstractFunctionSpace end
 
 # Getters for the function spaces
 get_n(f::AbstractFiniteElementSpace{n}) where {n} = n
@@ -60,8 +49,4 @@ Create a tensor product space made of only univariate b-spline spaces.
 function create_bspline_space(patch::Mesh.Patch{n}, degree::Vector{Int}, regularity::NTuple{n, Vector{Int}}) where {n}
     f_spaces = NTuple{n, BSplineSpace}(BSplineSpace(patch[i], degree[i], regularity[i]) for i in 1:1:n)
     return TensorProductSpace{n}(patch, f_spaces)
-end
-
-
-
 end

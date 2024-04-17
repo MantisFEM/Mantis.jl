@@ -1,19 +1,9 @@
 """
-This (sub-)module provides a collection of polynomial and non-polynomial bases on the canonical element.
-
-The exported names are:
-"""
-module CanonicalSpaces
-
-
-
-
-"""
     AbstractCanonicalSpace
 
 Supertype for all element-local bases.
 """
-abstract type AbstractCanonicalSpace end
+abstract type AbstractCanonicalSpace <: AbstractFunctionSpace end
 
 
 # Listed alphabetically
@@ -25,7 +15,7 @@ include("ECTSpaces.jl")
 # Has to be below the include statements to ensure that all evaluate 
 # methods are visible to it!
 @doc raw"""
-    (elem_loc_basis::AbstractCanonicalSpace)(xi::Vector{Float64}, args...)::Array{Float64}
+    (elem_loc_basis::T)(xi::Vector{Float64}, args...) where {T <: AbstractCanonicalSpace}
 
 Call the `evaluate`-method for the given `elem_loc_basis`.
 
@@ -43,10 +33,6 @@ See also
 - [`evaluate(elem_loc_basis::Bernstein, xi::Float64)`](@ref),
 - [`evaluate(elem_loc_basis::Bernstein, xi::Float64, nderivatives::Int64)`](@ref).
 """
-function (elem_loc_basis::AbstractCanonicalSpace)(xi::Vector{Float64}, args...)::Array{Float64}
+function (elem_loc_basis::T where {T <: AbstractCanonicalSpace})(xi::Vector{Float64}, args...)
     return evaluate(elem_loc_basis, xi, args...)
-end
-
-
-
 end

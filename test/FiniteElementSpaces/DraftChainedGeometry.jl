@@ -82,11 +82,11 @@ end
 ####### A SPECIFIC INSTANCE OF A NEW FEM SPACE: ELEMENT SPACE
 
 struct NewElementSpace <: AbstractFunctionSpace
-    polynomials::Mantis.CanonicalSpaces.Bernstein
+    polynomials::Mantis.FunctionSpaces.Bernstein
     geometry::AbstractGeometry
 
     function NewElementSpace(p)
-        polynomials = Mantis.CanonicalSpaces.Bernstein(p)
+        polynomials = Mantis.FunctionSpaces.Bernstein(p)
         map(xi) = xi
         dmap(xi) = 1.0*ones(size(xi))
         new(polynomials, AnalGeometry(map, dmap))
@@ -94,11 +94,11 @@ struct NewElementSpace <: AbstractFunctionSpace
 end
 
 function evaluate_val(fem_space::NewElementSpace, ::Int, ξ::Vector{Float64})
-    return Mantis.CanonicalSpaces.evaluate(fem_space.polynomials, ξ, 0)[:,:,1], 1:fem_space.polynomials.p+1, ξ
+    return Mantis.FunctionSpaces.evaluate(fem_space.polynomials, ξ, 0)[:,:,1], 1:fem_space.polynomials.p+1, ξ
 end
 
 function evaluate_der(fem_space::NewElementSpace, ::Int, ξ::Vector{Float64})
-    return Mantis.CanonicalSpaces.evaluate(fem_space.polynomials, ξ, 1)[:,:,2], 1:fem_space.polynomials.p+1, ξ
+    return Mantis.FunctionSpaces.evaluate(fem_space.polynomials, ξ, 1)[:,:,2], 1:fem_space.polynomials.p+1, ξ
 end
 
 function get_num_elements(::NewElementSpace)
@@ -113,14 +113,14 @@ end
 
 struct NewUnstructuredSpace <: AbstractFunctionSpace
     fem_spaces::NTuple{m, AbstractFunctionSpace} where {m}
-    extraction_op::Mantis.FiniteElementSpaces.ExtractionOperator
+    extraction_op::Mantis.FunctionSpaces.ExtractionOperator
     us_config::Dict
     
-    function NewUnstructuredSpace(fem_spaces::NTuple{m,AbstractFunctionSpace}, extraction_op::Mantis.FiniteElementSpaces.ExtractionOperator, us_config::Dict) where {m}
+    function NewUnstructuredSpace(fem_spaces::NTuple{m,AbstractFunctionSpace}, extraction_op::Mantis.FunctionSpaces.ExtractionOperator, us_config::Dict) where {m}
         new(fem_spaces, extraction_op, us_config)
     end
 
-    function NewUnstructuredSpace(fem_spaces::NTuple{m,AbstractFunctionSpace}, extraction_op::Mantis.FiniteElementSpaces.ExtractionOperator)where {m}
+    function NewUnstructuredSpace(fem_spaces::NTuple{m,AbstractFunctionSpace}, extraction_op::Mantis.FunctionSpaces.ExtractionOperator)where {m}
         # build 1D topology
         patch_neighbours = [-1 (1:m-1)...
                             (2:m)... -1]
@@ -139,11 +139,11 @@ function get_dim(us_space::NewUnstructuredSpace)
 end
 
 function get_num_elements(us_space::NewUnstructuredSpace)
-    return Mantis.FiniteElementSpaces.get_num_elements(us_space.extraction_op)
+    return Mantis.FunctionSpaces.get_num_elements(us_space.extraction_op)
 end
 
 function get_extraction(us_space::NewUnstructuredSpace, element_id::Int)
-    return Mantis.FiniteElementSpaces.get_extraction(us_space.extraction_op, element_id)
+    return Mantis.FunctionSpaces.get_extraction(us_space.extraction_op, element_id)
 end
 
 function get_space_id(us_space::NewUnstructuredSpace, element_id::Int)
@@ -247,7 +247,7 @@ num_elements = 2
 space_dim = n11+n12-2
 
 # combined space
-B1 = NewUnstructuredSpace((B11, B12),Mantis.FiniteElementSpaces.ExtractionOperator(extraction_coeffs,basis_indices,num_elements,space_dim))
+B1 = NewUnstructuredSpace((B11, B12),Mantis.FunctionSpaces.ExtractionOperator(extraction_coeffs,basis_indices,num_elements,space_dim))
 
 plot_basis_vals(B1, xi_plot)
 
@@ -293,4 +293,4 @@ readline()
 # space_dim = n21+n22-2
 
 # # # combined space
-# # B2 = NewUnstructuredSpace((B21, B22),Mantis.FiniteElementSpaces.ExtractionOperator(extraction_coeffs,basis_indices,num_elements,space_dim))
+# # B2 = NewUnstructuredSpace((B21, B22),Mantis.FunctionSpaces.ExtractionOperator(extraction_coeffs,basis_indices,num_elements,space_dim))
