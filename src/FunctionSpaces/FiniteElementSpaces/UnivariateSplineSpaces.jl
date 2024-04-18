@@ -347,34 +347,6 @@ function get_multiplicity(bspline::BSplineSpace)
 end
 
 """
-    get_patch(bspline::BSplineSpace)
-
-Returns the patch of the univariate function space `bspline`.
-
-# Arguments
-- `bspline::BSplineSpace`: The B-Spline function space.
-# Returns
-- `::Mesh.Patch1D`: The patch of the B-Spline space.
-"""
-function get_patch(bspline::BSplineSpace)
-    return bspline.knot_vector.patch_1d
-end
-
-"""
-    get_patch(bspline::BSplineSpace)
-
-Returns the multiplicity of the knot vector associated with the univariate function space `bspline`.
-
-# Arguments
-- `bspline::BSplineSpace`: The B-Spline function space.
-# Returns
-- `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
-"""
-function get_multiplicity(bspline::BSplineSpace)
-    return bspline.knot_vector.multiplicity
-end
-
-"""
     get_num_elements(bspline::BSplineSpace)
 
 Returns the number of elements in the underlying partition.
