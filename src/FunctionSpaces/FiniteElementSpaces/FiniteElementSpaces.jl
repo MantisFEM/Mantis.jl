@@ -40,3 +40,4 @@ include("KnotInsertion.jl")
 # composite function spaces
 include("UnstructuredSpaces.jl")
 include("TensorProductSpaces.jl")
+include("HierarchicalFiniteElementSpaces.jl")  # Creates Module HierarchicalFiniteElementSpaces
