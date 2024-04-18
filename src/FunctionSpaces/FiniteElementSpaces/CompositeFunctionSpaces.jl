@@ -1,5 +1,3 @@
-# UnstructuredSpace constructors
-
 @doc raw"""
     UnstructuredSpace{n,m} <: AbstractFiniteElementSpace{n}
 
@@ -33,6 +31,20 @@ struct UnstructuredSpace{n,m} <: AbstractFiniteElementSpace{n}
 
         new{1,m}(function_spaces, extraction_op, us_config, data)
     end
+end
+
+"""
+    get_dim(us_space::UnstructuredSpace)
+
+Returns the dimension of the unstructured function space `us_space`.
+
+# Arguments
+- `us_space::UnstructuredSpace)`: Unstructured function space.
+# Returns
+- `::Int`: The dimension of the space.
+"""
+function get_dim(us_space::UnstructuredSpace)
+    return get_num_elements(us_space.extraction_op)
 end
 
 @doc raw"""
@@ -101,6 +113,9 @@ For given global element id `element_id` for a given 1D unstructured space, find
 function get_local_basis(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Vector{Float64}, nderivatives::Int) where {m}
     space_id = get_space_id(us_space, element_id)
     space_element_id = element_id - us_space.us_config["patch_nels"][space_id]
+
+    # implement geometric transformation
+
     return evaluate(us_space.function_spaces[space_id], space_element_id, xi, nderivatives)
 end
 
@@ -131,26 +146,4 @@ end
 
 function evaluate(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Float64, nderivatives::Int) where {m}
     return evaluate(us_space, element_id, [xi], nderivatives)
-end
-
-# TensorProductSpace constructors
-
-"""
-    TensorProductSpace{n} <: AbstractFiniteElementSpace{n} 
-
-`n`-variate tensor-product space.
-
-# Fields
-- `patch::Patch{n}`: Patch on which the tensor product space is defined.
-- `function_spaces::NTuple{m, F} where {m, F <: AbstractFiniteElementSpace}`: collection of uni or multivariate function spaces.
-"""
-struct TensorProductSpace{n} <: AbstractFiniteElementSpace{n} 
-    patch::Mesh.Patch{n}
-    function_spaces::NTuple{m, AbstractFiniteElementSpace} where {m}
-    function TensorProductSpace(patch::Mesh.Patch{n}, function_spaces::NTuple{m, AbstractFiniteElementSpace}) where {n,m}
-        if sum([get_n(function_spaces[i]) for i in 1:1:m]) != n
-            throw(ArgumentError("The sum of the dimensions of the input spaces does not match the dimension of the patch!"))
-        end
-        new{n}(patch, function_spaces)
-    end
 end

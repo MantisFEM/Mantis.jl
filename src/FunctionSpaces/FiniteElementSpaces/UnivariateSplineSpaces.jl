@@ -191,12 +191,12 @@ with given `polynomial_degree` and `regularity` per breakpoint.
 # Fields
 - `knot_vector::KnotVector`: 1-dimensional knot vector.
 - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
-- `polynomials::ElementSpaces.Bernstein`: Refence Bernstein polynomials.
+- `polynomials::Bernstein`: Refence Bernstein polynomials.
 """
 struct BSplineSpace<:AbstractFiniteElementSpace{1}
     knot_vector::KnotVector
     extraction_op::ExtractionOperator
-    polynomials::ElementSpaces.Bernstein
+    polynomials::Bernstein
     
     function BSplineSpace(patch_1d::Mesh.Patch1D, polynomial_degree::Int, regularity::Vector{Int})
         # Check for errors in the construction 
@@ -220,7 +220,7 @@ struct BSplineSpace<:AbstractFiniteElementSpace{1}
         
         knot_vector = create_knot_vector(patch_1d, polynomial_degree, regularity, "regularity")
 
-        new(knot_vector, extract_bspline_to_bernstein(knot_vector), ElementSpaces.Bernstein(polynomial_degree))
+        new(knot_vector, extract_bspline_to_bernstein(knot_vector), Bernstein(polynomial_degree))
     end
 end
 
@@ -247,7 +247,7 @@ Returns the reference Bernstein polynomials of `bspline`.
 # Arguments
 - `bspline::BSplineSpace`: A univariate B-Spline function space.
 # Returns
-- `::ElementSpaces.Bernstein`: Bernstein polynomials.
+- `::Bernstein`: Bernstein polynomials.
 """
 function get_local_basis(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     local_basis = bspline.polynomials(xi, nderivatives)
@@ -314,7 +314,36 @@ Returns the dimension of the univariate function space `bspline`.
 - `::Int`: The dimension of the B-Spline space.
 """
 function get_dim(bspline::BSplineSpace)
-    return size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1))
+    @assert get_dim(bspline.extraction_op) == size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1)) "B-spline dimension incorrect."
+    return get_dim(bspline.extraction_op)
+end
+
+"""
+    get_patch(bspline::BSplineSpace)
+
+Returns the patch of the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Mesh.Patch1D`: The patch of the B-Spline space.
+"""
+function get_patch(bspline::BSplineSpace)
+    return bspline.knot_vector.patch_1d
+end
+
+"""
+    get_patch(bspline::BSplineSpace)
+
+Returns the multiplicity of the knot vector associated with the univariate function space `bspline`.
+
+# Arguments
+- `bspline::BSplineSpace`: The B-Spline function space.
+# Returns
+- `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
+"""
+function get_multiplicity(bspline::BSplineSpace)
+    return bspline.knot_vector.multiplicity
 end
 
 """
@@ -390,7 +419,6 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
     local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
-    el_size = get_element_size(bspline, element_id)
     for r = 0:nderivatives
         local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end

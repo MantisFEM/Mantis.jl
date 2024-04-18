@@ -21,9 +21,9 @@ for p in degrees_to_test
     sum_all2 = zeros(size(x))
 
     # Bernstein polynomials of degree p ...
-    b = Mantis.ElementSpaces.Bernstein(p)
+    b = Mantis.FunctionSpaces.Bernstein(p)
     # ... evaluated (values, 1st and 2nd derivatives) at quadrature nodes
-    b_eval = Mantis.ElementSpaces.evaluate(b, x, 2)
+    b_eval = Mantis.FunctionSpaces.evaluate(b, x, 2)
 
     # Check positivity of the polynomials
     @test minimum(b_eval[:,:,1]) >= 0.0
@@ -53,7 +53,7 @@ for p in degrees_to_test
         # Coefficients of f in terms of the monomial basis ...
         coeff_m = [zeros(p-1); 1.0; 1.0]
         # ... and in terms of the Bernstein basis
-        coeff_b = Mantis.ElementSpaces.extract_monomial_to_bernstein(b) * coeff_m
+        coeff_b = Mantis.FunctionSpaces.extract_monomial_to_bernstein(b) * coeff_m
         # Check that the values match f ...
         @test isapprox(maximum(abs.(b_eval[:,:,1] * coeff_b .- f_eval)), 0.0, atol = 1e-15)
         # ... the first order derivative matches df/dx ...

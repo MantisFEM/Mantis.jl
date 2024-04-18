@@ -94,8 +94,12 @@ extract_bspline_to_bspline(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{
 Computes the extraction coefficients of GTB-Spline basis functions in terms of constitutent B-spline basis functions.
 
 # Arguments
+- `bsplines::NTuple{m,BSplineSpace}`: collection of (generalized) bspline spaces
+- `regularity::Vector{Int}`: smoothness to be imposed at patch interfaces
 
 # Returns
+- `::ExtractionOperator`
+
 """
 function extract_gtbspline_to_bspline(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int}) where {m}
     # construct cumulative sum of all bspline dims
@@ -122,11 +126,32 @@ function extract_gtbspline_to_bspline(bsplines::NTuple{m,BSplineSpace}, regulari
         vals = [-KL[3]; KR[3]]
         K = SparseArrays.sparse(rows,cols,vals,(bspl_dims[i+2] - bspl_dims[i]),r+1)
         # update local extraction matrix by building double-diagonal nullspace of constraints
-        L = H[:, bspl_dims[i]+1:bspl_dims[i+2]] * K;
+        L = H[:, bspl_dims[i]+1:bspl_dims[i+2]] * K
         for j = 0:r
-            Hbar = build_sparse_nullspace(L[:, j+1]);
-            H = Hbar * H;
-            L = Hbar * L;
+            Hbar = build_sparse_nullspace(L[:, j+1])
+            H = Hbar * H
+            L = Hbar * L
+        end
+    end
+
+    # impose periodicity if desired for i = m
+    if regularity[m] > -1
+        r = regularity[m]
+        if size(H, 1) >= 2*(r+1)
+            Hper = circshift(H, r+1)
+            KL = SparseArrays.findnz(evaluate_all_at_point(bsplines[m], bspl_nels[m], 1.0, r))
+            KR = SparseArrays.findnz(evaluate_all_at_point(bsplines[1], 1, 0.0, r))
+            rows = [KL[1]; KR[1] .+ (bspl_dims[m+1] - bspl_dims[m])]
+            cols = [KL[2]; KR[2]]
+            vals = [-KL[3]; KR[3]]
+            K = SparseArrays.sparse(rows,cols,vals,(bspl_dims[m+1] - bspl_dims[m] + bspl_dims[2] - bspl_dims[1]),r+1)
+            Lper = Hper[:, [bspl_dims[m]+1:bspl_dims[m+1]; bspl_dims[1]+1:bspl_dims[2]]] * K
+            for j = 0:r
+                Hbar = build_sparse_nullspace(Lper[:, j+1])
+                Hper = Hbar * Hper
+                Lper = Hbar * Lper
+            end
+            H = Hper
         end
     end
 
