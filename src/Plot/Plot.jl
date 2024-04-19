@@ -3,9 +3,13 @@ This (sub-)module provides a collection of plotting routines for Mantis evaluata
 
 The exported names are:
 """
-module Plot
 
-include("PlotKernel.jl")
+module Plot
+import WriteVTK 
+
+import .. Geometry
+
+include("./PlotKernel.jl")
 
 @doc raw"""
     plot(geometry::G; kwargs...) where {G <: AbstractGeometry}
@@ -31,7 +35,7 @@ degree elements.
 # Returns 
 Nothing
 """
-function plot(geometry::G; kwargs...) where {G <: AbstractGeometry}
+function plot(geometry::G; kwargs...) where {G <: Geometry.AbstractGeometry}
     _plot(geometry; kwargs...)
 end
 
@@ -62,8 +66,8 @@ Note that both the underlying geometry of the field and the field itself are plo
 # Returns 
 Nothing
 """
-function plot(field::F; kwargs...) where {F <: AbstractFunction}
-    _plot(field.geometry, field; kwargs...)
-end
+# function plot(field::F; kwargs...) where {F <: Function}
+#     _plot(field.geometry, field; kwargs...)
+# end
 
 end

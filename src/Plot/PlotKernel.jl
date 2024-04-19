@@ -1,5 +1,5 @@
 
-function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::String = "default", n_subcells::Int64 = 1, degree::Int64 = 1) where {G <: AbstractGeometry, F <: AbstractFunction}
+function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::String = "default", n_subcells::Int64 = 1, degree::Int64 = 1) where {G <: Geometry.AbstractGeometry, F <: Function}
     # This function generates points per plotted cell, so connectivity is lost, this is what requires less information
     # from the mesh. Each computational element is sampled at n_subsamples (minimum is 2 per direction). These subsamples 
     # create a structured grid, each cell of this refined grid is plotted.
@@ -25,7 +25,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
             # Corner vertices
             # First point (bottom left)
             ξ = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- 1))
-            vertices[:, vertex_idx] .= evaluate(geometry, element_idx, ξ)
+            vertices[:, vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
             # Compute data to plot 
             if !isnothing(field)
                 point_data[vertex_idx] = evaluate(field, element_idx, ξ)
@@ -33,7 +33,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
 
             # Second point (bottom right)
             ξ = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- [0, 1]))
-            vertices[:, vertex_idx + 1] .= evaluate(geometry, element_idx, ξ)
+            vertices[:, vertex_idx + 1] .= Geometry.evaluate(geometry, element_idx, ξ)
             # Compute data to plot 
             if !isnothing(field)
                 point_data[vertex_idx + 1] = evaluate(field, element_idx, ξ)
@@ -41,7 +41,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
 
             # Third point (top right)
             ξ = collect(dξ .* Tuple(subcell_cartesian_idx[subcell_idx]))
-            vertices[:, vertex_idx + 2] .= evaluate(geometry, element_idx, ξ)
+            vertices[:, vertex_idx + 2] .= Geometry.evaluate(geometry, element_idx, ξ)
             # Compute data to plot 
             if !isnothing(field)
                 point_data[vertex_idx + 2] = evaluate(field, element_idx, ξ)
@@ -49,7 +49,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
 
             # Fourth point (top left)
             ξ = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- [1, 0]))
-            vertices[:, vertex_idx + 3] .= evaluate(geometry, element_idx, ξ)
+            vertices[:, vertex_idx + 3] .= Geometry.evaluate(geometry, element_idx, ξ)
             # Compute data to plot
             if !isnothing(field) 
                 point_data[vertex_idx + 3] = evaluate(field, element_idx, ξ)
@@ -62,7 +62,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
             ξ_0 = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- 1))
             for edge_vertex_idx in 1:(degree-1)
                 ξ = ξ_0 .+ [dξ_sub * edge_vertex_idx, 0.0]
-                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= evaluate(geometry, element_idx, ξ)
+                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
                 # Compute data to plot 
                 if !isnothing(field)
                     point_data[vertex_idx + vertex_offset + edge_vertex_idx] = evaluate(field, element_idx, ξ)
@@ -75,7 +75,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
             ξ_0 = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- [0, 1]))
             for edge_vertex_idx in 1:(degree-1)
                 ξ = ξ_0 .+ [0.0, dξ_sub * edge_vertex_idx]
-                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= evaluate(geometry, element_idx, ξ)
+                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
                 # Compute data to plot 
                 if !isnothing(field)
                     point_data[vertex_idx + vertex_offset + edge_vertex_idx] = evaluate(field, element_idx, ξ)
@@ -88,7 +88,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
             ξ_0 = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- [1, 0]))
             for edge_vertex_idx in 1:(degree-1)
                 ξ = ξ_0 .+ [dξ_sub * edge_vertex_idx, 0.0]
-                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= evaluate(geometry, element_idx, ξ)
+                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
                 # Compute data to plot 
                 if !isnothing(field)
                     point_data[vertex_idx + vertex_offset + edge_vertex_idx] = evaluate(field, element_idx, ξ)
@@ -101,7 +101,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
             ξ_0 = collect(dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- 1))
             for edge_vertex_idx in 1:(degree-1)
                 ξ = ξ_0 .+ [0.0, dξ_sub * edge_vertex_idx]
-                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= evaluate(geometry, element_idx, ξ)
+                vertices[:, vertex_idx + vertex_offset + edge_vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
                 # Compute data to plot 
                 if !isnothing(field)
                     point_data[vertex_idx + vertex_offset + edge_vertex_idx] = evaluate(field, element_idx, ξ)
@@ -115,7 +115,7 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
                 for vertex_row_idx in 1:(degree-1)
                     interior_vertex_idx = vertex_row_idx + (vertex_column_idx - 1) * (degree - 1)
                     ξ = ξ_0 .+ [dξ_sub * vertex_row_idx, dξ_sub * vertex_column_idx]
-                    vertices[:, vertex_idx + vertex_offset + interior_vertex_idx] .= evaluate(geometry, element_idx, ξ)
+                    vertices[:, vertex_idx + vertex_offset + interior_vertex_idx] .= Geometry.evaluate(geometry, element_idx, ξ)
                     # Compute data to plot 
                     if !isnothing(field)
                         point_data[vertex_idx + vertex_offset + interior_vertex_idx] = evaluate(field, element_idx, ξ)
