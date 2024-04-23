@@ -10,6 +10,7 @@ abstract type AbstractAnalGeometry <: AbstractGeometry end
 
 
 include("./MappedGeometry.jl")
+include("./CompositeGeometry.jl")
 include("./RectangleGeometry.jl")
 include("./MappedRectangleGeometry.jl")
 
