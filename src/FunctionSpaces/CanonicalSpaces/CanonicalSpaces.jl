@@ -14,9 +14,9 @@ include("ECTSpaces.jl")
 # # Has to be below the include statements to ensure that all evaluate 
 # # methods are visible to it!
 # @doc raw"""
-#     (elem_loc_basis::AbstractCanonicalSpace)(xi::Vector{Float64}, args...)::Array{Float64}
+#     (canonical_space::AbstractCanonicalSpace)(xi::Vector{Float64}, args...)::Array{Float64}
 
-# Call the `evaluate`-method for the given `elem_loc_basis`.
+# Call the `evaluate`-method for the given `canonical_space`.
 
 # Wrapper for all `evaluate`-methods so that all `AbstractCanonicalSpace` can 
 # be called by calling the struct instead of explicitly calling the 
@@ -26,12 +26,12 @@ include("ECTSpaces.jl")
 # evaluate, so this version should allow that as well.
 
 # See also 
-# - [`evaluate(elem_loc_basis::AbstractLagrangePolynomials, ξ::Vector{Float64})`](@ref),
-# - [`evaluate(elem_loc_basis::Bernstein, xi::Vector{Float64}, nderivatives::Int64)`](@ref),
-# - [`evaluate(elem_loc_basis::Bernstein, xi::Vector{Float64})`](@ref),
-# - [`evaluate(elem_loc_basis::Bernstein, xi::Float64)`](@ref),
-# - [`evaluate(elem_loc_basis::Bernstein, xi::Float64, nderivatives::Int64)`](@ref).
+# - [`evaluate(canonical_space::AbstractLagrangePolynomials, ξ::Vector{Float64})`](@ref),
+# - [`evaluate(canonical_space::Bernstein, xi::Vector{Float64}, nderivatives::Int64)`](@ref),
+# - [`evaluate(canonical_space::Bernstein, xi::Vector{Float64})`](@ref),
+# - [`evaluate(canonical_space::Bernstein, xi::Float64)`](@ref),
+# - [`evaluate(canonical_space::Bernstein, xi::Float64, nderivatives::Int64)`](@ref).
 # """
-function (elem_loc_basis::T where {T <: AbstractCanonicalSpace})(xi::Vector{Float64}, args...)
-    return evaluate(elem_loc_basis, xi, args...)
+function (canonical_space::T where {T <: AbstractCanonicalSpace})(xi::Vector{Float64}, args...)
+    return evaluate(canonical_space, xi, args...)
 end

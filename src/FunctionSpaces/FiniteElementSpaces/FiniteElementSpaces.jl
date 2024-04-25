@@ -29,6 +29,7 @@ function get_num_elements(extraction_op::ExtractionOperator)
     return extraction_op.num_elements
 end
 
+include("CanonicalFiniteElementSpaces.jl")
 include("CompositeFunctionSpaces.jl")
 include("UnivariateSplineSpaces.jl")
 include("UnivariateSplineExtractions.jl")
