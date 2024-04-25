@@ -314,7 +314,8 @@ Returns the dimension of the univariate function space `bspline`.
 - `::Int`: The dimension of the B-Spline space.
 """
 function get_dim(bspline::BSplineSpace)
-    return size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1))
+    @assert get_dim(bspline.extraction_op) == size(bspline.knot_vector.patch_1d)*(bspline.knot_vector.polynomial_degree+1) + sum(bspline.knot_vector.multiplicity .- (bspline.knot_vector.polynomial_degree+1)) "B-spline dimension incorrect."
+    return get_dim(bspline.extraction_op)
 end
 
 """
@@ -390,7 +391,6 @@ Evaluates the non-zero `bspline` basis functions on the element specified by `el
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int)
     extraction_coefficients, basis_indices = get_extraction(bspline, element_id)
     local_basis = get_local_basis(bspline, element_id, xi, nderivatives)
-    el_size = get_element_size(bspline, element_id)
     for r = 0:nderivatives
         local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
     end
@@ -497,4 +497,26 @@ function GTBSplineSpace(bsplines::NTuple{m,BSplineSpace}, regularity::Vector{Int
         end
     end
     return UnstructuredSpace(bsplines, extract_gtbspline_to_bspline(bsplines, regularity), Dict("regularity" => regularity))
+end
+
+function GTBSplineSpace(canonical_spaces::NTuple{m,CanonicalFiniteElementSpace}, regularity::Vector{Int}) where {m}
+    if length(regularity) != m
+        msg1 = "Number of regularity conditions should be equal to the number of bspline interfaces."
+        msg2 = " You have $(m) interfaces and $(length(regularity)) regularity conditions."
+        throw(ArgumentError(msg1*msg2))
+    end
+    for i in 1:m
+        j = i
+        k = i+1
+        if i == m
+            k = 1
+        end
+        polynomial_degree = min(get_polynomial_degree(canonical_spaces[j]), get_polynomial_degree(canonical_spaces[k]))
+        if polynomial_degree < regularity[i]
+            msg1 = "Minimal polynomial degrees must be greater than or equal to the regularity."
+            msg2 = " The minimal degree is $polynomial_degree and there is regularity $regularity[i] in index $i."
+            throw(ArgumentError(msg1*msg2))
+        end
+    end
+    return UnstructuredSpace(canonical_spaces, extract_gtbspline_to_canonical(canonical_spaces, regularity), Dict("regularity" => regularity))
 end

@@ -64,3 +64,20 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
     # check GTB-spline evaluation
     GB_eval, _ = Mantis.FunctionSpaces.evaluate(GB, el, x, 1)
 end
+
+# Test C1-smooth TrigonometricSplineSpace ----------------------------------------------------
+deg = 2
+Wt = pi/2
+breakpoints = [0.0, 1.0]
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+x, _ = Mantis.Quadrature.gauss_legendre(max(deg1,deg2)+1)
+for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
+    # check extraction coefficients
+    ex_coeffs, _ = Mantis.FunctionSpaces.get_extraction(GB, el)
+    @test all(ex_coeffs .>= 0.0) # Test for non-negativity
+    @test all(isapprox.(sum(ex_coeffs, dims=2) .- 1.0, 0.0, atol=1e-14)) # Test for partition of unity
+    # check GTB-spline evaluation
+    GB_eval, _ = Mantis.FunctionSpaces.evaluate(GB, el, x, 1)
+end

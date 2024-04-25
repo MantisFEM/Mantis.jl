@@ -161,7 +161,7 @@ end
 
 # ---------------------------------------------------------------------------------------
 
-# Gauss-Legendre polynomials ----------------------------------------------------
+# Gauss-Legendre polynomials ------------------------------------------------------------
 p_reference = [1, 2, 3, 4, 5, 20]  # polynomial degrees of reference data
 gl_nodes_reference = [[-0.5773502691896258, 0.5773502691896258],  # p = 1
                       [-0.7745966692414834, 0.0, 0.7745966692414834],  # p = 2
@@ -307,6 +307,57 @@ for p in degrees_to_test
   # Second order derivative tests to be done in the future
   # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
 
+end
+# ---------------------------------------------------------------------------------------
+
+
+# Edge Lobatto-Legendre polynomials -----------------------------------------------------
+degrees_to_test = 0:25
+for p in degrees_to_test
+  # We wish to test
+  # - Partition of unity 
+  # - Integral Kronecker delta property 
+  
+  # Construct the polynomials
+  ell_poly = Mantis.FunctionSpaces.EdgeLobattoLegendre(p)
+  
+  # Compute the evaluation points (quadrature points)
+  ξ_quad, w_quad = Mantis.Quadrature.gauss_legendre(2 * (p + 1))  # compute the quadrature nodes and weights to compute the integrals 
+
+  # Evaluate at the evaluation points
+  ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ_quad, 1)
+
+  # Test integral partition of unity property 
+  @test all(isapprox.(transpose(view(ell_poly_eval, :, :, 1))*w_quad, 1.0, atol = 1e-12))
+
+  # Test integral Kronecker delta property
+  # To avoid evaluating the polynomials many times, we evaluate them at quadrature points
+  # between the Gauss-Lobatto-Legendre nodes
+  
+  # Compute the evaluation points
+  ξ_quad, w_quad = Mantis.Quadrature.gauss_legendre(p + 1)  # compute the quadrature nodes and weights to compute the integrals 
+  ell_nodes = ell_poly.nodes
+  ξ = zeros(Float64, p+1, p+1)  # allocate the memory to store all the quadrature nodes for each interval between nodes
+  for k_interval in 1:(p+1) 
+    Δinterval = ell_nodes[k_interval + 1] - ell_nodes[k_interval] 
+    ξ[:, k_interval] .= ξ_quad * Δinterval .+ ell_nodes[k_interval]  # rescale the nodes to fit inside the interval 
+  end
+
+  # Evaluate the polynomials at the evaluation points 
+  ξ = reshape(ξ, :)  # transform into vector just to use it an input in evaluate
+  ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ, 0)
+  ell_poly_eval = reshape(ell_poly_eval, p+1, p+1, p+1)  # reshape so that we have the quadrature nodes for each interval in a column
+  # Compute the integrals of each basis over each of the intervals 
+  for basis_idx in 1:(p+1) 
+    for interval_idx in 1:(p + 1)
+      Δinterval = ell_nodes[interval_idx + 1] - ell_nodes[interval_idx]
+      if basis_idx == interval_idx 
+        @test all(isapprox.(reshape(view(ell_poly_eval, :, interval_idx, basis_idx), 1, :) * w_quad * Δinterval, 1.0, atol = 1e-12))
+      else
+        @test all(isapprox.(reshape(view(ell_poly_eval, :, interval_idx, basis_idx), 1, :) * w_quad  * Δinterval, 0.0, atol = 1e-12))
+      end
+    end
+  end
 end
 # ---------------------------------------------------------------------------------------
 

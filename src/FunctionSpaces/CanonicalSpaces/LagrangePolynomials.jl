@@ -3,7 +3,7 @@ using LinearAlgebra
 import PolynomialBases
 
 abstract type AbstractLagrangePolynomials <: AbstractCanonicalSpace end
-
+abstract type AbstractEdgePolynomials <: AbstractCanonicalSpace end
 
 struct LobattoLegendre <: AbstractLagrangePolynomials
     p::Int  # Polynomial degree
@@ -17,7 +17,6 @@ function LobattoLegendre(p::Int)
     return LobattoLegendre(p, nodes, ll_polynomials)
 end
 
-
 struct GaussLegendre <: AbstractLagrangePolynomials
     p::Int  # Polynomial degree
     nodes::Vector{Float64}  # Polynomial grid nodes, there are p+1 nodes
@@ -30,6 +29,44 @@ function GaussLegendre(p::Int)
     return GaussLegendre(p, nodes, gl_polynomials)
 end
 
+@doc raw"""
+Edge polynomials of degree ``p`` over Gauss-Lobatto-Legendre nodes.
+
+The ``j``-th edge basis polynomial, ``e_{j}(\xi)``, is given by, see [1],
+
+```math
+    e_{j}(\xi) = -\sum_{k=1}^{j} \frac{\mathrm{d} h_{k}(\xi)}{\mathrm{d}\xi}, j = 1 , \dots, p+1\,.
+```
+
+where ``h_{k}(\xi)`` is the ``k``-th Lagrange polynomial of degree ``(p+1)`` over 
+Gauss-Lobatto-Legendre nodes.
+
+If ``\xi_{i}`` are the ``(p+1)`` nodes of the associated Gauss-Lobatto-Legendre polynomials, then
+
+```math
+\int_{\xi_{i}}^{\xi_{i+1}} e_{j}(\xi)\,\mathrm{d}\xi = \delta_{i,j}, \qquad i,j = 1, \dots, p\,,
+```
+
+i.e., they satisfy an integral Kronecker-``\delta`` property.
+
+# Fields
+- `p::Int`: polynomial degree.
+- `nodes::Vector{Float64}`: the nodes of the Gauss-Lobatto-Legendre Lagrange polynomials associated to it.
+
+[1] Gerritsma, M.: Edge functions for spectral element methods. 
+    Submitted to the proceedings of ICOSAHOM 2009
+"""
+struct EdgeLobattoLegendre <: AbstractEdgePolynomials
+    p::Int  # Polynomial degree
+    nodes::Vector{Float64}  # Polynomial grid nodes, there are p+1 nodes
+    _core_polynomials::LobattoLegendre  # Lobatto-Legendre polynomial basis core structure from Mantis
+end
+
+function EdgeLobattoLegendre(p::Int)
+    ll_polynomials = LobattoLegendre(p+1)
+    nodes = ll_polynomials.nodes  # no need to rescale because they are already rescaled
+    return EdgeLobattoLegendre(p, nodes, ll_polynomials)
+end
 
 @doc raw"""
     evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
@@ -102,7 +139,7 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64},
         # D = PolynomialBases.derivative_matrix(polynomials._core_polynomials.nodes, polynomials._core_polynomials.baryweights)
         # D .*= 2.0 
         # Using internal function
-        D = _derivative_matrix(polynomials)
+        D = _derivative_matrix(polynomials.nodes)
 
         # Compute the first derivative
         # mul!(view(d_polynomials, :, :, derivative_idx + 1), view(d_polynomials, :, :, derivative_idx), D)
@@ -116,7 +153,7 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64},
             for derivative_idx in 2:nderivatives
                 # In this way we reuse previously computed values of D^{n-1}, so we just need to update in each step
                 # mul!(view(d_polynomials, :, :, derivative_idx + 1), view(d_polynomials, :, :, derivative_idx), D)
-                D_n = _derivative_matrix_next!(D_n, derivative_idx, D, polynomials)
+                D_n = _derivative_matrix_next!(D_n, derivative_idx, D, polynomials.nodes)
                 d_polynomials[:, :, derivative_idx + 1] .= d_polynomials[:, :, 1] * D_n
             end
         end
@@ -149,7 +186,69 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64})
 end
 
 @doc raw"""
-    _derivative_matrix(polynomials::AbstractLagrangePolynomials; algorithm::Int64=1)
+    evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64}, nderivatives::Int64)
+
+Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials` at `ξ` for 
+``\xi \in [0.0, 1.0]``. 
+
+
+# Arguments
+- `polynomials::EdgeLobattoLegendre`: ``(p+1)`` polynomials of degree ``p``,  
+    ``B_{j}^{p}(\xi)`` with ``j = 1, \dots, p+1``, to evaluate.
+- `ξ::Vector{Float64}`: vector of ``n`` evaluation points ``\xi \in [0.0, 1.0]``.
+- `nderivatives::Int64`: maximum order of derivatives to be computed (nderivatives ``\leq p``). Will compute
+   the polynomial, first derivative, second derivative, etc, up to nderivatives.
+
+# Returns 
+`d_polynomials::Array{Float64, 3}(n, p+1, nderivatives)` with the evaluation of `polynomials` and its derivatives
+up to degree `nderivatives` at every point `ξ`. `d_polynomials[i, j, k]` ``= \frac{\mathrm{d}^{k}B_{j}}{\mathrm{d}\xi^{k}}(\xi_{i})``.
+
+See also [`evaluate(polynomial::AbstractLagrangePolynomials, ξ::Float64, nderivatives::Int64)`](@ref).
+"""
+function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64}, nderivatives::Int64)
+    # The edge basis functions are given by, see documentation of EdgeLobattoLegendre:
+    #   
+    #   edge_{i}(x) = -\sum_{j=1}^{i} dh_{j}(x)/dx, i=1,...,p
+    # 
+    # This means that the derivatives are 
+    #   
+    #   d^{n}edge_{i}(x)/dx^{n} = -\sum_{j=1}^{i} d^{n+1}h_{j}(x)/dx^{n+1}, i=1,...,p
+    # 
+
+    # Compute nderivatives+1 of the Lagrange polynomials over Gauss-Lobatto-Legendre nodes
+    ll_polynomials_eval = evaluate(polynomials._core_polynomials, ξ, nderivatives+1)
+
+    # Compute the edge polynomials and their derivatives using the formula above: cumulative sum 
+    d_polynomials = -cumsum(ll_polynomials_eval[:, 1:(end-1), 2:end], dims=2)
+
+    return d_polynomials
+end
+
+
+@doc raw"""
+    evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})::Array{Float64}
+
+Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials` at `ξ` for 
+``\xi \in [0.0, 1.0]``. 
+
+# Arguments
+- `polynomials::EdgeLobattoLegendre`: ``(p+1)`` polynomials of degree ``p``,  
+    ``B_{j}(\xi)`` with ``j = 1, \dots, p+1``, to evaluate.
+- `ξ::Vector{Float64}`: vector of ``n`` evaluation points ``\xi \in [0.0, 1.0]``.
+
+# Returns 
+`polynomials::Array{Float64, 3}(n, p+1)` with the evaluation of `polynomials` at every point `ξ`. 
+    `polynomials[i, j]` ``= B_{j}(\xi_{i})``.
+
+See also [`evaluate(polynomial::EdgeLobattoLegendre, ξ::Float64, nderivatives::Int64)`](@ref).
+"""
+function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})::Array{Float64}
+    return reshape(evaluate(polynomials, ξ, 0), size(ξ, 1), polynomials.p + 1)
+end
+
+
+@doc raw"""
+    _derivative_matrix(nodes::Vector{Float64}; algorithm::Int64=1)
 
 Returns the first derivative of the polynomial lagrange basis
 functions at the nodal points.
@@ -185,8 +284,10 @@ the polynomials, $B_{j}$, of order `p`
 D_{k,j} = \frac{\mathrm{d}B_{j}(x_{k})}{\mathrm{d}x}
 ```
 # Arguments
-- `polynomials::AbstractLagrangePolynomials`: ``(p+1)`` polynomials of degree ``p``,  
-    ``B_{j}^{p}(\xi)`` with ``j = 1, \dots, p+1``, `\xi \in [0.0, 1.0]` to compute the derivative matrix.
+- `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
+  degree ``p``, ``B_{j}^{p}(\xi)``, for which to compute the derivative matrix. Note that 
+  the polynomials are such that ``B_{j}^{p}(\xi_{i}) = \delta_{j,i}`` with ``j,i = 1, \dots, p+1``, 
+  `\xi_{i} \in [0.0, 1.0]`.
 
 # Keyword arguments
 - `algorithm::Int64`: Flag to specify the algorithm to use
@@ -198,16 +299,15 @@ D_{k,j} = \frac{\mathrm{d}B_{j}(x_{k})}{\mathrm{d}x}
    ``D_{k,j} = \frac{\mathrm{d}B_{j}(x_{k})}{\mathrm{d}x}``.
    (size: [p+1, p+1])
 """
-function _derivative_matrix(polynomials::AbstractLagrangePolynomials; algorithm::Int64=1)
+function _derivative_matrix(nodes::Vector{Float64}; algorithm::Int64=1)
     #   Revisions:  2009-11-25 (apalha) First implementation.
     #               2014-12-03 (apalha) Removed pre-allocation of result.
     #                                   Replaced repmats by bsxfun for smaller
     #                                   memory footprint.
     #               2024-30-03 (apalha) Re-implemented in Julia, changed input arguments.
     
-    # Get the nodes of the polynomial basis and the number of roots (degree p + 1)
-    nodes = polynomials.nodes  # just make a view, do not copy it
-    p = polynomials.p 
+    # Get polynomial degree, p, the number of nodes plus one
+    p = size(nodes)[1] - 1
     
     # The expression for the derivative matrix D is 
     #             /
@@ -291,7 +391,7 @@ function _derivative_matrix(polynomials::AbstractLagrangePolynomials; algorithm:
 end
 
 @doc raw"""
-_derivative_matrix_next!(D_m::Array{Float64, 2}, m::Int64, D::Array{Float64, 2}, polynomials::AbstractLagrangePolynomials)
+_derivative_matrix_next!(D_m::Array{Float64, 2}, m::Int64, D::Array{Float64, 2}, nodes::Vector{Float64})
 
 Given the derivative matrix (of order 1), `D`, and the derivative matrix of order `n`, `D_m`,
 compute the derivative of order `(n+1)`.
@@ -305,8 +405,10 @@ We follow the algorithm proposed in section 4 of [Costa2000](@cite).
 - `D::Array{Float64, 2}` :: The derivatives of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
    ``D_{k,j} = \frac{\mathrm{d}B_{j}(x_{k})}{\mathrm{d}x}``.
    (size: [p+1, p+1])
-- `polynomials::AbstractLagrangePolynomials`: ``(p+1)`` polynomials of degree ``p``,  
-   ``B_{j}^{p}(\xi)`` with ``j = 1, \dots, p+1``, `\xi \in [0.0, 1.0]` to compute the derivative matrix.
+- `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
+   degree ``p``, ``B_{j}^{p}(\xi)``, for which to compute the derivative matrix. Note that 
+   the polynomials are such that ``B_{j}^{p}(\xi_{i}) = \delta_{j,i}`` with ``j,i = 1, \dots, p+1``, 
+   `\xi_{i} \in [0.0, 1.0]`.
 
 # Returns 
 - `D_m::Array{Float64, 2}` :: The derivatives or degree `(m+1)` of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
@@ -314,10 +416,7 @@ We follow the algorithm proposed in section 4 of [Costa2000](@cite).
    (size: [p+1, p+1])
 
 """
-function _derivative_matrix_next!(D_m::Array{Float64, 2}, m::Int64, D::Array{Float64, 2}, polynomials::AbstractLagrangePolynomials)
-    # Get the nodes of the polynomial basis and the number of roots (degree p + 1)
-    nodes = polynomials.nodes  # just make a view, do not copy it
-    
+function _derivative_matrix_next!(D_m::Array{Float64, 2}, m::Int64, D::Array{Float64, 2}, nodes::Vector{Float64})
     # Compute the differences ξ_{i} - ξ_{j}
     Δξ = broadcast(-, nodes, transpose(nodes)) 
 

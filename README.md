@@ -7,7 +7,7 @@ Welcome to `MANTIS.jl`, a package for high-order structure-preserving
 finite element methods. This package is designed around 
 structure-preserving/mimetic methods. It has extensive support for basis 
 functions; 'standard' mimetic finite elements, multi-patch splines, and
-hierarchical splines.
+([MIT license](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE)).
 
 
 ## Contents
@@ -21,8 +21,8 @@ A brief description of what you can find in the `README.md`.
 The `Mantis` package was created by
 - Diogo Costa Cabanas,
 - Joey Dekker,
-- Deepesh Toshniwal,
 - Artur Palha,
+- Deepesh Toshniwal,
 
 from TU Delft's Institute of Applied Mathematics (DIAM).
 
@@ -65,8 +65,9 @@ To create the docs, follow these steps:
   current environment by typing `activate .`. The environment is shown 
   in parenthesis '()' and should say 'docs'. Type `dev ../../Mantis.jl` 
   and execute this command. The environment will be updated so that the 
-  latest version of Mantis is available with its updated structure. You 
-  can now redo the previous step.
+  latest version of Mantis is available with its updated structure. Then 
+  you may also have to run `instantiate` to make sure the 
+  `docs\`-environment is updated. You can now redo the previous step.
 - Then you need to create a (local) webserver to view the HTML docs, for 
   which there are a few options, see the [Documenter Docs](https://documenter.juliadocs.org/stable/man/guide/). 
   Since I have `Python` installed, I use the python option. Run

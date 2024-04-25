@@ -56,12 +56,16 @@ format_setup = Documenter.HTML(
 
 
 # The modules option will raise an error when some docstrings from the 
-# listed modules are not included in the docs.
+# listed modules are not included in the docs. Due to an issue in Julia 
+# (see issue #45174) this does not always go well with functors 
+# (callable structs) so the docstrings should be moved to the type 
+# definitions as work-around.
+# Author names are ordered alphabetically on last name.
 makedocs(
     modules  = [Mantis.FunctionSpaces, Mantis.Quadrature], 
     format   = format_setup,
     sitename = "MANTIS.jl",
-    authors  = "Diogo Costa Cabanas, Joey Dekker, Deepesh Toshniwal, Artur Palha",
+    authors  = "Diogo Costa Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages    = Pages,
     plugins  = [bib],
 )

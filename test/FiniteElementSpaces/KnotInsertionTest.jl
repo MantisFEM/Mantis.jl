@@ -32,7 +32,7 @@ for p in degrees_for_test
         fine_coeffs = Mantis.FunctionSpaces.subdivide_coeffs(coarse_coeffs, two_scale_operator)
         
         for fine_el in 1:size(fine_bspline.knot_vector.patch_1d)
-            coarse_el = Mantis.HierarchicalFiniteElementSpaces.get_coarser_element(fine_el, nsubdivision)
+            coarse_el = Mantis.FunctionSpaces.get_coarser_element(fine_el, nsubdivision)
             coarse_spline_eval = Mantis.FunctionSpaces.evaluate(coarse_bspline, coarse_el, coarse_x, 0, coarse_coeffs)
             coarse_idx = (fine_el - 1)%nsubdivision + 1
 

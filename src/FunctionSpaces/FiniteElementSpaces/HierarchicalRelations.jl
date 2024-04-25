@@ -113,11 +113,11 @@ provided by `two_scale_operator`.
 
 # Arguments
 - `basis_id::Int`: Id of the parent B-spline.
-- `two_scale_operator::FunctionSpaces.TwoScaleOperator`: The two-scale operator for
+- `two_scale_operator::TwoScaleOperator`: The two-scale operator for
 the change of basis.
 # Returns
 - `::@view Vector{Int}`: Ids of the child B-splines.
 """
-function get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::FunctionSpaces.TwoScaleOperator)
+function get_finer_basis_id(coarse_basis_id::Int, two_scale_operator::TwoScaleOperator)
     return @view two_scale_operator.coarse_to_fine[coarse_basis_id]
 end
