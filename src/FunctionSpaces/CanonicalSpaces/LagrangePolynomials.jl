@@ -87,7 +87,7 @@ up to degree `nderivatives` at every point `ξ`. `d_polynomials[i, j, k]` ``= \f
 
 See also [`evaluate(polynomial::AbstractLagrangePolynomials, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)
     # Get information from inputs on size of computation 
     n_points = size(ξ, 1)  # the number of points where to evaluate the polynomials and their derivatives
     p = polynomials.p # the degree of the polynomials, the number of polynomials is p + 1
@@ -161,6 +161,10 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64},
 
     return d_polynomials
     
+end
+
+function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Float64, nderivatives::Int64)::Array{Float64}
+    return evaluate(polynomials, [ξ], nderivatives)
 end
 
 

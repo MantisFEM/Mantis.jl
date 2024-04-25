@@ -27,7 +27,6 @@ end
 # Test FEMGeometry -----------------------------------------------------------
 deg = 2
 Wt = pi/2
-breakpoints = [0.0, 1.0]
 b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
 B = ntuple( i -> b, 4)
 GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
@@ -47,6 +46,28 @@ geom = Mantis.Geometry.FEMGeometry(TP, geom_coeffs)
 output_filename = "fem_geometry_test.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
+
+# Test FEMGeometry - Lagrange -----------------------------------------------------------
+deg = 1
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.LobattoLegendre(deg))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [0,0,0,0])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
+TP = Mantis.FunctionSpaces.TensorProductSpace((GB,b1), Dict())
+# control points for geometry
+geom_coeffs_0 =   [1.0  -1.0
+1.0   1.0
+-1.0   1.0
+-1.0  -1.0]
+r0 = 1
+r1 = 2
+geom_coeffs = [geom_coeffs_0.*r0
+               geom_coeffs_0.*r1]
+geom = Mantis.Geometry.FEMGeometry(TP, geom_coeffs)
+# Generate the plot
+output_filename = "fem_geometry_lagrange_test.vtu"
+output_file = joinpath(output_data_folder, output_filename)
+Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 1)
 
 # Test AnalGeometry -----------------------------------------------------------
 n_subcells_to_test = 1:4
