@@ -7,15 +7,15 @@ module Geometry
 
 using .. FunctionSpaces
 
-abstract type AbstractGeometry end
-abstract type AbstractAnalGeometry <: AbstractGeometry end
-abstract type AbstractFEMGeometry <: AbstractGeometry end
+abstract type AbstractGeometry{n,m} end
+abstract type AbstractAnalGeometry{n,m} <: AbstractGeometry{n,m} end
+abstract type AbstractFEMGeometry{n,m} <: AbstractGeometry{n,m} end
 
+include("./CartesianGeometry.jl")
 include("./FEMGeometry.jl")
 include("./MappedGeometry.jl")
-include("./CompositeGeometry.jl")
-include("./CartesianGeometry.jl")
-include("./RectangleGeometry.jl")
-include("./MappedRectangleGeometry.jl")
+# include("./CompositeGeometry.jl")
+# include("./RectangleGeometry.jl")
+# include("./MappedRectangleGeometry.jl")
 
 end

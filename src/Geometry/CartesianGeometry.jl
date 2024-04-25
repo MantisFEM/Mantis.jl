@@ -1,4 +1,4 @@
-struct CartesianGeometry{n,n} <: AbstractAnalGeometry
+struct CartesianGeometry{n,n} <: AbstractAnalGeometry{n,n}
     n_elements::NTuple{n,Int}
     breakpoints::NTuple{n,Vector{Float64}}
     cartesian_idxs::CartesianIndices
@@ -9,6 +9,10 @@ struct CartesianGeometry{n,n} <: AbstractAnalGeometry
         return new{n,n}(n_elements, breakpoints, cartesian_idxs)
     end
 
+end
+
+function get_num_elements(geometry::CartesianGeometry{n,n}) where {n}
+    return prod(geometry.n_elements)
 end
 
 function evaluate(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::Matrix{Float64}) where {n}

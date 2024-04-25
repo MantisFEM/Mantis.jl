@@ -1,4 +1,4 @@
-struct FEMGeometry{n,m} <: AbstractGeometry
+struct FEMGeometry{n,m} <: AbstractGeometry{n,m}
     geometry_coeffs::Array{Float64,2}
     fem_space::FunctionSpaces.AbstractFiniteElementSpace{n}
     n_elements::Int
@@ -8,6 +8,10 @@ struct FEMGeometry{n,m} <: AbstractGeometry
         n_elements = FunctionSpaces.get_num_elements(fem_space)
         return new{n,m}(geometry_coeffs, fem_space, n_elements)
     end
+end
+
+function get_num_elements(geometry::FEMGeometry{n,m}) where {n,m}
+    return geometry.n_elements
 end
 
 # evaluate at matrix containing n-dimensional parametric points
