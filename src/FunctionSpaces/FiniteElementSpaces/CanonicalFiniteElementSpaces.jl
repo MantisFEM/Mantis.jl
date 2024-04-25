@@ -1,3 +1,11 @@
+@doc raw"""
+    CanonicalFiniteElementSpace <: AbstractFiniteElementSpace{1}
+
+Wrapper that allows treating a canonical space as a finite element space.
+
+# Fields
+- `canonical_space::AbstractCanonicalSpace` : canonical space.
+"""
 struct CanonicalFiniteElementSpace <: AbstractFiniteElementSpace{1}
     canonical_space::AbstractCanonicalSpace
 end

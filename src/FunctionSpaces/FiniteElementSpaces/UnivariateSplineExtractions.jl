@@ -210,7 +210,7 @@ extract_gtbspline_to_canonical(bsplines::NTuple{m,CanonicalFiniteElementSpace{1}
 Computes the extraction coefficients of GTB-Spline basis functions in terms of constitutent canonical basis functions.
 
 # Arguments
-- `canonical_spaces::NTuple{m,CanonicalFiniteElementSpace{1}}`: collection of canonical spaces
+- `canonical_spaces::NTuple{m,CanonicalFiniteElementSpace{1}}`: collection of canonical spaces treated as finite element spaces
 - `regularity::Vector{Int}`: smoothness to be imposed at patch interfaces
 
 # Returns
