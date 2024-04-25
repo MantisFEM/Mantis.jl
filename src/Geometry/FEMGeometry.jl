@@ -1,4 +1,4 @@
-struct FEMGeometry{n,m} <: AbstractGeometry
+struct FEMGeometry{n,m} <: AbstractGeometry{n, m}
     geometry_coeffs::Array{Float64,2}
     fem_space::FunctionSpaces.AbstractFiniteElementSpace{n}
     n_elements::Int

@@ -35,7 +35,7 @@ degree elements.
 # Returns 
 Nothing
 """
-function plot(geometry::G; kwargs...) where {G <: Geometry.AbstractGeometry}
+function plot(geometry::Geometry.AbstractGeometry{n, m}; kwargs...) where {n, m}
     _plot(geometry; kwargs...)
 end
 

@@ -7,9 +7,9 @@ module Geometry
 
 using .. FunctionSpaces
 
-abstract type AbstractGeometry end
-abstract type AbstractAnalGeometry <: AbstractGeometry end
-abstract type AbstractFEMGeometry <: AbstractGeometry end
+abstract type AbstractGeometry{n, m} end
+abstract type AbstractAnalGeometry{n, m} <: AbstractGeometry{n, m} end
+abstract type AbstractFEMGeometry{n, m} <: AbstractGeometry{n, m} end
 
 include("./FEMGeometry.jl")
 include("./MappedGeometry.jl")

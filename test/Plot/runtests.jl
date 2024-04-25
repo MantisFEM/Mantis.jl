@@ -80,7 +80,7 @@ for n_subcells in n_subcells_to_test
         xy_end = [1.0, 1.0]
 
         # Rectangle geometry
-        rectangle = Mantis.Geometry.Rectangle(n_elements, xy_start, xy_end)
+        rectangle = Mantis.Geometry.Rectangle{2, 2}(n_elements, xy_start, xy_end)
 
         # Generate the plot
         output_filename = @sprintf "rectangle_test_n_%d_p_%d.vtu" n_subcells degree
@@ -100,7 +100,7 @@ for n_subcells in n_subcells_to_test
             return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
         end
 
-        mapped_rectangle = Mantis.Geometry.MappedRectangle(n_elements, xy_start, xy_end, mapping, dmapping)
+        mapped_rectangle = Mantis.Geometry.MappedRectangle{2, 2}(n_elements, xy_start, xy_end, mapping, dmapping)
 
         # Generate the plot 
         output_filename = @sprintf "mapped_rectangle_test_n_%d_p_%d.vtu" n_subcells degree
@@ -119,7 +119,7 @@ for n_subcells in n_subcells_to_test
         # the resulting geometry, which is a composition of the rectangle geometry and the mapping 
         dimension = (2, 2)
 
-        curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
+        curved_mapping = Mantis.Geometry.Mapping{2, 2}(mapping, dmapping)
 
         mapped_geometry = Mantis.Geometry.MappedGeometry(rectangle, curved_mapping)
 
@@ -134,5 +134,18 @@ for n_subcells in n_subcells_to_test
     end
 end
 # -----------------------------------------------------------------------------
+
+struct SpiralGeometry{n, m} <: Mantis.Geometry.AbstractAnalGeometry{n, m}
+    n_elements::Int
+end
+
+function Mantis.Geometry.evaluate(geometry::SpiralGeometry{1, 3}, element_idx::Int64, ξ::Float64)
+    Δt = 1.0/geometry.n_elements
+    t = Δt * (element_idx - 1) + ξ * Δt
+    return [cos(4.0*π*t), sin(4.0*π*t), 2.0*t]
+end
+
+line = SpiralGeometry{1, 3}(10)
+Mantis.Plot.plot(line; vtk_filename = joinpath(output_data_folder, "helix_p_10"), n_subcells = 1, degree = 10)
 
 end

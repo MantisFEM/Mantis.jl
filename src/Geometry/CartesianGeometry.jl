@@ -1,4 +1,4 @@
-struct CartesianGeometry{n,n} <: AbstractAnalGeometry
+struct CartesianGeometry{n,n} <: AbstractAnalGeometry{n, n}
     n_elements::NTuple{n,Int}
     breakpoints::NTuple{n,Vector{Float64}}
     cartesian_idxs::CartesianIndices
