@@ -12,7 +12,7 @@ struct TensorProductSpace{n,m} <: AbstractFiniteElementSpace{n} where {m}
     data::Dict
 
     function TensorProductSpace(function_spaces::NTuple{m, AbstractFiniteElementSpace}, data::Dict) where {m}
-        n = get_n.(function_spaces)
+        n = sum(get_n.(function_spaces))
         new{n,m}(function_spaces, data)
     end
 end
@@ -156,4 +156,8 @@ function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple
     basis_indices = reshape([ordered_to_linear_index(binds, space_dims) for binds in basis_indices], length(basis_indices))
 
     return local_basis, basis_indices
+end
+
+function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}, ::Int) where {n,m}
+    return evaluate(tp_space, element_id, xi)
 end

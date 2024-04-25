@@ -67,17 +67,36 @@ end
 
 # Test C1-smooth TrigonometricSplineSpace ----------------------------------------------------
 deg = 2
-Wt = pi/2
-breakpoints = [0.0, 1.0]
+npatch = 4
+Wt = 2.0*pi/npatch
 b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
-B = ntuple( i -> b, 4)
-GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+B = ntuple( i -> b, npatch)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, ones(Int,npatch))
 x, _ = Mantis.Quadrature.gauss_legendre(max(deg1,deg2)+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
     # check extraction coefficients
     ex_coeffs, _ = Mantis.FunctionSpaces.get_extraction(GB, el)
     @test all(ex_coeffs .>= 0.0) # Test for non-negativity
     @test all(isapprox.(sum(ex_coeffs, dims=2) .- 1.0, 0.0, atol=1e-14)) # Test for partition of unity
-    # check GTB-spline evaluation
-    GB_eval, _ = Mantis.FunctionSpaces.evaluate(GB, el, x, 1)
+end
+
+# interpolate a cosine and a sine
+x = [0.5]
+LHS = zeros(npatch,npatch)
+RHS_C = zeros(npatch)
+RHS_S = zeros(npatch)
+for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
+    GB_eval, inds = Mantis.FunctionSpaces.evaluate(GB, el, x, 0)
+    LHS[el,inds] = GB_eval[:,:,1]
+    RHS_C[el] = cos(Wt * (x[1] + el - 1))
+    RHS_S[el] = sin(Wt * (x[1] + el - 1))
+end
+coeffs_C = LHS \ RHS_C
+coeffs_S = LHS \ RHS_S
+x, _ = Mantis.Quadrature.gauss_legendre(max(deg1,deg2)+1)
+for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
+    GB_eval, inds = Mantis.FunctionSpaces.evaluate(GB, el, x, 0)
+    # display(GB_eval[:,:,1]*coeffs_C[inds])
+    # display(cos.(Wt * (x .+ (el - 1))))
+    display(maximum(abs.(GB_eval[:,:,1]*coeffs_C[inds] - cos.(Wt * (x .+ (el - 1))))))
 end
