@@ -12,6 +12,23 @@ data_folder = joinpath(Mantis_folder, "test", "data")
 input_data_folder = joinpath(data_folder, "reference", "Plot")
 output_data_folder = joinpath(data_folder, "output")
 
+# Test CartesianGeometry -----------------------------------------------------------
+for nx = 1:4
+    for ny = 1:4
+        breakpoints = (collect(LinRange(0.0, 1.0, nx+1)), collect(LinRange(0.0,2.0,ny+1)))
+        geom = Mantis.Geometry.CartesianGeometry(breakpoints)
+        # Generate the plot
+        output_filename = @sprintf "cartesian_test_nx_%d_ny_%d.vtu" nx ny
+        output_file = joinpath(output_data_folder, output_filename)
+        Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 1)
+    end
+end
+
+# Test FEMGeometry -----------------------------------------------------------
+
+
+
+
 # Test AnalGeometry -----------------------------------------------------------
 n_subcells_to_test = 1:4
 degrees_to_test = 1:4

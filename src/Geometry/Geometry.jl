@@ -5,6 +5,8 @@ Contains all geometry definitions.
 """
 module Geometry 
 
+using .. FunctionSpaces
+
 abstract type AbstractGeometry end
 abstract type AbstractAnalGeometry <: AbstractGeometry end
 abstract type AbstractFEMGeometry <: AbstractGeometry end

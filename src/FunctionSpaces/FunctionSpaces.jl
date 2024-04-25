@@ -1,10 +1,5 @@
 """
-<<<<<<< HEAD
 This (sub-)module provides a collection of function spaces.
-=======
-This (sub-)module provides a collection of canonical and finite element function spaces.
->>>>>>> main
-
 The exported names are:
 """
 module FunctionSpaces

@@ -4,10 +4,10 @@ module Mantis
 # the include that are listed later can use code from the previous ones, 
 # but not the other way around.
 include("Mesh/mesh.jl")  # Creates Module Mesh
-include("Geometry/Geometry.jl")  # Creates Module Mesh
-include("Plot/Plot.jl")  # Creates Module Mesh
 include("Quadrature/Quadrature.jl")  # Creates Module Quadrature
 include("FunctionSpaces/FunctionSpaces.jl")  # Creates Module FunctionSpaces
+include("Geometry/Geometry.jl")  # Creates Module Mesh
+include("Plot/Plot.jl")  # Creates Module Mesh
 # include("HierarchicalFiniteElementSpaces/HierarchicalFiniteElementSpaces.jl")  # Creates Module HierarchicalFiniteElementSpaces
 
 end
