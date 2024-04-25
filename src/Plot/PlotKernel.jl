@@ -20,7 +20,17 @@ function _plot(geometry::G, field::Union{Nothing, F} = nothing; vtk_filename::St
 
     subcell_cartesian_idx = CartesianIndices((n_subcells, n_subcells))
 
+    # # this is where points evaluated inside an element will be stored
+    # vertices_el = zeros(n_dim, n_eval_1, n_eval_2, n_eval_3, ...)
+    # el_vertex_offset += prod(n_eval)
+    # vertices_el[:,i,j,k] .= vector_output_of_evaluate
+
+
+
     for element_idx in 1:n_total_elements
+        # vertices_el = geometry.evaluate(..., NTuple_of_directional_points)
+        # then, loop to store things in vtk format
+
         for subcell_idx in 1:(n_subcells^2)
             # Corner vertices
             # First point (bottom left)
