@@ -33,6 +33,8 @@ function get_num_elements(extraction_op::ExtractionOperator)
     return extraction_op.num_elements
 end
 
+# canonical finite element space wrapper
+include("CanonicalFiniteElementSpaces.jl")
 # univariate function spaces
 include("UnivariateSplineSpaces.jl")
 include("UnivariateSplineExtractions.jl")
