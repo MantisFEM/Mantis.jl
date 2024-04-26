@@ -10,6 +10,10 @@ struct FEMGeometry{n,m} <: AbstractGeometry{n, m}
     end
 end
 
+function get_num_elements(geometry::FEMGeometry{n,m}) where {n,m}
+    return geometry.n_elements
+end
+
 # evaluate at matrix containing n-dimensional parametric points
 function evaluate(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Matrix{Float64}) where {n,m}
     return evaluate.(geometry, element_idx, ntuple(i -> ntuple(j -> [ξ[i,j]], n), size(ξ,1)))

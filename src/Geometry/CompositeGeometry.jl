@@ -21,6 +21,12 @@ struct CompositeGeometry{n, m} <: AbstractGeometry{n, m}
 end
 
 function evaluate(geometry::CompositeGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    # We only need to evaluate the last geometry because it is required that Φ₂ is defined as
+    # Φ₂ = Φ̃₂ ̊Φ₁⁻¹
+    # with
+    # Φ₂: Ω₁ ↦ Ω₂
+    # Φ₁: Ω₀ ↦ Ω₁
+    # Φ̃₂: Ω₀ ↦ Ω₂  
     x = evaluate(Φ_2.geometry, element_idx, ξ)
     return x
 end
