@@ -2,6 +2,10 @@
 struct Mapping{n, m}
     mapping::Function
     dmapping::Function
+
+    function Mapping(dimension::NTuple{2, Int}, mapping::Function, dmapping::Function)
+        return new{dimension[1], dimension[2]}(mapping, dmapping)
+    end
 end
 
 function evaluate(mapping::Mapping{n, m}, x::Vector{Float64}) where {n, m}
@@ -16,11 +20,16 @@ struct MappedGeometry{n, m} <: AbstractGeometry{n, m}
     geometry::AbstractGeometry
     mapping::Mapping
     n_elements::Int
-end
 
-function MappedGeometry(geometry::AbstractGeometry{n, k}, mapping::Mapping{k, m}) where {n, k, m}
-    n_elements = geometry.n_elements
-    return MappedGeometry{n, m}(geometry, mapping, n_elements)
+    function MappedGeometry{n, m}(geometry::AbstractGeometry{n, k}, mapping::Mapping{k, m}) where {n, k, m}
+        n_elements = geometry.n_elements
+        return new{n, m}(geometry, mapping, n_elements)
+    end
+    
+    function MappedGeometry(geometry::AbstractGeometry{n, k}, mapping::Mapping{k, m}) where {n, k, m}
+        n_elements = geometry.n_elements
+        return new{n, m}(geometry, mapping, n_elements)
+    end
 end
 
 function evaluate(geometry::MappedGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}

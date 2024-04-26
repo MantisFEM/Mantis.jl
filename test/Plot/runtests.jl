@@ -119,7 +119,7 @@ for n_subcells in n_subcells_to_test
         # the resulting geometry, which is a composition of the rectangle geometry and the mapping 
         dimension = (2, 2)
 
-        curved_mapping = Mantis.Geometry.Mapping{2, 2}(mapping, dmapping)
+        curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
 
         mapped_geometry = Mantis.Geometry.MappedGeometry(rectangle, curved_mapping)
 

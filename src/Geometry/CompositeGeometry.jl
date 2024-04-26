@@ -4,13 +4,20 @@ struct CompositeGeometry{n, m} <: AbstractGeometry{n, m}
     Φ_1::AbstractGeometry
     Φ_2::AbstractGeometry
     n_elements::Int
-end
 
-function CompositeGeometry(Φ_1::AbstractGeometry{n, k}, Φ_2::AbstractGeometry{k, m}) where {n, k, m}
-    # Φ = Φ_2  ̊ Φ_1
-    dimension = (Φ_1.dimension[1], Φ_2.dimension[2])
-    n_elements = Φ_1.n_elements  # the number of elements need to be the same
-    return CompositeGeometry{n, m}(dimension, Φ_1, Φ_2, n_elements)
+    function CompositeGeometry{n, m}(Φ_1::AbstractGeometry{n, k}, Φ_2::AbstractGeometry{k, m}) where {n, k, m}
+        # Φ = Φ_2  ̊ Φ_1
+        dimension = (Φ_1.dimension[1], Φ_2.dimension[2])
+        n_elements = Φ_1.n_elements  # the number of elements need to be the same
+        return new{n, m}(dimension, Φ_1, Φ_2, n_elements)
+    end
+
+    function CompositeGeometry(Φ_1::AbstractGeometry{n, k}, Φ_2::AbstractGeometry{k, m}) where {n, k, m}
+        # Φ = Φ_2  ̊ Φ_1
+        dimension = (Φ_1.dimension[1], Φ_2.dimension[2])
+        n_elements = Φ_1.n_elements  # the number of elements need to be the same
+        return new{n, m}(dimension, Φ_1, Φ_2, n_elements)
+    end
 end
 
 function evaluate(geometry::CompositeGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
