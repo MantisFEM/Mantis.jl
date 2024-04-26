@@ -31,8 +31,9 @@ function evaluate(geometry::CompositeGeometry{n, m}, element_idx::Int, ξ::Vecto
     return x
 end
 
-function jacobian(geometry::CompositeGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
-    J_1 = jacobian(geometry.Φ_1, element_idx, ξ)  # the Jacobian for the mapping from the elements to base geometry image
-    J_2 = jacobian(geometry.Φ_2, element_idx, ξ)  # the mapping from the image of the  base geometry to the image of the mapping
-    return J_2 * J_1
+# I would rename this to: ∂Φ_∂ξ
+function jacobian_in_canonical_coordinates(geometry::CompositeGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    return jacobian_in_canonical_coordinates(geometry.Φ_2, element_idx, ξ)  # We only need the final geometry because it already accounts 
+                                                                            # for the whole transformation because we require that geometries
+                                                                            # share the same base geometry to be composable
 end

@@ -14,8 +14,8 @@ abstract type AbstractFEMGeometry{n, m} <: AbstractGeometry{n, m} end
 include("./CartesianGeometry.jl")
 include("./FEMGeometry.jl")
 include("./MappedGeometry.jl")
-# include("./CompositeGeometry.jl")
-# include("./RectangleGeometry.jl")
-# include("./MappedRectangleGeometry.jl")
+include("./CompositeGeometry.jl")
+include("./RectangleGeometry.jl")
+include("./MappedRectangleGeometry.jl")
 
 end
