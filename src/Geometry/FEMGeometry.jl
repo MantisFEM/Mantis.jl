@@ -25,12 +25,16 @@ function evaluate(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Vector{Float
     return vec(evaluate(geometry, element_idx, ntuple(i -> [ξ[i]], n)))
 end
 
+function evaluate(geometry::FEMGeometry{1,m}, element_idx::Int, ξ::Float64) where {m}
+    return evaluate(geometry, element_idx, [ξ])
+end
+
 # evaluate in each direction at the specific points in the ntuple
 function evaluate(geometry::FEMGeometry{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
     # evaluate fem space
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(geometry.fem_space, element_id, xi, 0)
     # combine with coefficients and return
-    return fem_basis * geometry.geometry_coeffs[fem_basis_indices,:]
+    return fem_basis[:,:,1] * geometry.geometry_coeffs[fem_basis_indices,:]
 end
 
 function jacobian(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Matrix{Float64}) where {n,m}

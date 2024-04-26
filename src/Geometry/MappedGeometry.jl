@@ -22,14 +22,18 @@ struct MappedGeometry{n, m} <: AbstractGeometry{n, m}
     n_elements::Int
 
     function MappedGeometry{n, m}(geometry::AbstractGeometry{n, k}, mapping::Mapping{k, m}) where {n, k, m}
-        n_elements = geometry.n_elements
+        n_elements = get_num_elements(geometry)
         return new{n, m}(geometry, mapping, n_elements)
     end
     
     function MappedGeometry(geometry::AbstractGeometry{n, k}, mapping::Mapping{k, m}) where {n, k, m}
-        n_elements = geometry.n_elements
+        n_elements = get_num_elements(geometry)
         return new{n, m}(geometry, mapping, n_elements)
     end
+end
+
+function get_num_elements(geometry::MappedGeometry{n,m}) where {n,m}
+    return geometry.n_elements
 end
 
 function evaluate(geometry::MappedGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}

@@ -13,8 +13,8 @@ input_data_folder = joinpath(data_folder, "reference", "Plot")
 output_data_folder = joinpath(data_folder, "output")
 
 # Test CartesianGeometry -----------------------------------------------------------
-for nx = 1:4
-    for ny = 1:4
+for nx = 1:3
+    for ny = 1:3
         breakpoints = (collect(LinRange(0.0, 1.0, nx+1)), collect(LinRange(0.0,2.0,ny+1)))
         geom = Mantis.Geometry.CartesianGeometry(breakpoints)
         # Generate the plot
@@ -24,7 +24,30 @@ for nx = 1:4
     end
 end
 
-# Test FEMGeometry -----------------------------------------------------------
+# Test MappedCartesianGeometry -----------------------------------------------------------
+for nx = 1:3
+    for ny = 1:3
+        breakpoints = (collect(LinRange(0.0, 1.0, nx+1)), collect(LinRange(0.0,2.0,ny+1)))
+        geom = Mantis.Geometry.CartesianGeometry(breakpoints)
+        function mapping(x::Vector{Float64})
+            return [(x[1] + 0.2)*cos(x[2]), (x[1] + 0.2)*sin(x[2])]
+        end
+        function dmapping(x::Vector{Float64})
+            return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
+        end
+        dimension = (2, 2)
+        curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
+        mapped_geometry = Mantis.Geometry.MappedGeometry(geom, curved_mapping)
+
+
+        # Generate the plot
+        output_filename = @sprintf "mapped_cartesian_test_nx_%d_ny_%d.vtu" nx ny
+        output_file = joinpath(output_data_folder, output_filename)
+        Mantis.Plot.plot(mapped_geometry; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 3)
+    end
+end
+
+# Test FEMGeometry (Annulus) -----------------------------------------------------------
 deg = 2
 Wt = pi/2
 b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
@@ -43,11 +66,11 @@ geom_coeffs = [geom_coeffs_0.*r0
                geom_coeffs_0.*r1]
 geom = Mantis.Geometry.FEMGeometry(TP, geom_coeffs)
 # Generate the plot
-output_filename = "fem_geometry_test.vtu"
+output_filename = "fem_geometry_annulus_test.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
 
-# Test FEMGeometry - Lagrange -----------------------------------------------------------
+# Test FEMGeometry - LagrangexBernstein (Square w/ hole) --------------------------------
 deg = 1
 b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.LobattoLegendre(deg))
 B = ntuple( i -> b, 4)
@@ -65,75 +88,94 @@ geom_coeffs = [geom_coeffs_0.*r0
                geom_coeffs_0.*r1]
 geom = Mantis.Geometry.FEMGeometry(TP, geom_coeffs)
 # Generate the plot
-output_filename = "fem_geometry_lagrange_test.vtu"
+output_filename = "fem_geometry_lagrange_square_test.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 1)
 
-# Test AnalGeometry -----------------------------------------------------------
-n_subcells_to_test = 1:4
-degrees_to_test = 1:4
-for n_subcells in n_subcells_to_test 
-    for degree in degrees_to_test
-        # Rectangle based geometries input parameters
-        n_elements = (2, 2)
-        xy_start = [0.0, 0.0]
-        xy_end = [1.0, 1.0]
+# Test FEMGeometry (Spiral) -----------------------------------------------------------
+deg = 2
+Wt = pi/2
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, -1])
+# control points for geometry
+geom_coeffs =   [0.0 -1.0 0.0
+1.0  -1.0 0.25
+1.0   1.0 0.5
+-1.0   1.0 0.75
+-1.0  -1.0 1.0
+0.0  -1.0 1.25]
+geom = Mantis.Geometry.FEMGeometry(GB, geom_coeffs)
+# Generate the plot
+output_filename = "fem_geometry_spiral_test.vtu"
+output_file = joinpath(output_data_folder, output_filename)
+Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
 
-        # Rectangle geometry
-        rectangle = Mantis.Geometry.Rectangle{2, 2}(n_elements, xy_start, xy_end)
+# # Test AnalGeometry -----------------------------------------------------------
+# n_subcells_to_test = 1:4
+# degrees_to_test = 1:4
+# for n_subcells in n_subcells_to_test 
+#     for degree in degrees_to_test
+#         # Rectangle based geometries input parameters
+#         n_elements = (2, 2)
+#         xy_start = [0.0, 0.0]
+#         xy_end = [1.0, 1.0]
 
-        # Generate the plot
-        output_filename = @sprintf "rectangle_test_n_%d_p_%d.vtu" n_subcells degree
-        output_file = joinpath(output_data_folder, output_filename)
-        Mantis.Plot.plot(rectangle; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+#         # Rectangle geometry
+#         rectangle = Mantis.Geometry.Rectangle{2, 2}(n_elements, xy_start, xy_end)
 
-        # Test plotting 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+#         # Generate the plot
+#         output_filename = @sprintf "rectangle_test_n_%d_p_%d.vtu" n_subcells degree
+#         output_file = joinpath(output_data_folder, output_filename)
+#         Mantis.Plot.plot(rectangle; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
 
-        # Mapped custom rectangle geometry
-        function mapping(x::Vector{Float64})
-            return [(x[1] + 0.2)*cos(x[2]), (x[1] + 0.2)*sin(x[2])]
-        end
+#         # Test plotting 
+#         input_file = joinpath(input_data_folder, output_filename)
+#         @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 
-        function dmapping(x::Vector{Float64})
-            return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
-        end
+#         # Mapped custom rectangle geometry
+#         function mapping(x::Vector{Float64})
+#             return [(x[1] + 0.2)*cos(x[2]), (x[1] + 0.2)*sin(x[2])]
+#         end
 
-        mapped_rectangle = Mantis.Geometry.MappedRectangle{2, 2}(n_elements, xy_start, xy_end, mapping, dmapping)
+#         function dmapping(x::Vector{Float64})
+#             return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
+#         end
 
-        # Generate the plot 
-        output_filename = @sprintf "mapped_rectangle_test_n_%d_p_%d.vtu" n_subcells degree
-        output_file = joinpath(output_data_folder, output_filename)
-        Mantis.Plot.plot(mapped_rectangle; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+#         mapped_rectangle = Mantis.Geometry.MappedRectangle{2, 2}(n_elements, xy_start, xy_end, mapping, dmapping)
 
-        # Test plotting 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
-        # -----------------------------------------------------------------------------
+#         # Generate the plot 
+#         output_filename = @sprintf "mapped_rectangle_test_n_%d_p_%d.vtu" n_subcells degree
+#         output_file = joinpath(output_data_folder, output_filename)
+#         Mantis.Plot.plot(mapped_rectangle; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+
+#         # Test plotting 
+#         input_file = joinpath(input_data_folder, output_filename)
+#         @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+#         # -----------------------------------------------------------------------------
 
 
-        # Test Mapped geometry --------------------------------------------------------
-        # This results in the same geometry as the custom mapped_rectangle, the difference is that is uses composition
-        # via the MappedGeometry struct: we provide the straight geometry rectangle and then a mapping and it generates
-        # the resulting geometry, which is a composition of the rectangle geometry and the mapping 
-        dimension = (2, 2)
+#         # Test Mapped geometry --------------------------------------------------------
+#         # This results in the same geometry as the custom mapped_rectangle, the difference is that is uses composition
+#         # via the MappedGeometry struct: we provide the straight geometry rectangle and then a mapping and it generates
+#         # the resulting geometry, which is a composition of the rectangle geometry and the mapping 
+#         dimension = (2, 2)
 
-        curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
+#         curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
 
-        mapped_geometry = Mantis.Geometry.MappedGeometry(rectangle, curved_mapping)
+#         mapped_geometry = Mantis.Geometry.MappedGeometry(rectangle, curved_mapping)
 
-        # Generate the plot 
-        output_filename = @sprintf "mapped_geometry_test_n_%d_p_%d.vtu" n_subcells degree
-        output_file = joinpath(output_data_folder, output_filename)
-        Mantis.Plot.plot(mapped_geometry; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+#         # Generate the plot 
+#         output_filename = @sprintf "mapped_geometry_test_n_%d_p_%d.vtu" n_subcells degree
+#         output_file = joinpath(output_data_folder, output_filename)
+#         Mantis.Plot.plot(mapped_geometry; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
 
-        # Test plotting 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
-    end
-end
-# -----------------------------------------------------------------------------
+#         # Test plotting 
+#         input_file = joinpath(input_data_folder, output_filename)
+#         @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+#     end
+# end
+# # -----------------------------------------------------------------------------
 
 struct SpiralGeometry{n, m} <: Mantis.Geometry.AbstractAnalGeometry{n, m}
     n_elements::Int

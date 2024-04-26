@@ -144,6 +144,10 @@ function evaluate(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Vector{
     return local_basis, basis_indices
 end
 
+function evaluate(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::NTuple{1,Vector{Float64}}, nderivatives::Int) where {m}
+    return evaluate(us_space, element_id, xi[1], nderivatives)
+end
+
 function evaluate(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Float64, nderivatives::Int) where {m}
     return evaluate(us_space, element_id, [xi], nderivatives)
 end
