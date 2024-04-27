@@ -12,7 +12,7 @@ struct TensorProductSpace{n,m} <: AbstractFiniteElementSpace{n} where {m}
     data::Dict
 
     function TensorProductSpace(function_spaces::NTuple{m, AbstractFiniteElementSpace}, data::Dict) where {m}
-        n = get_n.(function_spaces)
+        n = sum(get_n.(function_spaces))
         new{n,m}(function_spaces, data)
     end
 end
@@ -120,28 +120,30 @@ For given global element id `element_id` for a given tensor-product space, evalu
 # Returns
 - `::NTuple{m,F}`: where `F` is a Tuple containing evaluated local basis and local basis indices
 """
-function get_local_basis(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}, nderivatives::Vector{Int}) where {n,m}
+function get_local_basis(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Vector{Int}) where {n,m}
     # convert linear index ordered index pair
     ord_element_id = linear_to_ordered_index(element_id, get_num_elements.(tp_space.function_spaces))
+    # dimensions of all function spaces
+    space_dims = cumsum([0; [get_dim(tp_space.function_spaces[i]) for i = 1:m]])
     
-    return evaluate.(tp_space.function_spaces, ord_element_id, xi, nderivatives)
+    return (evaluate(tp_space.function_spaces[i], ord_element_id[i], xi[space_dims[i]+1:space_dims[i+1]], nderivatives[i]) for i = 1:m)
 end
 
 @doc raw"""
-    evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}) where {n,m}
+    evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
 
 For given global element id `element_id` for a given tensor-product space, evaluate the tensor-product basis functions and return.
 
 # Arguments 
 - `tp_space::TensorProductSpace`: tensor-product space
 - `element_id::Int`: global element id
-- `xi::NTuple{m,Vector{Float64}}`: vector of element-normalized points (i.e., in [0,1]) where basis needs to be evaluated
+- `xi::NTuple{n,Vector{Float64}}`: vector of element-normalized points (i.e., in [0,1]) where basis needs to be evaluated
 
 # Returns
 - `::Array{Float64}`: array of evaluated global basis (size: num_eval_points x num_funcs)
 - `::Vector{Int}`: vector of global basis indices (size: num_funcs)
 """
-function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}) where {n,m}
+function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
     # kronecker product of constituent basis functions
     all_local_basis = get_local_basis(tp_space, element_id, xi, zeros(Int,m))
     local_basis = all_local_basis[1][1][:,:,1]

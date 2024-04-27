@@ -32,7 +32,7 @@ function evaluate(polynomials::Bernstein, ξ::Vector{Float64}, nderivatives::Int
     for i = 1:neval
         ders[i,:,:] = evaluate(polynomials, ξ[i], nderivatives)
     end
-    return ders
+    return Dict(i => ders[:,:,i+1] for i = 0:nderivatives)
 end
 
 @doc raw"""
