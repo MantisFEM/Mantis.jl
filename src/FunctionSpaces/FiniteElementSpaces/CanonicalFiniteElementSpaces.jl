@@ -35,7 +35,7 @@ Evaluates all derivatives upto order `nderivatives` for all `canonical_space` ba
 - `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
 """
 function evaluate_all_at_point(space::CanonicalFiniteElementSpace, xi::Float64, nderivatives::Int)
-    local_basis = evaluate(space.canonical_space, xi, nderivatives)
+    local_basis = evaluate(space.canonical_space, [xi], nderivatives)
     ndofs = get_dim(space)
     basis_indices = 1:ndofs
     nloc = length(basis_indices)
@@ -47,7 +47,7 @@ function evaluate_all_at_point(space::CanonicalFiniteElementSpace, xi::Float64, 
         for i = 1:nloc
             I[count+1] = basis_indices[i]
             J[count+1] = r+1
-            V[count+1] = local_basis[1, i, r+1]
+            V[count+1] = local_basis[r][1, i]
             count += 1
         end
     end

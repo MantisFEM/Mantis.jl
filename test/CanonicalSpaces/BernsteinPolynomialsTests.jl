@@ -26,19 +26,19 @@ for p in degrees_to_test
     b_eval = Mantis.FunctionSpaces.evaluate(b, x, 2)
 
     # Check positivity of the polynomials
-    @test minimum(b_eval[:,:,1]) >= 0.0
+    @test minimum(b_eval[0]) >= 0.0
 
     # Check constant definite integral
-    @test isapprox(maximum(abs.(w'*b_eval[:,:,1] .- 1.0/(p + 1))), 0.0, atol=1e-15)
+    @test isapprox(maximum(abs.(w'*b_eval[0] .- 1.0/(p + 1))), 0.0, atol=1e-15)
 
     # Check partition of unity
-    @test all(isapprox.(sum(b_eval[:,:,1], dims=2), 1.0))
+    @test all(isapprox.(sum(b_eval[0], dims=2), 1.0))
 
     # Check zero sum of derivatives
-    @test all(isapprox.(abs.(sum(b_eval[:,:,2], dims=2)), 0.0, atol=1e-14))
+    @test all(isapprox.(abs.(sum(b_eval[1], dims=2)), 0.0, atol=1e-14))
 
     # Check that Greville points represent the polynomial \xi
-    @test all(isapprox.(b_eval[:,:,1] * LinRange(0,p,p+1), p.*x))
+    @test all(isapprox.(b_eval[0] * LinRange(0,p,p+1), p.*x))
 
     if p > 0
         # Test correctness of evaluation and derivatives
@@ -55,12 +55,12 @@ for p in degrees_to_test
         # ... and in terms of the Bernstein basis
         coeff_b = Mantis.FunctionSpaces.extract_monomial_to_bernstein(b) * coeff_m
         # Check that the values match f ...
-        @test isapprox(maximum(abs.(b_eval[:,:,1] * coeff_b .- f_eval)), 0.0, atol = 1e-15)
+        @test isapprox(maximum(abs.(b_eval[0] * coeff_b .- f_eval)), 0.0, atol = 1e-15)
         # ... the first order derivative matches df/dx ...
-        @test isapprox(maximum(abs.(b_eval[:,:,2] * coeff_b .- df_dx_eval)), 0.0, atol = 2e-14)
+        @test isapprox(maximum(abs.(b_eval[1] * coeff_b .- df_dx_eval)), 0.0, atol = 2e-14)
         # ... and the second order derivative matches d2f/dx2.
         if p > 1
-            @test isapprox(maximum(abs.(b_eval[:,:,3] * coeff_b .- d2f_dx2_eval)), 0.0, atol = 2e-13)
+            @test isapprox(maximum(abs.(b_eval[2] * coeff_b .- d2f_dx2_eval)), 0.0, atol = 2e-13)
         end
     end
 end

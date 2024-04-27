@@ -25,12 +25,12 @@ polynomials of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``.
 
 See also [`evaluate(polynomial::Bernstein, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::Bernstein, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+function evaluate(polynomials::Bernstein, ξ::Vector{Float64}, nderivatives::Int64)
     # store the values and derivatives here
     neval = length(ξ)
     ders = zeros(Float64, neval, polynomials.p + 1, nderivatives + 1)
     for i = 1:neval
-        ders[i,:,:] = evaluate(polynomials, ξ[i], nderivatives)
+        ders[i,:,:] = _evaluate(polynomials, ξ[i], nderivatives)
     end
     return Dict(i => ders[:,:,i+1] for i = 0:nderivatives)
 end
@@ -63,7 +63,7 @@ Compute all Bernstein polynomials of degree `p` at ``\xi`` for ``\xi \in [0.0, 1
 See also [`evaluate(polynomial::Bernstein, xi::Vector{Float64}, nderivatives::Int64)`](@ref).
 """
 function evaluate(polynomial::Bernstein, xi::Float64)::Array{Float64}
-    return evaluate(polynomial, xi, 0)
+    return evaluate(polynomial, [xi], 0)
 end
 
 
@@ -82,7 +82,7 @@ polynomial.
 - `xi::Float64`: evaluation point ``\in [0.0, 1.0]``.
 - `nderivatives::Int64`: maximum order of derivatives to be computed (nderivatives ``\leq p``).
 """
-function evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)::Array{Float64}
+function _evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)::Array{Float64}
     # degree
     p = polynomial.p
 
