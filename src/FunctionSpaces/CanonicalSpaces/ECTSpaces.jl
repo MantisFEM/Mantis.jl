@@ -44,7 +44,7 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
 end
 
 @doc raw"""
-    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64}, nderivatives::Int64)
 
 Compute derivatives up to order `nderivatives` for all basis functions of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``. 
 
@@ -108,7 +108,7 @@ function _evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::I
 end
 
 @doc raw"""
-    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64})::Array{Float64}
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64})
 
 Compute all basis function values at `ξ` in ``[0.0, 1.0]``.
 

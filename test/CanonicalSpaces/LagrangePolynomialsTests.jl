@@ -114,13 +114,13 @@ for p_idx in eachindex(p_reference)
     @test ll_polynomial.nodes ≈ ll_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.FunctionSpaces.evaluate(ll_polynomial, ll_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.FunctionSpaces.evaluate(ll_polynomial, ll_polynomial.nodes)[0] == LinearAlgebra.Diagonal(ones(p+1))
 
     # Test if polynomial basis evaluation at evenly spaced nodes 
     ll_eval =  Mantis.FunctionSpaces.evaluate(ll_polynomial, xi_evaluate)
 
     # Check correctness of results
-    @test view(ll_eval, :, :, 1) ≈ ll_evaluation[p_idx] atol = 1e-11
+    @test ll_eval[0] ≈ ll_evaluation[p_idx] atol = 1e-11
 end
 
 # Perform derivative tests
@@ -134,10 +134,10 @@ for p in degrees_to_test
   ll_eval =  Mantis.FunctionSpaces.evaluate(ll_polynomial, xi_evaluate, 2)
 
   # Partition of unity
-  @test all(isapprox.(sum(view(ll_eval, :, :, 1), dims=2), 1.0, atol = 5e-14))
+  @test all(isapprox.(sum(ll_eval[0], dims=2), 1.0, atol = 5e-14))
 
   # Zero sum of first order derivatives
-  @test all(isapprox.(abs.(sum(view(ll_eval, :, :, 2), dims=2)), 0.0, atol = 5e-13)) 
+  @test all(isapprox.(abs.(sum(ll_eval[1], dims=2)), 0.0, atol = 5e-13)) 
 
   # Test correctness of evaluation and derivatives
   # Check the first and second derivatives with respect to polynomial
@@ -153,7 +153,7 @@ for p in degrees_to_test
   d2f_dx2_eval = f.(xi_evaluate, p, 2)  # the second derivative at evaluation points
 
   # Use the basis to compute the first and second derivatives and check if they match
-  @test isapprox(maximum(abs.(view(ll_eval, :, :, 2) * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
+  @test isapprox(maximum(abs.(ll_eval[1] * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
   # Second order derivative tests to be done in the future
   # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
 
@@ -266,10 +266,10 @@ for p_idx in eachindex(p_reference)
     @test gl_polynomial.nodes ≈ gl_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
-    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, gl_polynomial.nodes) == LinearAlgebra.Diagonal(ones(p+1))
+    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, gl_polynomial.nodes)[0] == LinearAlgebra.Diagonal(ones(p+1))
 
     # Test if polynomial basis evaluation at evenly spaces nodes gives expected results
-    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...]) ≈ gl_evaluation[p_idx] atol = 1e-11
+    @test Mantis.FunctionSpaces.evaluate(gl_polynomial, [range(0.0, 1.0, length=11)...])[0] ≈ gl_evaluation[p_idx] atol = 1e-11
 end
 
 # Perform derivative tests
@@ -284,10 +284,10 @@ for p in degrees_to_test
   x = 1.0
 
   # Partition of unity
-  @test all(isapprox.(sum(view(gl_eval, :, :, 1), dims=2), 1.0, atol = 5e-14))
+  @test @views all(isapprox.(sum(gl_eval[0], dims=2), 1.0, atol = 5e-14))
 
   # Zero sum of first order derivatives
-  @test all(isapprox.(abs.(sum(view(gl_eval, :, :, 2), dims=2)), 0.0, atol = 1e-12)) 
+  @test @views all(isapprox.(abs.(sum(gl_eval[1], dims=2)), 0.0, atol = 1e-12)) 
 
   # Test correctness of evaluation and derivatives
   # Check the first and second derivatives with respect to polynomial
@@ -303,7 +303,7 @@ for p in degrees_to_test
   d2f_dx2_eval = f.(xi_evaluate, p, 2)  # the second derivative at evaluation points
 
   # Use the basis to compute the first and second derivatives and check if they match
-  @test isapprox(maximum(abs.(view(gl_eval, :, :, 2) * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
+  @test @views isapprox(maximum(abs.(gl_eval[1] * f_nodes .- df_dx_eval)), 0.0, atol = 1e-11)
   # Second order derivative tests to be done in the future
   # @test isapprox(maximum(abs.(view(ll_eval, :, :, 3) * f_nodes .- d2f_dx2_eval)), 0.0, atol = 5e-11)
 
@@ -328,7 +328,7 @@ for p in degrees_to_test
   ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ_quad, 1)
 
   # Test integral partition of unity property 
-  @test all(isapprox.(transpose(view(ell_poly_eval, :, :, 1))*w_quad, 1.0, atol = 1e-12))
+  @test @views all(isapprox.(transpose(ell_poly_eval[0])*w_quad, 1.0, atol = 1e-12))
 
   # Test integral Kronecker delta property
   # To avoid evaluating the polynomials many times, we evaluate them at quadrature points
@@ -346,7 +346,7 @@ for p in degrees_to_test
   # Evaluate the polynomials at the evaluation points 
   ξ = reshape(ξ, :)  # transform into vector just to use it an input in evaluate
   ell_poly_eval = Mantis.FunctionSpaces.evaluate(ell_poly, ξ, 0)
-  ell_poly_eval = reshape(ell_poly_eval, p+1, p+1, p+1)  # reshape so that we have the quadrature nodes for each interval in a column
+  ell_poly_eval = reshape(ell_poly_eval[0], p+1, p+1, p+1)  # reshape so that we have the quadrature nodes for each interval in a column
   # Compute the integrals of each basis over each of the intervals 
   for basis_idx in 1:(p+1) 
     for interval_idx in 1:(p + 1)

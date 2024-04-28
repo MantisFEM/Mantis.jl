@@ -69,7 +69,7 @@ function EdgeLobattoLegendre(p::Int)
 end
 
 @doc raw"""
-    evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+    evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)
 
 Evaluate the first `nderivatives` derivatives of the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, 
 in `polynomials` at `ξ` for ``\xi \in [0.0, 1.0]``. 
@@ -87,7 +87,7 @@ up to degree `nderivatives` at every point `ξ`. `d_polynomials[i, j, k]` ``= \f
 
 See also [`evaluate(polynomial::AbstractLagrangePolynomials, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64}, nderivatives::Int64)
     # Get information from inputs on size of computation 
     n_points = size(ξ, 1)  # the number of points where to evaluate the polynomials and their derivatives
     p = polynomials.p # the degree of the polynomials, the number of polynomials is p + 1
@@ -159,13 +159,13 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64},
         end
     end
 
-    return d_polynomials
+    return Dict(i => d_polynomials[:,:,i+1] for i = 0:nderivatives)
     
 end
 
 
 @doc raw"""
-    evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64})::Array{Float64}
+    evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64})
 
 Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials` at `ξ` for 
 ``\xi \in [0.0, 1.0]``. 
@@ -181,8 +181,8 @@ Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials`
 
 See also [`evaluate(polynomial::AbstractLagrangePolynomials, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64})::Array{Float64}
-    return reshape(evaluate(polynomials, ξ, 0), size(ξ, 1), polynomials.p + 1)
+function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64})
+    return evaluate(polynomials, ξ, 0)
 end
 
 @doc raw"""
@@ -217,16 +217,14 @@ function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64}, nderiva
 
     # Compute nderivatives+1 of the Lagrange polynomials over Gauss-Lobatto-Legendre nodes
     ll_polynomials_eval = evaluate(polynomials._core_polynomials, ξ, nderivatives+1)
+    
 
-    # Compute the edge polynomials and their derivatives using the formula above: cumulative sum 
-    d_polynomials = -cumsum(ll_polynomials_eval[:, 1:(end-1), 2:end], dims=2)
-
-    return d_polynomials
+    return Dict(i => -cumsum(ll_polynomials_eval[i+1][:,1:(end-1)],dims=2) for i = 0:nderivatives)
 end
 
 
 @doc raw"""
-    evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})::Array{Float64}
+    evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})
 
 Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials` at `ξ` for 
 ``\xi \in [0.0, 1.0]``. 
@@ -242,8 +240,8 @@ Evaluate the polynomials ``B_{j}(\xi)``, ``j = 1, \dots, p+1``, in `polynomials`
 
 See also [`evaluate(polynomial::EdgeLobattoLegendre, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})::Array{Float64}
-    return reshape(evaluate(polynomials, ξ, 0), size(ξ, 1), polynomials.p + 1)
+function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64})
+    return evaluate(polynomials, ξ, 0)
 end
 
 
