@@ -29,12 +29,12 @@ for deg1 in 0:5
         x2, _ = Mantis.Quadrature.gauss_legendre(deg2+1)
         for el in 1:1:Mantis.FunctionSpaces.get_num_elements(TP)
             # check B-spline evaluation
-            TP_eval, _ = Mantis.FunctionSpaces.evaluate(TP, el, (x1,x2))
+            TP_eval, _ = Mantis.FunctionSpaces.evaluate(TP, el, (x1,x2),0)
             # Positivity of the polynomials
-            @test minimum(TP_eval[:,:,1]) >= 0.0
+            @test minimum(TP_eval[0,0]) >= 0.0
 
             # Partition of unity
-            @test all(isapprox.(sum(TP_eval[:,:,1], dims=2), 1.0))
+            @test all(isapprox.(sum(TP_eval[0,0], dims=2), 1.0))
         end
     end
 end
@@ -70,8 +70,8 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(TP)
     # check B-spline evaluation
     TP_eval, _ = Mantis.FunctionSpaces.evaluate(TP, el, (x1,x2))
     # Positivity of the polynomials
-    @test minimum(TP_eval[:,:,1]) >= 0.0
+    @test minimum(TP_eval[0,0]) >= 0.0
 
     # Partition of unity
-    @test all(isapprox.(sum(TP_eval[:,:,1], dims=2), 1.0))
+    @test all(isapprox.(sum(TP_eval[0,0], dims=2), 1.0))
 end

@@ -416,7 +416,7 @@ function evaluate(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivati
 end
 
 """
-evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
+_evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
 
 Evaluates all derivatives upto order `nderivatives` for all `bspline` basis functions at a given point `xi` in the element `element_id`.
 
@@ -428,7 +428,7 @@ Evaluates all derivatives upto order `nderivatives` for all `bspline` basis func
 # Returns
 - `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
 """
-function evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
+function _evaluate_all_at_point(bspline::BSplineSpace, element_id::Int, xi::Float64, nderivatives::Int)
     local_basis, basis_indices = evaluate(bspline, element_id, [xi], nderivatives)
     nloc = length(basis_indices)
     ndofs = get_dim(bspline)
@@ -465,7 +465,7 @@ Evaluates a spline on the element specified by `element_id` and points `xi` and 
 """
 function evaluate(bspline::BSplineSpace, element_id::Int, xi::Vector{Float64}, nderivatives::Int, coefficients::Vector{Float64})
     local_basis, basis_indices = evaluate(bspline, element_id, xi, nderivatives)
-    evaluation = zeros(Float64, (size(local_basis)[1],nderivatives+1) )
+    evaluation = zeros(Float64, (size(local_basis[0],1),nderivatives+1) )
     
     for r = 0:nderivatives
         evaluation[:,r+1] .= @views local_basis[r] * coefficients[basis_indices]

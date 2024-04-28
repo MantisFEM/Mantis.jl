@@ -23,7 +23,7 @@ function get_dim(space::CanonicalFiniteElementSpace)
 end
 
 """
-evaluate_all_at_point(canonical_space::CanonicalFiniteElementSpace, xi::Float64, nderivatives::Int)
+_evaluate_all_at_point(canonical_space::CanonicalFiniteElementSpace, xi::Float64, nderivatives::Int)
 
 Evaluates all derivatives upto order `nderivatives` for all `canonical_space` basis functions at a given point `xi`.
 
@@ -34,7 +34,7 @@ Evaluates all derivatives upto order `nderivatives` for all `canonical_space` ba
 # Returns
 - `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
 """
-function evaluate_all_at_point(space::CanonicalFiniteElementSpace, xi::Float64, nderivatives::Int)
+function _evaluate_all_at_point(space::CanonicalFiniteElementSpace, xi::Float64, nderivatives::Int)
     local_basis = evaluate(space.canonical_space, [xi], nderivatives)
     ndofs = get_dim(space)
     basis_indices = 1:ndofs
@@ -54,8 +54,8 @@ function evaluate_all_at_point(space::CanonicalFiniteElementSpace, xi::Float64, 
     return SparseArrays.sparse(I,J,V,ndofs,nderivatives+1)
 end
 
-function evaluate_all_at_point(space::CanonicalFiniteElementSpace, ::Int, xi::Float64, nderivatives::Int)
-    return evaluate_all_at_point(space, xi, nderivatives)
+function _evaluate_all_at_point(space::CanonicalFiniteElementSpace, ::Int, xi::Float64, nderivatives::Int)
+    return _evaluate_all_at_point(space, xi, nderivatives)
 end
 
 function evaluate(space::CanonicalFiniteElementSpace, ::Int, xi::Vector{Float64}, nderivatives::Int)

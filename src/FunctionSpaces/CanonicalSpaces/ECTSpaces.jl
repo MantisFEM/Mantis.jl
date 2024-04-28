@@ -61,7 +61,7 @@ function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivat
     for i = 1:neval
         ders[i,:,:] = _evaluate(gtrig, xi[i],nderivatives)
     end
-    return Dict(i => ders[:,:,i+1] for i = 0:nderivatives)
+    return Dict{Int,Matrix{Float64}}(i => ders[:,:,i+1] for i = 0:nderivatives)
 end
 
 function _evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)

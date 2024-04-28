@@ -159,7 +159,7 @@ function evaluate(polynomials::AbstractLagrangePolynomials, ξ::Vector{Float64},
         end
     end
 
-    return Dict(i => d_polynomials[:,:,i+1] for i = 0:nderivatives)
+    return Dict{Int,Matrix{Float64}}(i => d_polynomials[:,:,i+1] for i = 0:nderivatives)
     
 end
 
@@ -219,7 +219,7 @@ function evaluate(polynomials::EdgeLobattoLegendre, ξ::Vector{Float64}, nderiva
     ll_polynomials_eval = evaluate(polynomials._core_polynomials, ξ, nderivatives+1)
     
 
-    return Dict(i => -cumsum(ll_polynomials_eval[i+1][:,1:(end-1)],dims=2) for i = 0:nderivatives)
+    return Dict{Int,Matrix{Float64}}(i => -cumsum(ll_polynomials_eval[i+1][:,1:(end-1)],dims=2) for i = 0:nderivatives)
 end
 
 
