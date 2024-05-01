@@ -12,6 +12,18 @@ struct MappedRectangle{n, n} <: AbstractAnalGeometry{n, n}
     dmapping::Function
 end
 
+function get_num_elements(geometry::MappedRectangle{n,m}) where {n,m}
+    return geometry.n_elements
+end
+
+function get_domain_dim(geometry::MappedRectangle{n,m}) where {n, m}
+    return n
+end
+
+function get_image_dim(geometry::MappedRectangle{n,m}) where {n, m}
+    return m
+end
+
 function MappedRectangle{2, 2}(n_elements_xy, xy_start, xy_end, mapping, dmapping)
     dimension = (2, 2)
     dxy = (xy_end .- xy_start) ./ n_elements_xy

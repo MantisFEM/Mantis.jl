@@ -268,7 +268,7 @@ function extract_gtbspline_to_canonical(canonical_spaces::NTuple{m,CanonicalFini
     end
 
     # remove small values obtained as a result of round-off errors
-    SparseArrays.fkeep!(H, (i,j,x) -> abs(x) > 1e-14)
+    SparseArrays.fkeep!((i,j,x) -> abs(x) > 1e-14, H)
 
     # convert global extraction matrix to element local extractions
     # (here, the matrix is transposed so that [canonical_spaces] * [extraction] = [GTB-splines])

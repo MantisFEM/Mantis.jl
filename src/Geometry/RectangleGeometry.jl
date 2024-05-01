@@ -17,6 +17,18 @@ function Rectangle{2, 2}(n_elements_xy, xy_start, xy_end)
     return Rectangle{2, 2}(dimension, n_elements, n_elements_xy, xy_start, xy_end, dxy, cartesian_idxs)
 end
 
+function get_num_elements(geometry::Rectangle{2,2})
+    return geometry.n_elements
+end
+
+function get_domain_dim(geometry::Rectangle{2,2})
+    return 2
+end
+
+function get_image_dim(geometry::Rectangle{2,2})
+    return 2
+end
+
 function evaluate(geometry::Rectangle{2, 2}, element_idx::Int, ξ::Vector{Float64})
     xy_idx = Tuple(geometry.cartesian_idxs[element_idx])
     x = (xy_idx .- 1) .* geometry.dxy .+ geometry.xy_start + ξ .* geometry.dxy

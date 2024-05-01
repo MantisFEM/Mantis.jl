@@ -15,6 +15,14 @@ function get_num_elements(geometry::CartesianGeometry{n,n}) where {n}
     return prod(geometry.n_elements)
 end
 
+function get_domain_dim(geometry::CartesianGeometry{n,n}) where {n}
+    return n
+end
+
+function get_image_dim(geometry::CartesianGeometry{n,n}) where {n}
+    return n
+end
+
 function evaluate(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::Matrix{Float64}) where {n}
     return evaluate.(geometry, element_idx, ntuple(i -> ntuple(j -> [ξ[i,j]], n), size(ξ,1)))
 end

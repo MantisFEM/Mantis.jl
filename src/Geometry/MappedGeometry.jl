@@ -8,6 +8,14 @@ struct Mapping{n, m}
     end
 end
 
+function get_domain_dim(mapping::Mapping{n, m}) where {n, m}
+    return n
+end
+
+function get_image_dim(mapping::Mapping{n, m}) where {n, m}
+    return m
+end
+
 function evaluate(mapping::Mapping{n, m}, x::Vector{Float64}) where {n, m}
     return mapping.mapping(x)
 end
@@ -34,6 +42,14 @@ end
 
 function get_num_elements(geometry::MappedGeometry{n,m}) where {n,m}
     return geometry.n_elements
+end
+
+function get_domain_dim(geometry::MappedGeometry{n,m}) where {n, m}
+    return n
+end
+
+function get_image_dim(geometry::MappedGeometry{n,m}) where {n, m}
+    return m
 end
 
 function evaluate(geometry::MappedGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
