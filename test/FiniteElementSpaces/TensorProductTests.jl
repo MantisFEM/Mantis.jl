@@ -19,9 +19,9 @@ patch2 = Mantis.Mesh.Patch1D(breakpoints2)
 for deg1 in 0:5
     for deg2 in 0:5
         # first B-spline patch
-        B1 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
+        local B1 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
         # second B-spline patch
-        B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
+        local B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
         # tensor-product B-spline patch
         TP = Mantis.FunctionSpaces.TensorProductSpace(B1,B2,Dict())
         # evaluation points
@@ -45,21 +45,21 @@ end
 
 # first B-spline patch
 deg1 = 3;
-B1 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
+B1_tensor_prod = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
 # second B-spline patch
 deg2 = 4;
-B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
+B2_tensor_prod = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
 # first multi-patch object
-MP1 = Mantis.FunctionSpaces.GTBSplineSpace((B1, B2), [1, -1])
+MP1 = Mantis.FunctionSpaces.GTBSplineSpace((B1_tensor_prod, B2_tensor_prod), [1, -1])
 
 # third B-spline patch
 deg1 = 4;
-B3 = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
+B3_tensor_prod = Mantis.FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1-1, -1])
 # second B-spline patch
 deg2 = 3;
-B4 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
+B4_tensor_prod = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
 # First multi-patch object
-MP2 = Mantis.FunctionSpaces.GTBSplineSpace((B3, B4), [1, -1])
+MP2 = Mantis.FunctionSpaces.GTBSplineSpace((B3_tensor_prod, B4_tensor_prod), [1, -1])
 
 # tensor-product B-spline patch
 TP = Mantis.FunctionSpaces.TensorProductSpace(MP1, MP2, Dict())

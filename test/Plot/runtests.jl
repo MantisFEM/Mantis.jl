@@ -42,7 +42,7 @@ for n_subcells in n_subcells_range
 
         # Test plotting 
         input_file = joinpath(input_data_folder, output_filename)
-        # @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
     end
 end
 # -----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ for n_subcells in n_subcells_range
 
         # Test plotting 
         input_file = joinpath(input_data_folder, output_filename)
-        # @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
     end
 end
 # -----------------------------------------------------------------------------
