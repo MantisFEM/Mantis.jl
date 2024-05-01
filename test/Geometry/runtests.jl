@@ -167,10 +167,54 @@ input_file = joinpath(input_data_folder, output_filename)
 @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
-# Test Tensor Product Geometry ------------------------------------------------
+# Test Square Tensor Product Geometry -----------------------------------------
+# Generate a tensor product geometry by combining two lines
 
+# Line 1
+breakpoints_1 = (Vector(0.0:0.1:1.0),)
+line_1_geo = Mantis.Geometry.CartesianGeometry(breakpoints_1)
 
+# Line 2
+breakpoints_2 = (Vector(2.0:0.1:3.0),)
+line_2_geo = Mantis.Geometry.CartesianGeometry(breakpoints_2)
+
+# Tensor product geometry 
+tensor_prod_geo = Mantis.Geometry.TensorProductGeometry(line_1_geo, line_2_geo)
+
+# Generate the plot
+output_filename = "tensor_product_geometry.vtu"
+output_file = joinpath(output_data_folder, output_filename)
+Mantis.Plot.plot(tensor_prod_geo; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
+# -----------------------------------------------------------------------------
+
+# Test Cylinder Tensor Product Geometry ---------------------------------------
+deg = 2
+Wt = pi/2
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+
+# control points for geometry
+geom_coeffs_circle =   [1.0  -1.0
+1.0   1.0
+-1.0   1.0
+-1.0  -1.0]
+
+cylinder_circle_geo = Mantis.Geometry.FEMGeometry(GB, geom_coeffs_circle)
+
+breakpoints_cylinder_line = (Vector(0.0:0.1:1.0),)
+cylinder_line_geo = Mantis.Geometry.CartesianGeometry(breakpoints_cylinder_line)
+
+# Tensor product geometry 
+cylinder_tensor_prod_geo = Mantis.Geometry.TensorProductGeometry(cylinder_circle_geo, cylinder_line_geo)
+
+# Generate the plot
+output_filename = "tensor_product_cylinder_geometry.vtu"
+output_file = joinpath(output_data_folder, output_filename)
+Mantis.Plot.plot(cylinder_tensor_prod_geo; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
 
 # -----------------------------------------------------------------------------
+
+
 
 end

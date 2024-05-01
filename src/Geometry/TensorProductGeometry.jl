@@ -1,40 +1,44 @@
 
 struct TensorProductGeometry{n, m} <: AbstractGeometry{n, m}
-    geometries::Vector{AbstractGeometry}
-    domain_dims::Vector{Int}
-    image_dims::Vector{Int}
-    n_elements_per_geometry::Vector{Int}
+    geometry_1::AbstractGeometry
+    geometry_2::AbstractGeometry
+    domain_dims::NTuple{2, Int}
+    image_dims::NTuple{2, Int}
+    n_elements_per_geometry::NTuple{2, Int}
     n_elements::Int
+    cartesian_indices::CartesianIndices
     
-    function TensorProductGeometry(geometries::Vector{AbstractGeometry})
-        n_elements_per_geometry = get_num_elements.(geometries)
+    function TensorProductGeometry(geometry_1::AbstractGeometry{n_1, m_1}, geometry_2::AbstractGeometry{n_2, m_2}) where {n_1, m_1, n_2, m_2}
+        n_elements_per_geometry = (get_num_elements(geometry_1), get_num_elements(geometry_2))
         n_elements = prod(n_elements_per_geometry)
-        domain_dims = get_domain_dim.(geometries)
-        image_dims = get_image_dim.(geometries)
+        domain_dims = (get_domain_dim(geometry_1), get_domain_dim(geometry_2))
+        image_dims = (get_image_dim(geometry_1), get_image_dim(geometry_2))
         n = sum(domain_dims)
-        m = sum(image_dims)
-        
-        return new{n, m}(geometries, domain_dims, image_dims, n_elements_per_geometry, n_elements)
+        m = sum(image_dims) 
+        cartesian_indices = CartesianIndices(n_elements_per_geometry)
+        return new{n, m}(geometry_1, geometry_2, domain_dims, image_dims, n_elements_per_geometry, n_elements, cartesian_indices)
     end
 end
 
 function get_num_elements(geometry::TensorProductGeometry{n, m}) where {n, m}
-    return n_elements
+    return geometry.n_elements
 end
 
-function get_domain_dim(geometry::TensorProductGeometry{n, m}) where {n, m}
+function get_domain_dim(::TensorProductGeometry{n, m}) where {n, m}
     return n
 end
 
-function get_image_dim(geometry::TensorProductGeometry{n, m}) where {n, m}
+function get_image_dim(::TensorProductGeometry{n, m}) where {n, m}
     return m
 end
 
-# function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
-#     x = evaluate(geometry.geometry, element_idx, ξ)
-#     x_mapped = evaluate(geometry.mapping, x)
-#     return x_mapped
-# end
+function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    element_geometries_idx = geometry.cartesian_indices[element_idx]
+    x = zeros(Float64, m)
+    x[1:geometry.image_dims[1]] .= evaluate(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])
+    x[(geometry.image_dims[1]+1):end] .= evaluate(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])
+    return x
+end
 
 # function jacobian(geometry::MappedGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
 #     J_1 = jacobian(geometry.geometry, element_idx, ξ)  # the Jacobian for the mapping from the elements to base geometry image
