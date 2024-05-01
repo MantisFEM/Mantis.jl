@@ -9,13 +9,14 @@ A tensor-product space that is built as the tensor-product of `m` input spaces. 
 - `function_spaces::NTuple{m,AbstractFiniteElementSpace} where {m}`: collection of uni or multivariate function spaces
 - `data::Dict`: any relevant data that the user wants to store
 """
-struct TensorProductSpace{n,m} <: AbstractFiniteElementSpace{n} where {m}
-    function_spaces::NTuple{m, AbstractFiniteElementSpace}
+struct TensorProductSpace{n, F1, F2} <: AbstractFiniteElementSpace{n} #where {n, F1 <: AbstractFiniteElementSpace{n1} where {n1}, F2 <: AbstractFiniteElementSpace{n2} where {n2}}
+    function_space_1::F1
+    function_space_2::F2
     data::Dict
 
-    function TensorProductSpace(function_spaces::NTuple{m, AbstractFiniteElementSpace}, data::Dict) where {m}
-        n = sum(get_n.(function_spaces))
-        new{n,m}(function_spaces, data)
+    function TensorProductSpace(function_space_1::F1, function_space_2::F2, data::Dict) where {F1 <: AbstractFiniteElementSpace{n1} where {n1}, F2 <: AbstractFiniteElementSpace{n2} where {n2}}
+        n = get_n(function_space_1) + get_n(function_space_2)
+        new{n,F1,F2}(function_space_1, function_space_2, data)
     end
 end
 
@@ -31,7 +32,11 @@ Returns number of total number of elements for the partition over which the func
 - `nel::Int`: total number of elements
 """
 function get_num_elements(tp_space::TensorProductSpace)
-    return prod(get_num_elements.(tp_space.function_spaces))
+    return prod(_get_num_elements_per_space(tp_space))
+end
+
+function _get_num_elements_per_space(tp_space::TensorProductSpace)
+    return (get_num_elements(tp_space.function_space_1), get_num_elements(tp_space.function_space_2))
 end
 
 """
@@ -45,7 +50,11 @@ Returns the dimension of the tensor-product function space `tp_space`.
 - `::Int`: The dimension of the space.
 """
 function get_dim(tp_space::TensorProductSpace)
-    return prod(get_dim.(tp_space.function_spaces))
+    return prod(_get_dim_per_space(tp_space))
+end
+
+function _get_dim_per_space(tp_space::TensorProductSpace)
+    return (get_dim(tp_space.function_space_1), get_dim(tp_space.function_space_2))
 end
 
 @doc raw"""
@@ -122,13 +131,14 @@ For given global element id `element_id` for a given tensor-product space, evalu
 # Returns
 - `::NTuple{m,F}`: where `F` is a Tuple containing evaluated local basis and local basis indices
 """
-function get_local_basis(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n,m}
+function get_local_basis(tp_space::TensorProductSpace{n,F1,F2}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n, F1 <: AbstractFiniteElementSpace{n1} where {n1}, F2 <: AbstractFiniteElementSpace{n2} where {n2}}
     # convert linear index ordered index pair
-    ord_element_id = linear_to_ordered_index(element_id, get_num_elements.(tp_space.function_spaces))
-    # cumsum of dimensions of all function spaces
-    space_dims = cumsum([0; [get_n(tp_space.function_spaces[i]) for i = 1:m]])
+    ord_element_id = linear_to_ordered_index(element_id, _get_num_elements_per_space(tp_space))
+
+    n1 = get_n(tp_space.function_space_1)
+    n2 = get_n(tp_space.function_space_2)
     
-    return [evaluate(tp_space.function_spaces[i], ord_element_id[i], xi[space_dims[i]+1:space_dims[i+1]], nderivatives) for i = 1:m]
+    return [evaluate(tp_space.function_space_1, ord_element_id[1], xi[1:n1], nderivatives), evaluate(tp_space.function_space_2, ord_element_id[2], xi[n1+1:n], nderivatives)]
 end
 
 @doc raw"""
@@ -145,35 +155,33 @@ For given global element id `element_id` for a given tensor-product space, evalu
 - `::Array{Float64}`: array of evaluated global basis (size: num_eval_points x num_funcs)
 - `::Vector{Int}`: vector of global basis indices (size: num_funcs)
 """
-function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n,m}
+function evaluate(tp_space::TensorProductSpace{n,F1,F2}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n, F1 <: AbstractFiniteElementSpace{n1} where {n1}, F2 <: AbstractFiniteElementSpace{n2} where {n2}}
     # get all local basis functions from constituent function spaces...
     all_local_basis = get_local_basis(tp_space, element_id, xi, nderivatives)
-    # ... and the cumsum of the space `n`s
-    space_ns = cumsum([0; [get_n(tp_space.function_spaces[i]) for i = 1:m]])
-
+    
     # generate all relevant keys for generating derivatives of order at most `nderivatives`
     der_keys = _integer_sums(nderivatives, n)
     local_basis = Dict{NTuple{n,Int},Matrix{Float64}}(i => Matrix{Float64}(undef,1,1) for i in der_keys)
 
+    n1 = get_n(tp_space.function_space_1)
+    n2 = get_n(tp_space.function_space_2)
+
     # kronecker product of constituent basis functions
     for key in keys(local_basis)
-        tmp = all_local_basis[1][1][key[space_ns[1]+1:space_ns[2]]...]
-        for i = 2:m
-            tmp = kron(all_local_basis[i][1][key[space_ns[i]+1:space_ns[i+1]]...], tmp)
-        end
+        tmp = kron(all_local_basis[2][1][key[n1+1:n]...], all_local_basis[1][1][key[1:n1]...])
         local_basis[key] = tmp
     end
     
     # get dimension of each constituent space
-    space_dims = get_dim.(tp_space.function_spaces)
+    space_dims = _get_dim_per_space(tp_space)
     # linear indexing for basis function indices
-    basis_indices = Iterators.product((all_local_basis[i][2] for i = 1:m)...)
+    basis_indices = Iterators.product(all_local_basis[1][2],all_local_basis[2][2])
     basis_indices = reshape([ordered_to_linear_index(binds, space_dims) for binds in basis_indices], length(basis_indices))
 
     return local_basis, basis_indices
 end
 
-function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
+function evaluate(tp_space::TensorProductSpace{n,F1,F2}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n, F1 <: AbstractFiniteElementSpace{n1} where {n1}, F2 <: AbstractFiniteElementSpace{n2} where {n2}}
     return evaluate(tp_space, element_id, xi, 0)
 end
 

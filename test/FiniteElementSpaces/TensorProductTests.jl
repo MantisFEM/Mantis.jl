@@ -23,7 +23,7 @@ for deg1 in 0:5
         # second B-spline patch
         B2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-1, -1])
         # tensor-product B-spline patch
-        TP = Mantis.FunctionSpaces.TensorProductSpace((B1,B2), Dict())
+        TP = Mantis.FunctionSpaces.TensorProductSpace(B1,B2,Dict())
         # evaluation points
         x1, _ = Mantis.Quadrature.gauss_legendre(deg1+1)
         x2, _ = Mantis.Quadrature.gauss_legendre(deg2+1)
@@ -62,7 +62,7 @@ B4 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2-1,1),  deg2-
 MP2 = Mantis.FunctionSpaces.GTBSplineSpace((B3, B4), [1, -1])
 
 # tensor-product B-spline patch
-TP = Mantis.FunctionSpaces.TensorProductSpace((MP1, MP2), Dict())
+TP = Mantis.FunctionSpaces.TensorProductSpace(MP1, MP2, Dict())
 # evaluation points
 x1 = collect(LinRange(0.0,1.0,11))
 x2 = collect(LinRange(0.0,1.0,11))

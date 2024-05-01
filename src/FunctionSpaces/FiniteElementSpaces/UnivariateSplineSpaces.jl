@@ -193,7 +193,7 @@ with given `polynomial_degree` and `regularity` per breakpoint.
 - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
 - `polynomials::Bernstein`: Refence Bernstein polynomials.
 """
-struct BSplineSpace<:AbstractFiniteElementSpace{1}
+struct BSplineSpace <: AbstractFiniteElementSpace{1}
     knot_vector::KnotVector
     extraction_op::ExtractionOperator
     polynomials::Bernstein
