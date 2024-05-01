@@ -138,7 +138,7 @@ function evaluate(us_space::UnstructuredSpace{1,m}, element_id::Int, xi::Vector{
     extraction_coefficients, basis_indices = get_extraction(us_space, element_id)
     local_basis, _ = get_local_basis(us_space, element_id, xi, nderivatives)
     for r = 0:nderivatives
-        local_basis[:,:,r+1] .= @views local_basis[:,:,r+1] * extraction_coefficients
+        local_basis[r] .= @views local_basis[r] * extraction_coefficients
     end
 
     return local_basis, basis_indices

@@ -22,13 +22,13 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B1)
     # check B-spline evaluation
     B1_eval, _ = Mantis.FunctionSpaces.evaluate(B1, el, x, 1)
     # Positivity of the polynomials
-    @test minimum(B1_eval[:,:,1]) >= 0.0
+    @test minimum(B1_eval[0]) >= 0.0
 
     # Partition of unity
-    @test all(isapprox.(sum(B1_eval[:,:,1], dims=2), 1.0))
+    @test all(isapprox.(sum(B1_eval[0], dims=2), 1.0))
 
     # Zero sum of derivatives
-    @test all(isapprox.(abs.(sum(B1_eval[:,:,2], dims=2)), 0.0, atol=1e-14))
+    @test all(isapprox.(abs.(sum(B1_eval[1], dims=2)), 0.0, atol=1e-14))
 end
 
 breakpoints = [0.0, 0.5, 0.6, 1.0]
@@ -45,13 +45,13 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(B2)
     # check B-spline evaluation
     B2_eval, _ = Mantis.FunctionSpaces.evaluate(B2, el, x, 1)
     # Positivity of the polynomials
-    @test minimum(B2_eval[:,:,1]) >= 0.0
+    @test minimum(B2_eval[0]) >= 0.0
 
     # Partition of unity
-    @test all(isapprox.(sum(B2_eval[:,:,1], dims=2), 1.0))
+    @test all(isapprox.(sum(B2_eval[0], dims=2), 1.0))
 
     # Zero sum of derivatives
-    @test all(isapprox.(abs.(sum(B2_eval[:,:,2], dims=2)), 0.0, atol=1e-14))
+    @test all(isapprox.(abs.(sum(B2_eval[1], dims=2)), 0.0, atol=1e-14))
 end
 
 GB = Mantis.FunctionSpaces.GTBSplineSpace((B1, B2), [1, -1])
@@ -87,7 +87,7 @@ RHS_C = zeros(npatch)
 RHS_S = zeros(npatch)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
     GB_eval, inds = Mantis.FunctionSpaces.evaluate(GB, el, x, 0)
-    LHS[el,inds] = GB_eval[:,:,1]
+    LHS[el,inds] = GB_eval[0]
     RHS_C[el] = cos(Wt * (x[1] + el - 1))
     RHS_S[el] = sin(Wt * (x[1] + el - 1))
 end
@@ -96,7 +96,6 @@ coeffs_S = LHS \ RHS_S
 x, _ = Mantis.Quadrature.gauss_legendre(max(deg1,deg2)+1)
 for el in 1:1:Mantis.FunctionSpaces.get_num_elements(GB)
     GB_eval, inds = Mantis.FunctionSpaces.evaluate(GB, el, x, 0)
-    # display(GB_eval[:,:,1]*coeffs_C[inds])
-    # display(cos.(Wt * (x .+ (el - 1))))
-    display(maximum(abs.(GB_eval[:,:,1]*coeffs_C[inds] - cos.(Wt * (x .+ (el - 1))))))
+    @test all(isapprox.(maximum(abs.(GB_eval[0]*coeffs_C[inds] - cos.(Wt * (x .+ (el - 1))))), 0.0, atol=1e-14))
+    @test all(isapprox.(maximum(abs.(GB_eval[0]*coeffs_S[inds] - sin.(Wt * (x .+ (el - 1))))), 0.0, atol=1e-14))
 end

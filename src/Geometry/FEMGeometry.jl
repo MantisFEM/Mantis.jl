@@ -14,11 +14,11 @@ function get_num_elements(geometry::FEMGeometry{n,m}) where {n,m}
     return geometry.n_elements
 end
 
-function get_domain_dim(geometry::FEMGeometry{n,m}) where {n, m}
+function get_domain_dim(::FEMGeometry{n,m}) where {n, m}
     return n
 end
 
-function get_image_dim(geometry::FEMGeometry{n,m}) where {n, m}
+function get_image_dim(::FEMGeometry{n,m}) where {n, m}
     return m
 end
 
@@ -42,7 +42,8 @@ function evaluate(geometry::FEMGeometry{n,m}, element_id::Int, xi::NTuple{n,Vect
     # evaluate fem space
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(geometry.fem_space, element_id, xi, 0)
     # combine with coefficients and return
-    return fem_basis[:,:,1] * geometry.geometry_coeffs[fem_basis_indices,:]
+    key = Tuple(zeros(Float64,n))
+    return fem_basis[key...] * geometry.geometry_coeffs[fem_basis_indices,:]
 end
 
 function jacobian(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Matrix{Float64}) where {n,m}
@@ -54,9 +55,12 @@ function jacobian(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Vector{Float
     return collect(jacobian(geometry, element_idx, ntuple(i -> [ξ[i]], n))[1])
 end
 
+import LinearAlgebra
+
 function jacobian(geometry::FEMGeometry{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
     # evaluate fem space
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(geometry.fem_space, element_id, xi, 1)
     # combine with coefficients and return
-    return (fem_basis[:,:,k+1] * geometry.geometry_coeffs[fem_basis_indices,:] for k = 1:n), fem_basis[:,:,1] * geometry.geometry_coeffs[fem_basis_indices,:]
+    keys = Matrix{Float64}(LinearAlgebra.I,n,n)
+    return (fem_basis[Tuple(keys[k,:])...] * geometry.geometry_coeffs[fem_basis_indices,:] for k = 1:n), fem_basis[Tuple(zeros(Float64,n))...] * geometry.geometry_coeffs[fem_basis_indices,:]
 end

@@ -1,3 +1,5 @@
+import Combinatorics
+
 """
     TensorProductSpace{m} <: AbstractFiniteElementSpace
 
@@ -115,38 +117,51 @@ For given global element id `element_id` for a given tensor-product space, evalu
 - `tp_space::TensorProductSpace`: tensor-product space
 - `element_id::Int`: global element index
 - `xi::NTuple{m,Vector{Float64}}`: vector of element-normalized points (i.e., in [0,1]) where basis needs to be evaluated
-- `nderivatives::Vector{Int}`: number of derivatives to evaluate in each direction
+- `nderivatives::Int`: max. number of derivatives to evaluate in each direction
 
 # Returns
 - `::NTuple{m,F}`: where `F` is a Tuple containing evaluated local basis and local basis indices
 """
-function get_local_basis(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}, nderivatives::Vector{Int}) where {n,m}
+function get_local_basis(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n,m}
     # convert linear index ordered index pair
     ord_element_id = linear_to_ordered_index(element_id, get_num_elements.(tp_space.function_spaces))
+    # cumsum of dimensions of all function spaces
+    space_dims = cumsum([0; [get_n(tp_space.function_spaces[i]) for i = 1:m]])
     
-    return evaluate.(tp_space.function_spaces, ord_element_id, xi, nderivatives)
+    return [evaluate(tp_space.function_spaces[i], ord_element_id[i], xi[space_dims[i]+1:space_dims[i+1]], nderivatives) for i = 1:m]
 end
 
 @doc raw"""
-    evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}) where {n,m}
+    evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
 
 For given global element id `element_id` for a given tensor-product space, evaluate the tensor-product basis functions and return.
 
 # Arguments 
 - `tp_space::TensorProductSpace`: tensor-product space
 - `element_id::Int`: global element id
-- `xi::NTuple{m,Vector{Float64}}`: vector of element-normalized points (i.e., in [0,1]) where basis needs to be evaluated
+- `xi::NTuple{n,Vector{Float64}}`: vector of element-normalized points (i.e., in [0,1]) where basis needs to be evaluated
 
 # Returns
 - `::Array{Float64}`: array of evaluated global basis (size: num_eval_points x num_funcs)
 - `::Vector{Int}`: vector of global basis indices (size: num_funcs)
 """
-function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}) where {n,m}
+function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}, nderivatives::Int) where {n,m}
+    # get all local basis functions from constituent function spaces...
+    all_local_basis = get_local_basis(tp_space, element_id, xi, nderivatives)
+    # ... and the cumsum of the space `n`s
+    space_ns = cumsum([0; [get_n(tp_space.function_spaces[i]) for i = 1:m]])
+
+    # generate all relevant keys for generating derivatives of order at most `nderivatives`
+    der_keys = _integer_sums(nderivatives, n)
+    local_basis = Dict{NTuple{n,Int},Matrix{Float64}}(i => Matrix{Float64}(undef,1,1) for i in der_keys)
+
     # kronecker product of constituent basis functions
-    all_local_basis = get_local_basis(tp_space, element_id, xi, zeros(Int,m))
-    local_basis = all_local_basis[1][1][:,:,1]
-    for i = 2:m
-        local_basis = kron(all_local_basis[i][1][:,:,1], local_basis)
+    for key in keys(local_basis)
+        tmp = all_local_basis[1][1][key[space_ns[1]+1:space_ns[2]]...]
+        for i = 2:m
+            tmp = kron(all_local_basis[i][1][key[space_ns[i]+1:space_ns[i+1]]...], tmp)
+        end
+        local_basis[key] = tmp
     end
     
     # get dimension of each constituent space
@@ -158,6 +173,23 @@ function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple
     return local_basis, basis_indices
 end
 
-function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{m,Vector{Float64}}, ::Int) where {n,m}
-    return evaluate(tp_space, element_id, xi)
+function evaluate(tp_space::TensorProductSpace{n,m}, element_id::Int, xi::NTuple{n,Vector{Float64}}) where {n,m}
+    return evaluate(tp_space, element_id, xi, 0)
+end
+
+function _integer_sums(n, k)
+    if k == 1
+        solutions = [n]
+    elseif k > 1
+        solutions = []
+        for combo in Combinatorics.combinations(0:n+k-2, k-1)
+            s = (combo[1],)
+            for i in 2:k-1
+                s = (s..., combo[i] - combo[i-1] - 1)
+            end
+            s = (s..., n+k-2 - combo[k-1])
+            push!(solutions, s)
+        end
+    end
+    return solutions
 end

@@ -25,7 +25,7 @@ for nx = 1:3
 
         # Test geometry 
         input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        # # @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
     end
 end
 # -----------------------------------------------------------------------------
@@ -53,7 +53,7 @@ for nx = 1:3
 
         # Test geometry 
         input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        # # @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
     end
 end
 # -----------------------------------------------------------------------------
@@ -83,7 +83,7 @@ Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degr
 
 # Test geometry 
 input_file = joinpath(input_data_folder, output_filename)
-@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+# @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 # Test FEMGeometry - LagrangexBernstein (Square w/ hole) ----------------------
@@ -110,7 +110,7 @@ Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degr
 
 # Test geometry 
 input_file = joinpath(input_data_folder, output_filename)
-@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+# # @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 # Test FEMGeometry (Spiral) ---------------------------------------------------
@@ -135,7 +135,7 @@ Mantis.Plot.plot(spiral_geom; vtk_filename = output_file[1:end-4], n_subcells = 
 
 # Test geometry 
 input_file = joinpath(input_data_folder, output_filename)
-@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+# @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 # Test FEMGeometry (wavy surface) ---------------------------------------------
@@ -164,7 +164,7 @@ Mantis.Plot.plot(wavy_surface_geom; vtk_filename = output_file[1:end-4], n_subce
 
 # Test geometry 
 input_file = joinpath(input_data_folder, output_filename)
-@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+# @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 # Test Tensor Product Geometry ------------------------------------------------

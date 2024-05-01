@@ -44,7 +44,7 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
 end
 
 @doc raw"""
-    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64}, nderivatives::Int64)::Array{Float64}
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64}, nderivatives::Int64)
 
 Compute derivatives up to order `nderivatives` for all basis functions of degree `p` at `ξ` for ``\xi \in [0.0, 1.0]``. 
 
@@ -55,16 +55,16 @@ Compute derivatives up to order `nderivatives` for all basis functions of degree
 
 See also [`evaluate(gtrig::GeneralizedTrigonometric, ξ::Float64, nderivatives::Int64)`](@ref).
 """
-function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivatives::Int)::Array{Float64}
+function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64}, nderivatives::Int)
     neval = length(xi)
     ders = zeros(Float64, neval, gtrig.p + 1, nderivatives + 1)
     for i = 1:neval
-        ders[i,:,:] = evaluate(gtrig, xi[i],nderivatives)
+        ders[i,:,:] = _evaluate(gtrig, xi[i],nderivatives)
     end
-    return ders
+    return Dict{Int,Matrix{Float64}}(i => ders[:,:,i+1] for i = 0:nderivatives)
 end
 
-function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
+function _evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
     tol = gtrig.endpoint_tol
     M = zeros(Float64, 1, gtrig.p+1, nderivatives+1)
     j = xi >= 0.0 && xi < 1.0
@@ -108,7 +108,7 @@ function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::In
 end
 
 @doc raw"""
-    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64})::Array{Float64}
+    evaluate(gtrig::GeneralizedTrigonometric, ξ::Vector{Float64})
 
 Compute all basis function values at `ξ` in ``[0.0, 1.0]``.
 
@@ -123,7 +123,7 @@ function evaluate(gtrig::GeneralizedTrigonometric, xi::Vector{Float64})
 end
 
 function evaluate(gtrig::GeneralizedTrigonometric, xi::Float64)
-    return evaluate(gtrig, xi, 0)
+    return evaluate(gtrig, [xi], 0)
 end
 
 

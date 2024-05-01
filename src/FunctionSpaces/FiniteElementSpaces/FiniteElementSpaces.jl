@@ -8,6 +8,10 @@ abstract type AbstractFiniteElementSpace{n} <: AbstractFunctionSpace end
 # Getters for the function spaces
 get_n(f::AbstractFiniteElementSpace{n}) where {n} = n
 
+function evaluate(function_space::AbstractFiniteElementSpace{1}, element_id::Int, xi::NTuple{1,Vector{Float64}}, nderivatives::Int)
+    return evaluate(function_space, element_id, xi[1], nderivatives)
+end
+
 """
     struct ExtractionOperator
 
