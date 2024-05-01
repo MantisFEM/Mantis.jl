@@ -156,7 +156,7 @@ function extract_gtbspline_to_bspline(bsplines::NTuple{m,BSplineSpace}, regulari
     end
 
     # remove small values obtained as a result of round-off errors
-    SparseArrays.fkeep!(H, (i,j,x) -> abs(x) > 1e-14)
+    SparseArrays.fkeep!((i,j,x) -> abs(x) > 1e-14, H)
 
     # convert global extraction matrix to element local extractions
     # (here, the matrix is transposed so that [Bsplines] * [extraction] = [GTB-splines])
