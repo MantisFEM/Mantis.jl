@@ -185,6 +185,10 @@ tensor_prod_geo = Mantis.Geometry.TensorProductGeometry(line_1_geo, line_2_geo)
 output_filename = "tensor_product_geometry.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Mantis.Plot.plot(tensor_prod_geo; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
+
+# Test geometry 
+input_file = joinpath(input_data_folder, output_filename)
+@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 # Test Cylinder Tensor Product Geometry ---------------------------------------
@@ -213,6 +217,9 @@ output_filename = "tensor_product_cylinder_geometry.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Mantis.Plot.plot(cylinder_tensor_prod_geo; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4)
 
+# Test geometry 
+input_file = joinpath(input_data_folder, output_filename)
+@test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 # -----------------------------------------------------------------------------
 
 
