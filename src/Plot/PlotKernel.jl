@@ -10,7 +10,7 @@ function _plot(geometry::Geometry.AbstractGeometry{1, range_dim}, field::Union{N
     domain_dim = 1  # this is hardcoded, because each type of cell plotted in VTK is different, so
                     # we need specialized functions
 
-    print("Geometry dimensions: ", domain_dim, " x ", range_dim, "\n")
+    # print("Geometry dimensions: ", domain_dim, " x ", range_dim, "\n")
     
     # Compute the total number of points
     n_vertices = prod(geometry.n_elements) * n_subcells * (degree+1)  # there are n_subcells cells per element, and (p+1) vertices per cell
@@ -94,7 +94,7 @@ function _plot(geometry::Geometry.AbstractGeometry{2, range_dim}, field::Union{N
     domain_dim = 2  # this is hardcoded, because each type of cell plotted in VTK is different, so
                     # we need specialized functions
 
-    print("Geometry dimensions: ", domain_dim, " x ", range_dim, "\n")
+    # print("Geometry dimensions: ", domain_dim, " x ", range_dim, "\n")
     
     # Compute the total number of points
     n_vertices = prod(geometry.n_elements) * (n_subcells^2) * ((degree+1)^2)  # there are n_subcells^2 cells per element, and (p+1)^2 vertices per cell

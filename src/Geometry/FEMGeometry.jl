@@ -22,10 +22,10 @@ function get_image_dim(::FEMGeometry{n,m}) where {n, m}
     return m
 end
 
-# evaluate at matrix containing n-dimensional parametric points
-function evaluate(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Matrix{Float64}) where {n,m}
-    return evaluate.(geometry, element_idx, ntuple(i -> ntuple(j -> [ξ[i,j]], n), size(ξ,1)))
-end
+# # evaluate at matrix containing n-dimensional parametric points
+# function evaluate(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Matrix{Float64}) where {n,m}
+#     return evaluate.(geometry, element_idx, ntuple(i -> ntuple(j -> [ξ[i,j]], n), size(ξ,1)))
+# end
 
 # evaluate at a single n-dimensional parametric point
 function evaluate(geometry::FEMGeometry{n,m}, element_idx::Int, ξ::Vector{Float64}) where {n,m}
@@ -62,5 +62,10 @@ function jacobian(geometry::FEMGeometry{n,m}, element_id::Int, xi::NTuple{n,Vect
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(geometry.fem_space, element_id, xi, 1)
     # combine with coefficients and return
     keys = Matrix{Float64}(LinearAlgebra.I,n,n)
-    return (fem_basis[Tuple(keys[k,:])...] * geometry.geometry_coeffs[fem_basis_indices,:] for k = 1:n), fem_basis[Tuple(zeros(Float64,n))...] * geometry.geometry_coeffs[fem_basis_indices,:]
+    n_eval_points = prod(length.(xi))
+    J = zeros(n_eval_points, m, n)
+    for k = 1:n 
+        J[:, :, k] .= fem_basis[Tuple(keys[k,:])...] * geometry.geometry_coeffs[fem_basis_indices,:]
+    end
+    return J, fem_basis[Tuple(zeros(Float64,n))...] * geometry.geometry_coeffs[fem_basis_indices,:]
 end

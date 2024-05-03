@@ -40,9 +40,10 @@ function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::V
     return x
 end
 
-# function jacobian(geometry::MappedGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
-#     J_1 = jacobian(geometry.geometry, element_idx, ξ)  # the Jacobian for the mapping from the elements to base geometry image
-#     x = evaluate(geometry, element_idx, ξ)
-#     J_2 = jacobian(geometry.mapping, x)  # the mapping from the image of the  base geometry to the image of the mapping
-#     return J_2 * J_1
-# end
+function jacobian(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    element_geometries_idx = geometry.cartesian_indices[element_idx]
+    J = zeros(Float64, 1, m, n)
+    J[1:1, 1:geometry.image_dims[1], 1:geometry.domain_dims[1]] .= jacobian(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])  # the Jacobian contribution from geometry 1
+    J[1:1, (geometry.image_dims[1]+1):end, (geometry.domain_dims[1]+1):end] .= jacobian(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])  # the Jacobian contribution from geometry 2
+    return J
+end
