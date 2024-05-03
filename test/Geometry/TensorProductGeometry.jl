@@ -70,7 +70,11 @@ Mantis.Plot.plot(cylinder_tensor_prod_geo; vtk_filename = output_file[1:end-4], 
 input_file = joinpath(input_data_folder, output_filename)
 @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
 
-# Test Jacobian 
+# Test evaluation with NTuple input and automatic tensor product 
+
+
+
+# Test Jacobian with single point evaluation
 # We check the Jacobian 
 #    J^{k}_{ij} = \partial{\Phi^{i}(\boldsymbol{x}_{k})}{\partial x^{0}_{j}}
 # at four points k at different z levels

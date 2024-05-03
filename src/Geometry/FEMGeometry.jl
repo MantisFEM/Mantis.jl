@@ -67,5 +67,5 @@ function jacobian(geometry::FEMGeometry{n,m}, element_id::Int, xi::NTuple{n,Vect
     for k = 1:n 
         J[:, :, k] .= fem_basis[Tuple(keys[k,:])...] * geometry.geometry_coeffs[fem_basis_indices,:]
     end
-    return J, fem_basis[Tuple(zeros(Float64,n))...] * geometry.geometry_coeffs[fem_basis_indices,:]
+    return J #, fem_basis[Tuple(zeros(Float64,n))...] * geometry.geometry_coeffs[fem_basis_indices,:]
 end

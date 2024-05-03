@@ -32,18 +32,34 @@ function get_image_dim(::TensorProductGeometry{n, m}) where {n, m}
     return m
 end
 
-function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::NTuple{n,Vector{Float64}}) where {n, m}
     element_geometries_idx = geometry.cartesian_indices[element_idx]
-    x = zeros(Float64, m)
-    x[1:geometry.image_dims[1]] .= evaluate(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])
-    x[(geometry.image_dims[1]+1):end] .= evaluate(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])
+    
+    n_points = prod(size.(ξ, 1))  # the total number of points to evaluate, it is a tensor product of the coordinates to sample in each direction
+    x = zeros(Float64, n_points, m)
+
+    x[:, 1:geometry.image_dims[1]] .= evaluate(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])
+    x[:, (geometry.image_dims[1]+1):end] .= evaluate(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])
+    
     return x
 end
 
-function jacobian(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+function evaluate(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    return evaluate(geometry, element_idx, ntuple(i -> [ξ[i]], n))[1, :]
+end
+
+function jacobian(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::NTuple{n,Vector{Float64}}) where {n, m}
     element_geometries_idx = geometry.cartesian_indices[element_idx]
-    J = zeros(Float64, 1, m, n)
-    J[1:1, 1:geometry.image_dims[1], 1:geometry.domain_dims[1]] .= jacobian(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])  # the Jacobian contribution from geometry 1
-    J[1:1, (geometry.image_dims[1]+1):end, (geometry.domain_dims[1]+1):end] .= jacobian(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])  # the Jacobian contribution from geometry 2
+
+    n_points = prod(size.(ξ, 1))  # the total number of points to evaluate, it is a tensor product of the coordinates to sample in each direction
+    J = zeros(Float64, n_points, m, n)
+
+    J[:, 1:geometry.image_dims[1], 1:geometry.domain_dims[1]] .= jacobian(geometry.geometry_1, element_geometries_idx[1], ξ[1:geometry.domain_dims[1]])  # the Jacobian contribution from geometry 1
+    J[:, (geometry.image_dims[1]+1):end, (geometry.domain_dims[1]+1):end] .= jacobian(geometry.geometry_2, element_geometries_idx[2], ξ[(geometry.domain_dims[1]+1):end])  # the Jacobian contribution from geometry 2
+    
     return J
+end
+
+function jacobian(geometry::TensorProductGeometry{n, m}, element_idx::Int, ξ::Vector{Float64}) where {n, m}
+    return jacobian(geometry, element_idx, ntuple(i -> [ξ[i]], n))
 end

@@ -29,13 +29,25 @@ end
 
 function evaluate(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::Vector{Float64}) where {n}
     @assert length(ξ) == n "Dimension mismatch"
-    return collect(evaluate(geometry, element_idx, ntuple(i -> [ξ[i]], n))[1])
+    return reshape(evaluate(geometry, element_idx, ntuple(i -> [ξ[i]], n)), :)  # return as a vector since there is only one point (one column)
 end
 
 function evaluate(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::NTuple{n,Vector{Float64}}) where {n}
     ordered_idx = Tuple(geometry.cartesian_idxs[element_idx])
     univariate_points = ntuple( k -> (1 .- ξ[k]) .* geometry.breakpoints[k][ordered_idx[k]] + ξ[k] .* geometry.breakpoints[k][ordered_idx[k]+1], n)
-    return collect(Iterators.product(univariate_points...))
+    
+    points_tensor_product_idx = CartesianIndices(size.(univariate_points, 1))  # get the multidimensional indices to index the tensor product points
+
+    # Loop over the points and compute their coordinates as the tensor product of the unidimensional points
+    n_points = prod(size.(ξ, 1))  # the total number of points to evaluate, it is a tensor product of the coordinates to sample in each direction
+    x = zeros(Float64, n, n_points)
+    for (point_idx, point_cartesian_idx) in enumerate(points_tensor_product_idx)
+        for component_idx in 1:n 
+            x[n, point_idx] = univariate_points[component_idx][point_cartesian_idx[component_idx]]
+        end    
+    end
+
+    return x
 end
 
 function jacobian(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::Matrix{Float64}) where {n}
