@@ -24,3 +24,8 @@ Modules = [Mantis.FunctionSpaces]
 ```@autodocs
 Modules = [Mantis.Quadrature]
 ```
+
+## All functions and stuff from Mantis.Geometry
+```@autodocs
+Modules = [Mantis.Geometry]
+```

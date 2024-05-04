@@ -43,7 +43,7 @@ function evaluate(geometry::CartesianGeometry{n,n}, element_idx::Int, ξ::NTuple
     x = zeros(Float64, n, n_points)
     for (point_idx, point_cartesian_idx) in enumerate(points_tensor_product_idx)
         for component_idx in 1:n 
-            x[n, point_idx] = univariate_points[component_idx][point_cartesian_idx[component_idx]]
+            x[component_idx, point_idx] = univariate_points[component_idx][point_cartesian_idx[component_idx]]
         end    
     end
 
