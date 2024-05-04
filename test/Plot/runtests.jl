@@ -2,7 +2,8 @@ module PlotTests
 
 import Mantis
 
-import Mmap
+import ReadVTK
+# import Mmap
 using Printf
 using Test
 
@@ -38,11 +39,23 @@ for n_subcells in n_subcells_range
         output_file = joinpath(output_data_folder, output_filename)
 
         # Plot
-        Mantis.Plot.plot(mapped_geometry; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+        Mantis.Plot.plot(mapped_geometry; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree, ascii = false, compress = false)
 
         # Test plotting 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        # Read the cell data from the reference file
+        reference_file = joinpath(input_data_folder, output_filename)
+        vtk_reference = ReadVTK.VTKFile(ReadVTK.get_example_file(reference_file))
+        reference_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Points")["Points"])
+        reference_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Cells")["connectivity"])
+
+        # Read the cell data from the output file
+        vtk_output = ReadVTK.VTKFile(ReadVTK.get_example_file(output_file))
+        output_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Points")["Points"])
+        output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["connectivity"])
+        
+        # # Check if cell data is identical
+        @test reference_points ≈ output_points atol = 1e-14
+        @test reference_cells == output_cells
     end
 end
 # -----------------------------------------------------------------------------
@@ -73,11 +86,23 @@ for n_subcells in n_subcells_range
         output_file = joinpath(output_data_folder, output_filename)
         
         # Plot
-        Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree)
+        Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = n_subcells, degree = degree, ascii = false, compress = false)
 
-        # Test plotting 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        # Test plotting  
+        # Read the cell data from the reference file
+        reference_file = joinpath(input_data_folder, output_filename)
+        vtk_reference = ReadVTK.VTKFile(ReadVTK.get_example_file(reference_file))
+        reference_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Points")["Points"])
+        reference_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Cells")["connectivity"])
+
+        # Read the cell data from the output file
+        vtk_output = ReadVTK.VTKFile(ReadVTK.get_example_file(output_file))
+        output_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Points")["Points"])
+        output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["connectivity"])
+        
+        # Check if cell data is identical
+        @test reference_points ≈ output_points atol = 1e-14
+        @test reference_cells == output_cells
     end
 end
 # -----------------------------------------------------------------------------

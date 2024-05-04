@@ -11,6 +11,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MeshCore = "43a99bba-f459-4d0e-8139-f3df11d847d4"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PolynomialBases = "c74db56a-226d-5e98-8bb0-a6049094aeea"
+ReadVTK = "dc215faf-f008-4882-a9f7-a79a826fadc3"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
@@ -21,9 +22,9 @@ PolynomialBases = "0.4.21"
 julia = "1.8"
 
 [extras]
-Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+ReadVTK = "dc215faf-f008-4882-a9f7-a79a826fadc3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Mmap", "Printf"]
+test = ["Test", "ReadVTK", "Printf"]

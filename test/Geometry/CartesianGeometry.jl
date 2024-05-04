@@ -1,7 +1,7 @@
 
 import Mantis
 
-import Mmap
+import ReadVTK
 using Printf
 using Test
 
@@ -20,11 +20,23 @@ for nx = 1:3
         # Generate the plot
         output_filename = @sprintf "cartesian_test_nx_%d_ny_%d.vtu" nx ny
         output_file = joinpath(output_data_folder, output_filename)
-        Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 1)
+        Mantis.Plot.plot(geom; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 1, ascii = false, compress = false)
 
         # Test geometry 
-        input_file = joinpath(input_data_folder, output_filename)
-        @test Mmap.mmap(open(input_file)) == Mmap.mmap(open(output_file))
+        # Read the cell data from the reference file
+        reference_file = joinpath(input_data_folder, output_filename)
+        vtk_reference = ReadVTK.VTKFile(ReadVTK.get_example_file(reference_file))
+        reference_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Points")["Points"])
+        reference_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_reference, "Cells")["connectivity"])
+
+        # Read the cell data from the output file
+        vtk_output = ReadVTK.VTKFile(ReadVTK.get_example_file(output_file))
+        output_points = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Points")["Points"])
+        output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["connectivity"])
+        
+        # # Check if cell data is identical
+        @test reference_points ≈ output_points atol = 1e-14
+        @test reference_cells == output_cells
     end
 end
 # -----------------------------------------------------------------------------

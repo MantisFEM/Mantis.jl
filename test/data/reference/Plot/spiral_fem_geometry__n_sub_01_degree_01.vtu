@@ -3,19 +3,19 @@
   <UnstructuredGrid>
     <Piece NumberOfPoints="8" NumberOfCells="4">
       <Points>
-        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="ascii">
- -7.455540509000128e-17 -0.9999999999999999 -2.097376355780836e-17 0.9999999999999996 5.551115123125783e-17 0.3749999999999999 0.9999999999999999 -9.33964914123216e-18 0.37499999999999994 -5.551115123125783e-17 0.9999999999999996 0.625 9.33964914123216e-18 0.9999999999999999 0.6249999999999999 -0.9999999999999996 -5.551115123125783e-17 0.875 -0.9999999999999999 1.867929828246432e-17 0.8749999999999999 -8.288594352771048e-18 -0.9999999999999997 1.25
+        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="binary">
+wAAAAAAAAAA=ug3SyDd9lbz////////vv7vcysRcLni8/P//////7z8AAAAAAACQPP7//////9c/////////7z8IeMbfJ4llvP///////9c/AAAAAAAAkLz8///////vPwAAAAAAAOQ/CHjG3yeJZTz////////vP////////+M//P//////778AAAAAAACQvAAAAAAAAOw/////////778IeMbfJ4l1PP///////+s/EIUV97gcY7z9///////vvwAAAAAAAPQ/
 </DataArray>
       </Points>
       <Cells>
-        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="ascii">
- 0 1 2 3 4 5 6 7
+        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="binary">
+QAAAAAAAAAA=AAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAwAAAAAAAAAEAAAAAAAAAAUAAAAAAAAABgAAAAAAAAAHAAAAAAAAAA==
 </DataArray>
-        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="ascii">
- 2 4 6 8
+        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="binary">
+IAAAAAAAAAA=AgAAAAAAAAAEAAAAAAAAAAYAAAAAAAAACAAAAAAAAAA=
 </DataArray>
-        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="ascii">
- 68 68 68 68
+        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="binary">
+BAAAAAAAAAA=RERERA==
 </DataArray>
       </Cells>
     </Piece>

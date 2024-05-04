@@ -3,19 +3,19 @@
   <UnstructuredGrid>
     <Piece NumberOfPoints="4" NumberOfCells="1">
       <Points>
-        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="ascii">
- 0.0 0.0 0.0 1.0 0.0 0.0 1.0 2.0 0.0 0.0 2.0 0.0
+        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="binary">
+YAAAAAAAAAA=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA8D8AAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAA
 </DataArray>
       </Points>
       <Cells>
-        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="ascii">
- 0 1 2 3
+        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="binary">
+IAAAAAAAAAA=AAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAwAAAAAAAAA=
 </DataArray>
-        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="ascii">
- 4
+        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="binary">
+CAAAAAAAAAA=BAAAAAAAAAA=
 </DataArray>
-        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="ascii">
- 70
+        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="binary">
+AQAAAAAAAAA=Rg==
 </DataArray>
       </Cells>
     </Piece>

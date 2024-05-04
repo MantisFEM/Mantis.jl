@@ -3,19 +3,19 @@
   <UnstructuredGrid>
     <Piece NumberOfPoints="16" NumberOfCells="4">
       <Points>
-        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="ascii">
- 1.0 -1.0 0.0 1.0 1.0 0.0 2.0 2.0 0.0 2.0 -2.0 0.0 1.0 1.0 0.0 -1.0 1.0 0.0 -2.0 2.0 0.0 2.0 2.0 0.0 -1.0 1.0 0.0 -1.0 -1.0 0.0 -2.0 -2.0 0.0 -2.0 2.0 0.0 -1.0 -1.0 0.0 1.0 -1.0 0.0 2.0 -2.0 0.0 -2.0 -2.0 0.0
+        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="binary">
+gAEAAAAAAAA=AAAAAAAA8D8AAAAAAADwvwAAAAAAAAAAAAAAAAAA8D8AAAAAAADwPwAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAwAAAAAAAAAAAAAAAAAAA8D8AAAAAAADwPwAAAAAAAAAAAAAAAAAA8L8AAAAAAADwPwAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA8L8AAAAAAADwPwAAAAAAAAAAAAAAAAAA8L8AAAAAAADwvwAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA8L8AAAAAAADwvwAAAAAAAAAAAAAAAAAA8D8AAAAAAADwvwAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAA
 </DataArray>
       </Points>
       <Cells>
-        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="ascii">
- 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+        <DataArray type="Int64" Name="connectivity" NumberOfComponents="1" format="binary">
+gAAAAAAAAAA=AAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAwAAAAAAAAAEAAAAAAAAAAUAAAAAAAAABgAAAAAAAAAHAAAAAAAAAAgAAAAAAAAACQAAAAAAAAAKAAAAAAAAAAsAAAAAAAAADAAAAAAAAAANAAAAAAAAAA4AAAAAAAAADwAAAAAAAAA=
 </DataArray>
-        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="ascii">
- 4 8 12 16
+        <DataArray type="Int64" Name="offsets" NumberOfComponents="1" format="binary">
+IAAAAAAAAAA=BAAAAAAAAAAIAAAAAAAAAAwAAAAAAAAAEAAAAAAAAAA=
 </DataArray>
-        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="ascii">
- 70 70 70 70
+        <DataArray type="UInt8" Name="types" NumberOfComponents="1" format="binary">
+BAAAAAAAAAA=RkZGRg==
 </DataArray>
       </Cells>
     </Piece>
