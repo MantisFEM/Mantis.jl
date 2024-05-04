@@ -15,7 +15,5 @@ include("./CartesianGeometry.jl")
 include("./FEMGeometry.jl")
 include("./MappedGeometry.jl")
 include("./TensorProductGeometry.jl")
-include("./RectangleGeometry.jl")
-include("./MappedRectangleGeometry.jl")
 
 end
