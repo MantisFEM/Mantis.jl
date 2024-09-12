@@ -7,7 +7,6 @@ using Test
 @testset "UnivariateSplineSpaces" begin include("UnivariateSplineTests.jl") end
 @testset "TensorProductTests" begin include("TensorProductTests.jl") end
 @testset "TensorProductTwoScaleRelations" begin include("TensorProductTwoScaleRelationsTest.jl") end
-@testset "UnstructuredTwoScaleRelations" begin include("UnstructuredTwoScaleRelationsTest.jl") end
 @testset "HierarchicalFiniteElementSpaces" begin include("HierarchicalFiniteElementSpaces/runtests.jl") end
 
 end

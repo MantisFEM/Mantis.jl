@@ -5,8 +5,11 @@ include("AbstractFiniteElementSpace.jl")
 include("ExtractionOperator.jl")
 # rational version of finite element spaces
 include("RationalFiniteElementSpaces.jl")
+# canonical finite element space wrapper
+include("CanonicalFiniteElementSpaces.jl")
 # univariate function spaces
 include("UnivariateSplineSpaces.jl")
+include("UnivariateSplineExtractions.jl")
 # composite function spaces
 include("UnstructuredSpaces.jl")
 include("TensorProductSpaces.jl")

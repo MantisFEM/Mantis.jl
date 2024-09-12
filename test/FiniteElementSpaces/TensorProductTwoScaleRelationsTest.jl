@@ -22,9 +22,9 @@ nsub1 = 3
 nsub2 = 2
 nsub3 = 4
 
-ts1, BF1 = Mantis.FunctionSpaces.build_two_scale_operator(B1, nsub1)
-ts2, BF2 = Mantis.FunctionSpaces.build_two_scale_operator(B2, nsub2)
-ts3, BF3 = Mantis.FunctionSpaces.build_two_scale_operator(B3, nsub3)
+ts1, BF1 = Mantis.FunctionSpaces.subdivide_bspline(B1, nsub1)
+ts2, BF2 = Mantis.FunctionSpaces.subdivide_bspline(B2, nsub2)
+ts3, BF3 = Mantis.FunctionSpaces.subdivide_bspline(B3, nsub3)
 
 ttsl = Mantis.FunctionSpaces.TensorProductTwoScaleOperator(ts1, ts2)
 ttsr = Mantis.FunctionSpaces.TensorProductTwoScaleOperator(ts2, ts3)

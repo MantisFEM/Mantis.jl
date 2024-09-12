@@ -247,7 +247,7 @@ trial_space_2d = Mantis.FunctionSpaces.TensorProductSpace(trial_space_x, trial_s
 test_space_2d = Mantis.FunctionSpaces.TensorProductSpace(test_space_x, test_space_y)
 
 # Set Dirichlet boundary conditions to zero.
-bc_dirichlet_2d = Dict{Int, Float64}(i => 0.0 for j in [1, 2, 3, 4, 6, 7, 8, 9] for i in trial_space_2d.dof_partition[1][j])
+bc_dirichlet_2d = Dict{Int, Float64}(i => 0.0 for j in [1, 2, 3, 4, 6, 7, 8, 9] for i in trial_space_2d.dof_partition[j])
 bc_dirichlet_2d_empty = Dict{Int, Float64}()
 
 # Create the geometries.

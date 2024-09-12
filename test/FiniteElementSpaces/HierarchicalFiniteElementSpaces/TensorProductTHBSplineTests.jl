@@ -21,13 +21,13 @@ CB2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1; fill(deg2-1, ne2-1);
 CTP = Mantis.FunctionSpaces.TensorProductSpace(CB1, CB2)
 
 
-TTS, FTP = Mantis.FunctionSpaces.build_two_scale_operator(CTP, nsubs)
+TTS, FTP = Mantis.FunctionSpaces.subdivide_bspline(CTP, nsubs)
 
 spaces = [CTP, FTP]
 operators = [TTS]
 
 for level ∈ 3:nlevels
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(spaces[level-1], nsubs)
+    new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(spaces[level-1], nsubs)
     push!(spaces, new_space)
     push!(operators, new_operator)
 end

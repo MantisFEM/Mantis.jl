@@ -208,7 +208,7 @@ for step ∈ 1:nsteps
     # Solve current hierarchical space solution
 
     L = Mantis.FunctionSpaces.get_num_levels(hspace)
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(hspace.spaces[L], nsubdiv)
+    new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(hspace.spaces[L], nsubdiv)
 
     dorfler_marking = Mantis.FunctionSpaces.get_dorfler_marking(err_per_element, dorfler_parameter)
     marked_domains = Mantis.FunctionSpaces.get_marked_domains(hspace, dorfler_marking, new_operator, false)
@@ -260,7 +260,7 @@ for step ∈ 1:nsteps
     # Solve current hierarchical space solution
 
     L = Mantis.FunctionSpaces.get_num_levels(hspace)
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(hspace.spaces[L], nsubdiv)
+    new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(hspace.spaces[L], nsubdiv)
 
     dorfler_marking = Mantis.FunctionSpaces.get_dorfler_marking(err_per_element, dorfler_parameter)
     marked_domains = Mantis.FunctionSpaces.get_marked_domains(hspace, dorfler_marking, new_operator, false)
@@ -312,7 +312,7 @@ for step ∈ 1:nsteps-1
     # Solve current hierarchical space solution
 
     L = Mantis.FunctionSpaces.get_num_levels(hspace)
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(hspace.spaces[L], nsubdiv)
+    new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(hspace.spaces[L], nsubdiv)
 
     dorfler_marking = Mantis.FunctionSpaces.get_dorfler_marking(err_per_element, dorfler_parameter)
     marked_domains = Mantis.FunctionSpaces.get_marked_domains(hspace, dorfler_marking, new_operator, true)

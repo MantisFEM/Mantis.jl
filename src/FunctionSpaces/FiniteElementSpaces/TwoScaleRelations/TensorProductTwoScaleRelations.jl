@@ -126,22 +126,8 @@ function _get_coarser_basis_id_per_space(twoscale_operator::TensorProductTwoScal
 end
 
 function subdivide_bspline(tp_space::TensorProductSpace{n, F1, F2}, nsubdivs::Tuple{Int, Int}) where {n, F1 <: BSplineSpace, F2 <: BSplineSpace}
-    space_1_fine = subdivide_bspline(tp_space.function_space_1, nsubdivs[1])
-    space_2_fine = subdivide_bspline(tp_space.function_space_2, nsubdivs[2])
-
-    return TensorProductSpace(space_1_fine, space_2_fine)
-end
-
-function build_two_scale_operator(tp_space::TensorProductSpace{n, F1, F2}, nsubdivs::Tuple{Int, Int}) where {n, F1 <: BSplineSpace, F2 <: BSplineSpace}
-    space_1_ts, space_1_fine = build_two_scale_operator(tp_space.function_space_1, nsubdivs[1])
-    space_2_ts, space_2_fine = build_two_scale_operator(tp_space.function_space_2, nsubdivs[2])
-
-    return TensorProductTwoScaleOperator(space_1_ts, space_2_ts), TensorProductSpace(space_1_fine, space_2_fine)
-end
-
-function build_two_scale_operator(tp_space::TensorProductSpace{n, F1, F2}, nsubdivs::NTuple{n,Int}) where {n, F1 <: AbstractFiniteElementSpace{n1}, F2 <: AbstractFiniteElementSpace{n2}} where {n1, n2}
-    space_1_ts, space_1_fine = build_two_scale_operator(tp_space.function_space_1, nsubdivs[1:n1])
-    space_2_ts, space_2_fine = build_two_scale_operator(tp_space.function_space_2, nsubdivs[n1+1:end])
+    space_1_ts, space_1_fine = subdivide_bspline(tp_space.function_space_1, nsubdivs[1])
+    space_2_ts, space_2_fine = subdivide_bspline(tp_space.function_space_2, nsubdivs[2])
 
     return TensorProductTwoScaleOperator(space_1_ts, space_2_ts), TensorProductSpace(space_1_fine, space_2_fine)
 end

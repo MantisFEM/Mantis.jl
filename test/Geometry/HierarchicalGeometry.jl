@@ -24,7 +24,7 @@ nsub1 = 2
 nsub2 = 2
 
 CTP = Mantis.FunctionSpaces.TensorProductSpace(CB1, CB2)
-CTS, FTP = Mantis.FunctionSpaces.build_two_scale_operator(CTP, (nsub1, nsub2))
+CTS, FTP = Mantis.FunctionSpaces.subdivide_bspline(CTP, (nsub1, nsub2))
 spaces = [CTP, FTP]
 
 CTP_num_els = Mantis.FunctionSpaces.get_num_elements(CTP)

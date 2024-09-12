@@ -185,19 +185,3 @@ function get_extraction(rat_space::RationalFiniteElementSpace{n,F}, element_id::
     # Return the extraction matrix and basis indices
     return Matrix{Float64}(LinearAlgebra.I, n_supp, n_supp), basis_indices
 end
-
-"""
-    get_element_size(rat_space::RationalFiniteElementSpace{n,F}, element_id::Int) where {n, F <: AbstractFiniteElementSpace{n}}
-
-Returns the size of the element for the rational finite element space.
-
-# Arguments
-- `rat_space::RationalFiniteElementSpace{n,F}`: The rational finite element space.
-- `element_id::Int`: The index of the element.
-
-# Returns
-The size of the element for the rational finite element space.
-"""
-function get_element_size(rat_space::RationalFiniteElementSpace{n,F}, element_id::Int) where {n, F <: AbstractFiniteElementSpace{n}}
-    return get_element_size(rat_space.function_space, element_id)
-end

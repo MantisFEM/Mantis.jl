@@ -27,7 +27,7 @@ for p in degrees_for_test
     for nsubdivision in subdivisions_to_test
         coarse_x = collect(range(0, 1, nq * nsubdivision + 1))
         
-        twoscale_operator, fine_bspline = Mantis.FunctionSpaces.build_two_scale_operator(coarse_bspline, nsubdivision)
+        twoscale_operator, fine_bspline = Mantis.FunctionSpaces.subdivide_bspline(coarse_bspline, nsubdivision)
 
         fine_coeffs = Mantis.FunctionSpaces.subdivide_coeffs(coarse_coeffs, twoscale_operator)
         

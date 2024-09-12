@@ -52,12 +52,10 @@ output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["c
 # Test Cylinder Tensor Product Geometry ---------------------------------------
 deg = 2
 nθ_elements = 4
-Wt = 2.0*pi/nθ_elements
-b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = collect(LinRange(0.0, nθ_elements, nθ_elements + 1))
-patch = Mantis.Mesh.Patch1D(breakpoints)
-B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
+Wt = pi/2
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, nθ_elements)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
 
 # control points for geometry
 # radius of cylinder is 1.0

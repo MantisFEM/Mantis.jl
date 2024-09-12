@@ -20,7 +20,7 @@ For given global element id `element_id` for a given finite element `space`, eva
 - `nderivatives::Int`: number of derivatives to evaluate.
 
 # Returns
-- `::Matrix{Float64}`: array of evaluated global basis (size: num_eval_points x num_funcs x nderivatives+1)
+- `::Array{Float64}`: array of evaluated global basis (size: num_eval_points x num_funcs x nderivatives+1)
 - `::Vector{Int}`: vector of global basis indices (size: num_funcs).
 
 # See also [`_get_derivative_idx(der_key::Vector{Int})`] to understand how evaluations are stored

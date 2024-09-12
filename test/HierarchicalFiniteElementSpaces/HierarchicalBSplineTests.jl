@@ -20,7 +20,7 @@ bsplines = Vector{Mantis.FunctionSpaces.BSplineSpace}(undef, nlevels)
 bsplines[1] = bspline1
 
 for l in 1:nlevels-1
-    ts_operator, bspline = Mantis.FunctionSpaces.build_two_scale_operator(bsplines[l], subdiv)
+    ts_operator, bspline = Mantis.FunctionSpaces.subdivide_bspline(bsplines[l], subdiv)
     two_scale_operators[l] = ts_operator
     bsplines[l+1] = bspline
 end

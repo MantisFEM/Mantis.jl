@@ -5,44 +5,19 @@ import ReadVTK
 using Printf
 using Test
 
-import LinearAlgebra
-
 # Compute base directories for data input and output
 Mantis_folder =  dirname(dirname(pathof(Mantis)))
 data_folder = joinpath(Mantis_folder, "test", "data")
 input_data_folder = joinpath(data_folder, "reference", "Geometry")
 output_data_folder = joinpath(data_folder, "output", "Geometry")
 
-# Test FEMGeometry (Polar) --------------------------------------------------
-deg = 2
-Wt = pi/2
-b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
-B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
-b2 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 2, [-1, -1])
-geom_coeffs_tp, _, _ = Mantis.FunctionSpaces.build_standard_degenerate_control_points(Mantis.FunctionSpaces.get_num_basis(GB),Mantis.FunctionSpaces.get_num_basis(b2),1.0)
-PSplines, E = Mantis.FunctionSpaces.PolarSplineSpace(GB, b2, (geom_coeffs_tp[:,1,:],geom_coeffs_tp[:,2,:]))
-geom_coeffs = (E[1] * E[1]') \ (E[1] * reshape(geom_coeffs_tp,:, 2))
-geom = Mantis.Geometry.FEMGeometry(PSplines[1], geom_coeffs)
-field_coeffs = Matrix{Float64}(LinearAlgebra.I, Mantis.FunctionSpaces.get_num_basis(PSplines[1]), Mantis.FunctionSpaces.get_num_basis(PSplines[1]))
-polar_surface_field = Mantis.Fields.FEMField(PSplines[1], field_coeffs)
-
-# Generate the plot
-output_filename = "fem_geometry_polar_test.vtu"
-output_file = joinpath(output_data_folder, output_filename)
-Mantis.Plot.plot(geom, polar_surface_field; vtk_filename = output_file[1:end-4], n_subcells = 1, degree = 4, ascii = false, compress = false)
-
 # Test FEMGeometry (Annulus) --------------------------------------------------
 deg = 2
 Wt = pi/2
-b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
-B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(GB, b1)
 # control points for geometry
 geom_coeffs_0 =   [1.0  -1.0
@@ -78,12 +53,10 @@ output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["c
 
 # Test FEMGeometry - LagrangexBernstein (Square w/ hole) ----------------------
 deg = 1
-b = Mantis.FunctionSpaces.LobattoLegendre(deg)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
-B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 0, 0, 0, -1])
-GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [0])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.LobattoLegendre(deg))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [0,0,0,0])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(GB, b1)
 # control points for geometry
 geom_coeffs_0 =   [1.0  -1.0
@@ -120,11 +93,9 @@ output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["c
 # Test FEMGeometry (Spiral) ---------------------------------------------------
 deg = 2
 Wt = pi/2
-b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
-GB = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, -1])
 # control points for geometry
 geom_coeffs =   [0.0 -1.0 0.0
 1.0  -1.0 0.25
@@ -159,12 +130,10 @@ output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["c
 # Test FEMGeometry (wavy surface) ---------------------------------------------
 deg = 2
 Wt = pi/2
-b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
-B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+B = ntuple( i -> b, 4)
+GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(GB, b1)
 # control points for geometry
 geom_coeffs_0 =   [1.0  -1.0
@@ -205,9 +174,9 @@ output_cells = ReadVTK.get_data(ReadVTK.get_data_section(vtk_output, "Cells")["c
 
 # Test FEMGeometry (NURBS quarter annulus) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(deg))
 B = Mantis.FunctionSpaces.RationalFiniteElementSpace(b, [1, 1/sqrt(2), 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(B, b1)
 # control points for geometry
 geom_coeffs_0 =   [0.0 1.0
@@ -243,11 +212,11 @@ Mantis.Plot.plot(quarter_annulus; vtk_filename = output_file[1:end-4], n_subcell
 
 # Test FEMGeometry (NURBS annulus) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(deg))
 br = Mantis.FunctionSpaces.RationalFiniteElementSpace(b, [1, 1/sqrt(2), 1])
-B = (br, br, br, br)
+B = ntuple( i -> br, 4)
 GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(GB, b1)
 # control points for geometry
 geom_coeffs_0 =   [1.0  -1.0
@@ -284,11 +253,11 @@ Mantis.Plot.plot(nurbs_annulus; vtk_filename = output_file[1:end-4], n_subcells 
 
 # Test FEMGeometry (NURBS wavy surface) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(deg))
 br = Mantis.FunctionSpaces.RationalFiniteElementSpace(b, [1, 1/sqrt(2), 1])
-B = (br, br, br, br)
+B = ntuple( i -> br, 4)
 GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 TP = Mantis.FunctionSpaces.TensorProductSpace(GB, b1)
 # control points for geometry
 geom_coeffs_0 =   [1.0  -1.0
@@ -325,17 +294,19 @@ Mantis.Plot.plot(nurbs_wavy_surface; vtk_filename = output_file[1:end-4], n_subc
 
 # Test FEMGeometry (NURBS vs GTB basis) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(deg))
 br = Mantis.FunctionSpaces.RationalFiniteElementSpace(b, [1, 1/sqrt(2), 1])
-Bsp = Mantis.FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
-Nurbs = Mantis.FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+B = ntuple( i -> b, 4)
+Br = ntuple( i -> br, 4)
+Bsp = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
+Nurbs = Mantis.FunctionSpaces.GTBSplineSpace(Br, [1, 1, 1, 1])
 
 Wt = pi/2
-gt = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-B = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1])
-GTB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
+gt = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt))
+GT = ntuple( i -> gt, 4)
+GTB = Mantis.FunctionSpaces.GTBSplineSpace(GT, [1, 1, 1, 1])
 
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.CanonicalFiniteElementSpace(Mantis.FunctionSpaces.Bernstein(1))
 
 TP_bsp = Mantis.FunctionSpaces.TensorProductSpace(Bsp, b1)
 TP_nurbs = Mantis.FunctionSpaces.TensorProductSpace(Nurbs, b1)
@@ -354,6 +325,7 @@ nurbs_annulus = Mantis.Geometry.FEMGeometry(TP_nurbs, geom_coeffs)
 gtb_annulus = Mantis.Geometry.FEMGeometry(TP_gtb, geom_coeffs)
 
 # field on the annulus
+import LinearAlgebra
 field_coeffs = Matrix{Float64}(LinearAlgebra.I, 8, 8)
 bsp_field = Mantis.Fields.FEMField(TP_bsp, field_coeffs)
 gtb_field = Mantis.Fields.FEMField(TP_gtb, field_coeffs)

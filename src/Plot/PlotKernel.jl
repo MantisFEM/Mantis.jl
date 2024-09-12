@@ -159,7 +159,7 @@ function _plot(form::Forms.AbstractFormExpression{manifold_dim, form_rank, G}, o
                             # convert 2D vector field to 3D vector field
                             point_data[:, vertex_offset + point_idx] .= vcat(vec(reduce.(+, Forms.evaluate_sharp_pushforward(form, element_idx, ξ)[1])), [0.0])
                         elseif range_dim == 3
-                            point_data[:, vertex_offset + point_idx] .= vec(reduce.(+, Forms.evaluate_sharp_pushforward(form, element_idx, ξ)[1]))
+                            point_data[:, vertex_offset + point_idx] .= vec(reduce.(+, Forms.evaluate_sharp_pushforward(form, element_idx, ξ)[1])), [0.0]
                         end
                     end
                 end

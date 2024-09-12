@@ -174,7 +174,7 @@ nsub2 = 2
 
 n_steps = 2
 n_els_per_step = 4
-new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(TB, (nsub1, nsub2))
+new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(TB, (nsub1, nsub2))
 spaces = [TB, new_space]
 operators = [new_operator]
 hspace = Mantis.FunctionSpaces.HierarchicalFiniteElementSpace(spaces, operators, [Int[], Int[]])
@@ -183,7 +183,7 @@ Random.seed!(28)
 for step ∈ 1:n_steps
     L = Mantis.FunctionSpaces.get_num_levels(hspace)
 
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(spaces[L], (nsub1, nsub2))
+    new_operator, new_space = Mantis.FunctionSpaces.subdivide_bspline(spaces[L], (nsub1, nsub2))
 
     marked_elements_per_level = [Int[] for _ ∈ 1:L-2]
     push!(marked_elements_per_level, rand(Mantis.FunctionSpaces.get_level_active(hspace.active_elements, L-1)[2], n_els_per_step))

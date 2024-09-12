@@ -20,8 +20,8 @@ CB2 = Mantis.FunctionSpaces.BSplineSpace(patch2, deg2, [-1; fill(deg2-1, ne2-1);
 nsub1 = 2
 nsub2 = 2
 
-TS1,FB1 = Mantis.FunctionSpaces.build_two_scale_operator(CB1, nsub1)
-TS2, FB2 = Mantis.FunctionSpaces.build_two_scale_operator(CB2, nsub2)
+TS1,FB1 = Mantis.FunctionSpaces.subdivide_bspline(CB1, nsub1)
+TS2, FB2 = Mantis.FunctionSpaces.subdivide_bspline(CB2, nsub2)
 
 CTP = Mantis.FunctionSpaces.TensorProductSpace(CB1, CB2)
 FTP = Mantis.FunctionSpaces.TensorProductSpace(FB1, FB2)

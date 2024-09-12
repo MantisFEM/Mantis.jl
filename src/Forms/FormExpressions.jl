@@ -125,7 +125,7 @@ function evaluate(form::AnalyticalFormField{manifold_dim, 1, G, E}, element_idx:
             a[i,:] .+= form_eval[j][i] .* J[i,j,:]
         end
     end
-    for j= 1:manifold_dim
+    for j= 1:image_dim
         form_pullback[j] = a[:,j]
     end
     
