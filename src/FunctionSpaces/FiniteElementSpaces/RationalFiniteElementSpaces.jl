@@ -36,6 +36,22 @@ function get_num_basis(rat_space::RationalFiniteElementSpace{n,F}) where {n, F <
 end
 
 """
+    get_basis_indices(rat_space::RationalFiniteElementSpace{n,F}, element_id::Int) where {n, F <: AbstractFiniteElementSpace{n}}
+
+Returns the basis indices supported on the given element for the rational finite element space.
+
+# Arguments
+- `rat_space::RationalFiniteElementSpace{n,F}`: The rational finite element space.
+- `element_id::Int`: The index of the element.
+
+# Returns
+The basis indices supported on the given element for the rational finite element space.
+"""
+function get_basis_indices(rat_space::RationalFiniteElementSpace{n,F}, element_id::Int) where {n, F <: AbstractFiniteElementSpace{n}}
+    return get_basis_indices(rat_space.function_space, element_id)
+end
+
+"""
     get_num_elements(rat_space::RationalFiniteElementSpace{n,F}) where {n, F <: AbstractFiniteElementSpace{n}}
 
 Returns the number of elements in the partition on which the rational finite element space is defined.

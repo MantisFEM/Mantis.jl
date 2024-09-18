@@ -72,17 +72,24 @@ end
 
 function get_basis_indices(tp_space::TensorProductSpace{n, F1, F2}, el_id::Int) where {n, F1, F2}
     max_ind_basis = _get_num_basis_per_space(tp_space)
-    extraction_per_dim = _get_extraction_per_dim(tp_space, el_id)
+    indices_per_dim = _get_basis_indices_per_dim(tp_space, el_id)
     
     # Compute basis indices
-    basis_indices = Vector{Int}(undef, prod(map(extraction -> length(extraction[2]), extraction_per_dim)))
+    basis_indices = Vector{Int}(undef, prod(length.(indices_per_dim)))
     idx = 1
-    for basis in Iterators.product(extraction_per_dim[1][2], extraction_per_dim[2][2])
+    for basis in Iterators.product(indices_per_dim[1], indices_per_dim[2])
         basis_indices[idx] = ordered_to_linear_index(basis, max_ind_basis)
         idx += 1
     end
     
     return basis_indices
+end
+
+function _get_basis_indices_per_dim(tp_space::TensorProductSpace{n, F1, F2}, el_id::Int) where {n, F1, F2}
+    max_ind_el = _get_num_elements_per_space(tp_space)
+    ordered_index = linear_to_ordered_index(el_id, max_ind_el)
+
+    return get_basis_indices(tp_space.function_space_1, ordered_index[1]), get_basis_indices(tp_space.function_space_2, ordered_index[2])
 end
 
 """

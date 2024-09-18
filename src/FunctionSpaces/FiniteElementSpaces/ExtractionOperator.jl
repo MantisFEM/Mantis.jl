@@ -33,6 +33,22 @@ function get_num_basis(extraction_op::ExtractionOperator)
 end
 
 @doc raw"""
+    get_basis_indices(extraction_op::ExtractionOperator, element_id::Int)
+
+Returns the basis indices supported on the given element.
+
+# Arguments
+- `extraction_op::ExtractionOperator`: The `ExtractionOperator` object.
+- `element_id::Int`: The index of the element.
+
+# Returns
+- `::Vector{Int}`: The basis indices supported on the given element.
+"""
+function get_basis_indices(extraction_op::ExtractionOperator, element_id::Int)
+    return extraction_op.basis_indices[element_id]
+end
+
+@doc raw"""
     get_extraction(extraction_op::ExtractionOperator, element_id::Int)
 
 Returns the extraction coefficient matrix and basis indices for a specific element.
@@ -47,7 +63,7 @@ A tuple containing:
 - The basis indices for the specified element.
 """
 function get_extraction(extraction_op::ExtractionOperator, element_id::Int)
-    return @views extraction_op.extraction_coefficients[element_id], extraction_op.basis_indices[element_id]
+    return @views extraction_op.extraction_coefficients[element_id], get_basis_indices(extraction_op, element_id)
 end
 
 @doc raw"""

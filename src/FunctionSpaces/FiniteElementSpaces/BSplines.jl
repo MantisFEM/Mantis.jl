@@ -108,10 +108,6 @@ function get_extraction(bspline::BSplineSpace, element_id::Int)
     return get_extraction(bspline.extraction_op, element_id)
 end
 
-function get_basis_indices(bspline::BSplineSpace, element_id::Int)
-    return get_extraction(bspline.extraction_op, element_id)[2]
-end
-
 """
     get_polynomials(bspline::BSplineSpace)
 
