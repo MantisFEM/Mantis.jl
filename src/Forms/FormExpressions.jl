@@ -1,7 +1,7 @@
 import LinearAlgebra
 using Subscripts
 
-struct AnalyticalFormField{manifold_dim, form_rank, G, E} <: AbstractFormField{manifold_dim, form_rank, 0, G}
+struct AnalyticalFormField{manifold_dim, form_rank, G, E} <: AbstractFormField{manifold_dim, form_rank, G, 0}
     geometry::G
     expression::E
     label::String
