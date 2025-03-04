@@ -18,7 +18,7 @@ struct NestedMapping{N, dN}
     num_elements_domain::Int
     num_elements_range::Int
     mapping::N
-    dmapping::dNf
+    dmapping::dN
 end
 
 """
@@ -89,8 +89,8 @@ Evaluate the mapping from the domain to the range geometry.
 function evaluate(
     nested_mapping::NestedMapping,
     element_idx_domain::Int,
-    xi_domain::NTuple{N, Vector{Float64}}
-)
+    xi_domain::NTuple{manifold_dim, Vector{Float64}}
+) where {manifold_dim}
     element_idx_range, xi_range = nested_mapping.mapping(element_idx_domain, xi_domain)
     return element_idx_range, xi_range
 end

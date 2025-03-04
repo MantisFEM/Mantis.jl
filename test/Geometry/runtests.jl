@@ -17,6 +17,9 @@ end
 @testset "HierarchicalGeometry" begin
     include("HierarchicalGeometryTests.jl")
 end
+@testset "NestedGeometry" begin
+    include("NestedGeometryTests.jl")
+end
 @testset "Metric" begin
     include("MetricTests.jl")
 end

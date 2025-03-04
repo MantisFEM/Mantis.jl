@@ -77,3 +77,81 @@ function create_curvilinear_square(
 
     return MappedGeometry(unit_square, curved_mapping)
 end
+
+################################################################################
+# Nested mappings for hierarchical meshes
+################################################################################
+
+function create_hierarchical_mesh_nestedness_map(
+    hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T},
+    exclude_elements::Vector{Int}
+) where {
+    manifold_dim,
+    S<:FunctionSpaces.AbstractFESpace{manifold_dim, 1},
+    T<:FunctionSpaces.AbstractTwoScaleOperator
+}
+    # mesh for range space
+    range_space = FunctionSpaces.get_space(hierarchical_space, 1)
+    # number of elements in range (i.e., the coarsest level mesh)
+    num_elements_range = FunctionSpaces.get_num_elements(range_space)
+    # get element vertices for the range
+    range_element_vertices = [
+        FunctionSpaces.get_element_vertices(range_space, i) for i in 1:num_elements_range
+    ]
+
+    # number of elements in domain (i.e., the active hierarchical mesh)
+    num_elements_domain_all = FunctionSpaces.get_num_elements(hierarchical_space)
+    num_elements_domain = num_elements_domain_all - length(exclude_elements)
+    # get domain to range element index map
+    domain_to_range_map = zeros(Int64, num_elements_domain)
+    # get element vertices for the domain
+    domain_element_vertices = Vector{NTuple{manifold_dim, Vector{Float64}}}(
+        undef, num_elements_domain
+    )
+    count = 0
+    for i in 1:num_elements_domain_all
+        element_level, element_level_id =
+        FunctionSpaces.convert_to_element_level_and_level_id(
+            hierarchical_space, i
+        )
+        if ~(i in exclude_elements)
+            domain_element_vertices[count+1] = FunctionSpaces.get_element_vertices(
+                    FunctionSpaces.get_space(hierarchical_space, element_level),
+                    element_level_id
+            )
+            domain_to_range_map[count+1] = FunctionSpaces.get_element_ancestor(
+                hierarchical_space.two_scale_operators,
+                i,
+                element_level,
+                element_level-1
+            )
+            count += 1
+        end
+    end
+
+    # create dmapping: length scale ratios of child and ancestor
+    function dmapping(element_idx_domain)
+        range_el_verts = range_element_vertices[domain_to_range_map[element_idx_domain]]
+        domain_el_verts = domain_element_vertices[element_idx_domain]
+        return [domain_el_verts[k][2] - domain_el_verts[k][1] for k in 1:manifold_dim] ./
+                [range_el_verts[k][2] - range_el_verts[k][1] for k in 1:manifold_dim]
+    end
+
+    # create mapping: affine map from domain to range
+    function mapping(element_idx_domain, xi_domain)
+        element_idx_range = domain_to_range_map[element_idx_domain]
+        range_el_verts = range_element_vertices[element_idx_range]
+        domain_el_verts = domain_element_vertices[element_idx_domain]
+        length_scales = dmapping(element_idx_domain)
+        xi_range = Vector{Vector{Float64}}(undef, manifold_dim)
+        for k in 1:manifold_dim
+            xi_range[k] = xi_domain[k] .* length_scales[k] .+
+                (domain_el_verts[k][1] .- range_el_verts[k][1]) ./
+                (range_el_verts[k][2] .- range_el_verts[k][1])
+        end
+
+        return element_idx_range, tuple(xi_range...)
+    end
+
+    return NestedMapping(num_elements_domain, num_elements_range, mapping, dmapping)
+ end
