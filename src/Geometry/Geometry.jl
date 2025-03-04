@@ -101,7 +101,7 @@ Computes the length, in each manifold dimension, of the element given by `elemen
 - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '::NTuple{manifold_dim, Float64}': The element's lengths. 
+- '::NTuple{manifold_dim, Float64}': The element's lengths.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
