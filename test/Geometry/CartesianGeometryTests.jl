@@ -10,25 +10,51 @@ include("GeometryTestsHelpers.jl")
 
 # Constructor, property, and getters and setters tests -------------------------------------
 # Vector{Float64} input.
-geometry = Geometry.CartesianGeometry((
+geometryVF = Geometry.CartesianGeometry((
     [0.0, 1.0, 2.0], [0.5, 1.5, 2.5], [-0.75, 0.0, 0.25, 0.75]
 ))
-@test Geometry.get_breakpoints(geometry) ==
+@test Geometry.get_breakpoints(geometryVF) ==
     ([0.0, 1.0, 2.0], [0.5, 1.5, 2.5], [-0.75, 0.0, 0.25, 0.75])
-@test Geometry.get_constituent_num_elements(geometry) == (2, 2, 3)
+@test Geometry.get_constituent_num_elements(geometryVF) == ((2, 2, 3),)
 
-@test Geometry.get_num_elements(geometry) == 12
-@test Geometry.get_manifold_dim(geometry) == 3
-@test Geometry.get_image_dim(geometry) == 3
+@test Geometry.get_num_elements(geometryVF) == 12
+@test Geometry.get_manifold_dim(geometryVF) == 3
+@test Geometry.get_image_dim(geometryVF) == 3
 
 # LinRange input.
-geometry = Geometry.CartesianGeometry((LinRange(0.5, 2.5, 5), LinRange(-0.75, 0.75, 3)))
-@test Geometry.get_breakpoints(geometry) == ([0.5, 1.0, 1.5, 2.0, 2.5], [-0.75, 0.0, 0.75])
-@test Geometry.get_constituent_num_elements(geometry) == (4, 2)
+geometryLR = Geometry.CartesianGeometry((LinRange(0.5, 2.5, 5), LinRange(-0.75, 0.75, 3)))
+@test Geometry.get_breakpoints(geometryLR) == ([0.5, 1.0, 1.5, 2.0, 2.5], [-0.75, 0.0, 0.75])
+@test Geometry.get_constituent_num_elements(geometryLR) == ((4, 2),)
 
-@test Geometry.get_num_elements(geometry) == 8
-@test Geometry.get_manifold_dim(geometry) == 2
-@test Geometry.get_image_dim(geometry) == 2
+@test Geometry.get_num_elements(geometryLR) == 8
+@test Geometry.get_manifold_dim(geometryLR) == 2
+@test Geometry.get_image_dim(geometryLR) == 2
+
+# Multi-patch input.
+geometryMP = Geometry.CartesianGeometry((
+    (LinRange(0.5, 2.5, 5), LinRange(-0.75, 0.75, 3)),
+    (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 6)),
+))
+@test Geometry.get_breakpoints(geometryMP, 1) == (([0.5, 1.0, 1.5, 2.0, 2.5], [-0.75, 0.0, 0.75]))
+@test Geometry.get_breakpoints(geometryMP, 2) == (([0.0, 1/3, 2/3, 1.0], [0.0, 1/5, 2/5, 3/5, 4/5, 1.0]))
+@test Geometry.get_constituent_num_elements(geometryMP) == ((4, 2), (3, 5))
+
+@test Geometry.get_num_elements(geometryMP) == 23
+@test Geometry.get_manifold_dim(geometryMP) == 2
+@test Geometry.get_image_dim(geometryMP) == 2
+
+for i in 1:Geometry.get_num_elements(geometryMP)
+    jac = Geometry.jacobian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
+    if i <= 8
+        for p in axes(jac, 1)
+            @test all(isapprox.(jac[p, :, :], [0.5 0.0; 0.0 0.75], rtol=1e-14))
+        end
+    else
+        for p in axes(jac, 1)
+            @test all(isapprox.(jac[p, :, :], [1/3 0.0; 0.0 1/5], rtol=1e-14))
+        end
+    end
+end
 
 # Test 2D CartesianGeometry ----------------------------------------------------------------
 for nx in 1:3

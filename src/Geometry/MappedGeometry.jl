@@ -98,17 +98,32 @@ function jacobian(
     return J
 end
 
-struct MappedGeometry{manifold_dim, G, Map} <: AbstractGeometry{manifold_dim}
+struct MappedGeometry{manifold_dim, num_patches, G, Map} <: AbstractGeometry{manifold_dim, num_patches}
     geometry::G
     mapping::Map
     num_elements::Int
+    num_elements_per_patch::NTuple{num_patches, Int}
 
+    # Constructor for multiple mappings, one per patch.
+    function MappedGeometry(
+        geometry::G, mapping::M
+    ) where {manifold_dim, num_patches, G <: AbstractGeometry{manifold_dim, num_patches}, M <: NTuple{num_patches, Mapping}}
+        num_elements_per_patch = get_num_elements_per_patch(geometry)
+
+        return new{manifold_dim, num_patches, G, M}(
+            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+        )
+    end
+
+    # Constructor for a single mapping for all patches.
     function MappedGeometry(
         geometry::G, mapping::Map
-    ) where {manifold_dim, G <: AbstractGeometry{manifold_dim}, Map <: Mapping}
-        num_elements = get_num_elements(geometry)
+    ) where {manifold_dim, num_patches, G <: AbstractGeometry{manifold_dim, num_patches}, Map <: Mapping}
+        num_elements_per_patch = get_num_elements_per_patch(geometry)
 
-        return new{manifold_dim, G, Map}(geometry, mapping, num_elements)
+        return new{manifold_dim, num_patches, G, Map}(
+            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+        )
     end
 end
 

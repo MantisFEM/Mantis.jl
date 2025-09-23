@@ -2,7 +2,7 @@
 #                                        Structure                                         #
 ############################################################################################
 
-struct HierarchicalGeometry{manifold_dim, H} <: AbstractGeometry{manifold_dim}
+struct HierarchicalGeometry{manifold_dim, H} <: AbstractGeometry{manifold_dim, 1}
     hier_space::H
 
     function HierarchicalGeometry(

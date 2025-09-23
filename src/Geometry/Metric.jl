@@ -1,9 +1,9 @@
 
 function metric(
-    geometry::AbstractGeometry{manifold_dim},
+    geometry::AbstractGeometry{manifold_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, num_patches}
     # The metric tensor gᵢⱼ is
     #   gᵢⱼ := ∑ₖᵐ ∂Φᵏ\∂ξᵢ ⋅ ∂Φᵏ\∂ξⱼ
     # Since the Jacobian matrix J is given by
@@ -36,10 +36,10 @@ function metric(
 end
 
 function inv_metric(
-    geometry::AbstractGeometry{manifold_dim},
+    geometry::AbstractGeometry{manifold_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, num_patches}
     # The inverse of the metric tensor gᵢⱼ is
     #   [gⁱʲ] := [gᵢⱼ]⁻¹
     # The metric tensor is computed for all evaluation points. To avoid having to compute

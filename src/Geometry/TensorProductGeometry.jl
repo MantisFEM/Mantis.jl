@@ -11,8 +11,8 @@ A geometry type representing the tensor product of multiple constituent geometri
   to Cartesian indexing.
 - `lin_num_elements::LI`: Useful to convert from Cartesian to linear indexing.
 """
-struct TensorProductGeometry{manifold_dim, num_geometries, T, CI, LI} <:
-       AbstractGeometry{manifold_dim}
+struct TensorProductGeometry{manifold_dim, num_patches, num_geometries, T, CI, LI} <:
+       AbstractGeometry{manifold_dim, num_patches}
     geometries::T
     cart_num_elements::CI
     lin_num_elements::LI
@@ -30,6 +30,7 @@ struct TensorProductGeometry{manifold_dim, num_geometries, T, CI, LI} <:
         return new{
             manifold_dim,
             num_geometries,
+            1,
             T,
             typeof(cart_num_elements),
             typeof(lin_num_elements),

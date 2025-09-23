@@ -1,6 +1,6 @@
 
 """
-    FEGeometry{manifold_dim, F} <: AbstractGeometry{manifold_dim}
+    FEGeometry{manifold_dim, num_patches, F} <: AbstractGeometry{manifold_dim, num_patches}
 
 Geometry defined from a finite element space `fem_space` and a matrix of geometric
 coefficients `geometry_coeffs`.
@@ -17,7 +17,7 @@ coefficients `geometry_coeffs`.
 
 # Type parameters
 - `manifold_dim`: Dimension of the domain in `fem_space`.
-- `F <: FunctionSpaces.AbstractFESpace{manifold_dim, 1}`: Underlying finite element space of
+- `F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_patches}`: Underlying finite element space of
     the geometry.
 
 # Inner Constructors
@@ -28,17 +28,17 @@ coefficients `geometry_coeffs`.
 # Outer Constructors
 - [`compute_parametric_geometry`](@ref).
 """
-struct FEGeometry{manifold_dim, F} <: AbstractGeometry{manifold_dim}
+struct FEGeometry{manifold_dim, num_patches, F} <: AbstractGeometry{manifold_dim, num_patches}
     geometry_coeffs::Matrix{Float64}
     fem_space::F
     num_elements::Int
 
     function FEGeometry(
         fem_space::F, geometry_coeffs::Matrix{Float64}
-    ) where {manifold_dim, F <: FunctionSpaces.AbstractFESpace{manifold_dim, 1}}
+    ) where {manifold_dim, num_patches, F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_patches}}
         num_elements = FunctionSpaces.get_num_elements(fem_space)
 
-        return new{manifold_dim, F}(geometry_coeffs, fem_space, num_elements)
+        return new{manifold_dim, num_patches, F}(geometry_coeffs, fem_space, num_elements)
     end
 end
 
@@ -53,7 +53,7 @@ coefficients of the space.
     for which to compute the geometry.
 
 # Returns
-- `::FEGeometry{manifold_dim, F}`: structure of the finite element geometry.
+- `::FEGeometry`: structure of the finite element geometry.
 """
 function compute_parametric_geometry(fem_space::FunctionSpaces.AbstractFESpace)
     geometry_coefficients = FunctionSpaces._compute_parametric_geometry_coeffs(fem_space)
@@ -74,10 +74,10 @@ function get_image_dim(geometry::FEGeometry)
 end
 
 function evaluate(
-    geometry::FEGeometry{manifold_dim, F},
+    geometry::FEGeometry{manifold_dim, num_patches, F},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, F}
+) where {manifold_dim, num_patches, F}
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(
         geometry.fem_space, element_id, xi, 0
     )
@@ -99,10 +99,10 @@ function evaluate(
 end
 
 function jacobian(
-    geometry::FEGeometry{manifold_dim, F},
+    geometry::FEGeometry{manifold_dim, num_patches, F},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, F}
+) where {manifold_dim, num_patches, F}
     # Jᵢⱼ = ∂Φⁱ\∂ξⱼ
     # evaluate fem space
     fem_basis, fem_basis_indices = FunctionSpaces.evaluate(
