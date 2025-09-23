@@ -24,12 +24,6 @@ for nx in 1:3
         function dmapping(x::AbstractVector)
             return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
         end
-        function mapping(x::AbstractArray)
-            return [(x[:, 1] .+ 0.2) .* cos.(x[:, 2]), (x[:, 1] .+ 0.2) .* sin.(x[:, 2])]
-        end
-        function dmapping(x::AbstractArray)
-            return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
-        end
 
         dimension = (2, 2)
         curved_mapping = Mantis.Geometry.Mapping(dimension, mapping, dmapping)
