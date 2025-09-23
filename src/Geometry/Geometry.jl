@@ -62,7 +62,11 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_image_dim(::AbstractGeometry)
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 """
@@ -86,7 +90,11 @@ function get_patch_id(geometry::AbstractGeometry, element_id::Int)
     end
     throw(
         ArgumentError(
-            "Element ID $(element_id) exceeds the total number of elements in the geometry."
+            LazyString(
+                "Element ID ",
+                element_id,
+                " exceeds the total number of elements in the geometry.",
+            )
         ),
     )
 end
@@ -204,7 +212,11 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_element_measure(geometry::AbstractGeometry, element_id::Int)
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 """
@@ -229,7 +241,11 @@ geometry type.
 function get_element_lengths(
     geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int
 ) where {manifold_dim, num_patches}
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 """
@@ -254,7 +270,11 @@ geometry type.
 function get_element_vertices(
     geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int
 ) where {manifold_dim, num_patches}
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 """
@@ -288,7 +308,11 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, num_patches}
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 """
@@ -322,7 +346,11 @@ function jacobian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, num_patches}
-    throw(ArgumentError("Method not defined for geometry of type $(typeof(geometry))."))
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
 end
 
 # core functionality
