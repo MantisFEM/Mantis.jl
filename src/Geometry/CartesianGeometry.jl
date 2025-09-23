@@ -1,5 +1,5 @@
 """
-    CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractAnalyticalGeometry{manifold_dim, num_patches}
+    CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractGeometry{manifold_dim, num_patches}
 
 A structure representing a Cartesian grid geometry in `manifold_dim` dimensions. Can have
 multiple patches, even though each patch is still a Cartesian grid. Note that the patches
@@ -11,7 +11,7 @@ are not required to have a matching grid.
 - `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
     elements in the grid for each patch. Used to convert from linear to cartesian indexing.
 """
-struct CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractAnalyticalGeometry{manifold_dim, num_patches}
+struct CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractGeometry{manifold_dim, num_patches}
     breakpoints::T
     cart_num_elements::CI
 
@@ -50,7 +50,7 @@ function get_num_elements(geometry::CartesianGeometry)
     return mapreduce(prod, +, get_constituent_num_elements(geometry))
 end
 
-function get_num_elements_per_patch(geometry::AbstractGeometry)
+function get_num_elements_per_patch(geometry::CartesianGeometry)
     return (prod(get_constituent_num_elements(geometry)[i]) for i in 1:get_num_patches(geometry))
 end
 

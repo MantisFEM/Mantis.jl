@@ -11,8 +11,6 @@ import ..FunctionSpaces
 import ..Points
 
 abstract type AbstractGeometry{manifold_dim, num_patches} end
-abstract type AbstractAnalyticalGeometry{manifold_dim, num_patches} <: AbstractGeometry{manifold_dim, num_patches} end
-abstract type AbstractFEGeometry{manifold_dim, num_patches} <: AbstractGeometry{manifold_dim, num_patches} end
 
 """
     get_manifold_dim(::AbstractGeometry{manifold_dim, num_patches})
