@@ -1,5 +1,7 @@
 """
-    CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractGeometry{manifold_dim, num_patches}
+    CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <: AbstractGeometry{
+        manifold_dim, image_dim, num_patches
+    }
 
 A structure representing a Cartesian grid geometry in `manifold_dim` dimensions. Can have
 multiple patches, even though each patch is still a Cartesian grid. Note that the patches
@@ -11,7 +13,9 @@ are not required to have a matching grid.
 - `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
     elements in the grid for each patch. Used to convert from linear to cartesian indexing.
 """
-struct CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractGeometry{manifold_dim, num_patches}
+struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <: AbstractGeometry{
+    manifold_dim, image_dim, num_patches
+}
     breakpoints::T
     cart_num_elements::CI
 
@@ -29,7 +33,7 @@ struct CartesianGeometry{manifold_dim, num_patches, T, CI} <: AbstractGeometry{m
             )
         end
 
-        return new{manifold_dim, num_patches, T, typeof(cart_num_elements)}(
+        return new{manifold_dim, manifold_dim, num_patches, T, typeof(cart_num_elements)}(
             breakpoints, cart_num_elements
         )
     end
@@ -44,7 +48,6 @@ end
 
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) = geometry.cart_num_elements[patch_id]
 get_breakpoints(geometry::CartesianGeometry, patch_id::Int=1) = geometry.breakpoints[patch_id]
-get_image_dim(geometry::CartesianGeometry) = get_manifold_dim(geometry)
 
 function get_num_elements(geometry::CartesianGeometry)
     return mapreduce(prod, +, get_constituent_num_elements(geometry))
@@ -60,11 +63,15 @@ function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int
 end
 
 function get_constituent_num_elements(
-    geometry::CartesianGeometry{manifold_dim, num_patches}
-) where {manifold_dim, num_patches}
+    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches}
     return ntuple(num_patches) do i
         return Tuple(maximum(get_cart_num_elements(geometry, i)))
     end
+end
+
+function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int=1)
+    return geometry
 end
 
 function evaluate(
@@ -93,10 +100,10 @@ function evaluate(
 end
 
 function jacobian(
-    geometry::CartesianGeometry{manifold_dim},
+    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, image_dim, num_patches}
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
     breakpoints = get_breakpoints(geometry, patch_id)
     scaling = ntuple(
@@ -116,6 +123,8 @@ function jacobian(
     end
 
     return J
+
+    # return [SMatrix{manifold_dim, manifold_dim}(LinearAlgebra.I) .* scaling for _ in 1:num_points]
 end
 
 function get_element_vertices(

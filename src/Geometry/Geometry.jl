@@ -5,20 +5,22 @@ Contains all geometry structure definitions and related methods.
 """
 module Geometry
 
-import LinearAlgebra
+using LinearAlgebra
+
+using StaticArrays
 
 import ..FunctionSpaces
 import ..Points
 
-abstract type AbstractGeometry{manifold_dim, num_patches} end
+abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
 """
-    get_manifold_dim(::AbstractGeometry{manifold_dim, num_patches})
+    get_manifold_dim(::AbstractGeometry{manifold_dim, image_dim, num_patches})
 
 Returns the dimensions of the domain manifold of a given geometry.
 
 # Arguments
-- `::AbstractGeometry{manifold_dim, num_patches}`: The geometry being used.
+- `::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
 
 # Returns
 - `::Int`: The domain manifold dimension.
@@ -28,46 +30,38 @@ This method is used as a fallback if there isn't a more specific method to be us
 latter should only be implemented explicitly if necessary.
 """
 get_manifold_dim(
-    ::AbstractGeometry{manifold_dim, num_patches}
-) where {manifold_dim, num_patches} = manifold_dim
+    ::AbstractGeometry{manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches} = manifold_dim
 
 """
-    get_num_patches(::AbstractGeometry{manifold_dim, num_patches})
+    get_image_dim(::AbstractGeometry{manifold_dim, image_dim, num_patches})
+
+Returns the dimensions of the image manifold of a given geometry.
+
+# Arguments
+- `::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
+
+# Returns
+- `::Int`: The image manifold dimension.
+"""
+get_image_dim(
+    ::AbstractGeometry{manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches} = image_dim
+
+"""
+    get_num_patches(::AbstractGeometry{manifold_dim, image_dim, num_patches})
 
 Returns the number of patches in a given geometry.
 
 # Arguments
-- `::AbstractGeometry{manifold_dim, num_patches}`: The geometry being used.
+- `::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
 
 # Returns
 - `::Int`: The number of patches in the geometry.
 """
 get_num_patches(
-    ::AbstractGeometry{manifold_dim, num_patches}
-) where {manifold_dim, num_patches} = num_patches
-
-"""
-    get_image_dim(::AbstractGeometry)
-
-Returns the dimensions of the image manifold of a given geometry.
-
-# Arguments
-- `::AbstractGeometry`: The geometry being used.
-
-# Returns
-- `::Int`: The image manifold dimension.
-
-# Notes
-There is no generic fallback for this method. It should be implemented for each concrete
-geometry type.
-"""
-function get_image_dim(::AbstractGeometry)
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
-end
+    ::AbstractGeometry{manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches} = num_patches
 
 """
     get_patch_id(geometry::AbstractGeometry, element_id::Int)
@@ -196,6 +190,30 @@ function get_num_elements_per_patch(geometry::AbstractGeometry)
 end
 
 """
+    get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int=1)
+
+Computes the measure of the element given by `element_id` in `geometry`.
+
+# Arguments
+- 'geometry::AbstractGeometry': The (physical) geometry being used.
+- 'patch_id::Int': Index of the patch of which the parametric geometry is to be returned.
+
+# Returns
+- '<:AbstractGeometry': The parametric geometry associated with the specified patch.
+
+# Notes
+There is no generic fallback for this method. It should be implemented for each concrete
+geometry type.
+"""
+function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int=1)
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
+end
+
+"""
     get_element_measure(geometry::AbstractGeometry, element_id::Int)
 
 Computes the measure of the element given by `element_id` in `geometry`.
@@ -221,8 +239,8 @@ end
 
 """
     get_element_lengths(
-        geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int,
-    ) where {manifold_dim, num_patches}
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int,
+    ) where {manifold_dim, image_dim, num_patches}
 
 Computes the length, in each manifold dimension, of the element given by `element_id` in
 `geometry`.
@@ -239,8 +257,8 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_element_lengths(
-    geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int
-) where {manifold_dim, num_patches}
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
+) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
             LazyString("Method not defined for geometry of type ",typeof(geometry),".")
@@ -250,8 +268,8 @@ end
 
 """
     get_element_vertices(
-        geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int,
-    ) where {manifold_dim, num_patches}
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int,
+    ) where {manifold_dim, image_dim, num_patches}
 
 Computes the vertices, in each manifold dimension, of the element given by `element_id` in
 `geometry`.
@@ -268,8 +286,8 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_element_vertices(
-    geometry::AbstractGeometry{manifold_dim, num_patches}, element_id::Int
-) where {manifold_dim, num_patches}
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
+) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
             LazyString("Method not defined for geometry of type ",typeof(geometry),".")
@@ -279,16 +297,16 @@ end
 
 """
     evaluate(
-        geometry::AbstractGeometry{manifold_dim, num_patches},
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, num_patches}
+    ) where {manifold_dim, image_dim, num_patches}
 
 Computes the evaluation of the physical points, mapped from the canonical points `xi`, of
 the element identified by `element_id` of a given `geometry`.
 
 # Arguments
-- `geometry::AbstractGeometry{manifold_dim, num_patches}`: The geometry being evaluated.
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being evaluated.
 - `element_id::Int`: The identifier of the element where the evaluation takes place.
 - `xi::NTuple{manifold_dim,Vector{Float64}}`: The points in canonical space used for
     evaluation.
@@ -304,10 +322,10 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function evaluate(
-    geometry::AbstractGeometry{manifold_dim, num_patches},
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
             LazyString("Method not defined for geometry of type ",typeof(geometry),".")
@@ -317,16 +335,16 @@ end
 
 """
     jacobian(
-        geometry::AbstractGeometry{manifold_dim, num_patches},
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, num_patches}
+    ) where {manifold_dim, image_dim, num_patches}
 
 Computes the jacobian at the physical points, mapped from the canonical points `xi`, of the
 element identified by `element_id` of a given `geometry`.
 
 # Arguments
-- `geometry::AbstractGeometry{manifold_dim, num_patches}`: The geometry being used.
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
 - `element_id::Int`: The identifier of the element where the evaluation takes place.
 - `xi::NTuple{manifold_dim,Vector{Float64}}`: The points in canonical space used for
     evaluation.
@@ -342,10 +360,10 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function jacobian(
-    geometry::AbstractGeometry{manifold_dim, num_patches},
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
             LazyString("Method not defined for geometry of type ",typeof(geometry),".")

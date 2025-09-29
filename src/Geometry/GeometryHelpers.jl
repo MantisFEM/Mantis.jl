@@ -25,7 +25,7 @@ function create_cartesian_box(
     breakpoints = map(
         LinRange, starting_points, starting_points .+ box_sizes, num_elements .+ 1
     )
-    return CartesianGeometry(map(collect, breakpoints))
+    return CartesianGeometry(breakpoints)
 end
 
 """
