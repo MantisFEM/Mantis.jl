@@ -39,19 +39,7 @@ end
 
 
 # Getters and setters.
-"""
-    get_geometry_on_patch(MPGeo::UnstructuredGeometry, patch_id::Int)
-
-Get the geometry on a specific patch.
-
-# Arguments
-- `geometry::UnstructuredGeometry`: The multi-patch geometry.
-- `patch_id::Int`: The patch ID.
-
-# Returns
-- ` <: AbstractGeometry{manifold_dim, image_dim, 1}`: The geometry on the specified patch.
-"""
-function get_geometry_on_patch(geometry::UnstructuredGeometry, patch_id::Int)
+function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
     return geometry.geometry_per_patch[patch_id]
 end
 

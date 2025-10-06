@@ -70,8 +70,16 @@ function get_constituent_num_elements(
     end
 end
 
-function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int=1)
+function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
+    return CartesianGeometry((geometry.breakpoints[patch_id],))
+end
+
+function get_parametric_geometry(geometry::CartesianGeometry)
     return geometry
+end
+
+function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
+    return get_geometry(geometry, patch_id)
 end
 
 function evaluate(

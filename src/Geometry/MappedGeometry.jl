@@ -142,14 +142,16 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
     end
 
     # Constructor for multiple mappings, one per patch, with the parametric geometry being
-    # only one object and thus the same for everything.
+    # only one object. If this is a single patch geometry, this one geometry will be used
+    # for every patch. If it is a multi-patch geometry, it must have the same number of
+    # patches as the number of mappings.
     function MappedGeometry(
         geometry::G, mapping::M
     ) where {
         manifold_dim,
         image_dim_base,
         num_patches,
-        G <: AbstractGeometry{manifold_dim, image_dim_base, 1},
+        G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
         M <: NTuple{num_patches, Mapping}
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
@@ -162,6 +164,14 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
                     image_dim
                 )))
             end
+        end
+
+        if num_patches_G != 1 || num_patches_G != num_patches
+            throw(ArgumentError(LazyString(
+                "The underlying geometry must have the same number of patches as the ",
+                "number of mappings, but the geometry has ",num_patches_G,
+                " patches, while there are ",num_patches," mappings."
+            )))
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
@@ -208,17 +218,31 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
 end
 
 function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
 ) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
-    return geometry.geometry
+    return get_parametric_geometry(geometry.geometry)
 end
 
 function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
 ) where {
     manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
 }
-    return geometry.geometry[patch_id]
+    return CartesianGeometry(get_breakpoints.(get_parametric_geometry.(geometry.geometry)))
+end
+
+function get_parametric_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
+) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    return get_parametric_geometry(geometry.geometry, patch_id)
+end
+
+function get_parametric_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
+) where {
+    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
+}
+    return get_parametric_geometry(geometry.geometry[patch_id], patch_id)
 end
 
 function get_mapping(

@@ -57,7 +57,7 @@ function get_constituent_geometry(geometry::TensorProductGeometry, geometry_id::
     return get_constituent_geometries(geometry)[geometry_id]
 end
 
-function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int=1)
+function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
     return TensorProductGeometry(
         ntuple(
             geo -> get_parametric_geometry(get_constituent_geometry(geometry, geo)),

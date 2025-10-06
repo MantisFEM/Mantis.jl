@@ -38,7 +38,7 @@ end
 
 # This functions will need to be updated, since it currently assumes a single patch
 # geometry. This will also change when the dependency on FunctionSpaces is flipped.
-function get_parametric_geometry(geometry::HierarchicalGeometry, patch_id::Int=1)
+function get_parametric_geometry(geometry::HierarchicalGeometry, patch_id::Int)
     @warn "The `patch_id` argument is currently ignored."
     return compute_parametric_geometry(get_fe_space(geometry))
 end

@@ -190,22 +190,51 @@ function get_num_elements_per_patch(geometry::AbstractGeometry)
 end
 
 """
-    get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int=1)
+    get_geometry(geometry::AbstractGeometry, patch_id::Int)
 
-Computes the measure of the element given by `element_id` in `geometry`.
+Get (or create) the physical geometry on a specific patch.
+
+# Arguments
+- `geometry::AbstractGeometry`: The multi-patch geometry.
+- `patch_id::Int`: The patch ID.
+
+# Returns
+- ` <: AbstractGeometry{manifold_dim, image_dim, 1}`: The geometry on the specified patch.
+"""
+function get_geometry(geometry::AbstractGeometry, patch_id::Int)
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
+end
+
+function get_parametric_geometry(geometry::AbstractGeometry)
+    throw(
+        ArgumentError(
+            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
+        )
+    )
+end
+
+"""
+    get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
+
+Finds the parametric geometry of the patch given by `patch_id` in `geometry`. If no
+`patch_id` is given, the parametric geometry of the whole geometry is returned.
 
 # Arguments
 - 'geometry::AbstractGeometry': The (physical) geometry being used.
 - 'patch_id::Int': Index of the patch of which the parametric geometry is to be returned.
 
 # Returns
-- '<:AbstractGeometry': The parametric geometry associated with the specified patch.
+- '<:CartesianGeometry': The parametric geometry associated with the specified patch.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
 geometry type.
 """
-function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int=1)
+function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
     throw(
         ArgumentError(
             LazyString("Method not defined for geometry of type ",typeof(geometry),".")
