@@ -126,14 +126,19 @@ function jacobian(
     end
 
     num_eval_points = Points.get_num_points(xi)
-    J = zeros(num_eval_points, image_dim, manifold_dim)
-    for basis_id in eachindex(fem_basis_indices)
-        for cartesian_idx in CartesianIndices(J)
-            (point, k_im, k_mani) = Tuple(cartesian_idx)
-            J[point, k_im, k_mani] +=
-                fem_basis[2][der_idxs[k_mani]][1][point, basis_id] *
-                geometry.geometry_coeffs[fem_basis_indices[basis_id], k_im]
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64}}(undef, num_eval_points)
+    cartesian_idxs = CartesianIndices((image_dim, manifold_dim))
+    for point in 1:num_eval_points
+        Jp = zeros(image_dim, manifold_dim)
+        for basis_id in eachindex(fem_basis_indices)
+            for cartesian_idx in cartesian_idxs
+                (k_im, k_mani) = Tuple(cartesian_idx)
+                Jp[k_im, k_mani] +=
+                    fem_basis[2][der_idxs[k_mani]][1][point, basis_id] *
+                    geometry.geometry_coeffs[fem_basis_indices[basis_id], k_im]
+            end
         end
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
 
     return J

@@ -297,7 +297,7 @@ function _evaluate(
     x = Geometry.evaluate(geometry, element_idx, xi)
     J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
     form_eval = get_expression(form_field)(x)
-    form_eval[1][:] .*= LinearAlgebra.det.(eachslice(J; dims=1))
+    form_eval[1][:] .*= LinearAlgebra.det.(J)
 
     # We need to wrap form_basis_indices in [] to return a vector of vector to allow
     # multi-indexed expressions, like wedges
@@ -323,7 +323,7 @@ function _evaluate(
     a = zeros(num_eval_points, manifold_dim)
     for j in 1:image_dim
         for i in 1:num_eval_points
-            a[i, :] .+= form_eval[j][i] .* J[i, j, :]
+            a[i, :] .+= form_eval[j][i] .* J[i][j, :]
         end
     end
 

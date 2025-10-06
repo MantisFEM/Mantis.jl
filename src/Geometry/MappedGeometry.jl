@@ -96,14 +96,10 @@ function jacobian(
     mapping::Mapping{manifold_dim, image_dim, M, dM}, x::Matrix{Float64}
 ) where {manifold_dim, image_dim, M <: Function, dM <: Function}
     num_points = size(x, 1)
-    J = zeros(num_points, image_dim, manifold_dim)
 
-    for i in 1:num_points
-        # Compute Jacobian for each input point
-        J[i, :, :] .= mapping.dmapping(view(x, i, :))
-    end
-
-    return J
+    return [
+        SMatrix{image_dim, manifold_dim}(mapping.dmapping(view(x, i, :))) for i in 1:num_points
+    ]
 end
 
 struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -151,6 +147,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
         manifold_dim,
         image_dim_base,
         num_patches,
+        num_patches_G,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
         M <: NTuple{num_patches, Mapping}
     }
@@ -245,6 +242,21 @@ function get_parametric_geometry(
     return get_parametric_geometry(geometry.geometry[patch_id], patch_id)
 end
 
+function get_base_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
+) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    return geometry.geometry
+end
+
+function get_base_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
+) where {
+    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
+}
+    return geometry.geometry[patch_id]
+end
+
+
 function get_mapping(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
 ) where {manifold_dim, image_dim, num_patches, G, Map <: Mapping}
@@ -273,39 +285,57 @@ function get_element_measure(geometry::MappedGeometry, element_id::Int)
 end
 
 function evaluate(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map}
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    x = evaluate(get_parametric_geometry(geometry, patch_id), local_element_id, xi)
+    x = evaluate(get_base_geometry(geometry, patch_id), local_element_id, xi)
+    x_mapped = evaluate(get_mapping(geometry, patch_id), x)
+
+    return x_mapped
+end
+
+function evaluate(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    x = evaluate(get_base_geometry(geometry), element_id, xi)
+    patch_id = get_patch_id(geometry, element_id)
     x_mapped = evaluate(get_mapping(geometry, patch_id), x)
 
     return x_mapped
 end
 
 function jacobian(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches}
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+) where {manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map}
     # the Jacobian for the mapping from the elements to base geometry image
-    J_1 = jacobian(get_parametric_geometry(geometry, patch_id), local_element_id, xi)
-    x = evaluate(get_parametric_geometry(geometry, patch_id), local_element_id, xi)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, patch_id)
+    J_1 = jacobian(base_geometry, local_element_id, xi)
+    x = evaluate(base_geometry, local_element_id, xi)
     # the mapping from the image of the  base geometry to the image of the mapping
     J_2 = jacobian(get_mapping(geometry, patch_id), x)
 
-    num_points = size(x, 1)
-    J_1_image_dim = get_image_dim(geometry.geometry)
+    return J_2 .* J_1
+end
 
-    J = zeros(num_points, image_dim, manifold_dim)
-    for k_im_1 in 1:J_1_image_dim
-        for cart_id in CartesianIndices(J)
-            (point, k_im, k_mani) = Tuple(cart_id)
-            J[point, k_im, k_mani] += J_2[point, k_im, k_im_1] * J_1[point, k_im_1, k_mani]
-        end
-    end
+function jacobian(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    # the Jacobian for the mapping from the elements to base geometry image
+    base_geometry = get_base_geometry(geometry)
+    patch_id = get_patch_id(geometry, element_id)
+    J_1 = jacobian(base_geometry, element_id, xi)
+    x = evaluate(base_geometry, element_id, xi)
+    # the mapping from the image of the  base geometry to the image of the mapping
+    J_2 = jacobian(get_mapping(geometry, patch_id), x)
 
-    return J
+    return J_2 .* J_1
 end

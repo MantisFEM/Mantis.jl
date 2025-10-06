@@ -98,7 +98,11 @@ for element_row_idx in 1:nz_elements
     # This corresponds to the point with local coordinates [0.0, 0.0] on the first element of
     # row element_row_idx
     ξ = Points.CartesianPoints(([0.0], [0.0]))
-    J_cylinder_reference = [0.0 0.5*π 0.0;;; 0.0 0.0 dx_cylinder_line]
+    J_cylinder_reference = [[
+        0.0 0.0
+        0.5*π 0.0
+        0.0 dx_cylinder_line
+    ]]
     J_cylinder = Geometry.jacobian(
         cylinder_tensor_prod_geometry, (element_row_idx - 1) * nθ_elements + 1, ξ
     )
@@ -108,7 +112,11 @@ for element_row_idx in 1:nz_elements
     # This corresponds to the point with local coordinates [1.0, 0.0] on the first element
     # of row element_row_idx
     ξ = Points.CartesianPoints(([1.0], [0.0]))
-    J_cylinder_reference = [-0.5*π 0.0 0.0;;; 0.0 0.0 dx_cylinder_line]
+    J_cylinder_reference = [[
+        -0.5*π 0.0
+        0.0 0.0
+        0.0 dx_cylinder_line
+    ]]
     J_cylinder = Geometry.jacobian(
         cylinder_tensor_prod_geometry, (element_row_idx - 1) * nθ_elements + 1, ξ
     )
@@ -118,7 +126,11 @@ for element_row_idx in 1:nz_elements
     # This corresponds to the point with local coordinates [1.0, 0.0] on the second element
     # of row element_row_idx
     ξ = Points.CartesianPoints(([1.0], [0.0]))
-    J_cylinder_reference = [0.0 -0.5*π 0.0;;; 0.0 0.0 dx_cylinder_line]
+    J_cylinder_reference = [[
+        0.0 0.0
+        -0.5*π 0.0
+        0.0 dx_cylinder_line
+    ]]
     J_cylinder = Geometry.jacobian(
         cylinder_tensor_prod_geometry, (element_row_idx - 1) * nθ_elements + 2, ξ
     )
@@ -128,7 +140,11 @@ for element_row_idx in 1:nz_elements
     # This corresponds to the point with local coordinates [1.0, 0.0] on the third element
     # of row element_row_idx
     ξ = Points.CartesianPoints(([1.0], [0.0]))
-    J_cylinder_reference = [0.5*π 0.0 0.0;;; 0.0 0.0 dx_cylinder_line]
+    J_cylinder_reference = [[
+        0.5*π 0.0
+        0.0 0.0
+        0.0 dx_cylinder_line
+    ]]
     J_cylinder = Geometry.jacobian(
         cylinder_tensor_prod_geometry, (element_row_idx - 1) * nθ_elements + 3, ξ
     )
@@ -138,7 +154,11 @@ for element_row_idx in 1:nz_elements
     # This corresponds to the point with local coordinates [1.0, 0.0] on the fourth element
     # of row element_row_idx
     ξ = Points.CartesianPoints(([1.0], [0.0]))
-    J_cylinder_reference = [0.0 0.5*π 0.0;;; 0.0 0.0 dx_cylinder_line]
+    J_cylinder_reference = [[
+        0.0 0.0
+        0.5*π 0.0
+        0.0 dx_cylinder_line
+    ]]
     J_cylinder = Geometry.jacobian(
         cylinder_tensor_prod_geometry, (element_row_idx - 1) * nθ_elements + 4, ξ
     )

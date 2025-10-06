@@ -76,16 +76,11 @@ function jacobian(
     for k in 1:manifold_dim
         delta[k] = (element_vertices[k][2] - element_vertices[k][1])
     end
-
     num_points = Points.get_num_points(xi)
-    J = zeros(Float64, num_points, manifold_dim, manifold_dim)
-    for k in range(1, manifold_dim)
-        for point in 1:num_points
-            J[point, k, k] = delta[k]
-        end
-    end
 
-    return J
+    return [
+        SMatrix{manifold_dim, manifold_dim}(LinearAlgebra.I) .* delta for _ in 1:num_points
+    ]
 end
 
 function get_element_vertices(geometry::HierarchicalGeometry, element_id::Int)

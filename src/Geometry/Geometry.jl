@@ -6,7 +6,6 @@ Contains all geometry structure definitions and related methods.
 module Geometry
 
 using LinearAlgebra
-
 using StaticArrays
 
 import ..FunctionSpaces
@@ -406,6 +405,7 @@ include("./FEGeometry.jl")
 include("./MappedGeometry.jl")
 include("./TensorProductGeometry.jl")
 include("./HierarchicalGeometry.jl")
+include("./UnstructuredGeometry.jl")
 include("./Metric.jl")
 
 # helper functions for convenience

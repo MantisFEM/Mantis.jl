@@ -293,8 +293,6 @@ function jacobian(
     xi::Points.CartesianPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_jacobians = get_constituent_jacobians(geometry, element_id, xi)
-    num_points = Points.get_num_points(xi)
-    eval = zeros(num_points, image_dim, manifold_dim)
     const_image_indices = get_constituent_image_indices(geometry)
     const_manifold_indices = get_constituent_manifold_indices(geometry)
     cart_num_points = CartesianIndices(
@@ -304,15 +302,20 @@ function jacobian(
             num_geometries,
         ),
     )
-    for geo_id in 1:num_geometries
-        for point in axes(eval, 1)
-            eval[point, const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][
-                cart_num_points[point][geo_id], :, :,
-            ]
+
+    num_eval_points = Points.get_num_points(xi)
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64}}(undef, num_eval_points)
+    for point in 1:num_eval_points
+        Jp = zeros(image_dim, manifold_dim)
+        for geo_id in 1:num_geometries
+            Jp[
+                const_image_indices[geo_id], const_manifold_indices[geo_id]
+            ] .= @view const_jacobians[geo_id][cart_num_points[point][geo_id]][:, :]
         end
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
 
-    return eval
+    return J
 end
 
 function jacobian(
@@ -321,17 +324,20 @@ function jacobian(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_jacobians = get_constituent_jacobians(geometry, element_id, xi)
-    num_points = Points.get_num_points(xi)
-    eval = zeros(num_points, image_dim, manifold_dim)
     const_image_indices = get_constituent_image_indices(geometry)
     const_manifold_indices = get_constituent_manifold_indices(geometry)
-    for geo_id in 1:num_geometries
-        for point in axes(eval, 1)
-            eval[point, const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][
-                point, :, :,
-            ]
+
+    num_eval_points = Points.get_num_points(xi)
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64}}(undef, num_eval_points)
+    for point in 1:num_eval_points
+        Jp = zeros(image_dim, manifold_dim)
+        for geo_id in 1:num_geometries
+            Jp[
+                const_image_indices[geo_id], const_manifold_indices[geo_id]
+            ] .= @view const_jacobians[geo_id][point][:, :]
         end
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
 
-    return eval
+    return J
 end

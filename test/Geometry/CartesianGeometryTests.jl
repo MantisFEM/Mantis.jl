@@ -47,11 +47,11 @@ for i in 1:Geometry.get_num_elements(geometryMP)
     jac = Geometry.jacobian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
     if i <= 8
         for p in axes(jac, 1)
-            @test all(isapprox.(jac[p, :, :], [0.5 0.0; 0.0 0.75], rtol=1e-14))
+            @test all(isapprox.(jac[p][:, :], [0.5 0.0; 0.0 0.75], rtol=1e-14))
         end
     else
         for p in axes(jac, 1)
-            @test all(isapprox.(jac[p, :, :], [1/3 0.0; 0.0 1/5], rtol=1e-14))
+            @test all(isapprox.(jac[p][:, :], [1/3 0.0; 0.0 1/5], rtol=1e-14))
         end
     end
 end

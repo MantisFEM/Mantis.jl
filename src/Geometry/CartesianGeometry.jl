@@ -70,7 +70,7 @@ function get_constituent_num_elements(
     end
 end
 
-function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
+function get_geometry(geometry::CartesianGeometry, patch_id::Int)
     return CartesianGeometry((geometry.breakpoints[patch_id],))
 end
 
@@ -120,19 +120,14 @@ function jacobian(
             breakpoints[dim][const_element_id[dim]],
         manifold_dim,
     )
+
     # Generate the Jacobian for the Cartesian grid
     # Per point, it's a diagonal matrix multiplied by the cell spacings in each direction
     num_points = Points.get_num_points(xi)
-    J = zeros(num_points, manifold_dim, manifold_dim)
-    for dim in axes(J, 3)
-        for point in axes(J, 1)
-            J[point, dim, dim] = scaling[dim]
-        end
-    end
 
-    return J
-
-    # return [SMatrix{manifold_dim, manifold_dim}(LinearAlgebra.I) .* scaling for _ in 1:num_points]
+    return [
+        SMatrix{manifold_dim, manifold_dim}(LinearAlgebra.I) .* scaling for _ in 1:num_points
+    ]
 end
 
 function get_element_vertices(
