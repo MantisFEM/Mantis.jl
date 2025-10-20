@@ -218,17 +218,8 @@ function get_constituent_jacobians(
     return const_eval
 end
 
-"""
-    evaluate(
-        geometry::TensorProductGeometry{manifold_dim, T},
-        element_id::Int,
-        xi::Points.AbstractPoints{manifold_dim}
-    ) where {
-        manifold_dim, image_dim, num_geometries, T<:NTuple{num_geometries, AbstractGeometry}
-    }
 
-Go [here](Modules/Geometry.md) for more details.
-"""
+
 function evaluate(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
     element_id::Int,
@@ -276,17 +267,6 @@ function evaluate(
     return eval
 end
 
-"""
-    jacobian(
-        geometry::TensorProductGeometry{manifold_dim, T},
-        element_id::Int,
-        xi::Points.AbstractPoints{manifold_dim}
-    ) where {
-        manifold_dim, image_dim, num_geometries, T<:NTuple{num_geometries, AbstractGeometry}
-    }
-
-Go [here](Modules/Geometry.md) for more details.
-"""
 function jacobian(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
     element_id::Int,

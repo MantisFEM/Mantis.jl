@@ -23,10 +23,6 @@ Returns the dimensions of the domain manifold of a given geometry.
 
 # Returns
 - `::Int`: The domain manifold dimension.
-
-# Notes
-This method is used as a fallback if there isn't a more specific method to be used. The
-latter should only be implemented explicitly if necessary.
 """
 get_manifold_dim(
     ::AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -68,17 +64,22 @@ get_num_patches(
 Get the ID of the patch to which the specified global element belongs.
 
 # Arguments
-- `geometry::AbstractGeometry`: The multi-patch geometry.
+- `geometry::AbstractGeometry`: The (multi-patch) geometry.
 - `element_id::Int`: The global element ID.
 
 # Returns
-- `::Int`: ID of the patch to which the element belongs.
+- `patch_id::Int`: ID of the patch to which the element belongs.
+
+# Exceptions
+- ArgumentError "no field 'num_elements'": This error is thrown if the given `element_id`
+    is larger than the total number of elements found in the `geometry`.
 """
 function get_patch_id(geometry::AbstractGeometry, element_id::Int)
-    cumulative_elements = cumsum(get_num_elements_per_patch(geometry))
-    for ci in eachindex(cumulative_elements)
-        if element_id <= cumulative_elements[ci]
-            return ci
+    num_cumulative_elements = 0
+    for patch_id in 1:get_num_patches(geometry)
+        num_cumulative_elements += get_num_elements(geometry, patch_id)
+        if element_id <= num_cumulative_elements
+            return patch_id
         end
     end
     throw(
@@ -86,15 +87,17 @@ function get_patch_id(geometry::AbstractGeometry, element_id::Int)
             LazyString(
                 "Element ID ",
                 element_id,
-                " exceeds the total number of elements in the geometry.",
-            )
+                " exceeds the total number of elements (",
+                num_cumulative_elements,
+                ") in the geometry.",
+            ),
         ),
     )
 end
 
 function get_patch_id(
-    geometry::AbstractGeometry{manifold_dim, 1}, element_id::Int
-) where {manifold_dim}
+    geometry::AbstractGeometry{manifold_dim, image_dim, 1}, element_id::Int
+) where {manifold_dim, image_dim}
     return 1
 end
 
@@ -110,25 +113,43 @@ Get the constituent patch ID and local element ID for the specified global eleme
 # Returns
 - `patch_id::Int`: The patch ID
 - `local_element_id::Int`: The local element ID.
+
+# Exceptions
+- ArgumentError "no field 'num_elements'": This error is thrown if the given `element_id`
+    is larger than the total number of elements found in the `geometry`.
 """
 function get_patch_and_local_element_id(geometry::AbstractGeometry, element_id::Int)
-    patch_id = get_patch_id(geometry, element_id)
-
+    num_cumulative_elements = 0
     local_element_id = element_id
-    for (i, num_elements_patch_i) in pairs(get_num_elements_per_patch(geometry))
-        if i < patch_id
-            local_element_id -= num_elements_patch_i
-        else
-            break
+    for patch_id in 1:get_num_patches(geometry)
+        num_element_patch_i = get_num_elements(geometry, patch_id)
+        num_cumulative_elements += num_element_patch_i
+
+        if element_id <= num_cumulative_elements
+            return patch_id, local_element_id
         end
+
+        # Only subtract the number of elements on the current patch after we're sure that
+        # the element is not on this patch. Otherwise we will miscount.
+        local_element_id -= num_element_patch_i
     end
 
-    return patch_id, local_element_id
+    throw(
+        ArgumentError(
+            LazyString(
+                "Element ID ",
+                element_id,
+                " exceeds the total number of elements (",
+                num_cumulative_elements,
+                ") in the geometry.",
+            ),
+        ),
+    )
 end
 
 function get_patch_and_local_element_id(
-    geometry::AbstractGeometry{manifold_dim, 1}, element_id::Int
-) where {manifold_dim}
+    geometry::AbstractGeometry{manifold_dim, image_dim, 1}, element_id::Int
+) where {manifold_dim, image_dim}
     return 1, element_id
 end
 
@@ -145,15 +166,22 @@ Get the global element ID for the specified constituent patch ID and local eleme
 # Returns
 - `::Int`: The global element ID.
 """
-function get_global_element_id(geometry::AbstractGeometry, patch_id::Int, local_element_id::Int)
-    return sum(get_num_elements_per_patch(geometry)[begin:(patch_id - 1)]; init=0) +
-           local_element_id
+function get_global_element_id(
+    geometry::AbstractGeometry, patch_id::Int, local_element_id::Int
+)
+    global_element_id = 0
+    for i in 1:(patch_id - 1)
+        global_element_id += get_num_elements(geometry, i)
+    end
+    return global_element_id + local_element_id
 end
 
 """
     get_num_elements(geometry::AbstractGeometry)
+    get_num_elements(geometry::AbstractGeometry, patch_id::Int)
 
-Returns the number of elements in `geometry`.
+Returns the number of elements in `geometry`. If a `patch_id` is given, return the number of
+elements in the patch.
 
 # Arguments
 - `geometry::AbstractGeometry`: The geometry being used.
@@ -162,11 +190,21 @@ Returns the number of elements in `geometry`.
 - `::Int`: The number of elements in the geometry.
 
 # Notes
-This method is used as a fallback if there isn't a more specific method to be used. The
-latter should only be implemented explicitly if necessary.
+This method, without `patch_id`, is used as a fallback. When the `patch_id` is specified,
+there is no fallback.
+
+# Exceptions
+- Error "no field 'num_elements'": This error is thrown if the number of elements is not
+    stored in a field called `num_elements` and if no specific `get_num_elements` method is
+    defined for the given `geometry`.
+- MethodError: This error is explicitly thrown if a `patch_id` is given, but no specialised
+    method is implemented.
 """
 function get_num_elements(geometry::AbstractGeometry)
     return geometry.num_elements
+end
+function get_num_elements(geometry::AbstractGeometry, patch_id::Int)
+    throw(MethodError(get_num_elements, (geometry, patch_id)))
 end
 
 """
@@ -178,11 +216,16 @@ Returns the number of elements in each patch of `geometry`.
 - `geometry::AbstractGeometry`: The geometry being used.
 
 # Returns
-- `::Int`: The number of elements in the geometry.
+- `::NTuple{num_patches, Int}`: The number of elements per patch in the geometry.
 
 # Notes
 This method is used as a fallback if there isn't a more specific method to be used. The
 latter should only be implemented explicitly if necessary.
+
+# Exceptions
+- Error "no field 'num_elements_per_patch'": This error is thrown if the number of elements
+    per patch is not stored in a field called `num_elements_per_patch` and if no specific
+    `get_num_elements_per_patch` method is defined for the given `geometry`.
 """
 function get_num_elements_per_patch(geometry::AbstractGeometry)
     return geometry.num_elements_per_patch
@@ -198,22 +241,18 @@ Get (or create) the physical geometry on a specific patch.
 - `patch_id::Int`: The patch ID.
 
 # Returns
-- ` <: AbstractGeometry{manifold_dim, image_dim, 1}`: The geometry on the specified patch.
+- `<:AbstractGeometry{manifold_dim, image_dim, 1}`: The geometry on the specified patch.
+
+# Notes
+There is no generic fallback for this method. It should be implemented for each concrete
+geometry type.
 """
 function get_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
+    throw(MethodError(get_geometry, (geometry, patch_id)))
 end
 
 function get_parametric_geometry(geometry::AbstractGeometry)
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
+    throw(MethodError(get_parametric_geometry, geometry))
 end
 
 """
@@ -224,21 +263,17 @@ Finds the parametric geometry of the patch given by `patch_id` in `geometry`. If
 
 # Arguments
 - 'geometry::AbstractGeometry': The (physical) geometry being used.
-- 'patch_id::Int': Index of the patch of which the parametric geometry is to be returned.
+- 'patch_id::Int': (Optional) ID of the patch to get the parametric geometry for.
 
 # Returns
-- '<:CartesianGeometry': The parametric geometry associated with the specified patch.
+- '<:CartesianGeometry': The (patch-wise) parametric geometry.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
 geometry type.
 """
 function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
+    throw(MethodError(get_parametric_geometry, (geometry, patch_id)))
 end
 
 """
@@ -260,8 +295,8 @@ geometry type.
 function get_element_measure(geometry::AbstractGeometry, element_id::Int)
     throw(
         ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
+            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
+        ),
     )
 end
 
@@ -289,8 +324,8 @@ function get_element_lengths(
 ) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
+            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
+        ),
     )
 end
 
@@ -318,8 +353,8 @@ function get_element_vertices(
 ) where {manifold_dim, image_dim, num_patches}
     throw(
         ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
+            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
+        ),
     )
 end
 
@@ -330,20 +365,18 @@ end
         xi::Points.AbstractPoints{manifold_dim},
     ) where {manifold_dim, image_dim, num_patches}
 
-Computes the evaluation of the physical points, mapped from the canonical points `xi`, of
+Computes the coordinates of the physical points, given the canonical points `xi`, on
 the element identified by `element_id` of a given `geometry`.
 
 # Arguments
 - `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being evaluated.
-- `element_id::Int`: The identifier of the element where the evaluation takes place.
-- `xi::NTuple{manifold_dim,Vector{Float64}}`: The points in canonical space used for
-    evaluation.
+- `element_id::Int`: The global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
+    evaluate the geometry.
 
 # Returns
-- `eval::Matrix{Float64}`: The geometry evaluatation based on `element_id` and `xi`. The
-    dimensions of `eval` are `(num_eval_points, image_dim)`, where `num_eval_points` is the
-    product of the number of evaluation points in `xi` in each dimension, and `image_dim` is
-    the image manifold dimension of `geometry`.
+- `::Matrix{Float64}`: The physical coordinates of `xi` on element `element_id`. The
+    size of the matrix is `(num_eval_points, image_dim)`.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
@@ -354,11 +387,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
+    throw(MethodError(evaluate, (geometry, element_id, xi)))
 end
 
 """
@@ -368,20 +397,19 @@ end
         xi::Points.AbstractPoints{manifold_dim},
     ) where {manifold_dim, image_dim, num_patches}
 
-Computes the jacobian at the physical points, mapped from the canonical points `xi`, of the
+Computes the jacobian at the physical points, given the canonical points `xi,` on the
 element identified by `element_id` of a given `geometry`.
 
 # Arguments
 - `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
-- `element_id::Int`: The identifier of the element where the evaluation takes place.
-- `xi::NTuple{manifold_dim,Vector{Float64}}`: The points in canonical space used for
-    evaluation.
+- `element_id::Int`: The global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain to evaluate
+    the jacobian at.
 
 # Returns
-- `J::Matrix{Float64}`: The jacobian evaluatation based on `element_id` and `xi`. The
-    dimensions of `J` are `(num_eval_points, image_dim, manifold_dim)`, where
-    `num_eval_points` is the product of the number of evaluation points in `xi` in each
-    dimension, and `image_dim` is the image manifold dimension of `geometry`.
+- `::Vector{SMatrix{image_dim, manifold_dim, Float64}}`: The jacobian at the physical points
+    corresponding to the canonical points `xi` on element `element_id`. The length of the
+    vector equals the number of evaluation points.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
@@ -392,11 +420,7 @@ function jacobian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ",typeof(geometry),".")
-        )
-    )
+    throw(MethodError(jacobian, (geometry, element_id, xi)))
 end
 
 # core functionality

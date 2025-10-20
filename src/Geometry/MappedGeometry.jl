@@ -77,21 +77,6 @@ function evaluate(mapping::Mapping, x::Matrix{Float64})
     return eval
 end
 
-"""
-    jacobian(mapping::Mapping, x::Matrix{Float64})
-
-Evaluates the jacobian at the physical points mapped from the parametric points `x`.
-
-# Arguments
-- `mapping::Mapping`: The mapping defining the transformation of the points `x`.
-- `x::Matrix{Float64}`: The points in parametric space to be mapped.
-
-# Returns
-- `::Matrix{Float64}`: The mapped points in physical space. The size of the matrix is
-    `(num_points, image_dim, manifold_dim)`, where `num_points` is the number of rows in
-    `x`, `image_dim` is the dimension of the mapped points and `manifold_dim` is the number
-    of columns in `x`.
-"""
 function jacobian(
     mapping::Mapping{manifold_dim, image_dim, M, dM}, x::Matrix{Float64}
 ) where {manifold_dim, image_dim, M <: Function, dM <: Function}
