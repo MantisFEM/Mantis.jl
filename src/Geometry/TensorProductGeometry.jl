@@ -1,8 +1,9 @@
 """
-    TensorProductGeometry{manifold_dim, image_dim, num_geometries, T, CI, LI} <:
-    AbstractGeometry{manifold_dim}
+    TensorProductGeometry{
+        manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
+    } <: AbstractGeometry{manifold_dim, image_dim, num_patches}
 
-A geometry type representing the tensor product of multiple constituent geometries.
+A geometry build by tensoring multiple constituent geometries.
 
 # Fields
 - `geometries::T`: Tuple of constituent geometries.
@@ -11,11 +12,13 @@ A geometry type representing the tensor product of multiple constituent geometri
   to Cartesian indexing.
 - `lin_num_elements::LI`: Useful to convert from Cartesian to linear indexing.
 """
-struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI} <:
-       AbstractGeometry{manifold_dim, image_dim, num_patches}
+struct TensorProductGeometry{
+    manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
+} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
     geometries::T
     cart_num_elements::CI
     lin_num_elements::LI
+    num_elements_per_patch::NTuple{num_patches, Int}
 
     function TensorProductGeometry(
         geometries::T
@@ -25,49 +28,54 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
         )
         cart_num_elements = CartesianIndices(const_num_elements)
         lin_num_elements = LinearIndices(cart_num_elements)
+
         manifold_dim = sum(get_manifold_dim, geometries)
         image_dim = sum(get_image_dim, geometries)
+        num_patches = prod(get_num_patches, geometries)
+
+        # The above iterators over the elements also work in the multi-patch case due to the
+        # (global) tensor-product structure. However, to make it compatible with other multi
+        # -patch functions, an efficient get_num_elements_per_patch is needed. This is
+        # easily and efficiently done once here and then stored. Hence the next 10 lines.
+        const_num_patches = ntuple(
+            geometry -> get_num_patches(geometries[geometry]), num_geometries
+        )
+        cart_num_patches = CartesianIndices(const_num_patches)
+        num_elements_per_patch = ntuple(num_patches) do patch_id
+            return prod(map(get_num_elements, geometries, Tuple(cart_num_patches[patch_id])))
+        end
 
         return new{
             manifold_dim,
             image_dim,
-            1,
+            num_patches,
             num_geometries,
             T,
             typeof(cart_num_elements),
             typeof(lin_num_elements),
         }(
-            geometries, cart_num_elements, lin_num_elements
+            geometries, cart_num_elements, lin_num_elements, num_elements_per_patch
         )
     end
 end
 
+# Get properties.
 get_cart_num_elements(geometry::TensorProductGeometry) = geometry.cart_num_elements
 get_lin_num_elements(geometry::TensorProductGeometry) = geometry.lin_num_elements
 get_constituent_geometries(geometry::TensorProductGeometry) = geometry.geometries
-get_num_geometries(::TensorProductGeometry{
-    manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
-}) where{manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI} = num_geometries
-
-function get_num_elements(geometry::TensorProductGeometry)
-    return prod(get_constituent_num_elements(geometry))
-end
-
+get_num_geometries(
+    ::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI}
+) where {manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI} = num_geometries
 function get_constituent_geometry(geometry::TensorProductGeometry, geometry_id::Int)
     return get_constituent_geometries(geometry)[geometry_id]
 end
 
-function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
-    return TensorProductGeometry(
-        ntuple(
-            geo -> get_parametric_geometry(get_constituent_geometry(geometry, geo)),
-            get_num_geometries(geometry),
-        )
-    )
-end
-
+# Getters for consituents.
 function get_constituent_num_elements(geometry::TensorProductGeometry)
-    return Tuple(maximum(get_cart_num_elements(geometry)))
+    # The cartesian number of elements is always ordered and created with the number of
+    # elements in each geometry. So, its last entry is the total number of elements per
+    # geometry. This means we don't have to search for its maximum.
+    return Tuple(last(get_cart_num_elements(geometry)))
 end
 
 function get_constituent_element_id(geometry::TensorProductGeometry, element_id::Int)
@@ -77,13 +85,18 @@ end
 function get_constituent_manifold_dim(geometry::TensorProductGeometry)
     const_geometries = get_constituent_geometries(geometry)
 
-    return ntuple(geometry -> get_manifold_dim(const_geometries[geometry]), get_num_geometries(geometry))
+    return ntuple(
+        geometry -> get_manifold_dim(const_geometries[geometry]),
+        get_num_geometries(geometry),
+    )
 end
 
 function get_constituent_image_dim(geometry::TensorProductGeometry)
     const_geometries = get_constituent_geometries(geometry)
 
-    return ntuple(geometry -> get_image_dim(const_geometries[geometry]), get_num_geometries(geometry))
+    return ntuple(
+        geometry -> get_image_dim(const_geometries[geometry]), get_num_geometries(geometry)
+    )
 end
 
 function get_constituent_manifold_indices(geometry::TensorProductGeometry)
@@ -132,42 +145,6 @@ function get_constituent_element_lengths(geometry::TensorProductGeometry, elemen
     return const_element_lengths
 end
 
-function get_element_vertices(geometry::TensorProductGeometry, element_id::Int)
-    const_element_vertices = get_constituent_element_vertices(geometry, element_id)
-    const_manifold_dim = get_constituent_manifold_dim(geometry)
-    cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
-    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
-        const_geometry_id = findfirst(
-            cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
-        )
-        const_dim_id = dim - cum_const_manifold_dim[const_geometry_id]
-
-        return const_element_vertices[const_geometry_id][const_dim_id]
-    end
-
-    return element_vertices
-end
-
-function get_element_lengths(geometry::TensorProductGeometry, element_id::Int)
-    const_element_lengths = get_constituent_element_lengths(geometry, element_id)
-    const_manifold_dim = get_constituent_manifold_dim(geometry)
-    cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
-    element_lengths = ntuple(get_manifold_dim(geometry)) do dim
-        const_geometry_id = findfirst(
-            cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
-        )
-        const_dim_id = dim - cum_const_manifold_dim[const_geometry_id]
-
-        return const_element_lengths[const_geometry_id][const_dim_id]
-    end
-
-    return element_lengths
-end
-
-function get_element_measure(geometry::TensorProductGeometry, element_id::Int)
-    return prod(get_element_lengths(geometry, element_id))
-end
-
 function get_constituent_evaluation_points(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
     xi::Points.AbstractPoints{manifold_dim},
@@ -208,18 +185,79 @@ function get_constituent_jacobians(
     const_geometries = get_constituent_geometries(geometry)
     const_element_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_eval = ntuple(
-        geometry -> jacobian(
-            const_geometries[geometry], const_element_id[geometry], const_xi[geometry]
-        ),
-        num_geometries,
-    )
+    const_jac = map(jacobian, const_geometries, Tuple(const_element_id), const_xi)
 
-    return const_eval
+    return const_jac
 end
 
+# Getters for geometries.
+function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
+    const_num_patches = ntuple(
+        gi -> get_num_patches(get_constituent_geometry(geometry, gi)),
+        get_num_geometries(geometry),
+    )
+    cart_num_patches = CartesianIndices(const_num_patches)
+    patch_id_per_geo = cart_num_patches[patch_id]
+    breakpoints_per_geo = ntuple(
+        geo_id -> get_breakpoints(
+            get_parametric_geometry(get_constituent_geometry(geometry, geo_id)),
+            patch_id_per_geo[geo_id],
+        ),
+        get_num_geometries(geometry),
+    )
+    return CartesianGeometry(Base.IteratorsMD.flatten(breakpoints_per_geo))
+end
 
+function get_parametric_geometry(geometry::TensorProductGeometry)
+    return CartesianGeometry(
+        ntuple(get_num_patches(geometry)) do patch_id
+            return get_breakpoints(get_parametric_geometry(geometry, patch_id))
+        end,
+    )
+end
 
+# Getters for numbers, sizes, shapes, lengths, etc.
+function get_num_elements(geometry::TensorProductGeometry)
+    return length(get_cart_num_elements(geometry))
+end
+
+function get_element_vertices(geometry::TensorProductGeometry, element_id::Int)
+    const_element_vertices = get_constituent_element_vertices(geometry, element_id)
+    const_manifold_dim = get_constituent_manifold_dim(geometry)
+    cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
+    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
+        const_geometry_id = findfirst(
+            cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
+        )
+        const_dim_id = dim - cum_const_manifold_dim[const_geometry_id]
+
+        return const_element_vertices[const_geometry_id][const_dim_id]
+    end
+
+    return element_vertices
+end
+
+function get_element_lengths(geometry::TensorProductGeometry, element_id::Int)
+    const_element_lengths = get_constituent_element_lengths(geometry, element_id)
+    const_manifold_dim = get_constituent_manifold_dim(geometry)
+    cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
+    element_lengths = ntuple(get_manifold_dim(geometry)) do dim
+        const_geometry_id = findfirst(
+            cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
+        )
+        const_dim_id = dim - cum_const_manifold_dim[const_geometry_id]
+
+        return const_element_lengths[const_geometry_id][const_dim_id]
+    end
+
+    return element_lengths
+end
+
+function get_element_measure(geometry::TensorProductGeometry, element_id::Int)
+    return prod(get_element_lengths(geometry, element_id))
+end
+
+# Evaluations and derivatives.
 function evaluate(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
     element_id::Int,
@@ -288,9 +326,9 @@ function jacobian(
     for point in 1:num_eval_points
         Jp = zeros(image_dim, manifold_dim)
         for geo_id in 1:num_geometries
-            Jp[
-                const_image_indices[geo_id], const_manifold_indices[geo_id]
-            ] .= @view const_jacobians[geo_id][cart_num_points[point][geo_id]][:, :]
+            Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][cart_num_points[point][geo_id]][
+                :, :,
+            ]
         end
         J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
@@ -312,9 +350,9 @@ function jacobian(
     for point in 1:num_eval_points
         Jp = zeros(image_dim, manifold_dim)
         for geo_id in 1:num_geometries
-            Jp[
-                const_image_indices[geo_id], const_manifold_indices[geo_id]
-            ] .= @view const_jacobians[geo_id][point][:, :]
+            Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][point][
+                :, :,
+            ]
         end
         J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end

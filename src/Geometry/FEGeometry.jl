@@ -28,23 +28,39 @@ coefficients `geometry_coeffs`.
 # Outer Constructors
 - [`compute_parametric_geometry`](@ref).
 """
-struct FEGeometry{manifold_dim, image_dim, num_patches, F} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
+struct FEGeometry{manifold_dim, image_dim, num_patches, F} <:
+       AbstractGeometry{manifold_dim, image_dim, num_patches}
     geometry_coeffs::Matrix{Float64}
     fe_space::F
     num_elements::Int
 
     function FEGeometry(
         fe_space::F, geometry_coeffs::Matrix{Float64}
-    ) where {manifold_dim, num_patches, F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_patches}}
+    ) where {
+        manifold_dim,
+        num_patches,
+        F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_patches},
+    }
         num_elements = FunctionSpaces.get_num_elements(fe_space)
         image_dim = size(geometry_coeffs, 2)
 
-        return new{manifold_dim, image_dim, num_patches, F}(geometry_coeffs, fe_space, num_elements)
+        if num_patches > 1
+            @warn "This geometry has not been updated to deal with multiple patches."
+        end
+
+        return new{manifold_dim, image_dim, num_patches, F}(
+            geometry_coeffs, fe_space, num_elements
+        )
     end
 end
 
 function get_fe_space(geometry::FEGeometry)
     return geometry.fe_space
+end
+
+# Only true for the single-patch case!
+function get_num_elements_per_patch(geometry::FEGeometry)
+    return get_num_elements(geometry)
 end
 
 """

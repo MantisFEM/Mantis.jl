@@ -28,9 +28,9 @@ Returns the dimension of the domain manifold of the mapping.
 # Returns
 - `::Int`: The dimension of the domain manifold.
 """
-function get_manifold_dim(::Mapping{manifold_dim, image_dim, M, dM}) where {
-    manifold_dim, image_dim, M, dM
-}
+function get_manifold_dim(
+    ::Mapping{manifold_dim, image_dim, M, dM}
+) where {manifold_dim, image_dim, M, dM}
     return manifold_dim
 end
 
@@ -45,9 +45,9 @@ Returns the dimension of the image manifold of the mapping.
 # Returns
 - `::Int`: The dimension of the image manifold.
 """
-function get_image_dim(::Mapping{manifold_dim, image_dim, M, dM}) where {
-    manifold_dim, image_dim, M, dM
-}
+function get_image_dim(
+    ::Mapping{manifold_dim, image_dim, M, dM}
+) where {manifold_dim, image_dim, M, dM}
     return image_dim
 end
 
@@ -83,11 +83,13 @@ function jacobian(
     num_points = size(x, 1)
 
     return [
-        SMatrix{image_dim, manifold_dim}(mapping.dmapping(view(x, i, :))) for i in 1:num_points
+        SMatrix{image_dim, manifold_dim}(mapping.dmapping(view(x, i, :))) for
+        i in 1:num_points
     ]
 end
 
-struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
+struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
+       AbstractGeometry{manifold_dim, image_dim, num_patches}
     geometry::G
     mapping::Map
     num_elements::Int
@@ -102,23 +104,30 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
         image_dim_base,
         num_patches,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
-        M <: NTuple{num_patches, Mapping}
+        M <: NTuple{num_patches, Mapping},
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
 
         image_dim = get_image_dim(mapping[1])
         for i in eachindex(mapping)
             if get_image_dim(mapping[i]) != image_dim
-                throw(ArgumentError(LazyString(
-                    "All mappings must have the same image dim. Mapping ",i,
-                    " has an image dim of ",get_image_dim(mapping[i])," instead of ",
-                    image_dim
-                )))
+                throw(
+                    ArgumentError(
+                        LazyString(
+                            "All mappings must have the same image dim. Mapping ",
+                            i,
+                            " has an image dim of ",
+                            get_image_dim(mapping[i]),
+                            " instead of ",
+                            image_dim,
+                        ),
+                    ),
+                )
             end
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
-            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
@@ -134,30 +143,44 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
         num_patches,
         num_patches_G,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
-        M <: NTuple{num_patches, Mapping}
+        M <: NTuple{num_patches, Mapping},
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
         image_dim = get_image_dim(mapping[1])
         for i in eachindex(mapping)
             if get_image_dim(mapping[i]) != image_dim
-                throw(ArgumentError(LazyString(
-                    "All mappings must have the same image dim. Mapping ",i,
-                    " has an image dim of ",get_image_dim(mapping[i])," instead of ",
-                    image_dim
-                )))
+                throw(
+                    ArgumentError(
+                        LazyString(
+                            "All mappings must have the same image dim. Mapping ",
+                            i,
+                            " has an image dim of ",
+                            get_image_dim(mapping[i]),
+                            " instead of ",
+                            image_dim,
+                        ),
+                    ),
+                )
             end
         end
 
         if num_patches_G != 1 || num_patches_G != num_patches
-            throw(ArgumentError(LazyString(
-                "The underlying geometry must have the same number of patches as the ",
-                "number of mappings, but the geometry has ",num_patches_G,
-                " patches, while there are ",num_patches," mappings."
-            )))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The underlying geometry must have the same number of patches as ",
+                        "the number of mappings, but the geometry has ",
+                        num_patches_G,
+                        " patches, while there are ",
+                        num_patches,
+                        " mappings.",
+                    ),
+                ),
+            )
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
-            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
@@ -169,14 +192,14 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
         image_dim_base,
         num_patches,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
-        Map <: Mapping
+        Map <: Mapping,
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
 
         image_dim = get_image_dim(mapping)
 
         return new{manifold_dim, image_dim, num_patches, G, Map}(
-            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
@@ -187,60 +210,32 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <: AbstractG
         manifold_dim,
         image_dim_base,
         G <: AbstractGeometry{manifold_dim, image_dim_base, 1},
-        Map <: Mapping
+        Map <: Mapping,
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
 
         image_dim = get_image_dim(mapping)
 
         return new{manifold_dim, image_dim, 1, G, Map}(
-            geometry, mapping, sum(num_elements_per_patch), Tuple(num_elements_per_patch)
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 end
 
-function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
-) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
-    return get_parametric_geometry(geometry.geometry)
-end
-
-function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
-) where {
-    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
-}
-    return CartesianGeometry(get_breakpoints.(get_parametric_geometry.(geometry.geometry)))
-end
-
-function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
-) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
-    return get_parametric_geometry(geometry.geometry, patch_id)
-end
-
-function get_parametric_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
-) where {
-    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
-}
-    return get_parametric_geometry(geometry.geometry[patch_id], patch_id)
-end
-
+# Get properties.
 function get_base_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
 ) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
     return geometry.geometry
 end
 
 function get_base_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
 ) where {
     manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
 }
     return geometry.geometry[patch_id]
 end
-
 
 function get_mapping(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
@@ -254,7 +249,16 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
+# Getters for geometries.
+function get_parametric_geometry(geometry::MappedGeometry)
+    return get_parametric_geometry(get_base_geometry(geometry))
+end
 
+function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
+    return get_parametric_geometry(get_base_geometry(geometry, patch_id))
+end
+
+# Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     return get_element_lengths(
@@ -269,11 +273,12 @@ function get_element_measure(geometry::MappedGeometry, element_id::Int)
     )
 end
 
+# Evaluations and derivatives.
 function evaluate(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map}
+) where {manifold_dim, image_dim, num_patches, G, Map}
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     x = evaluate(get_base_geometry(geometry, patch_id), local_element_id, xi)
     x_mapped = evaluate(get_mapping(geometry, patch_id), x)
@@ -281,44 +286,16 @@ function evaluate(
     return x_mapped
 end
 
-function evaluate(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
-    element_id::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
-    x = evaluate(get_base_geometry(geometry), element_id, xi)
-    patch_id = get_patch_id(geometry, element_id)
-    x_mapped = evaluate(get_mapping(geometry, patch_id), x)
-
-    return x_mapped
-end
-
 function jacobian(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map}
+) where {manifold_dim, image_dim, num_patches, G, Map}
     # the Jacobian for the mapping from the elements to base geometry image
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     base_geometry = get_base_geometry(geometry, patch_id)
     J_1 = jacobian(base_geometry, local_element_id, xi)
     x = evaluate(base_geometry, local_element_id, xi)
-    # the mapping from the image of the  base geometry to the image of the mapping
-    J_2 = jacobian(get_mapping(geometry, patch_id), x)
-
-    return J_2 .* J_1
-end
-
-function jacobian(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
-    element_id::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
-    # the Jacobian for the mapping from the elements to base geometry image
-    base_geometry = get_base_geometry(geometry)
-    patch_id = get_patch_id(geometry, element_id)
-    J_1 = jacobian(base_geometry, element_id, xi)
-    x = evaluate(base_geometry, element_id, xi)
     # the mapping from the image of the  base geometry to the image of the mapping
     J_2 = jacobian(get_mapping(geometry, patch_id), x)
 

@@ -71,8 +71,15 @@ Get the ID of the patch to which the specified global element belongs.
 - `patch_id::Int`: ID of the patch to which the element belongs.
 
 # Exceptions
-- ArgumentError "no field 'num_elements'": This error is thrown if the given `element_id`
-    is larger than the total number of elements found in the `geometry`.
+- ArgumentError: This error is thrown if the given `element_id` is larger than the total
+    number of elements found in the `geometry`.
+- Error "no field 'num_elements'": This error is thrown if the number of elements is not
+    stored in a field called `num_elements` and if no specific `get_num_elements` method is
+    defined for the given `geometry`.
+- Error "no field 'num_elements_per_patch'": This error is thrown if the number of elements
+    per patch is not stored in a field called `num_elements_per_patch` and if no specific
+    `get_num_elements`-method (with `patch_id` argument) is defined for the given
+    `geometry`.
 """
 function get_patch_id(geometry::AbstractGeometry, element_id::Int)
     num_cumulative_elements = 0
@@ -115,8 +122,15 @@ Get the constituent patch ID and local element ID for the specified global eleme
 - `local_element_id::Int`: The local element ID.
 
 # Exceptions
-- ArgumentError "no field 'num_elements'": This error is thrown if the given `element_id`
-    is larger than the total number of elements found in the `geometry`.
+- ArgumentError: This error is thrown if the given `element_id` is larger than the total
+    number of elements found in the `geometry`.
+- Error "no field 'num_elements'": This error is thrown if the number of elements is not
+    stored in a field called `num_elements` and if no specific `get_num_elements` method is
+    defined for the given `geometry`.
+- Error "no field 'num_elements_per_patch'": This error is thrown if the number of elements
+    per patch is not stored in a field called `num_elements_per_patch` and if no specific
+    `get_num_elements`-method (with `patch_id` argument) is defined for the given
+    `geometry`.
 """
 function get_patch_and_local_element_id(geometry::AbstractGeometry, element_id::Int)
     num_cumulative_elements = 0
@@ -190,21 +204,23 @@ elements in the patch.
 - `::Int`: The number of elements in the geometry.
 
 # Notes
-This method, without `patch_id`, is used as a fallback. When the `patch_id` is specified,
-there is no fallback.
+This method is used as a fallback and assumes that the number of elements (per patch) are
+explicitly stored.
 
 # Exceptions
 - Error "no field 'num_elements'": This error is thrown if the number of elements is not
     stored in a field called `num_elements` and if no specific `get_num_elements` method is
     defined for the given `geometry`.
-- MethodError: This error is explicitly thrown if a `patch_id` is given, but no specialised
-    method is implemented.
+- Error "no field 'num_elements_per_patch'": This error is thrown if the number of elements
+    per patch is not stored in a field called `num_elements_per_patch` and if no specific
+    `get_num_elements_per_patch`- or `get_num_elements`-method (with `patch_id` argument) is
+    defined for the given `geometry`.
 """
 function get_num_elements(geometry::AbstractGeometry)
     return geometry.num_elements
 end
 function get_num_elements(geometry::AbstractGeometry, patch_id::Int)
-    throw(MethodError(get_num_elements, (geometry, patch_id)))
+    return get_num_elements_per_patch(geometry)[patch_id]
 end
 
 """

@@ -75,7 +75,10 @@ function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int
 end
 
 function get_constituent_num_elements(geometry::CartesianGeometry, patch_id::Int)
-    return Tuple(maximum(get_cart_num_elements(geometry, patch_id)))
+    # The cartesian number of elements is always ordered and created with the number of
+    # elements in each constituent. So, its last entry is the total number of elements per
+    # constituent. This means we don't have to search for its maximum.
+    return Tuple(last(get_cart_num_elements(geometry, patch_id)))
 end
 function get_constituent_num_elements(geometry::CartesianGeometry)
     return (get_constituent_num_elements(geometry, i) for i in 1:get_num_patches(geometry))

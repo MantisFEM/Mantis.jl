@@ -17,9 +17,9 @@ function basic_tests(geometry, answers)
     @test Geometry.get_num_elements(geometry) == answers[4]
     @test Geometry.get_manifold_dim(geometry) == answers[5]
     @test Geometry.get_image_dim(geometry) == answers[6]
-    @test Geometry.get_num_elements_per_patch(geometry) == answers[7]
+    @test all(Geometry.get_num_elements_per_patch(geometry) .== answers[7])
     @test Geometry.get_num_elements(geometry, 1) == answers[8]
-    @test Geometry.get_element_lengths(geometry, 1) == answers[9]
+    @test all(isapprox.(Geometry.get_element_lengths(geometry, 1), answers[9], rtol=1e-14))
 
     return nothing
 end
@@ -60,6 +60,25 @@ answers_LR = (
     (0.5, 0.75),
 )
 basic_tests(geometryLR, answers_LR)
+
+# Multi-patch input. 2 patches, 2D. Homogeneous input. First patch has more element than the
+# second.
+geometryMP2 = Geometry.CartesianGeometry((
+    (LinRange(-0.5, 2.5, 16), LinRange(-0.5, 2.5, 31)),
+    (LinRange(2.5, 3.0, 4), LinRange(-0.5, 2.5, 9)),
+))
+answers_MP2 = (
+    ((LinRange(-0.5, 2.5, 16), LinRange(-0.5, 2.5, 31))),
+    [(15, 30), (3, 8)],
+    2,
+    474,
+    2,
+    2,
+    (450, 24),
+    450,
+    (0.2, 0.1),
+)
+basic_tests(geometryMP2, answers_MP2)
 
 # Multi-patch input. 2 patches, 2D. Heterogeneous input (not recommended).
 geometryMP = Geometry.CartesianGeometry((
