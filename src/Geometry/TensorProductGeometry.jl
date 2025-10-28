@@ -79,7 +79,7 @@ function get_constituent_num_elements(geometry::TensorProductGeometry)
 end
 
 function get_constituent_element_id(geometry::TensorProductGeometry, element_id::Int)
-    return get_cart_num_elements(geometry)[element_id]
+    return Tuple(get_cart_num_elements(geometry)[element_id])
 end
 
 function get_constituent_manifold_dim(geometry::TensorProductGeometry)
@@ -125,11 +125,7 @@ end
 function get_constituent_element_vertices(geometry::TensorProductGeometry, element_id::Int)
     const_spaces = get_constituent_geometries(geometry)
     const_element_id = get_constituent_element_id(geometry, element_id)
-    const_element_vertices = ntuple(
-        geometry ->
-            get_element_vertices(const_spaces[geometry], const_element_id[geometry]),
-        get_num_geometries(geometry),
-    )
+    const_element_vertices = map(get_element_vertices, const_spaces, const_element_id)
 
     return const_element_vertices
 end
@@ -137,10 +133,7 @@ end
 function get_constituent_element_lengths(geometry::TensorProductGeometry, element_id::Int)
     const_spaces = get_constituent_geometries(geometry)
     const_element_id = get_constituent_element_id(geometry, element_id)
-    const_element_lengths = ntuple(
-        geometry -> get_element_lengths(const_spaces[geometry], const_element_id[geometry]),
-        get_num_geometries(geometry),
-    )
+    const_element_lengths = map(get_element_lengths, const_spaces, const_element_id)
 
     return const_element_lengths
 end
@@ -167,12 +160,7 @@ function get_constituent_evaluations(
     const_geometries = get_constituent_geometries(geometry)
     const_element_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_eval = ntuple(
-        geometry -> evaluate(
-            const_geometries[geometry], const_element_id[geometry], const_xi[geometry]
-        ),
-        num_geometries,
-    )
+    const_eval = map(evaluate, const_geometries, const_element_id, const_xi)
 
     return const_eval
 end
@@ -185,7 +173,7 @@ function get_constituent_jacobians(
     const_geometries = get_constituent_geometries(geometry)
     const_element_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_jac = map(jacobian, const_geometries, Tuple(const_element_id), const_xi)
+    const_jac = map(jacobian, const_geometries, const_element_id, const_xi)
 
     return const_jac
 end
@@ -210,7 +198,7 @@ end
 
 function get_parametric_geometry(geometry::TensorProductGeometry)
     return CartesianGeometry(
-        ntuple(get_num_patches(geometry)) do patch_id
+        ntuple(Val(get_num_patches(geometry))) do patch_id
             return get_breakpoints(get_parametric_geometry(geometry, patch_id))
         end,
     )
@@ -225,7 +213,7 @@ function get_element_vertices(geometry::TensorProductGeometry, element_id::Int)
     const_element_vertices = get_constituent_element_vertices(geometry, element_id)
     const_manifold_dim = get_constituent_manifold_dim(geometry)
     cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
-    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
+    element_vertices = ntuple(Val(get_manifold_dim(geometry))) do dim
         const_geometry_id = findfirst(
             cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
         )
@@ -241,7 +229,7 @@ function get_element_lengths(geometry::TensorProductGeometry, element_id::Int)
     const_element_lengths = get_constituent_element_lengths(geometry, element_id)
     const_manifold_dim = get_constituent_manifold_dim(geometry)
     cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
-    element_lengths = ntuple(get_manifold_dim(geometry)) do dim
+    element_lengths = ntuple(Val(get_manifold_dim(geometry))) do dim
         const_geometry_id = findfirst(
             cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
         )
@@ -322,7 +310,9 @@ function jacobian(
     )
 
     num_eval_points = Points.get_num_points(xi)
-    J = Vector{SMatrix{image_dim, manifold_dim, Float64}}(undef, num_eval_points)
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}}(
+        undef, num_eval_points
+    )
     for point in 1:num_eval_points
         Jp = zeros(image_dim, manifold_dim)
         for geo_id in 1:num_geometries
@@ -332,7 +322,6 @@ function jacobian(
         end
         J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
-
     return J
 end
 

@@ -61,6 +61,31 @@ answers_LR = (
 )
 basic_tests(geometryLR, answers_LR)
 
+# LinRange input. Single-patch, 4D.
+geometry1p4D = Geometry.CartesianGeometry((
+    LinRange(0.5, 2.5, 5),
+    LinRange(-0.75, 0.75, 3),
+    LinRange(1.5, 2.5, 4),
+    LinRange(10.5, 20.5, 6),
+))
+answers_1p4D = (
+    (
+        LinRange(0.5, 2.5, 5),
+        LinRange(-0.75, 0.75, 3),
+        LinRange(1.5, 2.5, 4),
+        LinRange(10.5, 20.5, 6),
+    ),
+    [(4, 2, 3, 5)],
+    1,
+    120,
+    4,
+    4,
+    (120,),
+    120,
+    (0.5, 0.75, 1.0 / 3.0, 2.0),
+)
+basic_tests(geometry1p4D, answers_1p4D)
+
 # Multi-patch input. 2 patches, 2D. Homogeneous input. First patch has more element than the
 # second.
 geometryMP2 = Geometry.CartesianGeometry((
@@ -153,7 +178,7 @@ for i in 1:Geometry.get_num_elements(geometryMP100)
 end
 @test all_jac_MP100
 
-# Test 2D CartesianGeometry ----------------------------------------------------------------
+# Comparison to reference data.
 for nx in 1:3
     for ny in 1:3
         geometry = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 2.0), (nx, ny))

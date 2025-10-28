@@ -43,7 +43,7 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
         NT <: Number,
         T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
     }
-        cart_num_elements = ntuple(num_patches) do i
+        cart_num_elements = ntuple(Val(num_patches)) do i
             return CartesianIndices(
                 ntuple(dim -> length(breakpoints[i][dim]) - 1, manifold_dim)
             )
@@ -65,6 +65,8 @@ end
 # Get properties.
 get_breakpoints(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.breakpoints[patch_id]
+get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
+    geometry.breakpoints[patch_id][dim][point]
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.cart_num_elements[patch_id]
 
@@ -117,10 +119,9 @@ end
 
 function get_element_vertices(geometry::CartesianGeometry, element_id::Int)
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
-    breakpoints = get_breakpoints(geometry, patch_id)
-    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
-        vertex_1 = breakpoints[dim][const_element_id[dim]]
-        vertex_2 = breakpoints[dim][const_element_id[dim] + 1]
+    element_vertices = ntuple(Val(get_manifold_dim(geometry))) do dim
+        vertex_1 = get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
+        vertex_2 = get_breakpoint(geometry, patch_id, dim, const_element_id[dim] + 1)
 
         return (vertex_1, vertex_2)
     end
@@ -132,10 +133,9 @@ function get_element_lengths(geometry::CartesianGeometry, element_id::Int)
     # Directly compute the element lengths without calling `get_element_vertices`. This
     # avoids the overhead of computing the vertices explicitly.
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
-    breakpoints = get_breakpoints(geometry, patch_id)
-    element_lengths = ntuple(get_manifold_dim(geometry)) do dim
-        return breakpoints[dim][const_element_id[dim] + 1] -
-               breakpoints[dim][const_element_id[dim]]
+    element_lengths = ntuple(Val(get_manifold_dim(geometry))) do dim
+        return get_breakpoint(geometry, patch_id, dim, const_element_id[dim] + 1) -
+               get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
     end
 
     return element_lengths
@@ -152,14 +152,10 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
-    breakpoints = get_breakpoints(geometry, patch_id)
-    scaling = ntuple(
-        dim ->
-            breakpoints[dim][const_element_id[dim] + 1] -
-            breakpoints[dim][const_element_id[dim]],
-        manifold_dim,
-    )
-    offset = ntuple(dim -> breakpoints[dim][const_element_id[dim]], manifold_dim)
+    scaling = get_element_lengths(geometry, element_id)
+    offset = ntuple(Val(manifold_dim)) do dim
+        return get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
+    end
     num_points = Points.get_num_points(xi)
     eval = zeros(num_points, manifold_dim)
     for (i, point) in enumerate(xi)

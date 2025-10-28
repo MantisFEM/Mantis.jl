@@ -17,5 +17,8 @@ end
 @testset "Metric" begin
     include("MetricTests.jl")
 end
+@testset "Inference" begin
+    include("GeometryInferenceTests.jl")
+end
 
 end

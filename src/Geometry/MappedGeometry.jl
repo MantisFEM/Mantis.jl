@@ -1,5 +1,7 @@
 
-struct Mapping{manifold_dim, image_dim, M, dM}
+abstract type AbstractMapping{manifold_dim, image_dim} end
+
+struct Mapping{manifold_dim, image_dim, M, dM} <: AbstractMapping{manifold_dim, image_dim}
     dimensions::NTuple{2, Int}
     mapping::M
     dmapping::dM
@@ -102,28 +104,13 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
     ) where {
         manifold_dim,
         image_dim_base,
+        image_dim,
         num_patches,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
-        M <: NTuple{num_patches, Mapping},
+        M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
     }
-        num_elements_per_patch = get_num_elements_per_patch(geometry)
-
-        image_dim = get_image_dim(mapping[1])
-        for i in eachindex(mapping)
-            if get_image_dim(mapping[i]) != image_dim
-                throw(
-                    ArgumentError(
-                        LazyString(
-                            "All mappings must have the same image dim. Mapping ",
-                            i,
-                            " has an image dim of ",
-                            get_image_dim(mapping[i]),
-                            " instead of ",
-                            image_dim,
-                        ),
-                    ),
-                )
-            end
+        num_elements_per_patch = ntuple(num_patches) do geo_i
+            get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
@@ -140,36 +127,18 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
     ) where {
         manifold_dim,
         image_dim_base,
+        image_dim,
         num_patches,
         num_patches_G,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
-        M <: NTuple{num_patches, Mapping},
+        M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
     }
-        num_elements_per_patch = get_num_elements_per_patch(geometry)
-        image_dim = get_image_dim(mapping[1])
-        for i in eachindex(mapping)
-            if get_image_dim(mapping[i]) != image_dim
-                throw(
-                    ArgumentError(
-                        LazyString(
-                            "All mappings must have the same image dim. Mapping ",
-                            i,
-                            " has an image dim of ",
-                            get_image_dim(mapping[i]),
-                            " instead of ",
-                            image_dim,
-                        ),
-                    ),
-                )
-            end
-        end
-
-        if num_patches_G != 1 || num_patches_G != num_patches
+        if !(num_patches_G == 1 || num_patches_G == num_patches)
             throw(
                 ArgumentError(
                     LazyString(
-                        "The underlying geometry must have the same number of patches as ",
-                        "the number of mappings, but the geometry has ",
+                        "The underlying geometry must have either one patch or the same ",
+                        "number of patches as there are mappings, but the geometry has ",
                         num_patches_G,
                         " patches, while there are ",
                         num_patches,
@@ -177,6 +146,14 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
                     ),
                 ),
             )
+        end
+
+        if num_patches_G == 1
+            num_elements_per_patch = ntuple(num_patches) do i
+                return get_num_elements(geometry)
+            end
+        else
+            num_elements_per_patch = get_num_elements_per_patch(geometry)
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
@@ -190,13 +167,14 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
     ) where {
         manifold_dim,
         image_dim_base,
+        image_dim,
         num_patches,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
-        Map <: Mapping,
+        Map <: AbstractMapping{manifold_dim, image_dim},
     }
-        num_elements_per_patch = get_num_elements_per_patch(geometry)
-
-        image_dim = get_image_dim(mapping)
+        num_elements_per_patch = ntuple(num_patches) do geo_i
+            get_num_elements(geometry[geo_i])
+        end
 
         return new{manifold_dim, image_dim, num_patches, G, Map}(
             geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
@@ -209,12 +187,11 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
     ) where {
         manifold_dim,
         image_dim_base,
+        image_dim,
         G <: AbstractGeometry{manifold_dim, image_dim_base, 1},
-        Map <: Mapping,
+        Map <: AbstractMapping{manifold_dim, image_dim},
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
-
-        image_dim = get_image_dim(mapping)
 
         return new{manifold_dim, image_dim, 1, G, Map}(
             geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
