@@ -213,7 +213,7 @@ function get_element_vertices(geometry::TensorProductGeometry, element_id::Int)
     const_element_vertices = get_constituent_element_vertices(geometry, element_id)
     const_manifold_dim = get_constituent_manifold_dim(geometry)
     cum_const_manifold_dim = (0, cumsum(const_manifold_dim)...)
-    element_vertices = ntuple(Val(get_manifold_dim(geometry))) do dim
+    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
         const_geometry_id = findfirst(
             cum_manifold_dim -> dim ≤ cum_manifold_dim, cum_const_manifold_dim[2:end]
         )
@@ -252,16 +252,12 @@ function evaluate(
     xi::Points.CartesianPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_evaluations = get_constituent_evaluations(geometry, element_id, xi)
+    const_eval_points = get_constituent_evaluation_points(geometry, xi)
     num_points = Points.get_num_points(xi)
     eval = zeros(num_points, image_dim)
     const_image_indices = get_constituent_image_indices(geometry)
-    cart_num_points = CartesianIndices(
-        ntuple(
-            geo ->
-                Points.get_num_points(get_constituent_evaluation_points(geometry, xi)[geo]),
-            num_geometries,
-        ),
-    )
+    const_num_points = map(Points.get_num_points, const_eval_points)
+    cart_num_points = CartesianIndices(const_num_points)
     for geo_id in 1:num_geometries
         for point in axes(eval, 1)
             eval[point, const_image_indices[geo_id]] .= @view const_evaluations[geo_id][
@@ -301,29 +297,49 @@ function jacobian(
     const_jacobians = get_constituent_jacobians(geometry, element_id, xi)
     const_image_indices = get_constituent_image_indices(geometry)
     const_manifold_indices = get_constituent_manifold_indices(geometry)
-    cart_num_points = CartesianIndices(
-        ntuple(
-            geo ->
-                Points.get_num_points(get_constituent_evaluation_points(geometry, xi)[geo]),
-            num_geometries,
-        ),
-    )
+    const_eval_points = get_constituent_evaluation_points(geometry, xi)
+    const_num_points = map(Points.get_num_points, const_eval_points)
+    cart_num_points = CartesianIndices(const_num_points)
 
     num_eval_points = Points.get_num_points(xi)
     J = Vector{SMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}}(
         undef, num_eval_points
     )
-    for point in 1:num_eval_points
-        Jp = zeros(image_dim, manifold_dim)
-        for geo_id in 1:num_geometries
-            Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][cart_num_points[point][geo_id]][
-                :, :,
-            ]
+    Jp = Ref(zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}))
+    geo_id = Ref(1)
+    for point in eachindex(J)
+        jacs_per_point = map(getindex, const_jacobians, Tuple(cart_num_points[point]))
+        foreach(jacs_per_point) do jac_i
+            setindex!(
+                Jp[], jac_i, const_image_indices[geo_id[]], const_manifold_indices[geo_id[]]
+            )
+            geo_id[] += 1
         end
-        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
+        geo_id[] = 1
     end
+    # Jp = zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim})
+    # for point in eachindex(J)
+    #     for geo_id in 1:num_geometries
+    #         Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= const_jacobians[geo_id][cart_num_points[point][geo_id]]
+    #     end
+    #     J[point] = SMatrix{image_dim, manifold_dim}(Jp)
+    # end
     return J
 end
+
+# using Mantis
+# using BenchmarkTools
+# cg1d = Geometry.CartesianGeometry((
+#            (LinRange(0.0, 1.0, 2),), (LinRange(1.0, 2.0, 3),), (LinRange(2.0, 3.0, 4),)
+#        ))
+# cg2d = Geometry.CartesianGeometry((
+#            (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)), # First patch
+#            (LinRange(1.0, 2.0, 6), LinRange(0.0, 1.0, 7)), # Second patch
+#        ))
+# tpgeometry2 = Geometry.TensorProductGeometry((cg2d, cg1d))
+# xi = Points.CartesianPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 6)))
+# @benchmark Geometry.jacobian($tpgeometry2, 1, $xi)
 
 function jacobian(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
@@ -335,16 +351,29 @@ function jacobian(
     const_manifold_indices = get_constituent_manifold_indices(geometry)
 
     num_eval_points = Points.get_num_points(xi)
-    J = Vector{SMatrix{image_dim, manifold_dim, Float64}}(undef, num_eval_points)
-    for point in 1:num_eval_points
-        Jp = zeros(image_dim, manifold_dim)
-        for geo_id in 1:num_geometries
-            Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= @view const_jacobians[geo_id][point][
-                :, :,
-            ]
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}}(
+        undef, num_eval_points
+    )
+    Jp = Ref(zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}))
+    geo_id = Ref(1)
+    for point in eachindex(J)
+        jacs_per_point = map(getindex, const_jacobians, ntuple(i -> i, num_geometries))
+        foreach(jacs_per_point) do jac_i
+            setindex!(
+                Jp[], jac_i, const_image_indices[geo_id[]], const_manifold_indices[geo_id[]]
+            )
+            geo_id[] += 1
         end
-        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
+        geo_id[] = 1
     end
+    # Jp = zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim})
+    # for point in 1:num_eval_points
+    #     for geo_id in 1:num_geometries
+    #         Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= const_jacobians[geo_id][point]
+    #     end
+    #     J[point] = SMatrix{image_dim, manifold_dim}(Jp)
+    # end
 
     return J
 end

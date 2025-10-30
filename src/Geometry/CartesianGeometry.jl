@@ -119,7 +119,7 @@ end
 
 function get_element_vertices(geometry::CartesianGeometry, element_id::Int)
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
-    element_vertices = ntuple(Val(get_manifold_dim(geometry))) do dim
+    element_vertices = ntuple(get_manifold_dim(geometry)) do dim
         vertex_1 = get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
         vertex_2 = get_breakpoint(geometry, patch_id, dim, const_element_id[dim] + 1)
 
@@ -133,7 +133,7 @@ function get_element_lengths(geometry::CartesianGeometry, element_id::Int)
     # Directly compute the element lengths without calling `get_element_vertices`. This
     # avoids the overhead of computing the vertices explicitly.
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
-    element_lengths = ntuple(Val(get_manifold_dim(geometry))) do dim
+    element_lengths = ntuple(get_manifold_dim(geometry)) do dim
         return get_breakpoint(geometry, patch_id, dim, const_element_id[dim] + 1) -
                get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
     end
@@ -153,7 +153,7 @@ function evaluate(
 ) where {manifold_dim, image_dim, num_patches}
     const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
     scaling = get_element_lengths(geometry, element_id)
-    offset = ntuple(Val(manifold_dim)) do dim
+    offset = ntuple(manifold_dim) do dim
         return get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
     end
     num_points = Points.get_num_points(xi)

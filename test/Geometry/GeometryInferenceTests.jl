@@ -114,7 +114,8 @@ const xi_2D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
 const xi_3D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 const xi_3D_set = Points.PointSet(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 const xi_4D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
-const xi_10D = Points.CartesianPoints((
+const xi_11D = Points.CartesianPoints((
+    [0.0, 1.0],
     [0.0, 1.0],
     [0.0, 1.0],
     [0.0, 1.0],
@@ -126,7 +127,20 @@ const xi_10D = Points.CartesianPoints((
     [0.0, 1.0],
     [0.0, 1.0],
 ))
-
+const xi_11D_set = Points.PointSet((
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+    [0.0, 1.0],
+))
+# using InteractiveUtils
 foreach(geos) do geo
     # Note that JET only uses the types of the inputs, so which numbers we pick here is
     # irrelevant.
@@ -160,21 +174,32 @@ foreach(geos) do geo
         @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D)
         @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D)
         @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_3D)
+
+        if typeof(geo) <: Geometry.TensorProductGeometry
+            # Also test the method for non-cartesian points. This is only a different method
+            # for tensor product geometries.
+            @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D_set)
+            @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D_set)
+        end
     elseif Geometry.get_manifold_dim(geo) == 4
         @test_opt Geometry.Geometry.evaluate(geo, 5, xi_4D)
         @test_opt Geometry.Geometry.jacobian(geo, 5, xi_4D)
         @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_4D)
-    elseif Geometry.get_manifold_dim(geo) == 10
-        @test_opt Geometry.Geometry.evaluate(geo, 5, xi_10D)
-        @test_opt Geometry.Geometry.jacobian(geo, 5, xi_10D)
-        @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_10D)
-    end
+    elseif Geometry.get_manifold_dim(geo) == 11
+        # println(@code_warntype Geometry.Geometry.jacobian(geo, 5, xi_11D))
+        # error()
+        @test_opt Geometry.Geometry.evaluate(geo, 5, xi_11D)
+        @test_opt Geometry.Geometry.jacobian(geo, 5, xi_11D)
+        @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_11D)
 
-    if Geometry.get_manifold_dim(geo) == 3 && typeof(geo) <: Geometry.TensorProductGeometry
-        # Also test the method for non-cartesian points. This is only a different method for
-        # tensor product geometries.
-        @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D_set)
-        @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D_set)
+        if typeof(geo) <: Geometry.TensorProductGeometry
+            # Also test the method for non-cartesian points. This is only a different method
+            # for tensor product geometries.
+            @test_opt Geometry.Geometry.evaluate(geo, 5, xi_11D_set)
+            @test_opt Geometry.Geometry.jacobian(geo, 5, xi_11D_set)
+        end
+    else
+        @warn "GeometryInference: This geometry was not tested: $(geo)"
     end
 end
 

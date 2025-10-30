@@ -1,6 +1,5 @@
 module MappedGeometryTests
 
-using Core: Argument
 using Mantis
 
 import ReadVTK
