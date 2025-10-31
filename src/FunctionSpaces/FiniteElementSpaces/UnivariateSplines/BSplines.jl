@@ -148,7 +148,7 @@ end
 function get_local_basis(
     space::BSplineSpace,
     element_id::Int,
-    xi::Points.CartesianPoints{1},
+    xi::Points.AbstractPoints{1},
     nderivatives::Int,
     component_id::Int=1,
 )
@@ -296,19 +296,6 @@ function get_greville_points(space::BSplineSpace)
     return get_greville_points(get_knot_vector(space))
 end
 
-"""
-    assemble_global_extraction_matrix(space::BSplineSpace)
-
-Loops over all elements and assembles the global extraction matrix for the B-spline space.
-The extraction matrix is a sparse matrix that maps the local basis functions to the global
-basis functions.
-
-# Arguments
-- `space::BSplineSpace`: The B-spline space.
-
-# Returns
-- `::Array{Float64,2}`: Global extraction matrix.
-"""
 function assemble_global_extraction_matrix(space::BSplineSpace)
     # Number of global basis functions
     num_global_basis = get_num_basis(space)

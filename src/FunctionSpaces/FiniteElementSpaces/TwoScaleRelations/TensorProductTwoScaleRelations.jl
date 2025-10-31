@@ -12,12 +12,13 @@ relationships between coarse and fine tensor product spaces.
 - `twoscale_operators::TS`: A tuple of two-scale operators for each constituent space.
 """
 struct TensorProductTwoScaleOperator{
-    manifold_dim, num_components, num_patches, num_spaces, TP, TS
+    manifold_dim, num_components, num_patches, num_spaces, TP, TS, R
 } <: AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
     parent_space::TP
     child_space::TP
     global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}
     twoscale_operators::TS
+    parent_child_relations::R
 
     function TensorProductTwoScaleOperator(
         parent_space::TP, child_space::TP, twoscale_operators::TS
@@ -33,10 +34,21 @@ struct TensorProductTwoScaleOperator{
         gm = kron(
             (twoscale_operators[space].global_subdiv_matrix for space in num_spaces:-1:1)...
         )
+        let operator_ref = Ref{TensorProductTwoScaleOperator}()
+            parent_child_relations = ParentChildRelations(
+                parent -> get_element_children(operator_ref[], parent),
+                child -> get_element_parent(operator_ref[], child),
+                parent -> get_basis_children(operator_ref[], parent),
+                child -> get_basis_parents(operator_ref[], child),
+            )
+            R = typeof(parent_child_relations)
+            operator = new{manifold_dim, num_components, num_patches, num_spaces, TP, TS, R}(
+                parent_space, child_space, gm, twoscale_operators, parent_child_relations
+            )
+            operator_ref[] = operator
 
-        return new{manifold_dim, num_components, num_patches, num_spaces, TP, TS}(
-            parent_space, child_space, gm, twoscale_operators
-        )
+            return operator
+        end
     end
 end
 

@@ -157,7 +157,7 @@ end
 # PolarSplines
 ############################################################################################
 
-struct PolarSplineSpace{num_components, T, TE, TI, TJ} <:
+struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
        AbstractFESpace{2, num_components, 1}
     patch_spaces::T
     extraction_op::ExtractionOperator{num_components, TE, TI, TJ}
@@ -172,52 +172,81 @@ struct PolarSplineSpace{num_components, T, TE, TI, TJ} <:
     two_poles::Bool
     zero_at_poles::Bool
     degenerate_control_points::Array{Float64, 3}
+    degenerate_space::TD
 
     """
         PolarSplineSpace(
-            space_p::AbstractFESpace{1, 1},
-            space_r::AbstractFESpace{1, 1},
+            patch_spaces::NTuple{1, TensorProductSpace{2, 1}},
             degenerate_control_points::Array{Float64, 3},
+            degenerate_space::TensorProductSpace{2, 1},
             two_poles::Bool=false,
-            zero_at_poles::Bool=false
+            zero_at_poles::Bool=false,
         )
 
-    Build a polar spline space from the given poloidal and radial spaces.
+    Build a scalar polar spline space from the given tensor-product space and degenerate
+    control points and the corresponding degenerate tensor-product space (the latter two
+    define the polar parametric domain).
 
     # Arguments
-    - `space_p::AbstractFESpace{1, 1}`: The poloidal space.
-    - `space_r::AbstractFESpace{1, 1}`: The radial space.
+    - `patch_spaces::NTuple{1, TensorProductSpace{2, 1}}`: The tensor-product space defining
+        the polar spline space.
     - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+    - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
     - `two_poles::Bool=false`: Whether the polar spline space has two poles.
     - `zero_at_poles::Bool=false`: Whether functions are constrained to zero at poles.
 
-
     # Returns
-    - `polar_splines::AbstractFESpace`: The polar spline space.
-    - `E::ExtractionOperator`: The extraction operator.
+    - `::PolarSplineSpace{1, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
+        The scalar polar spline space.
     """
     function PolarSplineSpace(
-        space_p::AbstractFESpace{1, 1},
-        space_r::AbstractFESpace{1, 1},
-        degenerate_control_points::Array{Float64, 3};
+        patch_spaces::NTuple{1, TensorProductSpace{2, 1}},
+        degenerate_control_points::Array{Float64, 3},
+        degenerate_space::TensorProductSpace{2, 1},
         two_poles::Bool=false,
         zero_at_poles::Bool=false,
     )
-
-        # number of dofs for the poloidal and radial spaces
+        # poloidal and radial spaces
+        space_p, space_r = get_constituent_spaces(patch_spaces[1])
+        # number of basis functions for the poloidal and radial spaces
         n_p = get_num_basis(space_p)
-        n_r = get_num_basis(space_r)
-
-        if zero_at_poles
-            n_r += 1
+        n_r = get_num_basis(space_r) + zero_at_poles
+        if n_p != size(degenerate_control_points, 1)
+            throw(
+                ArgumentError(
+                    "The poloidal space does not match the input coefficients."
+                ),
+            )
+        end
+        if n_r != size(degenerate_control_points, 2)
+            throw(
+                ArgumentError(
+                    "The radial space does not match the input coefficients."
+                ),
+            )
+        end
+        if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
+            throw(
+                ArgumentError(
+                    "The degenerate tensor-product space does not match the input coefficients.",
+                ),
+            )
+        end
+        if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
+            throw(
+                ArgumentError(
+                    "The degenerate tensor-product space does not match the input coefficients.",
+                ),
+            )
         end
 
         # first, build extraction operator and control triangle
         E, control_triangle = extract_scalar_polar_splines_to_tensorproduct(
-            degenerate_control_points, n_p, n_r, two_poles, zero_at_poles
+            degenerate_control_points, n_r, two_poles, zero_at_poles
         )
 
-        patch_spaces = (TensorProductSpace((space_p, space_r)),)
+        # zero_at_poles = false: C^1 smooth scalars
+        # zero_at_poles = true: C^-1 smooth scalars
         regularity = 1
         if zero_at_poles
             regularity = -1
@@ -228,7 +257,12 @@ struct PolarSplineSpace{num_components, T, TE, TI, TJ} <:
             patch_spaces, (E,), two_poles
         )
 
-        return new{1, typeof(patch_spaces), get_EIJ_types(extraction_op)...}(
+        return new{
+            1,
+            typeof(patch_spaces),
+            typeof(degenerate_space),
+            get_EIJ_types(extraction_op)...
+        }(
             patch_spaces,
             extraction_op,
             dof_partition,
@@ -239,40 +273,108 @@ struct PolarSplineSpace{num_components, T, TE, TI, TJ} <:
             two_poles,
             zero_at_poles,
             degenerate_control_points,
+            degenerate_space
         )
     end
 
-    function PolarSplineSpace(
-        space_p::AbstractFESpace{1, 1},
-        space_r::AbstractFESpace{1, 1},
-        degenerate_control_points::Array{Float64, 3},
-        dspace_p::AbstractFESpace{1, 1},
-        dspace_r::AbstractFESpace{1, 1};
-        two_poles::Bool=false,
-    )
+    """
+        PolarSplineSpace(
+            patch_spaces::NTuple{2, TensorProductSpace{2, 1}},
+            degenerate_control_points::Array{Float64, 3},
+            degenerate_space::TensorProductSpace{2, 1},
+            two_poles::Bool=false,
+            ::Bool=false
+        )
 
-        # number of dofs for the poloidal and radial spaces
+    Build a vector polar spline space from the given tensor-product spaces and degenerate
+    control points and the corresponding degenerate tensor-product space (the latter two
+    define the polar parametric domain).
+
+    # Arguments
+    - `patch_spaces::NTuple{2, TensorProductSpace{2, 1}}`: The tensor-product spaces defining
+        the polar spline space.
+    - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+    - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
+    - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+    - `::Bool=false`: Dummy argument to have a uniform constructor as the scalar case.
+
+    # Returns
+    - `::PolarSplineSpace{2, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
+        The vector polar spline space.
+    """
+    function PolarSplineSpace(
+        patch_spaces::NTuple{2, TensorProductSpace{2, 1}},
+        degenerate_control_points::Array{Float64, 3},
+        degenerate_space::TensorProductSpace{2, 1},
+        two_poles::Bool=false,
+        ::Bool=false,
+    )
+        # poloidal and radial component spaces
+        dspace_p, space_r = get_constituent_spaces(patch_spaces[1])
+        space_p, dspace_r = get_constituent_spaces(patch_spaces[2])
+        # number of basis functions for the poloidal and radial spaces
         n_p = get_num_basis(space_p)
         n_r = get_num_basis(space_r)
+        if n_p != size(degenerate_control_points, 1)
+            throw(
+                ArgumentError(
+                    "The poloidal space does not match the input coefficients."
+                ),
+            )
+        end
+        if n_r != size(degenerate_control_points, 2)
+            throw(
+                ArgumentError(
+                    "The radial space does not match the input coefficients."
+                ),
+            )
+        end
+        if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
+            throw(
+                ArgumentError(
+                    "The degenerate tensor-product space does not match the input coefficients.",
+                ),
+            )
+        end
+        if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
+            throw(
+                ArgumentError(
+                    "The degenerate tensor-product space does not match the input coefficients.",
+                ),
+            )
+        end
+        if n_p != get_num_basis(dspace_p)
+            throw(
+                ArgumentError(
+                    "Input poloidal space incompatible with periodicity assumption."
+                ),
+            )
+        end
+        if n_r != get_num_basis(dspace_r) + 1
+            throw(
+                ArgumentError(
+                    "Input radial space and its derivative are incompatible."
+                ),
+            )
+        end
 
         # first, build extraction operator and control triangle
         E, control_triangle = extract_vector_polar_splines_to_tensorproduct(
-            degenerate_control_points, n_p, n_r, two_poles
+            degenerate_control_points, n_r, two_poles
         )
 
-        # build underlying tensor-product space for the components of the vector field
-        patch_spaces = (
-            TensorProductSpace((dspace_p, space_r)), TensorProductSpace((space_p, dspace_r))
-        )
-
-        # build polar spline extraction operators and dof partitioning
         # build polar spline extraction operator and dof partitioning
         extraction_op, dof_partition = _build_polar_extraction_and_dof_partition(
             patch_spaces, E, two_poles
         )
 
         regularity = 0
-        return new{2, typeof(patch_spaces), get_EIJ_types(extraction_op)...}(
+        return new{
+            2,
+            typeof(patch_spaces),
+            typeof(degenerate_space),
+            get_EIJ_types(extraction_op)...
+        }(
             patch_spaces,
             extraction_op,
             dof_partition,
@@ -283,6 +385,7 @@ struct PolarSplineSpace{num_components, T, TE, TI, TJ} <:
             two_poles,
             false,
             degenerate_control_points,
+            degenerate_space
         )
     end
 end
@@ -290,7 +393,6 @@ end
 """
     extract_scalar_polar_splines_to_tensorproduct(
         degenerate_control_points::Array{Float64, 3},
-        num_basis_p::Int,
         num_basis_r::Int,
         two_poles::Bool=false,
         zero_at_poles::Bool=nothing
@@ -301,7 +403,6 @@ product space.
 
 # Arguments
 - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-- `num_basis_p::Int`: Number of poloidal basis functions.
 - `num_basis_r::Int`: Number of radial basis functions.
 - `two_poles::Bool=false`: Whether the polar spline space has two poles.
 - `zero_at_poles::Bool=nothing`: Whether functions are constrained to zero at poles.
@@ -312,7 +413,6 @@ product space.
 """
 function extract_scalar_polar_splines_to_tensorproduct(
     degenerate_control_points::Array{Float64, 3},
-    num_basis_p::Int,
     num_basis_r::Int,
     two_poles::Bool=false,
     zero_at_poles::Bool=nothing,
@@ -321,13 +421,6 @@ function extract_scalar_polar_splines_to_tensorproduct(
         throw(
             ArgumentError(
                 "The control points need to be two-dimensional, got $(size(degenerate_control_points, 3)).",
-            ),
-        )
-    end
-    if size(degenerate_control_points, 1) != num_basis_p
-        throw(
-            ArgumentError(
-                "The input points need to be two sets of $num_basis_p points, got $(size(degenerate_control_points, 1)).",
             ),
         )
     end
@@ -342,6 +435,9 @@ function extract_scalar_polar_splines_to_tensorproduct(
     else
         origin = degenerate_control_points[1, 1, :]
     end
+
+    # number of basis functions in poloidal direction
+    num_basis_p = size(degenerate_control_points, 1)
 
     # build triangle circumscribing the input degenerate control points
     tri = _get_circumscribing_triangle(
@@ -444,7 +540,6 @@ end
 """
     extract_vector_polar_splines_to_tensorproduct(
         degenerate_control_points::Array{Float64, 3},
-        num_basis_p::Int,
         num_basis_r::Int;
         two_poles::Bool=false
     )
@@ -454,7 +549,6 @@ the tensor product basis functions.
 
 # Arguments
 - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-- `num_basis_p::Int`: Number of poloidal basis functions.
 - `num_basis_r::Int`: Number of radial basis functions.
 - `two_poles::Bool=false`: Whether the polar spline space has two poles.
 
@@ -465,7 +559,6 @@ The first element corresponds to the horizontal edges and the second element to 
 """
 function extract_vector_polar_splines_to_tensorproduct(
     degenerate_control_points::Array{Float64, 3},
-    num_basis_p::Int,
     num_basis_r::Int,
     two_poles::Bool=false,
 )
@@ -473,13 +566,6 @@ function extract_vector_polar_splines_to_tensorproduct(
         throw(
             ArgumentError(
                 "The control points need to be two-dimensional, got $(size(degenerate_control_points, 3)).",
-            ),
-        )
-    end
-    if size(degenerate_control_points, 1) != num_basis_p
-        throw(
-            ArgumentError(
-                "The input points need to be two sets of $num_basis_p points, got $(size(degenerate_control_points, 1)).",
             ),
         )
     end
@@ -494,6 +580,9 @@ function extract_vector_polar_splines_to_tensorproduct(
     else
         origin = degenerate_control_points[1, 1, :]
     end
+
+    # number of basis functions in poloidal direction
+    num_basis_p = size(degenerate_control_points, 1)
 
     # build triangle circumscribing the input degenerate control points
     tri = _get_circumscribing_triangle(
@@ -639,16 +728,6 @@ function get_num_elements_per_patch(space::PolarSplineSpace)
     return space.num_elements_per_patch
 end
 
-get_global_extraction_matrix(space::PolarSplineSpace) = space.global_extraction_matrix
-function get_global_extraction_matrix(
-    space::PolarSplineSpace{num_components}, component_id::Int
-) where {num_components}
-    if component_id > num_components
-        throw(ArgumentError("PolarSplineSpace only has $num_components component."))
-    end
-    return space.global_extraction_matrix[component_id]
-end
-
 get_patch_spaces(space::PolarSplineSpace) = space.patch_spaces
 function get_max_local_dim(space::PolarSplineSpace)
     return sum(get_max_local_dim.(get_patch_spaces(space)))
@@ -657,11 +736,15 @@ end
 function assemble_global_extraction_matrix(
     space::PolarSplineSpace{num_components}
 ) where {num_components}
-    return SparseArrays.sparse_hcat(space.global_extraction_matrix...)
+    return permutedims(SparseArrays.sparse_hcat(space.global_extraction_matrix...))
 end
 
 function get_degenerate_control_points(space::PolarSplineSpace)
     return space.degenerate_control_points
+end
+
+function get_degenerate_space(space::PolarSplineSpace)
+    return space.degenerate_space
 end
 
 function get_element_lengths(space::PolarSplineSpace, element_id::Int)

@@ -28,54 +28,57 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
 
     function GeneralizedTrigonometric(p::Int, w::Float64, l::Float64, t::Bool, m::Int)
         endpoint_tol = 1e-12
-        return new(p, w, l, t, m, gtrig_representation(p, w, l, t, m), endpoint_tol)
+        if p < 1
+            throw(ArgumentError("Degree p must be a positive integer."))
+        end
+        new(p, w, l, t, m, gtrig_representation(p, w, l, t, m), endpoint_tol)
     end
 end
 
-function _evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
-    M = zeros(Float64, 1, gtrig.p + 1, nderivatives + 1)
+function _evaluate(ect_space::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
+    M = zeros(Float64, 1, ect_space.p+1, nderivatives+1)
 
     left = false
     right = false
-    if xi < gtrig.endpoint_tol
+    if xi < ect_space.endpoint_tol
         left = true
-    elseif xi > 1.0 - gtrig.endpoint_tol
+    elseif xi > 1.0 - ect_space.endpoint_tol
         right = true
     end
 
     # scale the point to lie in the interval [0, l]
-    xi = gtrig.l * xi
-    if gtrig.t
-        for r in 0:nderivatives
-            k = min(r, gtrig.p - 1)
-            wxl = gtrig.w * xi
-            E = [1.0; cumprod((1.0 ./ (1:(gtrig.p - k))) * wxl)]
+    xi = ect_space.l * xi
+    if ect_space.t
+        for r = 0:nderivatives
+            k = min(r, ect_space.p-1)
+            wxl = ect_space.w * xi
+            E = [1.0; cumprod((1.0 ./ (1:ect_space.p-k)) * wxl)]
             if mod(r, 4) == 0
-                E[gtrig.p - k] = cos(wxl)
-                E[gtrig.p + 1 - k] = sin(wxl)
+                E[ect_space.p-k] = cos(wxl);
+                E[ect_space.p+1-k] = sin(wxl);
             elseif mod(r, 4) == 1
-                E[gtrig.p - k] = -sin(wxl)
-                E[gtrig.p + 1 - k] = cos(wxl)
+                E[ect_space.p-k] = -sin(wxl);
+                E[ect_space.p+1-k] = cos(wxl);
             elseif mod(r, 4) == 2
-                E[gtrig.p - k] = -cos(wxl)
-                E[gtrig.p + 1 - k] = -sin(wxl)
+                E[ect_space.p-k] = -cos(wxl);
+                E[ect_space.p+1-k] = -sin(wxl);
             elseif mod(r, 4) == 3
-                E[gtrig.p - k] = sin(wxl)
-                E[gtrig.p + 1 - k] = -cos(wxl)
+                E[ect_space.p-k] = sin(wxl);
+                E[ect_space.p+1-k] = -cos(wxl);
             end
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r + 1] = (gtrig.w^r) * (gtrig.C[:, (k + 1):end] * E) * (gtrig.l^r)
+            M[1, :, r+1] = (ect_space.w^r) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^r)
         end
     else
-        for r in 0:nderivatives
-            k = min(r, gtrig.p - 1)
-            ww = [1; cumprod(repeat([-gtrig.w * gtrig.w], gtrig.m))]
-            Ef = [1.0; cumprod((1.0 ./ (1:(gtrig.p - k + 2 * gtrig.m))) * xi)]
-            E = Ef[1:(gtrig.p + 1 - k)]
-            E[gtrig.p - k, :] = Ef[(gtrig.p - k):2:end, :]' * ww
-            E[gtrig.p - k + 1, :] = Ef[(gtrig.p - k + 1):2:end, :]' * ww
+        for r = 0:nderivatives
+            k = min(r, ect_space.p-1)
+            ww = [1; cumprod(repeat([-ect_space.w * ect_space.w], ect_space.m))]
+            Ef = [1.0; cumprod((1.0 ./ (1:ect_space.p-k+2*ect_space.m)) * xi)]
+            E = Ef[1:ect_space.p+1-k]
+            E[ect_space.p-k, :] = Ef[ect_space.p-k:2:end, :]' * ww
+            E[ect_space.p-k+1, :] = Ef[ect_space.p-k+1:2:end, :]' * ww
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r + 1] = gtrig.C[:, (k + 1):end] * E * (gtrig.l^r)
+            M[1, :, r+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^r)
         end
     end
 
@@ -86,6 +89,25 @@ function _evaluate(gtrig::GeneralizedTrigonometric, xi::Float64, nderivatives::I
     end
 
     return M
+end
+
+"""
+    evaluate(ect_space::GeneralizedTrigonometric, ξ::Vector{Float64})
+
+Compute all basis function values at `ξ` in ``[0.0, 1.0]``.
+
+# Arguments
+- `ect_space::GeneralizedTrigonometric`:  Generalized Trigonometric section space.
+- `xi::Vector{Float64}`: vector of evaluation points in ``[0.0, 1.0]``.
+
+See also [`evaluate(ect_space::GeneralizedTrigonometric, xi::Vector{Float64}, nderivatives::Int64)`](@ref).
+"""
+function evaluate(ect_space::GeneralizedTrigonometric, xi::Vector{Float64})
+    return evaluate(ect_space, xi, 0)
+end
+
+function evaluate(ect_space::GeneralizedTrigonometric, xi::Float64)
+    return evaluate(ect_space, [xi], 0)
 end
 
 """
@@ -151,15 +173,19 @@ end
 """
     get_derivative_space(ect_space::GeneralizedTrigonometric)
 
-Get the space of one degree lower than the input space.
+Get the space of one degree lower than the input space. Assumes that the degree of the space
+is at least 2.
 
 # Arguments
-- `ect_space::GeneralizedTrigonometric`: A ect space.
+- `ect_space::GeneralizedTrigonometric`: A generalized trigonometric space.
 
 # Returns
-- `::GeneralizedTrigonometric`: A ect space of one degree lower than the input space.
+- `::GeneralizedTrigonometric`: A generalized trigonometric space of one degree lower than the input space.
 """
 function get_derivative_space(ect_space::GeneralizedTrigonometric)
+    if ect_space.p < 2
+        throw(ArgumentError("Degree of the space must be at least 2 to get derivative space."))
+    end
     return GeneralizedTrigonometric(
         ect_space.p - 1, ect_space.w, ect_space.l, ect_space.t, ect_space.m
     )
@@ -168,13 +194,13 @@ end
 """
     get_bisected_canonical_space(ect_space::GeneralizedTrigonometric)
 
-Bisect the canonical space by dividing the weight in half.
+Bisect the canonical space by dividing the length in half.
 
 # Arguments
-- `ect_space::GeneralizedTrigonometric`: A ect space.
+- `ect_space::GeneralizedTrigonometric`: A generalized trigonometric space.
 
 # Returns
-- `::GeneralizedTrigonometric`: A ect space with the weight divided by 2.
+- `::GeneralizedTrigonometric`: A generalized trigonometric space with the length divided by 2.
 """
 function get_bisected_canonical_space(ect_space::GeneralizedTrigonometric)
     return GeneralizedTrigonometric(ect_space.p, ect_space.w, ect_space.l / 2, ect_space.m)
@@ -187,11 +213,11 @@ For number of sub-elements which is powers of 2, bisect the canonical space by d
 length in half for each power.
 
 # Arguments
-- `ect_space::GeneralizedTrigonometric`: A ect space.
+- `ect_space::GeneralizedTrigonometric`: A generalized trigonometric space.
 - `num_sub_elements::Int`: Number of sub-elements to be created.
 
 # Returns
-- `::GeneralizedTrigonometric`: A ect space with the subdivided length.
+- `::GeneralizedTrigonometric`: A generalized trigonometric space with the subdivided length.
 """
 function get_child_canonical_space(
     ect_space::GeneralizedTrigonometric, num_sub_elements::Int

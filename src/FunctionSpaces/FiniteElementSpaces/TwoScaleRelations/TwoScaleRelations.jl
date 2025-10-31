@@ -20,27 +20,26 @@ and child finite element spaces.
 - `child_to_parent_basis::Vector{Vector{Int}}`: A vector of vectors containing the
     parent basis function IDs for each child basis function.
 """
-struct TwoScaleOperator{manifold_dim, num_components, num_patches, S} <:
+struct TwoScaleOperator{manifold_dim, num_components, num_patches, S, R} <:
        AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
     parent_space::S
     child_space::S
     global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}
-    parent_to_child_elements::Vector{Vector{Int}}
-    child_to_parent_elements::Vector{Int}
-    parent_to_child_basis::Vector{Vector{Int}}
-    child_to_parent_basis::Vector{Vector{Int}}
+    parent_child_relations::R
 
     function TwoScaleOperator(
         parent_space::S,
         child_space::S,
         global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int},
-        parent_to_child_elements::Vector{Vector{Int}},
-        child_to_parent_elements::Vector{Int},
+        parent_to_child_elements::PCE,
+        child_to_parent_elements::CPE,
     ) where {
         manifold_dim,
         num_components,
         num_patches,
         S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+        PCE,
+        CPE,
     }
         num_child_basis, num_parent_basis = size(global_subdiv_matrix)
         parent_to_child_basis = Vector{Vector{Int}}(undef, num_parent_basis)
@@ -59,102 +58,16 @@ struct TwoScaleOperator{manifold_dim, num_components, num_patches, S} <:
             )]
         end
 
-        return new{manifold_dim, num_components, num_patches, S}(
-            parent_space,
-            child_space,
-            global_subdiv_matrix,
+        parent_child_relations = ParentChildRelations(
             parent_to_child_elements,
             child_to_parent_elements,
             parent_to_child_basis,
             child_to_parent_basis,
         )
+        R = typeof(parent_child_relations)
+
+        return new{manifold_dim, num_components, num_patches, S, R}(
+            parent_space, child_space, global_subdiv_matrix, parent_child_relations
+        )
     end
-end
-
-function get_parent_to_child_elements(operator::TwoScaleOperator)
-    return operator.parent_to_child_elements
-end
-
-function get_child_to_parent_elements(operator::TwoScaleOperator)
-    return operator.child_to_parent_elements
-end
-
-function get_parent_to_child_basis(operator::TwoScaleOperator)
-    return operator.parent_to_child_basis
-end
-
-function get_child_to_parent_basis(operator::TwoScaleOperator)
-    return operator.child_to_parent_basis
-end
-
-"""
-    get_element_children(operator::TwoScaleOperator, element_id::Int)
-
-Retrieve and return the child element IDs for a given element ID within a two-scale
-operator.
-
-# Arguments
-- `operator::TwoScaleOperator`: The two-scale operator that dechilds the
-    parent-child relationships between elements.
-- `element_id::Int`: The identifier of the element whose children are to be retrieved.
-
-# Returns
-- `::Vector{Int}`: A vector containing the identifiers of the child elements.
-"""
-function get_element_children(operator::TwoScaleOperator, element_id::Int)
-    return get_parent_to_child_elements(operator)[element_id]
-end
-
-"""
-    get_basis_children(operator::TwoScaleOperator, basis_id::Int)
-
-Retrieve and return the child basis function IDs for a given basis function ID within a
-two-scale operator.
-
-# Arguments
-- `operator::TwoScaleOperator`: The two-scale operator that dechilds the
-    parent-child relationships between basis basis.
-- `basis_id::Int`: The identifier of the basis function whose children are to be retrieved.
-
-# Returns
-- `::Vector{Int}`: A vector containing the identifiers of the child basis basis.
-"""
-function get_basis_children(operator::TwoScaleOperator, basis_id::Int)
-    return get_parent_to_child_basis(operator)[basis_id]
-end
-
-"""
-    get_element_parent(operator::TwoScaleOperator, element_id::Int)
-
-Retrieve and return the parent element ID for a given element ID within a two-scale
-operator.
-
-# Arguments
-- `operator::TwoScaleOperator`: The two-scale operator that dechilds the
-    parent-child relationships between elements.
-- `element_id::Int`: The identifier of the element whose parent is to be retrieved.
-
-# Returns
-- `::Int`: The identifier of the parent element.
-"""
-function get_element_parent(operator::TwoScaleOperator, element_id::Int)
-    return get_child_to_parent_elements(operator)[element_id]
-end
-
-"""
-    get_basis_parents(operator::TwoScaleOperator, basis_id::Int)
-
-Retrieve and return the parent basis basis for a given basis function ID within a
-two-scale operator.
-
-# Arguments
-- `operator::TwoScaleOperator`: The two-scale operator that dechilds the
-    parent-child relationships between basis basis.
-- `basis_id::Int`: The identifier of the basis function whose parent is to be retrieved.
-
-# Returns
-- `::Vector{Int}`: The identifier of the parent basis basis.
-"""
-function get_basis_parents(operator::TwoScaleOperator, basis_id::Int)
-    return get_child_to_parent_basis(operator)[basis_id]
 end

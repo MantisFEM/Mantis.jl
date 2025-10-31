@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+FunctionSpaces/FiniteElementSpaces/OtherSpaces/DirectSumSpace/3D-num_components=3-num_basis=1029-p=3-k=2,2625f63,2025-09-22,1.11.7,2025-09-29,23.671 ms,39.303 ms,38.370 ms,11.467 ms,0.000 ns,91.81 MiB,406

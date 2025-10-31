@@ -85,7 +85,7 @@ up to degree `nderivatives` at every point `ξ`. `d_polynomials[i, j, k]` ``= \\
 """
 Memoization.@memoize function evaluate(
     polynomials::AbstractLagrangePolynomials,
-    ξ::Points.CartesianPoints{1},
+    ξ::Points.AbstractPoints{1},
     nderivatives::Int=0,
 )
     # Get information from inputs on size of computation
@@ -189,7 +189,7 @@ Evaluate the polynomials ``B_{j}(\\xi)``, ``j = 1, \\dots, p+1``, in `polynomial
 up to degree `nderivatives` at every point `ξ`. `d_polynomials[i, j, k]` ``= \\frac{\\mathrm{d}^{k}B_{j}}{\\mathrm{d}\\xi^{k}}(\\xi_{i})``.
 """
 Memoization.@memoize function evaluate(
-    polynomials::EdgeLobattoLegendre, ξ::Points.CartesianPoints{1}, nderivatives::Int=0
+    polynomials::EdgeLobattoLegendre, ξ::Points.AbstractPoints{1}, nderivatives::Int=0
 )
     # The edge basis functions are given by, see documentation of EdgeLobattoLegendre:
     #

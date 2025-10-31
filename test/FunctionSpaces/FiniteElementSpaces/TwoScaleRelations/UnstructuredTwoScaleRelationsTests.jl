@@ -12,9 +12,9 @@ patch1 = Mantis.Mesh.Patch1D(breakpoints1)
 breakpoints2 = [0.0, 0.8, 1.0]
 patch2 = Mantis.Mesh.Patch1D(breakpoints2)
 
-###
+#############################################################################################
 ### Univariate test 1
-###
+##########################################################################################
 deg1 = 2
 deg2 = deg1
 
@@ -47,9 +47,9 @@ ts, B_fine = Mantis.FunctionSpaces.build_two_scale_operator(B, nsub1)
     )
 )
 
-###
+##########################################################################################
 ### Univariate test 2
-###
+##########################################################################################
 deg1 = 2
 deg2 = 3
 
@@ -94,6 +94,53 @@ fine_dofs_discont_2 = fine_ex_op * fine_dofs_GTB
 # check approximate equality
 @test(isapprox(maximum(abs.(fine_dofs_discont_1 - fine_dofs_discont_2)), 0.0, atol=1e-13))
 
-# --------------------------------------------------
-#
+##########################################################################################
+# Bivariate test 1
+##########################################################################################
+
+num_elements_p = 5
+num_elements_r = 2
+num_subdiv_p = 2
+num_subdiv_r = 3
+deg_p = 2
+deg_r = 3
+regularity_p = deg_p - 1
+regularity_r = deg_r - 1
+n_p = num_elements_p * (deg_p + 1) - num_elements_p * (regularity_p + 1)
+n_r = num_elements_r * (deg_r + 1) - (num_elements_r - 1) * (regularity_r + 1)
+
+# build scalar polar spline space
+P_scalar_coarse = FunctionSpaces.create_scalar_polar_spline_space(
+    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r)
+)
+geom_coeffs_coarse = P_scalar_coarse.degenerate_control_points
+size_tp_coarse = size(geom_coeffs_coarse)
+
+# refine degenerate control points
+TS_tp, space_tp_fine = FunctionSpaces.build_two_scale_operator(
+    FunctionSpaces.get_degenerate_space(P_scalar_coarse), (num_subdiv_p, num_subdiv_r)
+)
+size_tp_fine =
+    FunctionSpaces.get_num_basis.(FunctionSpaces.get_constituent_spaces(space_tp_fine))
+subdiv_mat_tp = FunctionSpaces.get_global_subdiv_matrix(TS_tp)
+geom_coeffs_fine = reshape(
+    subdiv_mat_tp * reshape(geom_coeffs_coarse, :, size_tp_coarse[3]),
+    (size_tp_fine[1], size_tp_fine[2], size_tp_coarse[3]),
+)
+
+# build finer space
+TS_polar, P_scalar_fine = FunctionSpaces.build_two_scale_operator(
+    P_scalar_coarse, (num_subdiv_p, num_subdiv_r)
+)
+subdiv_mat_polar = FunctionSpaces.get_global_subdiv_matrix(TS_polar)
+
+# check consistency
+coeffs = rand(FunctionSpaces.get_num_basis(P_scalar_coarse))
+coeffs_tp = FunctionSpaces.assemble_global_extraction_matrix(P_scalar_coarse) * coeffs
+coeffs_tp_fine = subdiv_mat_tp * coeffs_tp
+coeffs_fine = subdiv_mat_polar * coeffs
+coeffs_fine_tp =
+    FunctionSpaces.assemble_global_extraction_matrix(P_scalar_fine) * coeffs_fine
+@test(isapprox(maximum(abs.(coeffs_tp_fine .- coeffs_fine_tp)), 0.0, atol=1e-13))
+
 end

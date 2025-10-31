@@ -98,9 +98,9 @@ resulting fine basis coefficients.
     subdivision.
 """
 function get_child_basis_coefficients(
-    parent_basis_coefficients::Vector{Float64}, operator::AbstractTwoScaleOperator
+    parent_basis_coefficients::AbstractVector{Float64}, operator::AbstractTwoScaleOperator
 )
-    return operator.global_subdiv_matrix * parent_basis_coefficients
+    return get_global_subdiv_matrix(operator) * parent_basis_coefficients
 end
 
 """
@@ -128,10 +128,49 @@ function get_local_subdiv_matrix(
     return get_global_subdiv_matrix(operator)[child_basis_indices, parent_basis_indices]
 end
 
+function get_parent_child_relations(operator::AbstractTwoScaleOperator)
+    return operator.parent_child_relations
+end
+
+function get_element_children(operator::AbstractTwoScaleOperator, parent::Int)
+    return get_element_children(get_parent_child_relations(operator), parent)
+end
+
+function get_element_parent(operator::AbstractTwoScaleOperator, child::Int)
+    return get_element_parent(get_parent_child_relations(operator), child)
+end
+
+function get_basis_children(operator::AbstractTwoScaleOperator, parent::Int)
+    return get_basis_children(get_parent_child_relations(operator), parent)
+end
+
+function get_basis_parents(operator::AbstractTwoScaleOperator, child::Int)
+    return get_basis_parents(get_parent_child_relations(operator), child)
+end
+
+function get_parent_to_children_elements(operator::AbstractTwoScaleOperator)
+    return get_parent_to_children_elements(get_parent_child_relations(operator))
+end
+
+function get_child_to_parent_elements(operator::AbstractTwoScaleOperator)
+    return get_child_to_parent_elements(get_parent_child_relations(operator))
+end
+
+function get_parent_to_children_basis(operator::AbstractTwoScaleOperator)
+    return get_parent_to_children_basis(get_parent_child_relations(operator))
+end
+
+function get_child_to_parent_basis(operator::AbstractTwoScaleOperator)
+    return get_child_to_parents_basis(get_parent_child_relations(operator))
+end
+
 # Includes for concrete two scale relations
 
+include("ParentChildRelations.jl")
 include("TwoScaleRelations.jl")
 include("UnivariateTwoScaleRelations.jl")
 include("UnivariateBSplineTwoScaleRelations.jl")
 include("TensorProductTwoScaleRelations.jl")
+include("DirectSumTwoScaleRelations.jl")
 include("GTBSplineTwoScaleRelations.jl")
+include("PolarSplineTwoScaleRelations.jl")

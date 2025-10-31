@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.Bernstein-k=0-num_basis=5-p=1,2625f63,2025-09-22,1.10.7,2025-10-30,333.000 ns,364.508 ns,458.262 ns,291.000 ns,0.000 ns,688 bytes,5

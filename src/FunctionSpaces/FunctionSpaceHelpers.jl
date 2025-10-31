@@ -471,20 +471,15 @@ function create_scalar_polar_spline_space(
     zero_at_poles::Bool=false,
     box_sizes::NTuple{2, Float64} = (1.0, 1.0)
 )
-    if zero_at_poles
-        # reduce degree and regularity by 1
-        Bθ, Br = create_dim_wise_bspline_spaces(
-            (0.0, 0.0), box_sizes, num_elements,
-            degrees .- 1, regularities .- 1, (1, 1), (1, 1)
-        )
-    else
-        Bθ, Br = create_dim_wise_bspline_spaces(
-            (0.0, 0.0), box_sizes, num_elements, degrees, regularities, (1, 1), (1, 1)
-        )
-    end
-
-    return _create_scalar_polar_spline_space(
-        Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles, zero_at_poles
+    return create_scalar_polar_spline_space(
+        num_elements,
+        Bernstein.(degrees),
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        zero_at_poles=zero_at_poles,
+        box_sizes=box_sizes
     )
 end
 
@@ -528,54 +523,46 @@ function create_scalar_polar_spline_space(
     zero_at_poles::Bool=false,
     box_sizes::NTuple{2, Float64} = (1.0, 1.0)
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
-    if zero_at_poles
-        # reduce degree and regularity by 1
-        Bθ, Br = create_dim_wise_bspline_spaces(
-            (0.0, 0.0), box_sizes, num_elements,
-            get_derivative_space.(section_spaces), regularities .- 1, (1, 1), (1, 1)
-        )
-        return _create_scalar_polar_spline_space(
-            Bθ, Br, regularities[1] - 1, geom_coeffs_tp, R, two_poles, zero_at_poles
-        )
-
-    else
-        Bθ, Br = create_dim_wise_bspline_spaces(
-            (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
-        )
-        return _create_scalar_polar_spline_space(
-            Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles, zero_at_poles
-        )
-    end
-end
-
-function _create_scalar_polar_spline_space(
-    Bθ, Br, endpt_regularity_θ, geom_coeffs_tp, R, two_poles, zero_at_poles
-)
-
-    # impose periodicity
-    GBθ = GTBSplineSpace((Bθ,), [endpt_regularity_θ])
+    # spaces used for creating degenerate geometry
+    Bθ_g, Br_g = create_dim_wise_bspline_spaces(
+        (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
+    )
+    GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
 
     if isnothing(geom_coeffs_tp)
         if two_poles
             error("Two-pole geometries require user-provided geometry coefficients.")
         end
         # number of control points for a degenerate tensor-product mapping
-        n_θ = get_num_basis(GBθ)
-        if zero_at_poles
-            n_r = get_num_basis(Br) + 1
-        else
-            n_r = get_num_basis(Br)
-        end
+        n_θ = get_num_basis(GBθ_g)
+        n_r = get_num_basis(Br_g)
         geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
     end
 
-    return PolarSplineSpace(
-        GBθ,
-        Br,
-        geom_coeffs_tp;
-        two_poles=two_poles,
-        zero_at_poles=zero_at_poles
-    )
+    if zero_at_poles
+        # reduce degree and regularity by 1
+        Bθ, Br = create_dim_wise_bspline_spaces(
+            (0.0, 0.0), box_sizes, num_elements,
+            get_derivative_space.(section_spaces), regularities .- 1, (1, 1), (1, 1)
+        )
+        GBθ = GTBSplineSpace((Bθ,), [regularities[1] - 1])
+
+        return PolarSplineSpace(
+            (TensorProductSpace((GBθ, Br)),),
+            geom_coeffs_tp,
+            TensorProductSpace((GBθ_g, Br_g)),
+            two_poles,
+            zero_at_poles
+        )
+    else
+        return PolarSplineSpace(
+            (TensorProductSpace((GBθ_g, Br_g)),),
+            geom_coeffs_tp,
+            TensorProductSpace((GBθ_g, Br_g)),
+            two_poles,
+            zero_at_poles
+        )
+    end
 end
 
 """
@@ -613,12 +600,14 @@ function create_vector_polar_spline_space(
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64} = (1.0, 1.0)
 )
-    Bθ, Br = create_dim_wise_bspline_spaces(
-        (0.0, 0.0), box_sizes, num_elements, degrees, regularities, (1, 1), (1, 1)
-    )
-
-    return _create_vector_polar_spline_space(
-        Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles
+    return create_vector_polar_spline_space(
+        num_elements,
+        Bernstein.(degrees),
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes
     )
 end
 
@@ -657,42 +646,31 @@ function create_vector_polar_spline_space(
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64} = (1.0, 1.0)
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
-    Bθ, Br = create_dim_wise_bspline_spaces(
+    # spaces used for creating degenerate geometry
+    Bθ_g, Br_g = create_dim_wise_bspline_spaces(
         (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
     )
-
-    return _create_vector_polar_spline_space(
-        Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles
-    )
-end
-
-function _create_vector_polar_spline_space(
-    Bθ, Br, endpt_regularity_θ, geom_coeffs_tp, R, two_poles
-)
-    # impose periodicity
-    GBθ = GTBSplineSpace((Bθ,), [endpt_regularity_θ])
+    GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
 
     if isnothing(geom_coeffs_tp)
         if two_poles
             error("Two-pole geometries require user-provided geometry coefficients.")
         end
         # number of control points for a degenerate tensor-product mapping
-        n_θ = get_num_basis(GBθ)
-        n_r = get_num_basis(Br)
+        n_θ = get_num_basis(GBθ_g)
+        n_r = get_num_basis(Br_g)
         geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
     end
 
-    # derivative spaces to be used for the vector spaces
-    dBr = get_derivative_space(Br)
-    dBθ = get_derivative_space(Bθ)
-    dGBθ = GTBSplineSpace((dBθ,), [endpt_regularity_θ - 1])
     return PolarSplineSpace(
-        GBθ,
-        Br,
+        (
+            TensorProductSpace((get_derivative_space(GBθ_g), Br_g)),
+            TensorProductSpace((GBθ_g, get_derivative_space(Br_g))),
+        ),
         geom_coeffs_tp,
-        dGBθ,
-        dBr;
-        two_poles=two_poles
+        TensorProductSpace((GBθ_g, Br_g)),
+        two_poles,
+        false
     )
 end
 
@@ -728,14 +706,15 @@ function create_polar_geometry_data(
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64} = (1.0, 1.0)
 )
-    Bθ, Br = create_dim_wise_bspline_spaces(
-        (0.0, 0.0), box_sizes, num_elements, degrees, regularities, (1, 1), (1, 1)
+    return create_polar_geometry_data(
+        num_elements,
+        Bernstein.(degrees),
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes
     )
-
-    return _create_polar_geometry_data(
-        Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles
-    )
-
 end
 
 function create_polar_geometry_data(
@@ -750,36 +729,8 @@ function create_polar_geometry_data(
     Bθ, Br = create_dim_wise_bspline_spaces(
         (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
     )
-
-    return _create_polar_geometry_data(
-        Bθ, Br, regularities[1], geom_coeffs_tp, R, two_poles
-    )
-
-end
-
-"""
-    _create_polar_geometry_data(Bθ, Br, endpt_regularity_θ, geom_coeffs_tp, R, two_poles)
-
-Creates a polar spline geometry, the underlying polar spline space, and the univariate
-two-scale relations for the underlying tensor-product space.
-
-# Arguments
-- `Bθ::BSplineSpace`: The univariate B-spline space in the angular direction.
-- `Br::BSplineSpace`: The univariate B-spline space in the radial direction.
-- `endpt_regularity_θ::Int`: The regularity at the endpoints in the angular direction.
-- `geom_coeffs_tp::Union{Nothing,Array{Float64,3}}`: The geometry coefficients.
-- `R::Float64`: The radius of the domain.
-
-# Returns
-- `P_geom`: The polar spline geometry space
-- `geom_coeffs_polar`: The polar geometry coefficients.
-"""
-function _create_polar_geometry_data(
-    Bθ, Br, endpt_regularity_θ, geom_coeffs_tp, R, two_poles
-)
-
     # impose periodicity
-    GBθ = GTBSplineSpace((Bθ,), [endpt_regularity_θ])
+    GBθ = GTBSplineSpace((Bθ,), [regularities[1]])
 
     # number of control points for a degenerate tensor-product mapping
     n_θ = get_num_basis(GBθ)
@@ -791,16 +742,16 @@ function _create_polar_geometry_data(
 
     # Polar spline space and global extraction matrix for the geometry
     P_geom = PolarSplineSpace(
-        GBθ,
-        Br,
-        geom_coeffs_tp;
-        two_poles = two_poles
+        (TensorProductSpace((GBθ, Br)),),
+        geom_coeffs_tp,
+        TensorProductSpace((GBθ, Br)),
+        two_poles,
+        false
     )
-    E_geom = get_global_extraction_matrix(P_geom, 1)
+    E_geom = assemble_global_extraction_matrix(P_geom)
 
     # control points for the polar spline space
-    geom_coeffs_polar =
-        (E_geom * E_geom') \ (E_geom * reshape(geom_coeffs_tp, :, 2))
+    geom_coeffs_polar = (E_geom' * E_geom) \ (E_geom' * reshape(geom_coeffs_tp, :, 2))
 
     return P_geom, geom_coeffs_polar
 end
@@ -822,61 +773,14 @@ Refine the polar geometry data.
 function refine_polar_geometry_data(
     P_geom, geom_coeffs_polar; two_poles=false
 )
-    # get underlying tensor-product space
-    tp_space = get_patch_spaces(P_geom)[1]
-    # get underlying univariate constituent spaces
-    GBθ, Br = get_constituent_spaces(tp_space)
-    Bθ = get_patch_spaces(GBθ)[1]
-    n_θ = get_num_basis(GBθ)
-    n_r = get_num_basis(Br)
-
-    # get coarse polar geometry control points
-    E_geom = get_global_extraction_matrix(P_geom, 1)
-    geom_coeffs_polar_tp = reshape(
-        E_geom' * geom_coeffs_polar, n_θ, n_r, 2
-    )
-
-    # refine the univariate spaces
-    ts_r, Br_ref = build_two_scale_operator(Br, 2)
-    _, Bθ_ref = build_two_scale_operator(Bθ, 2)
-    GBθ_ref = GTBSplineSpace((Bθ_ref,), [endpt_regularity_θ])
-    ts_θ, _ = build_two_scale_operator(GBθ, GBθ_ref, ((2,),))
-
-    # refine the tensor-product control points
-    geom_coeffs_tp = get_degenerate_control_points(P_geom)
-    geom_coeffs_tp_ref = cat(
-        ts_θ.global_subdiv_matrix *
-        geom_coeffs_tp[:, :, 1] *
-        ts_r.global_subdiv_matrix',
-        ts_θ.global_subdiv_matrix *
-        geom_coeffs_tp[:, :, 2] *
-        ts_r.global_subdiv_matrix';
-        dims = 3
-    )
-
-    # build refined polar spline space
-    P_geom_ref = PolarSplineSpace(
-        GBθ_ref,
-        Br_ref,
-        geom_coeffs_tp_ref;
-        two_poles = two_poles
-    )
-
+    # refine the space and build two-scale operator
+    TS, P_geom_ref = build_two_scale_operator(P_geom, 2)
+    subdiv_mat = get_global_subdiv_matrix(TS)
     # refine input polar geometry coefficients
-    E_geom_ref = get_global_extraction_matrix(P_geom_ref, 1)
-    geom_coeffs_polar_tp_ref = reshape(cat(
-        ts_θ.global_subdiv_matrix *
-        geom_coeffs_polar_tp[:, :, 1] *
-        ts_r.global_subdiv_matrix',
-        ts_θ.global_subdiv_matrix *
-        geom_coeffs_polar_tp[:, :, 2] *
-        ts_r.global_subdiv_matrix';
-        dims=3
-    ), :, 2)
-    geom_coeffs_polar_ref = (E_geom_ref * E_geom_ref') \ (E_geom_ref * geom_coeffs_polar_tp_ref)
+    geom_coeffs_polar_ref = subdiv_mat * geom_coeffs_polar
 
     return P_geom_ref, geom_coeffs_polar_ref,
-        (get_num_elements(ts_θ.fine_space), get_num_elements(ts_r.fine_space))
+        get_num_elements.(get_constituent_spaces(P_geom_ref))
 end
 
 """

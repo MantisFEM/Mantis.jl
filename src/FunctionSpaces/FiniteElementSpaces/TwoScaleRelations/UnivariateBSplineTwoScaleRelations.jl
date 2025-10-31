@@ -1,21 +1,3 @@
-function get_parent_to_child_elements(space::BSplineSpace, num_subdivisions::Int)
-    parent_to_child = Vector{Vector{Int}}(undef, get_num_elements(space))
-    for element_id in eachindex(parent_to_child)
-        parent_to_child[element_id] = get_element_children(element_id, num_subdivisions)
-    end
-
-    return parent_to_child
-end
-
-function get_child_to_parent_elements(space::BSplineSpace, num_subdivisions::Int)
-    child_to_parent = Vector{Int}(undef, get_num_elements(space))
-    for element_id in eachindex(child_to_parent)
-        child_to_parent[element_id] = get_element_parent(element_id, num_subdivisions)
-    end
-
-    return child_to_parent
-end
-
 # Helper functions for knot insertion
 
 """
@@ -138,7 +120,7 @@ inserted ones are given multiplicity `child_multiplicity`.
 - `child_multiplicity_vector::Vector{Int}`: child multiplicity vector.
 """
 function subdivide_multiplicity_vector(
-    parent_multiplicity::Vector{Int}, num_subdivisions::Int, child_multiplicity::Int
+    parent_multiplicity::Vector{Int}, num_subdivisions::Int, child_multiplicity::Int=1
 )
     mult_length = 1 + length(parent_multiplicity) * (num_subdivisions) - num_subdivisions
 
@@ -156,26 +138,6 @@ function subdivide_multiplicity_vector(
     end
 
     return child_multiplicity_vector
-end
-
-"""
-    subdivide_multiplicity_vector(parent_multiplicity::Vector{Int}, num_subdivisions::Int)
-
-    Subdivides `parent_multiplicity` by uniformly subdiving each element 'num_subdivisions' times.
-The parent multiplicities are preserved in the final multiplicity vector, and newly
-inserted ones are given multiplicity 1.
-
-# Arguments
-- `parent_multiplicity::Vector{Int}`: parent multiplicity vector.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-
-# Returns
-- `::Vector{Int}`: child multiplicity vector.
-"""
-function subdivide_multiplicity_vector(
-    parent_multiplicity::Vector{Int}, num_subdivisions::Int
-)
-    return subdivide_multiplicity_vector(parent_multiplicity, num_subdivisions, 1)
 end
 
 """
@@ -306,10 +268,10 @@ ones are given multiplicity `child_multiplicity`.
 - `child_multiplicity::Int`: Multiplicity of each new knot.
 
 # Returns
-- `::BSplineSpace`: Rechildd B-spline space.
+- `::BSplineSpace`: refined B-spline space.
 """
 function subdivide_space(
-    parent_bspline::BSplineSpace, num_subdivisions::Int, child_multiplicity::Int
+    parent_bspline::BSplineSpace, num_subdivisions::Int, child_multiplicity::Int=1
 )
     child_knot_vector = subdivide_knot_vector(
         parent_bspline.knot_vector, num_subdivisions, child_multiplicity
@@ -329,24 +291,6 @@ function subdivide_space(
         n_dofs_left,
         n_dofs_right,
     )
-end
-
-"""
-    subdivide_space(parent_bspline::BSplineSpace, num_subdivisions::Int)
-
-    Subdivides `parent_bspline` by uniformly subdiving each element 'num_subdivisions' times. The
-parent multiplicities are preserved in the `child_multiplicity`, and newly inserted ones are
-given multiplicity 1.
-
-# Arguments
-- `parent_bspline::BSplineSpace`: parent B-spline.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-
-# Returns
-- `::BSplineSpace`: Rechildd B-spline space.
-"""
-function subdivide_space(parent_bspline::BSplineSpace, num_subdivisions::Int)
-    return subdivide_space(parent_bspline, num_subdivisions, 1)
 end
 
 """
@@ -550,34 +494,28 @@ function build_two_scale_operator(
 ) where {F <: AbstractCanonicalSpace}
     if F <: Bernstein
         gm = build_two_scale_matrix(parent_bspline.knot_vector, child_bspline.knot_vector)
-
     else
         # build the element subdivision matrix
         el_subdivision_mat = build_two_scale_matrix(
             parent_bspline.polynomials, num_subdivisions
         )
-
         # assemble the global extraction operators for the parent and child spaces
         parent_extraction_mat = assemble_global_extraction_matrix(parent_bspline)
         child_extraction_mat = assemble_global_extraction_matrix(child_bspline)
-
         # concatenate the two_scale_operator subdivision matrices in a block diagonal format
         discont_subdivision_mat = SparseArrays.blockdiag(
             [el_subdivision_mat for i in 1:get_num_elements(parent_bspline)]...
         )
-
         # compute the two-scale matrix by solving a least-squares problem
         gm = SparseArrays.sparse(
             child_extraction_mat \ Array(discont_subdivision_mat * parent_extraction_mat)
         )
         SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, gm)
     end
-
-    parent_to_child_elements = get_parent_to_child_elements(
+    parent_to_child_elements = get_parent_to_children_elements(
         parent_bspline, num_subdivisions
     )
     child_to_parent_elements = get_child_to_parent_elements(child_bspline, num_subdivisions)
-
     return TwoScaleOperator(
         parent_bspline,
         child_bspline,
@@ -603,7 +541,7 @@ For more information, see [Dangella2018](@cite).
 # Arguments
 - `parent_bspline::BSplineSpace`: parent B-spline.
 - `num_subdivisions::Int`: Number of times each element is subdivided.
-- `child_multiplicity::Int`: Multiplicity of each new knot in rechildd knot vector.\
+- `child_multiplicity::Int`: Multiplicity of each new knot in refined knot vector.\
 
 # Returns
 - `::FiniteElementSpaces.TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
@@ -746,4 +684,12 @@ function build_two_scale_operator(
         ),
         manifold_dim,
     )
+end
+
+function get_parent_to_children_elements(_::BSplineSpace, num_subdivisions::Int)
+    return parent -> get_element_children(parent, num_subdivisions)
+end
+
+function get_child_to_parent_elements(_::BSplineSpace, num_subdivisions::Int)
+    return child -> get_element_parent(child, num_subdivisions)
 end

@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+FunctionSpaces/FiniteElementSpaces/TensorProductSpaces/2D-Mantis.FunctionSpaces.Bernstein-num_basis=576-p=5-k=-1,2625f63,2025-09-22,1.11.7,2025-09-29,26.144 μs,33.620 μs,23.063 μs,17.914 μs,0.000 ns,182.70 KiB,92

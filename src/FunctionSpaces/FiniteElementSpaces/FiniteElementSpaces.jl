@@ -582,6 +582,19 @@ function evaluate(
     return evaluations
 end
 
+"""
+    assemble_global_extraction_matrix(space::AbstractFESpace)
+
+Assembles the global extraction matrix for an FESpace by combining the extraction
+coefficients from each element on each patch. The global extraction matrix maps the global
+degrees of freedom to the local degrees of freedom.
+
+# Arguments
+- `space::AbstractFESpace`: The finite element space.
+
+# Returns
+- `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
+"""
 function assemble_global_extraction_matrix(space::AbstractFESpace)
     throw(
         ArgumentError(
@@ -706,16 +719,16 @@ function _compute_parametric_geometry_coeffs(
 end
 
 include("ExtractionOperator.jl")
-include("OtherSpaces/RationalFESpaces.jl")
-include("UnivariateSplines/UnivariateSplines.jl")
 
-# composite function spaces
+include("OtherSpaces/RationalFESpaces.jl")
+include("OtherSpaces/DirectSumSpace.jl")
+
+include("UnivariateSplines/UnivariateSplines.jl")
 include("TensorProductSpaces/TensorProductSpaces.jl")
+
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
 
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
 include("Hierarchical/Hierarchical.jl")
-
-include("OtherSpaces/DirectSumSpace.jl")

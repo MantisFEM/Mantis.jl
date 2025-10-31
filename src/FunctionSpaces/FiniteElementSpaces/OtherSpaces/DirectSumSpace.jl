@@ -118,7 +118,8 @@ function get_dof_partition(space::DirectSumSpace)
             for partition in eachindex(dof_partition_per_component[component][patch])
                 append!(
                     dof_partition[patch][partition],
-                    dof_partition_per_component[component][patch][partition] .+ dof_offsets[component],
+                    dof_partition_per_component[component][patch][partition] .+
+                    dof_offsets[component],
                 )
             end
         end
@@ -163,6 +164,21 @@ end
 
 function get_extraction(space::DirectSumSpace, element_id::Int, component_id::Int)
     return LinearAlgebra.I, get_basis_permutation(space, element_id, component_id)
+end
+
+function get_extraction_coefficients(
+    space::DirectSumSpace, element_id::Int, component_id::Int
+)
+    return LinearAlgebra.I
+end
+
+function get_support(space::DirectSumSpace, basis_id::Int)
+    # Find which component space the basis function belongs to.
+    basis_offsets = get_dof_offsets(space)
+    component_id = findlast(c -> c < basis_id, basis_offsets)
+    basis_id = basis_id - basis_offsets[component_id]
+
+    return get_support(get_component_spaces(space)[component_id], basis_id)
 end
 
 # function evaluate(

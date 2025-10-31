@@ -48,8 +48,7 @@ function add_padding!(
 end
 
 function add_padding!(
-    marked_elements_per_level::Vector{Vector{Int}},
-    spaces::Vector{S}
+    marked_elements_per_level::Vector{Vector{Int}}, spaces::Vector{S}
 ) where {manifold_dim, S <: AbstractFESpace{manifold_dim, 1}}
     num_levels = length(spaces)
 
@@ -59,10 +58,7 @@ function add_padding!(
         end
 
         basis_in_marked_elements = reduce(
-            union,
-            get_basis_indices.(
-                Ref(spaces[level]), marked_elements_per_level[level]
-            ),
+            union, get_basis_indices.(Ref(spaces[level]), marked_elements_per_level[level])
         )
         marked_elements_per_level[level] = union(
             get_support.(Ref(spaces[level]), basis_in_marked_elements)...
@@ -73,10 +69,12 @@ function add_padding!(
 end
 
 function get_marked_elements_children(
-    hier_space::HierarchicalFiniteElementSpace{manifold_dim, S, T},
+    hier_space::HierarchicalFiniteElementSpace{
+        manifold_dim, num_components, num_patches, S, T
+    },
     marked_elements_per_level::Vector{Vector{Int}},
     new_operator::T,
-) where {manifold_dim, S, T <: AbstractTwoScaleOperator}
+) where {manifold_dim, num_components, num_patches, S, T <: AbstractTwoScaleOperator}
     num_levels = get_num_levels(hier_space)
 
     marked_children = Vector{Vector{Int}}(undef, num_levels)
@@ -123,9 +121,11 @@ function get_padding_per_level(
 end
 
 function get_refinement_domains(
-    hier_space::HierarchicalFiniteElementSpace{manifold_dim, S, T},
+    hier_space::HierarchicalFiniteElementSpace{
+        manifold_dim, num_components, num_patches, S, T
+    },
     marked_elements_per_level::Vector{Vector{Int}},
     new_operator::T,
-) where {manifold_dim, S, T <: AbstractTwoScaleOperator}
+) where {manifold_dim, num_components, num_patches, S, T <: AbstractTwoScaleOperator}
     return get_marked_elements_children(hier_space, marked_elements_per_level, new_operator)
 end

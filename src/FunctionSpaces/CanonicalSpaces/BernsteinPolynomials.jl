@@ -36,7 +36,7 @@ at `ξ` for ``\\xi \\in [0.0, 1.0]``.
 - `::Vector{Vector{Matrix{Float64}}}`: Nested vector containing the values.
 """
 Memoization.@memoize function evaluate(
-    polynomials::Bernstein, xi::Points.CartesianPoints{1}, nderivatives::Int=0
+    polynomials::Bernstein, xi::Points.AbstractPoints{1}, nderivatives::Int=0
 )
     # store the values and derivatives here
     neval = length(xi)

@@ -35,6 +35,8 @@ struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_p
     dof_partition::Vector{Vector{Vector{Int}}}
     num_elements_per_patch::NTuple{num_patches, Int}
     regularity::Vector{Int}
+    num_dofs_left::Int
+    num_dofs_right::Int
 
     function GTBSplineSpace(
         patch_spaces::T,
@@ -154,7 +156,13 @@ struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_p
         end
 
         return new{num_patches, T, get_EIJ_types(extraction_op)...}(
-            patch_spaces, extraction_op, dof_partition, num_elements_per_patch, regularity
+            patch_spaces,
+            extraction_op,
+            dof_partition,
+            num_elements_per_patch,
+            regularity,
+            num_dofs_left,
+            num_dofs_right
         )
     end
 end
@@ -174,7 +182,7 @@ end
 function get_element_lengths(space::GTBSplineSpace, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
 
-    return get_element_lengths(space.patch_spaces[patch_id], local_element_id)
+    return get_element_lengths(get_patch_spaces(space)[patch_id], local_element_id)
 end
 
 function get_local_basis(
@@ -187,7 +195,7 @@ function get_local_basis(
     # We need space ID and local element ID to know which function space to evaluate.
     patch_id, patch_element_id = get_patch_and_local_element_id(space, element_id)
 
-    return evaluate(space.patch_spaces[patch_id], patch_element_id, xi, nderivatives)[1]
+    return evaluate(get_patch_spaces(space)[patch_id], patch_element_id, xi, nderivatives)[1]
 end
 
 get_patch_spaces(space::GTBSplineSpace) = space.patch_spaces
@@ -195,19 +203,21 @@ function get_max_local_dim(space::GTBSplineSpace)
     return maximum(get_max_local_dim.(get_patch_spaces(space)))
 end
 
-"""
-    assemble_global_extraction_matrix(
-        space::GTBSplineSpace{num_patches}
-    ) where {num_patches}
+function get_derivative_space(space::GTBSplineSpace{num_patches}) where {num_patches}
+    patch_spaces_der = ntuple(num_patches) do i
+        return get_derivative_space(get_patch_spaces(space)[i])
+    end
+    regularity_der = space.regularity .- 1
+    regularity_der = [max(r, -1) for r in regularity_der]
 
-Assembles the global extraction matrix for a GTBSplineSpace by combining the extraction coefficients from each element on each patch.
+    return GTBSplineSpace(
+        patch_spaces_der,
+        regularity_der,
+        max(space.num_dofs_left-1, -1),
+        max(space.num_dofs_right-1, -1),
+    )
+end
 
-# Arguments
-- `space::GTBSplineSpace{num_patches}`: The GTBSplineSpace
-
-# Returns
-- `SparseMatrixCSC{Float64}`: The global extraction matrix that maps GTB dofs to local dofs
-"""
 function assemble_global_extraction_matrix(
     space::GTBSplineSpace{num_patches}
 ) where {num_patches}
@@ -239,3 +249,7 @@ function assemble_global_extraction_matrix(
 
     return SparseArrays.sparse(global_extraction_matrix)
 end
+
+get_constructor_num_dofs_left(space::GTBSplineSpace) = space.num_dofs_left
+get_constructor_num_dofs_right(space::GTBSplineSpace) = space.num_dofs_right
+get_patch_interface_regularities(space::GTBSplineSpace) = space.regularity
