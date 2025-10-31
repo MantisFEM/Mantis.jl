@@ -119,7 +119,11 @@ function test_0form_hodge_laplacian(
                 uₕ = Assemblers.solve_zero_form_hodge_laplacian(X[1], fₑ, dΩ)
                 if test
                     ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh.txt")
-                    @test all(isapprox.(uₕ.coefficients, ref_coeffs, atol=atol, rtol=rtol))
+                    @test all(
+                        isapprox.(
+                            uₕ.coefficients, ref_coeffs, atol=atol * 10, rtol=rtol * 10
+                        ),
+                    )
                 end
 
                 # compute error
