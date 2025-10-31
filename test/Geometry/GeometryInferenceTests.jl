@@ -76,6 +76,12 @@ geom_cart_patch_2 = Geometry.CartesianGeometry((
     0.0:(1.0 / num_elements_per_dim_per_patch[2][2]):1.0,
 ))
 # Mapped, explicit geometry and mapping per patch.
+geom_slanted_1patch = Geometry.MappedGeometry(
+    (geom_cart_patch_1,), (mapping_patch_1_slanted,)
+)
+geom_slanted_1patch2 = Geometry.MappedGeometry(
+    (geom_cart_patch_2,), (mapping_patch_2_slanted,)
+)
 geom_slanted_2patch = Geometry.MappedGeometry(
     (geom_cart_patch_1, geom_cart_patch_2),
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
@@ -96,6 +102,41 @@ geom_slanted_2patch_onemap = Geometry.MappedGeometry(
 # Mapped, single mapping, single patch.
 geom_slanted_2patch_11 = Geometry.MappedGeometry(geom_cart_patch_1, mapping_patch_1_slanted)
 
+# Unstructured
+geom_unstr = Geometry.UnstructuredGeometry((
+    Geometry.TensorProductGeometry((
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+    )),
+    Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5))),
+    geom_slanted_1patch,
+))
+geom_unstr2 = Geometry.UnstructuredGeometry((
+    Geometry.TensorProductGeometry((
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+    )),
+    Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5))),
+    geom_slanted_1patch,
+    Geometry.TensorProductGeometry((
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 4),))),
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 4),))),
+    )),
+))
+geom_unstr3 = Geometry.UnstructuredGeometry((
+    Geometry.TensorProductGeometry((
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 2),))),
+    )),
+    Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5))),
+    geom_slanted_1patch,
+    Geometry.TensorProductGeometry((
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 4),))),
+        Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 4),))),
+    )),
+    geom_slanted_1patch2,
+))
+
 const geos = (
     geometry1,
     geometryMP100,
@@ -107,6 +148,8 @@ const geos = (
     geom_slanted_2patch_oneref,
     geom_slanted_2patch_onemap,
     geom_slanted_2patch_11,
+    geom_unstr,
+    geom_unstr2,
 )
 
 const xi_1D = Points.CartesianPoints(([0.0, 1.0],))
@@ -140,7 +183,7 @@ const xi_11D_set = Points.PointSet((
     [0.0, 1.0],
     [0.0, 1.0],
 ))
-# using InteractiveUtils
+
 foreach(geos) do geo
     # Note that JET only uses the types of the inputs, so which numbers we pick here is
     # irrelevant.
