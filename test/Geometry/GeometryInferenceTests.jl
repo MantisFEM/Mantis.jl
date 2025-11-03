@@ -12,7 +12,7 @@ using Test
     using JET
 end
 
-if Base.VERSION >= v"1.12"
+@static if Base.VERSION >= v"1.12"
     # We can only run the tests if JET was loaded.
     if any(x -> x.name == "JET", values(Pkg.dependencies()))
         # Test geometries
@@ -50,8 +50,8 @@ if Base.VERSION >= v"1.12"
             tpgeo, geometry1p4D, cg2d, cg1d, geometry1
         ))
         # 2D, Mapped
-        # Mappings to create the deformed geometries. The mappings are defined with reference
-        # to the unit square [0,1]x[0,1] as parametric domain.
+        # Mappings to create the deformed geometries. The mappings are defined with
+        # reference to the unit square [0,1]x[0,1] as parametric domain.
         function mapping_patch_1_slant(x::AbstractVector{Float64}, slant_factor=0.25)
             return [x[1] + slant_factor * x[1] * x[2], x[2]]
         end
@@ -203,8 +203,8 @@ if Base.VERSION >= v"1.12"
         ))
 
         foreach(geos) do geo
-            # Note that JET only uses the types of the inputs, so which numbers we pick here is
-            # irrelevant.
+            # Note that JET only uses the types of the inputs, so which numbers we pick
+            # here is irrelevant.
             @test_opt Geometry.get_patch_id(geo, 14)
 
             @test_opt Geometry.get_patch_and_local_element_id(geo, 14)
@@ -237,8 +237,8 @@ if Base.VERSION >= v"1.12"
                 @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_3D)
 
                 if typeof(geo) <: Geometry.TensorProductGeometry
-                    # Also test the method for non-cartesian points. This is only a different method
-                    # for tensor product geometries.
+                    # Also test the method for non-cartesian points. This is only a
+                    # different method for tensor product geometries.
                     @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D_set)
                     @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D_set)
                 end
@@ -254,8 +254,8 @@ if Base.VERSION >= v"1.12"
                 @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_11D)
 
                 if typeof(geo) <: Geometry.TensorProductGeometry
-                    # Also test the method for non-cartesian points. This is only a different method
-                    # for tensor product geometries.
+                    # Also test the method for non-cartesian points. This is only a
+                    # different method for tensor product geometries.
                     @test_opt Geometry.Geometry.evaluate(geo, 5, xi_11D_set)
                     @test_opt Geometry.Geometry.jacobian(geo, 5, xi_11D_set)
                 end
