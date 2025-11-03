@@ -178,6 +178,22 @@ function basic_tests(geometry, answers)
     @test Geometry.get_num_elements_per_patch(geometry) == answers[6]
     @test Geometry.get_num_elements(geometry, 1) == answers[7]
     @test Geometry.get_element_lengths(geometry, 1) == answers[8]
+    @test all(isapprox.(Geometry.get_element_measure(geometry, 1), answers[9], rtol=1e-14))
+
+    patch_id, local_element_id = Geometry.get_patch_and_local_element_id(
+        geometry, answers[11]
+    )
+    @test (patch_id, local_element_id) == answers[10]
+    @test Geometry.get_global_element_id(geometry, patch_id, local_element_id) ==
+        answers[11]
+
+    @test all(
+        all.([
+            isapprox.(
+                Geometry.get_element_vertices(geometry, 1)[i], answers[12][i], rtol=1e-14
+            ) for i in eachindex(answers[12])
+        ]),
+    )
 
     return nothing
 end
@@ -185,10 +201,10 @@ end
 # Reduction test, single-patch, single element, single geometry, 1D.
 cg1 = Geometry.CartesianGeometry(([-1, 1],))
 tpgeometry1 = Geometry.TensorProductGeometry((cg1,))
-answers_1 = ((1,), 1, 1, 1, 1, (1,), 1, (2.0,))
+answers_1 = ((1,), 1, 1, 1, 1, (1,), 1, (2.0,), 2.0, (1, 1), 1, ((-1, 1),))
 basic_tests(tpgeometry1, answers_1)
 
-# All cartesian. 2D (2 patches) tensored with 1D (3 patches).
+# All cartesian. 3D: 2D (2 patches) tensored with 1D (3 patches).
 cg1d = Geometry.CartesianGeometry((
     (LinRange(0.0, 1.0, 2),), (LinRange(1.0, 2.0, 3),), (LinRange(2.0, 3.0, 4),)
 ))
@@ -197,7 +213,20 @@ cg2d = Geometry.CartesianGeometry((
     (LinRange(1.0, 2.0, 6), LinRange(0.0, 1.0, 7)), # Second patch
 ))
 tpgeometry2 = Geometry.TensorProductGeometry((cg2d, cg1d))
-answers_2 = ((42, 6), 6, 252, 3, 3, (12, 30, 24, 60, 36, 90), 12, (1.0 / 3, 0.25, 1.0))
+answers_2 = (
+    (42, 6),
+    6,
+    252,
+    3,
+    3,
+    (12, 30, 24, 60, 36, 90),
+    12,
+    (1.0 / 3, 0.25, 1.0),
+    1.0 / 12.0,
+    (5, 36),
+    162,
+    ((0.0, 1.0 / 3.0), (0.0, 0.25), (0.0, 1.0)),
+)
 basic_tests(tpgeometry2, answers_2)
 
 end

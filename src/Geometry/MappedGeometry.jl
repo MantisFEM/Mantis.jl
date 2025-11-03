@@ -250,6 +250,13 @@ function get_element_measure(geometry::MappedGeometry, element_id::Int)
     )
 end
 
+function get_element_vertices(geometry::MappedGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_vertices(
+        get_parametric_geometry(geometry, patch_id), local_element_id
+    )
+end
+
 # Evaluations and derivatives.
 function evaluate(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},

@@ -20,13 +20,29 @@ function basic_tests(geometry, answers)
     @test all(Geometry.get_num_elements_per_patch(geometry) .== answers[7])
     @test Geometry.get_num_elements(geometry, 1) == answers[8]
     @test all(isapprox.(Geometry.get_element_lengths(geometry, 1), answers[9], rtol=1e-14))
+    @test all(isapprox.(Geometry.get_element_measure(geometry, 1), answers[10], rtol=1e-14))
+
+    patch_id, local_element_id = Geometry.get_patch_and_local_element_id(
+        geometry, answers[12]
+    )
+    @test (patch_id, local_element_id) == answers[11]
+    @test Geometry.get_global_element_id(geometry, patch_id, local_element_id) ==
+        answers[12]
+
+    @test all(
+        all.([
+            isapprox.(
+                Geometry.get_element_vertices(geometry, 1)[i], answers[13][i], rtol=1e-14
+            ) for i in eachindex(answers[13])
+        ]),
+    )
 
     return nothing
 end
 
 # Reduction test, single-patch, single element, 1D.
 geometry1 = Geometry.CartesianGeometry(([-1, 1],))
-answers_1 = (([-1, 1],), [(1,)], 1, 1, 1, 1, (1,), 1, (2.0,))
+answers_1 = (([-1, 1],), [(1,)], 1, 1, 1, 1, (1,), 1, (2.0,), 2.0, (1, 1), 1, ((-1, 1),))
 basic_tests(geometry1, answers_1)
 
 # Vector{Float64} input. Single-patch 3D.
@@ -43,6 +59,10 @@ answers_VF = (
     (12,),
     12,
     (1.0, 1.0, 0.75),
+    0.75,
+    (1, 4),
+    4,
+    ((0.0, 1.0), (0.5, 1.5), (-0.75, 0.0)),
 )
 basic_tests(geometryVF, answers_VF)
 
@@ -58,6 +78,10 @@ answers_LR = (
     (8,),
     8,
     (0.5, 0.75),
+    0.375,
+    (1, 7),
+    7,
+    ((0.5, 1.0), (-0.75, 0.0)),
 )
 basic_tests(geometryLR, answers_LR)
 
@@ -83,6 +107,10 @@ answers_1p4D = (
     (120,),
     120,
     (0.5, 0.75, 1.0 / 3.0, 2.0),
+    0.25,
+    (1, 120),
+    120,
+    ((0.5, 1.0), (-0.75, 0.0), (1.5, 1.5 + 1 / 3), (10.5, 12.5)),
 )
 basic_tests(geometry1p4D, answers_1p4D)
 
@@ -102,6 +130,10 @@ answers_MP2 = (
     (450, 24),
     450,
     (0.2, 0.1),
+    0.02,
+    (2, 13),
+    463,
+    ((-0.5, -0.3), (-0.5, -0.4)),
 )
 basic_tests(geometryMP2, answers_MP2)
 
@@ -120,6 +152,10 @@ answers_MP = (
     (8, 15),
     8,
     (0.5, 0.85),
+    0.425,
+    (2, 15),
+    23,
+    ((0.5, 1.0), (-0.75, 0.1)),
 )
 basic_tests(geometryMP, answers_MP)
 @test Geometry.get_breakpoints(geometryMP, 2) ==
@@ -159,6 +195,10 @@ answers_MP100 = (
     Tuple(1:100),
     1,
     (1.0,),
+    1.0,
+    (100, 100),
+    5050,
+    ((0.0, 1.0),),
 )
 basic_tests(geometryMP100, answers_MP100)
 @test Geometry.get_breakpoints(geometryMP100, 67) == (LinRange(66.0, 67.0, 68),)
@@ -177,6 +217,22 @@ for i in 1:Geometry.get_num_elements(geometryMP100)
     end
 end
 @test all_jac_MP100
+
+# Test errors:
+# Element_id is too high
+@test_throws ArgumentError Geometry.get_patch_id(geometryLR, 9)
+@test_throws ArgumentError Geometry.get_patch_id(geometryMP100, 5051)
+# Element_id is too high
+@test_throws ArgumentError Geometry.get_patch_and_local_element_id(geometryLR, 9)
+@test_throws ArgumentError Geometry.get_patch_and_local_element_id(geometryMP100, 5051)
+# Patch id is too high
+@test_throws ArgumentError Geometry.get_global_element_id(geometryLR, 2, 1)
+@test_throws ArgumentError Geometry.get_global_element_id(geometryMP100, 101, 3)
+# Element_id is too high for the geometry
+@test_throws ArgumentError Geometry.get_global_element_id(geometryLR, 1, 12)
+@test_throws ArgumentError Geometry.get_global_element_id(geometryMP100, 30, 6000)
+# Element_id is too high for the patch (but not for the geometry).
+@test_throws ArgumentError Geometry.get_global_element_id(geometryMP100, 30, 45)
 
 # Comparison to reference data.
 for nx in 1:3

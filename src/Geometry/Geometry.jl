@@ -105,7 +105,21 @@ end
 function get_patch_id(
     geometry::AbstractGeometry{manifold_dim, image_dim, 1}, element_id::Int
 ) where {manifold_dim, image_dim}
-    return 1
+    if element_id <= get_num_elements(geometry)
+        return 1
+    else
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Element ID ",
+                    element_id,
+                    " exceeds the total number of elements (",
+                    get_num_elements(geometry),
+                    ") in the geometry.",
+                ),
+            ),
+        )
+    end
 end
 
 """
@@ -164,7 +178,21 @@ end
 function get_patch_and_local_element_id(
     geometry::AbstractGeometry{manifold_dim, image_dim, 1}, element_id::Int
 ) where {manifold_dim, image_dim}
-    return 1, element_id
+    if element_id <= get_num_elements(geometry)
+        return 1, element_id
+    else
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Element ID ",
+                    element_id,
+                    " exceeds the total number of elements (",
+                    get_num_elements(geometry),
+                    ") in the geometry.",
+                ),
+            ),
+        )
+    end
 end
 
 """
@@ -183,6 +211,45 @@ Get the global element ID for the specified constituent patch ID and local eleme
 function get_global_element_id(
     geometry::AbstractGeometry, patch_id::Int, local_element_id::Int
 )
+    if patch_id > get_num_patches(geometry)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given patch_id, ",
+                    patch_id,
+                    ", exceeds the total number of patches on this geometry (",
+                    get_num_patches(geometry),
+                    ").",
+                ),
+            ),
+        )
+    end
+    if local_element_id > get_num_elements(geometry)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given local_element_id, ",
+                    local_element_id,
+                    ", exceeds the total number of element on this geometry (",
+                    get_num_elements(geometry),
+                    ").",
+                ),
+            ),
+        )
+    end
+    if local_element_id > get_num_elements(geometry, patch_id)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given local_element_id, ",
+                    local_element_id,
+                    ", exceeds the total number of element on this patch (",
+                    get_num_elements(geometry, patch_id),
+                    ").",
+                ),
+            ),
+        )
+    end
     global_element_id = 0
     for i in 1:(patch_id - 1)
         global_element_id += get_num_elements(geometry, i)
@@ -302,7 +369,7 @@ Computes the measure of the element given by `element_id` in `geometry`.
 - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '::Float64': The measure of the element.
+- '<:Number': The measure of the element.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
@@ -329,7 +396,7 @@ Computes the length, in each manifold dimension, of the element given by `elemen
 - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '::NTuple{manifold_dim, Float64}': The element's lengths.
+- '<:NTuple{manifold_dim, Number}': The element's lengths.
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete
@@ -358,7 +425,9 @@ Computes the vertices, in each manifold dimension, of the element given by `elem
 - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '::NTuple{manifold_dim, Float64}': The element's vertices.
+- '<:NTuple{manifold_dim, NTuple{2, Number}}': The element's vertices per manifold dim. For
+    example, for the unit cube [0.0, 1.0]^3 this will be:
+    ((0.0, 1.0), (0.0, 1.0), (0.0, 1.0)).
 
 # Notes
 There is no generic fallback for this method. It should be implemented for each concrete

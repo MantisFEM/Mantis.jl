@@ -66,6 +66,22 @@ function basic_tests(geometry, answers)
     @test all(Geometry.get_num_elements_per_patch(geometry) .== answers[5])
     @test Geometry.get_num_elements(geometry, 1) == answers[6]
     @test all(isapprox.(Geometry.get_element_lengths(geometry, 1), answers[7], rtol=1e-14))
+    @test all(isapprox.(Geometry.get_element_measure(geometry, 1), answers[8], rtol=1e-14))
+
+    patch_id, local_element_id = Geometry.get_patch_and_local_element_id(
+        geometry, answers[10]
+    )
+    @test (patch_id, local_element_id) == answers[9]
+    @test Geometry.get_global_element_id(geometry, patch_id, local_element_id) ==
+        answers[10]
+
+    @test all(
+        all.([
+            isapprox.(
+                Geometry.get_element_vertices(geometry, 1)[i], answers[11][i], rtol=1e-14
+            ) for i in eachindex(answers[11])
+        ]),
+    )
 
     return nothing
 end
@@ -120,7 +136,7 @@ mapping_I_obj = Geometry.Mapping((1, 1), mapping_I, dmapping_I)
 geometry1 = Geometry.MappedGeometry(
     Geometry.CartesianGeometry((LinRange(0.0, 1.0, 2),)), mapping_I_obj
 )
-answers_1 = (1, 1, 1, 1, (1,), 1, (1.0,))
+answers_1 = (1, 1, 1, 1, (1,), 1, (1.0,), 1.0, (1, 1), 1, ((0.0, 1.0),))
 basic_tests(geometry1, answers_1)
 
 # Mapped, explicit geometry and mapping per patch.
@@ -128,7 +144,9 @@ geom_slanted_2patch = Geometry.MappedGeometry(
     (geom_cart_patch_1, geom_cart_patch_2),
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
 )
-answers_geom_slanted_2patch = (2, 46, 2, 2, (16, 30), 16, (0.25, 0.25))
+answers_geom_slanted_2patch = (
+    2, 46, 2, 2, (16, 30), 16, (0.25, 0.25), 0.0625, (1, 5), 5, ((0.0, 0.25), (0.0, 0.25))
+)
 basic_tests(geom_slanted_2patch, answers_geom_slanted_2patch)
 
 # Mapped, one parametric domain with multiple mappings.
@@ -136,7 +154,19 @@ geom_slanted_2patch_oneref = Geometry.MappedGeometry(
     Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 7)),)),
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
 )
-answers_geom_slanted_2patch_oneref = (2, 48, 2, 2, (24, 24), 24, (0.25, 1.0 / 6.0))
+answers_geom_slanted_2patch_oneref = (
+    2,
+    48,
+    2,
+    2,
+    (24, 24),
+    24,
+    (0.25, 1.0 / 6.0),
+    1.0 / 24.0,
+    (2, 2),
+    26,
+    ((0.0, 0.25), (0.0, 1.0 / 6.0)),
+)
 basic_tests(geom_slanted_2patch_oneref, answers_geom_slanted_2patch_oneref)
 
 # Mapped, multiple patches with one map.
@@ -149,12 +179,26 @@ geom_slanted_2patch_onemap = Geometry.MappedGeometry(
     ),
     mapping_patch_1_slanted,
 )
-answers_geom_slanted_2patch_onemap = (4, 84, 2, 2, (12, 18, 24, 30), 12, (0.125, 1.0 / 6.0))
+answers_geom_slanted_2patch_onemap = (
+    4,
+    84,
+    2,
+    2,
+    (12, 18, 24, 30),
+    12,
+    (0.125, 1.0 / 6.0),
+    1 / 48,
+    (2, 3),
+    15,
+    ((0.0, 0.125), (0.0, 1.0 / 6.0)),
+)
 basic_tests(geom_slanted_2patch_onemap, answers_geom_slanted_2patch_onemap)
 
 # Mapped, single mapping, single patch.
 geom_slanted_2patch_11 = Geometry.MappedGeometry(geom_cart_patch_1, mapping_patch_1_slanted)
-answers_geom_slanted_2patch_11 = (1, 16, 2, 2, (16,), 16, (0.25, 0.25))
+answers_geom_slanted_2patch_11 = (
+    1, 16, 2, 2, (16,), 16, (0.25, 0.25), 0.0625, (1, 16), 16, ((0.0, 0.25), (0.0, 0.25))
+)
 basic_tests(geom_slanted_2patch_11, answers_geom_slanted_2patch_11)
 
 # Surface embedded in 3D.
@@ -162,7 +206,9 @@ geo(x) = [x[1], x[2], x[1] * x[2]]
 dgeo(x) = [[1.0 0.0]; [0.0 1.0]; [x[2] x[1]]]
 mapping2to3 = Mantis.Geometry.Mapping((2, 3), geo, dgeo)
 geometry2to3 = Mantis.Geometry.MappedGeometry(geom_cart_patch_1, mapping2to3)
-answers_geometry2to3 = (1, 16, 2, 3, (16,), 16, (0.25, 0.25))
+answers_geometry2to3 = (
+    1, 16, 2, 3, (16,), 16, (0.25, 0.25), 0.0625, (1, 14), 14, ((0.0, 0.25), (0.0, 0.25))
+)
 basic_tests(geometry2to3, answers_geometry2to3)
 
 for (k, IJ) in enumerate(CartesianIndices((4, 4)))
