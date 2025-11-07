@@ -161,6 +161,23 @@ Returns the form space associated with the form field.
 get_form_space(form_field::FormField) = form_field.form_space
 
 """
+    get_form_space_tree(form_field::AbstractFormField)
+
+Returns the list of spaces of forms of `expression_rank > 0` in the tree of the expression.
+Since `FormField` has a single form of `expression_rank = 0` it returns an empty `Tuple`.
+
+# Arguments
+- `form_field::AbstractFormField`: The AbstractFormField structure.
+
+# Returns
+- `Tuple(<:AbstractFormExpression)`: The list of forms present in the tree of the expression, in this case empty.
+"""
+function get_form_space_tree(form_field::AbstractFormField)
+    return ()  # return an empty Tuple because AbstractFormField has only one form of expression_rank = 0
+end
+
+
+"""
     get_coefficients(form_field::FormField)
 
 Returns the coefficients of the form field.
@@ -172,6 +189,20 @@ Returns the coefficients of the form field.
 - `Vector{Float64}`: The coefficients of the form field.
 """
 get_coefficients(form_field::FormField) = form_field.coefficients
+
+"""
+    get_num_coefficients(form_field::FormField)
+
+Returns the number of coefficients of the form field.
+
+# Arguments
+- `form_field::FormField`: The form field.
+
+# Returns
+- `Int`: The number of coefficients (dofs) of the form field.
+"""
+get_num_coefficients(form_field::FormField) = size(form_field.coefficients, 1)
+
 
 """
     get_expression(form_field::AnalyticalFormField)

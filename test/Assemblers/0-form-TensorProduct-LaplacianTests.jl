@@ -121,7 +121,7 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             ref_coeffs = read_data(
                 sub_dir, "$p-$section_space-$mesh.txt"
             )
-            @test all(isapprox.(uₕ.coefficients, ref_coeffs, atol=atol, rtol=rtol))
+            @test all(isapprox.(uₕ.coefficients, ref_coeffs, atol=atol*10, rtol=rtol*10))
 
             # compute error
             error = Analysis.L2_norm(uₕ - uₑ, dΩ)

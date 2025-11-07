@@ -59,6 +59,9 @@ function d(form::AbstractFormExpression)
     return ExteriorDerivative(form)
 end
 
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
 """
     get_form(ext_der::ExteriorDerivative)
 
@@ -71,6 +74,23 @@ Returns the form to which the exterior derivative is applied.
 - `<:AbstractFormExpression`: The form to which the exterior derivative is applied.
 """
 get_form(ext_der::ExteriorDerivative) = ext_der.form
+
+"""
+    get_form_space_tree(ext_der::ExteriorDerivative)
+
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the exterior derivative, e.g., for
+`d((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. \
+If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+
+# Arguments
+- `ext_der::ExteriorDerivative`: The exterior derivative structure.
+
+# Returns
+- `Tuple(<:AbstractFormExpression)`: The list of spaces of forms present in the tree of the exterior derivative.
+"""
+function get_form_space_tree(ext_der::ExteriorDerivative)
+    return get_form_space_tree(ext_der.form)
+end
 
 """
     get_geometry(ext_der::ExteriorDerivative)
@@ -305,4 +325,129 @@ function _evaluate_exterior_derivative(
 
     # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
     return local_d_form_basis_eval, form_basis_indices
+end
+
+
+# #############################################################################################
+# #                                           dd                                              #
+# #############################################################################################
+# function _evaluate_exterior_derivative(
+#     dform::ExteriorDerivative{manifold_dim, form_rank_d, expression_rank, G, F},
+#     element_id::Int,
+#     xi::NTuple{manifold_dim, Vector{Float64}}
+# ) where {
+#     manifold_dim,
+#     form_rank_d,
+#     expression_rank,
+#     form_rank,
+#     G <: Geometry.AbstractGeometry{manifold_dim},
+#     F <: AbstractFormField{manifold_dim, form_rank, G},
+# }
+#     # Determine shape of the output 
+#     n_evaluation_points = prod(size.(xi, 1))
+#     n_derivative_components = binomial(manifold_dim, form_rank_d + 1)
+#     n_basis_functions = 1
+
+#     # Generate the zeros output array
+#     ddform_eval = [
+#         zeros(Float64, n_evaluation_points, n_basis_functions) for
+#         _ in 1:n_derivative_components
+#     ]
+
+#     # We need to wrap form_basis_indices in [] to return a vector of vector to allow
+#     # multi-indexed expressions, like wedges.
+#     return ddform_eval, [[1]]
+# end
+
+#############################################################################################
+#                                     Wedge product                                         #
+#############################################################################################
+
+function _evaluate_exterior_derivative(
+    form::Wedge{manifold_dim, form_rank, expression_rank, G, F1, F2},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {
+    manifold_dim,
+    form_rank,
+    form_rank_1,
+    form_rank_2,
+    expression_rank,
+    expression_rank_1,
+    expression_rank_2,
+    G <: Geometry.AbstractGeometry{manifold_dim},
+    F1 <: AbstractFormExpression{manifold_dim, form_rank_1, expression_rank_1, G},
+    F2 <: AbstractFormExpression{manifold_dim, form_rank_2, expression_rank_2, G}
+}
+    # The exterior derivative of a wedge product follows the Leibniz rule:
+    # d(αᵏ ∧ βᵐ) = dαᵏ ∧ βᵐ + (-1)^k αᵏ ∧ dβᵐ
+    
+    # Extract the forms that compose the wedge product and their exterior derivatives
+    α = form.form_1
+    β = form.form_2
+    dα = ExteriorDerivative(α)
+    dβ = ExteriorDerivative(β)
+    
+    # Compute the Leibniz expression components
+    dα_wedge_β = Forms.Wedge(dα, β)
+    α_wedge_dβ = Forms.Wedge(α, dβ)
+
+    return evaluate(dα_wedge_β + (-1)^get_form_rank(α) * α_wedge_dβ, element_id, xi)
+end
+
+
+#############################################################################################
+#                                Unary transformation                                     #
+#############################################################################################
+function _evaluate_exterior_derivative(
+    form::UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {
+    manifold_dim,
+    form_rank,
+    expression_rank,
+    G <: Geometry.AbstractGeometry{manifold_dim},
+    F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+    T <: Function
+}
+    # The exterior derivative of a binary transformation follows the law:
+    # d(c*αᵏ) = c*dαᵏ
+    
+    # Extract the forms that compose the binary transformation and their exterior derivatives
+    α = get_form(form)
+    uni_transformation = get_transformation(form)
+    
+    # Evaluate the distributive expression components, sum them, and return
+    return evaluate(uni_transformation(d(α)), element_id, xi)
+end
+
+
+#############################################################################################
+#                                 Binary transformation                                     #
+#############################################################################################
+function _evaluate_exterior_derivative(
+    form::BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, G, T},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {
+    manifold_dim,
+    form_rank,
+    expression_rank,
+    G <: Geometry.AbstractGeometry{manifold_dim},
+    F1 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+    F2 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+    T <: Function
+}
+    # The exterior derivative of a binary transformation follows the distributive law:
+    # d(αᵏ + βᵏ) = dαᵏ +  dβᵏ
+    
+    # Extract the forms
+    forms = get_forms(form)
+
+    # Extract the transformation 
+    binary_transformation = get_transformation(form)
+
+    # Evaluate the distributive expression components, sum them, and return
+    return evaluate(binary_transformation(d(forms[1]), d(forms[2])), element_id, xi)
 end

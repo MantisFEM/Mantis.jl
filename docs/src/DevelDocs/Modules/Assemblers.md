@@ -1,6 +1,6 @@
 # Assemblers
 
-## All functions and stuff from Mantis.Assemblers
+## All docstrings from Mantis.Assemblers
 ```@autodocs
 Modules = [Mantis.Assemblers]
 ```

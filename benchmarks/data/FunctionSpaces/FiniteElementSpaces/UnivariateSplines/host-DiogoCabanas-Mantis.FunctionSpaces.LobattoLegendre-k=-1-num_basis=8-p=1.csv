@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.LobattoLegendre-k=-1-num_basis=8-p=1,2625f63,2025-09-22,1.11.7,2025-09-29,591.000 ns,642.890 ns,680.557 ns,541.000 ns,0.000 ns,720 bytes,8

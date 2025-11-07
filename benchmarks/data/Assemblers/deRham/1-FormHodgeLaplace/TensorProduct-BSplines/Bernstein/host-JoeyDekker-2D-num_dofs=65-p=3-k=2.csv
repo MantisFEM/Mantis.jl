@@ -1,3 +1,4 @@
-benchmark,commit_hash,julia_version,date,med_time,min_time,min_gc,min_memory,min_allocs
-Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\2D-num_dofs=65-p=3-k=2,69d1161,1.11.5,2025-06-25,6.912 ms,6.353 ms,0.000 ns,6.18 MiB,89711
-Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\2D-num_dofs=65-p=3-k=2,c11bc61,1.11.5,2025-08-14,1.918 ms,1.617 ms,0.000 ns,2.50 MiB,11900
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\2D-num_dofs=65-p=3-k=2,69d1161,2025-06-18,1.11.5,2025-06-25,6.912 ms,0.000 ms,0.000 ms,6.353 ms,0.000 ns,6.18 MiB,89711
+Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\2D-num_dofs=65-p=3-k=2,c11bc61,2025-06-26,1.11.5,2025-08-14,1.918 ms,0.000 ms,0.000 ms,1.617 ms,0.000 ns,2.50 MiB,11900
+Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\2D-num_dofs=65-p=3-k=2,2625f63,2025-09-22,1.11.7,2025-09-29,3.034 ms,7.127 ms,12.901 ms,2.613 ms,0.000 ns,2.50 MiB,11900

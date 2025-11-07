@@ -131,6 +131,24 @@ function get_form(wedge::Wedge)
                         `AbstractFormSpace`."""))
 end
 
+"""
+    get_form_space_tree(wedge::Wedge)
+
+Returns the spaces of the forms of `expression_rank` > 0 appearing in the tree of the wedge operator, e.g., for
+`(α ∧ β) ∧ γ`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
+If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+
+# Arguments
+- `wedge::Wedge`: The wedge structure.
+
+# Returns
+- `Tuple(<:AbstractFormExpression)`: The list of spaces of forms present in the tree of the wedge
+      product.
+"""
+function get_form_space_tree(wedge::Wedge)
+    return tuple(get_form_space_tree(wedge.form_1)..., get_form_space_tree(wedge.form_2)...)
+end
+
 function get_geometry(wedge::Wedge)
     return get_geometry(get_forms(wedge)...)
 end

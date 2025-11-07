@@ -6,7 +6,7 @@ Mantis' `Geometry` module contains all functionality related to geometry.
 
 ## Geometry
 
-An ``(n, m)`` geometry $\Phi$ is a collection of ``L`` mappings
+An ``(n, m)`` geometry ``\Phi`` is a collection of ``L`` mappings
 ``\left\{\Phi_{i}\right\}_{i=1}^{L}`` that map the canonical ``n``-dimensional domain,
 ``\Omega^{0} := [0, 1]^{n}`` into ``L`` ``n``-dimensional simply connected subdomains,
 ``\Omega^{1}_{i}`` with ``i = 1, \dots, L``, of ``\mathbb{R}^{m}``. Moreover,
@@ -79,14 +79,14 @@ The output is a matrix, ``\boldsymbol{\mathsf{X}}`` of dimensions
 ``\left(\prod_{i=1}^{n}m_{i}\right) \times m`` (the number of tensor product points where
 the geometry is evaluated in element `element_idx`, and the dimension of the embedding space
 to where the canonical element is mapped into. Specifically:
-```math 
+```math
 \boldsymbol{\mathsf{X}}_{k, l} = \Phi_{r, l}(\xi^{1}_{j_{1}}, \dots,
-\xi^{n}_{j_{n}}), 
+\xi^{n}_{j_{n}}),
 ```
 where ``r =`` `element_idx`, and ``k = j_{1} + \sum_{i=2}^{n} (j_{i} -
 1)\prod_{l=1}^{i-1}m_{l}``, as before.
 
-### Jacobian 
+### Jacobian
 
 Given the `NTuple` `ξ` of ``n`` `Vectors`, ``\boldsymbol{\xi}^{i}``, ``i=1, \dots, n``, each
 containing ``m_{i}`` unidimensional coordinates ``\xi^{i}_{j}``, ``i = 1, \dots, n`` and ``
@@ -106,3 +106,9 @@ l}}{\partial\xi_{s}}(\xi^{1}_{j_{1}}, \dots, \xi^{n}_{j_{n}}),
 ```
 where ``r = \mathtt{element\_idx}``, and ``k = j_{1} + \sum_{i=2}^{n} (j_{i} -
 1)\prod_{l=1}^{i-1}m_{l}``, as before.
+
+
+## All docstrings from Mantis.Geometry
+```@autodocs
+Modules = []
+```

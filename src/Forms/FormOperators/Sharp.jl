@@ -58,6 +58,23 @@ Returns the form to which the sharp is applied.
 """
 get_form(sharp::Sharp) = sharp.form
 
+"""
+    get_form_space_tree(wedge::Wedge)
+
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp operator, e.g., for
+`♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1.
+If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+
+# Arguments
+- `sharp::Sharp`: The sharp structure.
+
+# Returns
+- `Tuple(<:AbstractFormExpression)`: The list of forms present in the tree of the sharp.
+"""
+function get_form_space_tree(sharp::Sharp)
+    return get_form_space_tree(sharp.form)
+end
+
 ############################################################################################
 #                                     Evaluate methods                                     #
 ############################################################################################

@@ -1,6 +1,9 @@
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
 
 [compat]

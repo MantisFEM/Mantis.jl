@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+FunctionSpaces/FiniteElementSpaces/TensorProductSpaces/2D-Mantis.FunctionSpaces.EdgeLobattoLegendre-num_basis=256-p=3-k=-1,2625f63,2025-09-22,1.10.6,2025-09-29,11.708 μs,12.240 μs,2.483 μs,7.500 μs,0.000 ns,84.64 KiB,66

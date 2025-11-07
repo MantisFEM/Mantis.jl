@@ -1,6 +1,6 @@
 # FunctionSpaces
 
-## All functions and stuff from Mantis.FunctionSpaces
+## All docstrings from Mantis.FunctionSpaces
 ```@autodocs
 Modules = [Mantis.FunctionSpaces]
 ```

@@ -79,6 +79,23 @@ Returns the form associated with the integral operator.
 get_form(integral::Integral) = integral.form
 
 """
+    get_form_space_tree(integral::Integral)
+
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the integrand of integral, e.g., for
+`∫c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. 
+If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+
+# Arguments
+- `integral::Integral`: The Integral structure.
+
+# Returns
+- `Tuple(<:AbstractFormExpression)`: The list of form spaces present in the tree of the integrand of integral.
+"""
+function get_form_space_tree(integral::Integral)
+    return get_form_space_tree(get_form(integral))
+end
+
+"""
     get_expression_rank(integral::Integral)
 
 Returns the rank of the expression associated with the integral operator.
