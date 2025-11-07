@@ -1,0 +1,94 @@
+module LChainTests
+
+#=
+The following tests are based on the work done in https://arxiv.org/abs/2502.19542.
+=#
+
+using Mantis
+using Test
+
+# Initial mesh.
+starting_point = (0.0, 0.0)
+box_size = (1.0, 1.0)
+num_elements = (8, 7)
+# B-spline parameters
+p = (2, 2) # Polynomial degrees.
+k = p .- 1 # Regularities.
+B0 = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
+# Hierarchical parameters
+truncate = false
+num_steps = 1 # Number of refinement steps.
+num_sub = (2, 2) # Number of subdivisions per dimension per step.
+# Examples of figure 5.1
+## (a)
+H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
+lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
+const_i = (3, 4)
+const_j = (8, 6)
+βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
+marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), vcat, (βᵢ, βⱼ))]
+Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
+FunctionSpaces.refine_mesh!(H, 1, marked_elements)
+Bll = FunctionSpaces.get_Bll(H, 1)
+@test length(Ωₗₗ) == 72
+@test Bll == [31, 32, 33, 58, 59, 60]
+@test isempty(FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements))
+## (b)
+H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
+lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
+const_i = (4, 4)
+const_j = (6, 6)
+const_t1 = (4, 5)
+const_t2 = (5, 4)
+βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
+βₜ₁, βₜ₂ = lin_num_basis[const_t1...], lin_num_basis[const_t2...]
+marked_elements = [
+    mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ₁, βₜ₂))
+]
+Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
+FunctionSpaces.refine_mesh!(H, 1, marked_elements)
+Bll = FunctionSpaces.get_Bll(H, 1)
+@test length(Ωₗₗ) == 84
+@test Bll == [34, 35, 44, 45, 56]
+initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements)
+@test initiate_pairs == [
+    (44, 35),
+    (44, 45),
+    (44, 56),
+    (44, 34),
+    (35, 45),
+    (35, 56),
+    (35, 34),
+    (45, 56),
+    (45, 34),
+    (56, 34),
+]
+for pair in initiate_pairs
+    @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
+    if 56 in pair
+        @test !FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+    else
+        @test FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+    end
+end
+## (c)
+H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
+lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
+const_i = (4, 4)
+const_j = (6, 6)
+const_t = (7, 4)
+βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
+βₜ = lin_num_basis[const_t...]
+marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ))]
+Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
+FunctionSpaces.refine_mesh!(H, 1, marked_elements)
+Bll = FunctionSpaces.get_Bll(H, 1)
+@test Bll == [34, 35, 36, 37, 46, 56]
+initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements)
+@test initiate_pairs == [(56, 37), (56, 34), (37, 34)]
+for pair in initiate_pairs
+    @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
+    @test FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+end
+
+end

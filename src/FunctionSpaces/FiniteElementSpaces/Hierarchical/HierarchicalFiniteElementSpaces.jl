@@ -151,6 +151,21 @@ mutable struct HierarchicalFiniteElementSpace{
             spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
         )
     end
+
+    # Constructor for a Hierarchical space with no refinement
+    function HierarchicalFiniteElementSpace(
+        space::S,
+        num_subdivisions::NTuple{manifold_dim, Int},
+        truncated::Bool=true,
+        simplified::Bool=false,
+    ) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
+        TS, ref_space = build_two_scale_operator(space, num_subdivisions)
+        domains = [collect(1:get_num_elements(space)), Int[]]
+
+        return HierarchicalFiniteElementSpace(
+            [space, ref_space], [TS], domains, num_subdivisions, truncated, simplified
+        )
+    end
 end
 
 ############################################################################################
@@ -196,11 +211,15 @@ function get_active_objects_and_nested_domains(
     active_basis_per_level = [collect(1:get_num_basis(spaces[1]))]
     nested_domains_per_level = [collect(1:get_num_elements(spaces[1]))]
     # If the hierarchical space is not simplified, we need to ensure that the
-    # refinement domains do not contain proper subsets of a given element's
+    # refinement domains contain proper subsets of a given element's
     # children as refined.
     if !simplified
         new_domains = [get_level_ids(domains, level) for level in 1:num_levels]
         for level in num_levels:-1:2
+            if isempty(new_domains[level])
+                continue
+            end
+
             parents = mapreduce(
                 child -> get_element_parent(two_scale_operators[level - 1], child),
                 union,
@@ -279,10 +298,12 @@ function get_active_objects_and_nested_domains(
         setdiff!(active_elements_per_level[level], elements_to_remove)
         setdiff!(active_basis_per_level[level], basis_to_remove)
         # Add active elements and basis on next level
-        push!(active_elements_per_level, unique(elements_to_add))
-        push!(active_basis_per_level, unique(basis_to_add))
+        unique!(elements_to_add)
+        unique!(basis_to_add)
+        push!(active_elements_per_level, elements_to_add)
+        push!(active_basis_per_level, basis_to_add)
         # Store nested domains Ωˡ
-        push!(nested_domains_per_level, elements_to_add)
+        push!(nested_domains_per_level, copy(elements_to_add))
     end
 
     map(elements -> sort!(elements), active_elements_per_level)
@@ -773,9 +794,68 @@ function get_basis_contained_in_next_level_domain(
     return basis_contained_in_next_level
 end
 
+function refine_mesh!(
+    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Vector{Int}}
+)
+    L = get_num_levels(space)
+    if level == L
+        TS, space_ref = build_two_scale_operator(
+            get_space(space, L), get_num_subdivisions(space)
+        )
+        push!(get_spaces(space), space_ref)
+        push!(get_two_scale_operators(space), TS)
+        push!(get_level_ids(get_active_elements(space)), Int[])
+        push!(get_level_cum_num_ids(get_active_elements(space)), Int[])
+        push!(get_level_ids(get_nested_domains(space)), Int[])
+        push!(get_level_cum_num_ids(get_nested_domains(space)), Int[])
+    end
+
+    active_elements = get_active_elements(space)
+    nested_domains = get_nested_domains(space)
+    setdiff!(get_level_ids(active_elements, level), marked_elements[level])
+    TS = get_twoscale_operator(space, level)
+    refined_elements = mapreduce(
+        el -> get_element_children(TS, el), vcat, marked_elements[level]
+    )
+    append!(get_level_ids(active_elements, level + 1), refined_elements)
+    append!(get_level_ids(nested_domains, level + 1), refined_elements)
+    setfield!(
+        active_elements,
+        :level_cum_num_ids,
+        [0; cumsum(length.(get_level_ids(active_elements)))],
+    )
+    setfield!(
+        nested_domains,
+        :level_cum_num_ids,
+        [0; cumsum(length.(get_level_ids(nested_domains)))],
+    )
+
+    return space
+end
+
 ############################################################################################
 #                                     Getters                                              #
 ############################################################################################
+
+function get_active_elements(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.active_elements
+end
+
+function get_active_basis(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.active_basis
+end
+
+function get_nested_domains(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.nested_domains
+end
+
+function get_spaces(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.spaces
+end
+
+function get_two_scale_operators(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.two_scale_operators
+end
 
 function get_num_levels(hier_space::HierarchicalFiniteElementSpace)
     return get_num_levels(hier_space.active_elements)

@@ -1,28 +1,33 @@
 function add_lchains!(
-    space::HierarchicalFiniteElementSpace{2}, level::Int, marked_els::Vector{Int}
+    space::HierarchicalFiniteElementSpace{2}, level::Int, marked_els::Vector{Vector{Int}}
 )
     previous_parents = Int[]
     L = get_num_levels(space)
     for l in L:-1:1
+        if isempty(marked_els[l])
+            continue
+        end
+
         l_space = get_space(space, l)
-        update_space!(space, l, marked_els)
-        unchecked_pairs = initiate_pairs(space, l, marked_els)
+        refine_mesh!(space, l, marked_els)
+        Bll = get_Bll(space, level)
+        unchecked_pairs = initiate_pairs(space, l, Bll, marked_els)
         problematic_mesh = true
         level_corners = Int[]
         while problematic_mesh
             problematic_mesh = false
             current_corners = Int[]
             for (βᵢ, βⱼ) in unchecked_pairs
-                if !is_problematic(space, level, (βᵢ, βⱼ))
+                if !is_problematic(space, level, Bll, (βᵢ, βⱼ))
                     continue
                 end
 
-                corner = get_lchain_corner(space, level, (βᵢ, βⱼ))
+                corner = get_lchain_corner(space, level, Bll, (βᵢ, βⱼ))
                 push!(current_corners, corner)
                 problematic_mesh = true
             end
 
-            update_space!(
+            refine_mesh!(
                 space, l, mapreduce(c -> get_support(l_space, c), ∪, current_corners)
             )
             Bll = get_Bll(space, level)
@@ -31,7 +36,7 @@ function add_lchains!(
         end
 
         level_corners = level_corners ∪ previous_parents
-        refined_elements = marked_els[l - 1] ∪ get_subdomain(space, l - 1)
+        refined_elements = marked_els[l - 1] ∪ get_level_domain(space, l - 1)
         previous_parents = Int[]
         ll_space = get_space(space, l - 1)
         for βᵢ in level_corners
@@ -46,29 +51,16 @@ function add_lchains!(
     return nothing
 end
 
-function initiate_pairs(
-    space::HierarchicalFiniteElementSpace{2}, level::Int, marked_els::Vector{Int}
-)
-    level_space = get_space(space, level)
-    Bll = get_Bll(space, level)
-    unchecked = Int[]
-    for βᵢ in Bll
-        if !is_resolved(space, level, βᵢ) &&
-            !isempty(get_support(level_space, βᵢ) ∩ marked_els)
-            push!(unchecked, βᵢ)
-        end
+function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
+    Bll = Int[]
+    L = get_num_levels(space)
+    if level == L
+        return Bll
     end
 
-    unchecked_pairs = get_local_pairs(space, level, Bll, unchecked)
-
-    return unchecked_pairs
-end
-
-function get_Bll(space::HierarchicalFiniteElementSpace{2}, level::Int)
     Ωₗₗ = get_level_domain(space, level + 1)
     op = get_twoscale_operator(space, level)
-    Bll = Int[]
-    for βᵢ in get_level_basis_ids(space, level)
+    for βᵢ in 1:get_num_basis(get_space(space, level))
         supp_βᵢ = get_support(get_space(space, level), βᵢ)
         supp_βᵢ = mapreduce(e -> get_element_children(op, e), vcat, supp_βᵢ)
         if all(e ∈ Ωₗₗ for e in supp_βᵢ)
@@ -79,22 +71,56 @@ function get_Bll(space::HierarchicalFiniteElementSpace{2}, level::Int)
     return Bll
 end
 
-function is_resolved(space::HierarchicalFiniteElementSpace{2}, level::Int, βᵢ::Int)
+function initiate_pairs(
+    space::HierarchicalFiniteElementSpace{2},
+    level::Int,
+    Bll::Vector{Int},
+    marked_els::Vector{Vector{Int}},
+)
+    level_space = get_space(space, level)
+    unchecked = Int[]
+    level_marked_els = marked_els[level]
+    for βᵢ in Bll
+        if !is_resolved(space, level, Bll, βᵢ) &&
+            !isempty(get_support(level_space, βᵢ) ∩ level_marked_els)
+            push!(unchecked, βᵢ)
+        end
+    end
+
+    unchecked_pairs = get_local_pairs(space, level, Bll, unchecked)
+
+    return unchecked_pairs
+end
+
+function is_resolved(
+    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+)
     level_space = get_space(space, level)
     const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
     const_num_basis = get_constituent_num_basis(level_space)
     lin_num_basis = get_lin_num_basis(level_space)
-    level_basis_ids = get_level_basis_ids(space, level)
     for k in 1:2
         const_left_βᵢ = const_βᵢ .- (k .== (1, 2))
         const_right_βᵢ = const_βᵢ .+ (k .== (1, 2))
+        if const_βᵢ[k] == 1
+            right_βᵢ = lin_num_basis[const_right_βᵢ...]
+            if right_βᵢ ∈ Bll
+                return true
+            else
+                continue
+            end
+        elseif const_βᵢ[k] == const_num_basis[k]
+            left_βᵢ = lin_num_basis[const_left_βᵢ...]
+            if left_βᵢ ∈ Bll
+                return true
+            else
+                continue
+            end
+        end
+
         left_βᵢ = lin_num_basis[const_left_βᵢ...]
         right_βᵢ = lin_num_basis[const_right_βᵢ...]
-        if const_βᵢ[k] == 1 && right_βᵢ ∈ level_basis_ids
-            return true
-        elseif const_βᵢ[k] == const_num_basis[k] && left_βᵢ ∈ level_basis_ids
-            return true
-        elseif left_βᵢ ∈ level_basis_ids && right_βᵢ ∈ level_basis_ids
+        if left_βᵢ ∈ Bll && right_βᵢ ∈ Bll
             return true
         end
     end
@@ -109,13 +135,19 @@ function get_local_pairs(
     unchecked::Vector{Int},
 )
     pairs = Tuple{Int, Int}[]
-    for βᵢ in unchecked, βⱼ in get_interaction_box(space, level, Bll, βᵢ)
-        if !is_resolved(space, level, βⱼ)
+    all_candidates = Int[]
+    for βᵢ in unchecked
+        append!(all_candidates, get_interaction_box(space, level, Bll, βᵢ))
+    end
+
+    unique!(all_candidates)
+    for (βᵢ, βⱼ) in Combinatorics.combinations(all_candidates, 2)
+        if βᵢ != βⱼ &&
+            !is_resolved(space, level, Bll, βᵢ) &&
+            !is_resolved(space, level, Bll, βⱼ)
             push!(pairs, (βᵢ, βⱼ))
         end
     end
-
-    unique!(pairs)
 
     return pairs
 end
@@ -125,18 +157,22 @@ function get_interaction_box(
 )
     level_space = get_space(space, level)
     p = get_constituent_polynomial_degree(level_space)
+    const_num_basis = get_constituent_num_basis(level_space)
     const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
     lin_num_basis = get_lin_num_basis(level_space)
     inter_box = Int[]
-    for offset_1 in (-p[1] + 1):(p[1] + 1), offset_2 in (-p[2] + 1):(p[2] + 1)
+    for offset_1 in (-(p[1] + 1)):(p[1] + 1), offset_2 in (-(p[2] + 1)):(p[2] + 1)
         if offset_1 == 0 && offset_2 == 0
             continue
         end
 
-        const_βⱼ = copy(const_βᵢ)
-        const_βⱼ[1] += offset_1
-        const_βⱼ[2] += offset_2
-        βⱼ = lin_num_basis[const_βⱼ...]
+        lj = const_βᵢ[1] + offset_1
+        rj = const_βᵢ[2] + offset_2
+        if lj < 1 || lj > const_num_basis[1] || rj < 1 || rj > const_num_basis[2]
+            continue
+        end
+
+        βⱼ = lin_num_basis[lj, rj]
         if βⱼ ∈ Bll
             push!(inter_box, βⱼ)
         end
@@ -161,31 +197,47 @@ function has_minimal_intersection(
     level_space = get_space(space, level)
     const_supp_1 = get_constituent_support(level_space, βᵢ)
     const_supp_2 = get_constituent_support(level_space, βⱼ)
-    if level == get_num_levels(space)
-        operator = new_operator
-    else
-        operator = space.two_scale_operators[level]
-    end
-
+    operator = get_twoscale_operator(space, level)
     p_fine = get_constituent_polynomial_degree(get_child_space(operator))
     const_twoscale_operators = get_constituent_twoscale_operators(operator)
     for k in 1:2
         ts = const_twoscale_operators[k]
-        fine_space = get_child_space(ts)
-        min_basis_1 = minimum(const_supp_1[k])
-        max_basis_1 = maximum(const_supp_1[k])
-        min_basis_2 = minimum(const_supp_2[k])
-        max_basis_2 = maximum(const_supp_2[k])
-        intersection_boundary_breakpoints = (
-            maximum((min_basis_1, min_basis_2)), minimum((max_basis_1, max_basis_2))
-        )
-        I_k = get_contained_knot_vector(intersection_boundary_breakpoints, ts, fine_space)
+        child_space = get_child_space(ts)
+        lv1, rv1 = const_supp_1[k][1], const_supp_1[k][end]
+        lv2, rv2 = const_supp_2[k][1], const_supp_2[k][end]
+        intersection_boundary_breakpoints = (maximum((lv1, lv2)), minimum((rv1, rv2)) + 1)
+        I_k = get_contained_knot_vector(intersection_boundary_breakpoints, ts, child_space)
         if get_knot_vector_length(I_k) > p_fine[k]
             return true
         end
     end
 
     return false
+end
+
+function get_contained_knot_vector(
+    boundary_breakpoints::NTuple{2, Int},
+    ts::AbstractTwoScaleOperator,
+    fine_space::BSplineSpace,
+)
+    if boundary_breakpoints[1] == boundary_breakpoints[2]
+        breakpoint_idxs = get_element_children(ts, boundary_breakpoints[1])[1]
+    else
+        element_idxs = Int[]
+        # A breakpoint i is associated to element [ξᵢ, ξᵢ₊₁]
+        for element in boundary_breakpoints
+            append!(element_idxs, get_element_children(ts, element))
+        end
+
+        breakpoint_idxs = minimum(element_idxs):(maximum(element_idxs) + 1)
+    end
+
+    breakpoints = get_patch(fine_space).breakpoints[breakpoint_idxs]
+    multiplicity = get_multiplicity_vector(fine_space)[breakpoint_idxs]
+
+    return KnotVector(
+        Mesh.Patch1D(breakpoints), get_polynomial_degree(fine_space), multiplicity
+    )
 end
 
 function has_shortest_chain(
@@ -207,9 +259,17 @@ function has_shortest_chain(
     inter_box_j = get_interaction_box(space, level, Bll, βⱼ)
     inter_box_ij = inter_box_i ∩ inter_box_j
     verts_to_rmv = Int[]
-    for (v, offset) in enumerate(CartesianIndices((0:const_diff[1], 0:const_diff[2])))
-        const_βₜ = const_βᵢ .- offset
-        βₜ = lin_num_basis[const_βₜ...]
+    sign_1 = sign(const_diff[1])
+    sign_2 = sign(const_diff[2])
+    for (v, offset) in
+        enumerate(CartesianIndices((0:abs(const_diff[1]), 0:abs(const_diff[2]))))
+        βₜ = lin_num_basis[
+            const_βᵢ[1] - sign_1 * offset[1], const_βᵢ[2] - sign_2 * offset[2]
+        ]
+        if βₜ ∈ (βᵢ, βⱼ)
+            continue
+        end
+
         if βₜ ∉ inter_box_ij
             push!(verts_to_rmv, v)
         end
@@ -219,4 +279,22 @@ function has_shortest_chain(
     Graphs.SimpleGraphs.rem_vertices!(graph, verts_to_rmv; keep_order=true)
 
     return Graphs.has_path(graph, 1, Graphs.nv(graph))
+end
+
+function get_lchain_corner(
+    space::HierarchicalFiniteElementSpace{2},
+    level::Int,
+    Bll::Vector{Int},
+    (βᵢ, βⱼ)::Tuple{Int, Int},
+)
+    level_space = get_space(space, level)
+    lin_num_basis = get_lin_num_basis(level_space)
+    const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
+    const_βⱼ = get_constituent_basis_id(level_space, βⱼ)
+    corner = lin_num_basis[const_βᵢ[1], const_βⱼ[2]]
+    if is_resolved(space, level, Bll, corner)
+        return corner
+    end
+
+    return lin_num_basis[const_βⱼ[1], const_βᵢ[2]]
 end

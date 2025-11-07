@@ -13,7 +13,7 @@ that of an object in level l.
     i.e. 'level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))'. First entry is always 0 for
     ease of use.
 """
-struct HierarchicalActiveInfo
+mutable struct HierarchicalActiveInfo
     level_ids::Vector{Vector{Int}}
     level_cum_num_ids::Vector{Int}
 
