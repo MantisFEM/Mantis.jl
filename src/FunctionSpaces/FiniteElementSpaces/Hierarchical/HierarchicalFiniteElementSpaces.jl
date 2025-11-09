@@ -56,38 +56,6 @@ mutable struct HierarchicalFiniteElementSpace{
         S <: AbstractFESpace{manifold_dim, num_components, num_patches},
         T <: AbstractTwoScaleOperator,
     }
-        function _compute_dof_partition(spaces, active_basis, num_levels)
-            level_partition = get_dof_partition.(spaces)
-            n_patches = length(level_partition[1])
-            n_partitions = [length(level_partition[1][i]) for i in 1:n_patches]
-            dof_partition = Vector{Vector{Vector{Int}}}(undef, n_patches)
-
-            for patch in 1:n_patches
-                dof_partition[patch] = Vector{Vector{Int}}(undef, n_partitions[patch])
-                for partition in 1:n_partitions[patch]
-                    for level in 1:num_levels
-                        level_active_basis = [get_level_ids(active_basis, level)]
-                        active_dof_partition_checks =
-                            level_partition[level][patch][partition] .∈ level_active_basis
-                        dof_ids =
-                            convert_to_hier_id.(
-                                Ref(active_basis),
-                                level,
-                                level_partition[level][patch][partition][active_dof_partition_checks],
-                            )
-
-                        if level == 1
-                            dof_partition[patch][partition] = dof_ids
-                        else
-                            append!(dof_partition[patch][partition], dof_ids)
-                        end
-                    end
-                end
-            end
-
-            return dof_partition
-        end
-
         num_levels = length(spaces)
 
         # Checks for incompatible arguments
@@ -110,8 +78,7 @@ mutable struct HierarchicalFiniteElementSpace{
         multilevel_elements, multilevel_extraction_coeffs, multilevel_basis_indices = get_multilevel_extraction(
             spaces, two_scale_operators, active_elements, active_basis, truncated
         )
-
-        dof_partition = _compute_dof_partition(spaces, active_basis, num_levels)
+        dof_partition = compute_dof_partition(spaces, active_basis, num_levels)
 
         # Creates the structure
         return new{manifold_dim, num_components, num_patches, S, T}(
@@ -617,6 +584,38 @@ function truncate_refinement_matrix!(refinement_matrix, active_indices::Vector{I
     return refinement_matrix
 end
 
+function compute_dof_partition(spaces, active_basis, num_levels)
+    level_partition = get_dof_partition.(spaces)
+    n_patches = length(level_partition[1])
+    n_partitions = [length(level_partition[1][i]) for i in 1:n_patches]
+    dof_partition = Vector{Vector{Vector{Int}}}(undef, n_patches)
+
+    for patch in 1:n_patches
+        dof_partition[patch] = Vector{Vector{Int}}(undef, n_partitions[patch])
+        for partition in 1:n_partitions[patch]
+            for level in 1:num_levels
+                level_active_basis = [get_level_ids(active_basis, level)]
+                active_dof_partition_checks =
+                    level_partition[level][patch][partition] .∈ level_active_basis
+                dof_ids =
+                    convert_to_hier_id.(
+                        Ref(active_basis),
+                        level,
+                        level_partition[level][patch][partition][active_dof_partition_checks],
+                    )
+
+                if level == 1
+                    dof_partition[patch][partition] = dof_ids
+                else
+                    append!(dof_partition[patch][partition], dof_ids)
+                end
+            end
+        end
+    end
+
+    return dof_partition
+end
+
 ############################################################################################
 #                                        Extraction                                        #
 ############################################################################################
@@ -795,7 +794,7 @@ function get_basis_contained_in_next_level_domain(
 end
 
 function refine_mesh!(
-    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Vector{Int}}
+    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
 )
     L = get_num_levels(space)
     if level == L
@@ -812,11 +811,9 @@ function refine_mesh!(
 
     active_elements = get_active_elements(space)
     nested_domains = get_nested_domains(space)
-    setdiff!(get_level_ids(active_elements, level), marked_elements[level])
+    setdiff!(get_level_ids(active_elements, level), marked_elements)
     TS = get_twoscale_operator(space, level)
-    refined_elements = mapreduce(
-        el -> get_element_children(TS, el), vcat, marked_elements[level]
-    )
+    refined_elements = mapreduce(el -> get_element_children(TS, el), vcat, marked_elements)
     append!(get_level_ids(active_elements, level + 1), refined_elements)
     append!(get_level_ids(nested_domains, level + 1), refined_elements)
     setfield!(
@@ -829,6 +826,77 @@ function refine_mesh!(
         :level_cum_num_ids,
         [0; cumsum(length.(get_level_ids(nested_domains)))],
     )
+
+    return space
+end
+
+function update_basis!(space::HierarchicalFiniteElementSpace)
+    L = get_num_levels(space)
+    active_basis = get_active_basis(space)
+    nested_domains = get_nested_domains(space)
+    simplified = is_simplified(space)
+    for level in 1:(L - 1)
+        level_space = get_space(space, level)
+        next_level_space = get_space(space, level + 1)
+        level_ts = get_twoscale_operator(space, level)
+        next_level_domain = Set(get_level_ids(nested_domains, level + 1))
+        basis_to_remove = Int[]
+        basis_to_add = Int[]
+        if !simplified
+            for parent_basis in get_level_ids(active_basis, level)
+                parent_support = get_support(level_space, parent_basis)
+                if all(
+                    child -> child in next_level_domain,
+                    mapreduce(
+                        el -> get_element_children(level_ts, el), vcat, parent_support
+                    ),
+                )
+                    append!(basis_to_remove, parent_basis)
+                end
+            end
+
+            for child_basis in 1:get_num_basis(next_level_space)
+                child_support = get_support(next_level_space, child_basis)
+                if all(child -> child in next_level_domain, child_support)
+                    append!(basis_to_add, child_basis)
+                end
+            end
+        else
+            for parent_basis in get_level_ids(active_basis, level)
+                parent_support = get_support(level_space, parent_basis)
+                if all(
+                    child -> child in next_level_domain,
+                    mapreduce(
+                        el -> get_element_children(level_ts, el), vcat, parent_support
+                    ),
+                )
+                    append!(basis_to_remove, parent_basis)
+                    union!(basis_to_add, get_basis_children(level_ts, parent_basis))
+                end
+            end
+        end
+
+        setdiff!(get_level_ids(active_basis, level), basis_to_remove)
+        append!(get_level_ids(active_basis, level + 1), basis_to_add)
+    end
+
+    setfield!(
+        active_basis, :level_cum_num_ids, [0; cumsum(length.(get_level_ids(active_basis)))]
+    )
+    multilevel_els, multilevel_coeffs, multilevel_indices = get_multilevel_extraction(
+        get_spaces(space),
+        get_two_scale_operators(space),
+        get_active_elements(space),
+        active_basis,
+        is_truncated(space),
+    )
+    dof_partition = compute_dof_partition(
+        get_spaces(space), active_basis, get_num_levels(space)
+    )
+    setfield!(space, :multilevel_elements, multilevel_els)
+    setfield!(space, :multilevel_extraction_coeffs, multilevel_coeffs)
+    setfield!(space, :multilevel_basis_indices, multilevel_indices)
+    setfield!(space, :dof_partition, dof_partition)
 
     return space
 end
@@ -855,6 +923,14 @@ end
 
 function get_two_scale_operators(hier_space::HierarchicalFiniteElementSpace)
     return hier_space.two_scale_operators
+end
+
+function is_truncated(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.truncated
+end
+
+function is_simplified(hier_space::HierarchicalFiniteElementSpace)
+    return hier_space.simplified
 end
 
 function get_num_levels(hier_space::HierarchicalFiniteElementSpace)

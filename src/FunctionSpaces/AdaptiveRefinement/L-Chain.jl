@@ -1,17 +1,18 @@
 function add_lchains!(
-    space::HierarchicalFiniteElementSpace{2}, level::Int, marked_els::Vector{Vector{Int}}
+    space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
 )
     previous_parents = Int[]
     L = get_num_levels(space)
-    for l in L:-1:1
-        if isempty(marked_els[l])
+    for level in L:-1:1
+        level_marked_els = marked_els[level]
+        if isempty(level_marked_els)
             continue
         end
 
-        l_space = get_space(space, l)
-        refine_mesh!(space, l, marked_els)
+        level_space = get_space(space, level)
+        refine_mesh!(space, level, level_marked_els)
         Bll = get_Bll(space, level)
-        unchecked_pairs = initiate_pairs(space, l, Bll, marked_els)
+        unchecked_pairs = initiate_pairs(space, level, Bll, level_marked_els)
         problematic_mesh = true
         level_corners = Int[]
         while problematic_mesh
@@ -27,28 +28,38 @@ function add_lchains!(
                 problematic_mesh = true
             end
 
+            if !problematic_mesh
+                break
+            end
+
             refine_mesh!(
-                space, l, mapreduce(c -> get_support(l_space, c), ∪, current_corners)
+                space,
+                level,
+                mapreduce(c -> get_support(level_space, c), union, current_corners),
             )
             Bll = get_Bll(space, level)
             unchecked_pairs = get_local_pairs(space, level, Bll, current_corners)
-            level_corners = level_corners ∪ current_corners
+            union!(level_corners, current_corners)
+        end
+
+        if level == 1
+            continue
         end
 
         level_corners = level_corners ∪ previous_parents
-        refined_elements = marked_els[l - 1] ∪ get_level_domain(space, l - 1)
+        refined_elements = marked_els[level - 1] ∪ get_level_domain(space, level - 1)
         previous_parents = Int[]
-        ll_space = get_space(space, l - 1)
+        pl_space = get_space(space, level - 1)
         for βᵢ in level_corners
-            if !isempty(get_support(l_space, βᵢ) ∩ refined_elements)
-                parent = get_parent_function(space, l, βᵢ)
+            if !isempty(get_support(level_space, βᵢ) ∩ refined_elements)
+                parent = get_parent_function(space, level, βᵢ)
                 push!(previous_parents, parent)
-                union!(marked_els[l - 1], get_support(ll_space, parent))
+                union!(marked_els[level - 1], get_support(pl_space, parent))
             end
         end
     end
 
-    return nothing
+    return update_basis!(space)
 end
 
 function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
@@ -75,14 +86,13 @@ function initiate_pairs(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
     Bll::Vector{Int},
-    marked_els::Vector{Vector{Int}},
+    marked_els::Vector{Int},
 )
     level_space = get_space(space, level)
     unchecked = Int[]
-    level_marked_els = marked_els[level]
     for βᵢ in Bll
         if !is_resolved(space, level, Bll, βᵢ) &&
-            !isempty(get_support(level_space, βᵢ) ∩ level_marked_els)
+            !isempty(get_support(level_space, βᵢ) ∩ marked_els)
             push!(unchecked, βᵢ)
         end
     end
@@ -297,4 +307,12 @@ function get_lchain_corner(
     end
 
     return lin_num_basis[const_βⱼ[1], const_βᵢ[2]]
+end
+
+function get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
+    pl_space = get_space(space, level - 1)
+    operator = get_twoscale_operator(space, level - 1)
+    parents = get_child_to_parents_basis(operator)[βᵢ]
+
+    return parents[1]
 end
