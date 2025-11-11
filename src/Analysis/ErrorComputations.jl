@@ -1,9 +1,3 @@
-function _L2_norm_square(u, element_id, dΩ)
-    integral = ∫(u ∧ ★(u), dΩ)
-
-    return Forms.evaluate(integral, element_id)[1][1]
-end
-
 function L2_norm(u, dΩ)
     norm = 0.0
     inner_prod = ∫(u ∧ ★(u), dΩ)
@@ -28,11 +22,14 @@ function _compute_square_error_per_element(
 }
     num_elements = Quadrature.get_num_base_elements(quad_rule)
     result = Vector{Float64}(undef, num_elements)
+    difference = computed_sol - exact_sol
+    if norm == "L2"
+        integral = ∫((difference) ∧ ★(difference), quad_rule)
+    end
 
     for elem_id in 1:1:num_elements
-        difference = computed_sol - exact_sol
         if norm == "L2"
-            result[elem_id] = _L2_norm_square(difference, elem_id, quad_rule)
+            result[elem_id] = Forms.evaluate(integral, elem_id)[1][1]
         elseif norm == "H1"
             throw(ArgumentError("Computing the H1 norm still needs to be updated."))
             # d_difference = Forms.ExteriorDerivative(difference)
@@ -48,16 +45,16 @@ function _compute_square_error_per_element(
                 ),
             )
         else
-            throw(ArgumentError(
-                "Unknown norm '$norm'. Only 'L2', 'Linf', and 'H1' are accepted inputs."
-                )
+            throw(
+                ArgumentError(
+                    "Unknown norm '$norm'. Only 'L2', 'Linf', and 'H1' are accepted inputs."
+                ),
             )
         end
     end
 
     return result
 end
-
 
 function compute_error_per_element(
     computed_sol::TF1, exact_sol::TF2, quad_rule::Q, norm="L2"

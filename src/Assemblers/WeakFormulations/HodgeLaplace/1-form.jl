@@ -94,7 +94,7 @@ Returns the solution of the weak form of the 1-form Hodge Laplacian from an adap
 """
 function solve_one_form_hodge_laplacian(
     complex::C,
-    forcing_function::Function,
+    problem_data::Function,
     dΩₐ::Quadrature.StandardQuadrature{manifold_dim},
     num_steps::Int,
     dorfler_parameter::Float64,
@@ -107,49 +107,50 @@ function solve_one_form_hodge_laplacian(
     end
 
     # Exact solution on initial step
-    δu¹, u¹, f¹ = forcing_function(1, Forms.get_geometry(complex)...)
+    δu¹, u¹, f¹ = problem_data(1, Forms.get_geometry(complex...))
     δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ)
-    err_per_element = Analysis.compute_error_per_element(δu¹ₕ, δu¹, dΩₑ)
+    err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
     for step in 1:num_steps
         if verbose
             println("Solving the problem on step $step...")
         end
 
-        X⁰ = FunctionSpaces.get_component_spaces(complex[1].fem_space)[1]
-        L = FunctionSpaces.get_num_levels(X⁰)
-        new_operator, new_space = FunctionSpaces.build_two_scale_operator(
-            FunctionSpaces.get_space(X⁰, L), FunctionSpaces.get_num_subdivisions(X⁰)
-        )
+        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
         )
-        # Get domains to be refined in current step
-        marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            X⁰, dorfler_marking
-        )
         if Lchains
-            FunctionSpaces.add_Lchains_supports!(
-                marked_elements_per_level, X⁰, new_operator
+            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
+                H⁰, dorfler_marking; ensure_nestedness=false
             )
+            FunctionSpaces.add_lchains!(H⁰, marked_elements_per_level)
+        else
+            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
+                H⁰, dorfler_marking; ensure_nestedness=true
+            )
+            L = FunctionSpaces.get_num_levels(H⁰)
+            for level in 1:L
+                if !isempty(marked_elements_per_level[level])
+                    FunctionSpaces.refine_mesh!(H⁰, level, marked_elements_per_level[level])
+                end
+            end
+
+            FunctionSpaces.update_basis!(H⁰)
         end
-        refinement_domains = FunctionSpaces.get_refinement_domains(
-            X⁰, marked_elements_per_level, new_operator
-        )
-        complex = Forms.update_hierarchical_de_rham_complex(
-            complex, refinement_domains, new_operator, new_space
-        )
-        geom = Forms.get_geometry(complex...)
+
+        complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
+        geo = Forms.get_geometry(complex...)
         dΩₐ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )
         dΩₑ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geo)
         )
         # Update exact solution
-        δu¹, u¹, f¹ = forcing_function(1, geom)
+        δu¹, u¹, f¹ = problem_data(1, geo)
         # Solve problem on current step
         δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ)
-        err_per_element = Analysis.compute_error_per_element(δu¹ₕ, δu¹, dΩₑ)
+        err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
     end
 
     return δu¹ₕ, u¹ₕ

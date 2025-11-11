@@ -414,12 +414,7 @@ function create_hierarchical_de_rham_complex(
             # Build the corresponding tensor-product FEM space.
             tp_space = FunctionSpaces.TensorProductSpace(tp_consituent_spaces)
             hierarchical_space = FunctionSpaces.HierarchicalFiniteElementSpace(
-                [tp_space],
-                FunctionSpaces.AbstractTwoScaleOperator[],
-                [Int[]],
-                num_subdivisions,
-                truncate,
-                simplified,
+                tp_space, num_subdivisions, truncate, simplified
             )
 
             return hierarchical_space
@@ -516,6 +511,44 @@ function update_hierarchical_de_rham_complex(
     return zero_form, one_form, two_form
 end
 
+function update_hierarchical_de_rham_complex(
+    complex::C, H⁰::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim}
+) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+    active_elements = FunctionSpaces.get_active_elements(H⁰)
+    nested_domains = FunctionSpaces.get_nested_domains(H⁰)
+    L = FunctionSpaces.get_num_levels(H⁰)
+    geo = Geometry.HierarchicalGeometry(H⁰)
+    for form in complex[2:end],
+        space in FunctionSpaces.get_component_spaces(get_fe_space(form))
+
+        if L > FunctionSpaces.get_num_levels(space)
+            FunctionSpaces.add_level!(space)
+        end
+
+        setfield!(space, :active_elements, deepcopy(active_elements))
+        setfield!(space, :nested_domains, deepcopy(nested_domains))
+        FunctionSpaces.update_basis!(space)
+    end
+
+    new_complex = ntuple(num_forms) do k
+        num_components = FunctionSpaces.get_num_components(get_fe_space(complex[k]))
+        if num_components == 1
+            return FormSpace(k - 1, geo, get_fe_space(complex[k]), get_label(complex[k]))
+        else
+            return FormSpace(
+                k - 1,
+                geo,
+                FunctionSpaces.DirectSumSpace(
+                    FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
+                ),
+                get_label(complex[k]),
+            )
+        end
+    end
+
+    return new_complex
+end
+
 ################################################################################
 # Polar B-spline de Rham complex
 ################################################################################
@@ -549,13 +582,12 @@ function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing,
-    R::Float64 = 1.0,
+    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
+    R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0),
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
     refine::Bool=false,
 )
-
     return create_polar_spline_de_rham_complex(
         num_elements,
         FunctionSpaces.Bernstein.(degrees),
@@ -564,7 +596,7 @@ function create_polar_spline_de_rham_complex(
         R=R,
         two_poles=two_poles,
         box_sizes=box_sizes,
-        refine=refine
+        refine=refine,
     )
 end
 
@@ -597,21 +629,25 @@ function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing,
-    R::Float64 = 1.0,
+    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
+    R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0),
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
     refine::Bool=false,
 ) where {F <: NTuple{2, FunctionSpaces.AbstractCanonicalSpace}}
-
     form_spaces = Vector{AbstractFormSpace}(undef, 3)
 
     ##############################
     # Geometry
     ##############################
     P_geom, geom_coeffs_polar = FunctionSpaces.create_polar_geometry_data(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes,
     )
     if refine
         P_geom, geom_coeffs_polar, num_elements = FunctionSpaces.refine_geometry_data(
@@ -625,8 +661,14 @@ function create_polar_spline_de_rham_complex(
     # 0-Forms
     ##############################
     P⁰ = FunctionSpaces.create_scalar_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, zero_at_poles=false, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        zero_at_poles=false,
+        box_sizes=box_sizes,
     )
     form_spaces[1] = FormSpace(0, geometry, P⁰, "ω_0")
 
@@ -634,8 +676,13 @@ function create_polar_spline_de_rham_complex(
     # 1-Forms
     ##############################
     P¹ = FunctionSpaces.create_vector_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes,
     )
     form_spaces[2] = FormSpace(1, geometry, P¹, "ω_1")
 
@@ -643,8 +690,14 @@ function create_polar_spline_de_rham_complex(
     # 2-Forms
     ##############################
     P² = FunctionSpaces.create_scalar_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, zero_at_poles=true, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        zero_at_poles=true,
+        box_sizes=box_sizes,
     )
     form_spaces[3] = FormSpace(2, geometry, P², "ω_2")
 
@@ -695,7 +748,8 @@ function trace_basis_idxs(
     dof_partition = FunctionSpaces.get_dof_partition(get_fe_space(form))
     num_sides = 3^manifold_dim
     basis_idxs = [
-        i for j in setdiff(1:num_sides, Int((num_sides + 1) / 2)) for i in dof_partition[1][j]
+        i for j in setdiff(1:num_sides, Int((num_sides + 1) / 2)) for
+        i in dof_partition[1][j]
     ]
     return basis_idxs
 end

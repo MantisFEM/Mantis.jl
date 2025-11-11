@@ -697,19 +697,20 @@ function get_basis_permutation(
     return J
 end
 
-function get_basis_indices(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    if get_multilevel_id(hier_space, hier_id) == 0
+function get_basis_indices(space::HierarchicalFiniteElementSpace, element_id::Int)
+    if iszero(get_multilevel_id(space, element_id))
         element_level, element_level_id = convert_to_element_level_and_level_id(
-            hier_space, hier_id
+            space, element_id
         )
-        basis_indices = collect(
-            get_basis_indices(get_space(hier_space, element_level), element_level_id)
+        basis_indices = get_basis_indices(get_space(space, element_level), element_level_id)
+        map!(
+            basis_id -> convert_to_basis_hier_id(space, element_level, basis_id),
+            basis_indices,
+            basis_indices,
         )
-        basis_indices .=
-            convert_to_basis_hier_id.(Ref(hier_space), Ref(element_level), basis_indices)
     else
-        multilevel_id = get_multilevel_id(hier_space, hier_id)
-        basis_indices = hier_space.multilevel_basis_indices[multilevel_id]
+        multilevel_id = get_multilevel_id(space, element_id)
+        basis_indices = space.multilevel_basis_indices[multilevel_id]
     end
 
     return basis_indices
@@ -797,34 +798,53 @@ function refine_mesh!(
     space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
 )
     L = get_num_levels(space)
+    active_elements = get_active_elements(space)
+	new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
+	if isempty(new_marked_els)
+		return space
+	end
+
     if level == L
-        TS, space_ref = build_two_scale_operator(
-            get_space(space, L), get_num_subdivisions(space)
-        )
-        push!(get_spaces(space), space_ref)
-        push!(get_two_scale_operators(space), TS)
-        push!(get_level_ids(get_active_elements(space)), Int[])
-        push!(get_level_cum_num_ids(get_active_elements(space)), Int[])
-        push!(get_level_ids(get_nested_domains(space)), Int[])
-        push!(get_level_cum_num_ids(get_nested_domains(space)), Int[])
+        add_level!(space)
     end
 
     active_elements = get_active_elements(space)
     nested_domains = get_nested_domains(space)
-    setdiff!(get_level_ids(active_elements, level), marked_elements)
-    TS = get_twoscale_operator(space, level)
-    refined_elements = mapreduce(el -> get_element_children(TS, el), vcat, marked_elements)
-    append!(get_level_ids(active_elements, level + 1), refined_elements)
-    append!(get_level_ids(nested_domains, level + 1), refined_elements)
+	new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
+    setdiff!(get_level_ids(active_elements, level), new_marked_els)
+    ts = get_twoscale_operator(space, level)
+    refined_elements = mapreduce(el -> get_element_children(ts, el), vcat, new_marked_els)
+    union!(get_level_ids(active_elements, level + 1), refined_elements)
+    union!(get_level_ids(nested_domains, level + 1), refined_elements)
     setfield!(
-        active_elements,
-        :level_cum_num_ids,
-        [0; cumsum(length.(get_level_ids(active_elements)))],
+        space, :active_elements, HierarchicalActiveInfo(get_level_ids(active_elements))
     )
-    setfield!(
-        nested_domains,
-        :level_cum_num_ids,
-        [0; cumsum(length.(get_level_ids(nested_domains)))],
+    setfield!(space, :nested_domains, HierarchicalActiveInfo(get_level_ids(nested_domains)))
+
+    return space
+end
+
+function add_level!(space::HierarchicalFiniteElementSpace)
+    L = get_num_levels(space)
+    new_ts, new_space = build_two_scale_operator(
+        get_space(space, L), get_num_subdivisions(space)
+    )
+    push!(get_spaces(space), new_space)
+    push!(get_two_scale_operators(space), new_ts)
+    push!(get_level_ids(get_active_elements(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_active_elements(space)),
+        last(get_level_cum_num_ids(get_active_elements(space))),
+    )
+    push!(get_level_ids(get_nested_domains(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_nested_domains(space)),
+        last(get_level_cum_num_ids(get_nested_domains(space))),
+    )
+    push!(get_level_ids(get_active_basis(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_active_basis(space)),
+        last(get_level_cum_num_ids(get_active_basis(space))),
     )
 
     return space
@@ -858,7 +878,7 @@ function update_basis!(space::HierarchicalFiniteElementSpace)
             for child_basis in 1:get_num_basis(next_level_space)
                 child_support = get_support(next_level_space, child_basis)
                 if all(child -> child in next_level_domain, child_support)
-                    append!(basis_to_add, child_basis)
+                    union!(basis_to_add, child_basis)
                 end
             end
         else
@@ -877,17 +897,15 @@ function update_basis!(space::HierarchicalFiniteElementSpace)
         end
 
         setdiff!(get_level_ids(active_basis, level), basis_to_remove)
-        append!(get_level_ids(active_basis, level + 1), basis_to_add)
+        union!(get_level_ids(active_basis, level + 1), basis_to_add)
     end
 
-    setfield!(
-        active_basis, :level_cum_num_ids, [0; cumsum(length.(get_level_ids(active_basis)))]
-    )
+    setfield!(space, :active_basis, HierarchicalActiveInfo(get_level_ids(active_basis)))
     multilevel_els, multilevel_coeffs, multilevel_indices = get_multilevel_extraction(
         get_spaces(space),
         get_two_scale_operators(space),
         get_active_elements(space),
-        active_basis,
+        get_active_basis(space),
         is_truncated(space),
     )
     dof_partition = compute_dof_partition(

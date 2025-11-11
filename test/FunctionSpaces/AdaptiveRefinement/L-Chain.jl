@@ -7,6 +7,8 @@ The following tests are based on the work done in https://arxiv.org/abs/2502.195
 using Mantis
 using Test
 
+include("Helper.jl")
+
 # Examples of figure 5.1
 # Initial mesh.
 starting_point = (0.0, 0.0)
@@ -52,16 +54,16 @@ Bll = FunctionSpaces.get_Bll(H, 1)
 @test Bll == [34, 35, 44, 45, 56]
 initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1])
 @test initiate_pairs == [
-    (44, 35),
-    (44, 45),
-    (44, 56),
-    (44, 34),
+    (34, 44),
+    (34, 35),
+    (34, 45),
+    (34, 56),
+    (35, 44),
     (35, 45),
     (35, 56),
-    (35, 34),
+    (44, 45),
+    (44, 56),
     (45, 56),
-    (45, 34),
-    (56, 34),
 ]
 for pair in initiate_pairs
     @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
@@ -85,7 +87,7 @@ FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
 Bll = FunctionSpaces.get_Bll(H, 1)
 @test Bll == [34, 35, 36, 37, 46, 56]
 initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1])
-@test initiate_pairs == [(56, 37), (56, 34), (37, 34)]
+@test initiate_pairs == [(34, 56), (34, 37), (37, 56)]
 for pair in initiate_pairs
     @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
     @test FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
@@ -119,6 +121,43 @@ Bll = FunctionSpaces.get_Bll(H, 1)
 @test Bll == [61, 85, 109]
 FunctionSpaces.add_lchains!(H, marked_elements)
 Bll = FunctionSpaces.get_Bll(H, 1)
-@test Bll == [61, 74, 85, 86, 87, 98, 109, 110, 111]
+@test Bll == [59, 60, 61, 72, 83, 84, 85, 96, 109]
+# Example of figure 7.4
+# Initial mesh.
+starting_point = (0.0, 0.0)
+box_size = (1.0, 1.0)
+num_elements = (16, 16)
+# B-spline parameters
+p = (3, 3) # Polynomial degrees.
+k = p .- 1 # Regularities.
+B0 = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
+# Hierarchical parameters
+truncate = true
+simplified = false
+num_steps = 6 # Number of refinement steps.
+num_sub = (2, 2) # Number of subdivisions per dimension per step.
+θ = 0.06 # Dorfler parameter.
+Lchains = true # Decide if Lchains are added to fix inexact refinements.
+# Quadrature rules
+nq_assembly = p .+ 1
+nq_error = nq_assembly .* 2
+∫ₐ, ∫ₑ = Quadrature.get_canonical_quadrature_rules(
+    Quadrature.gauss_legendre, nq_assembly, nq_error
+)
+dΩₐ, dΩₑ = (
+    Quadrature.StandardQuadrature(∫ₐ, prod(num_elements)),
+    Quadrature.StandardQuadrature(∫ₑ, prod(num_elements)),
+)
+verbose = true
+# Hierarchical de Rham complex
+ℍ = Forms.create_hierarchical_de_rham_complex(
+    starting_point, box_size, num_elements, p, k, num_sub, truncate, simplified
+)
+# Solve problem
+δuₕ, uₕ = Assemblers.solve_one_form_hodge_laplacian(
+    ℍ, problem_data, dΩₐ, num_steps, θ, dΩₑ, Lchains; verbose
+)
+δu, u, _ = problem_data(1, Forms.get_geometry(uₕ))
+Plot.export_form_fields_to_vtk((u, uₕ, u - uₕ), "L-chain-Test")
 
 end

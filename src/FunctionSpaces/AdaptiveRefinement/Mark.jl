@@ -24,49 +24,64 @@ end
 
 function add_padding!(
     marked_elements_per_level::Vector{Vector{Int}},
-    hier_space::HierarchicalFiniteElementSpace,
+    space::HierarchicalFiniteElementSpace;
+    ensure_nestedness::Bool=true,
 )
-    num_levels = get_num_levels(hier_space)
-
-    for level in 1:num_levels
+    L = get_num_levels(space)
+    for level in 1:L
         if marked_elements_per_level[level] == Int[]
             continue
         end
 
-        basis_in_marked_elements = reduce(
+        level_space = get_space(space, level)
+        basis_in_marked_elements = mapreduce(
+            el -> get_basis_indices(level_space, el),
             union,
-            get_basis_indices.(
-                Ref(hier_space.spaces[level]), marked_elements_per_level[level]
-            ),
+            marked_elements_per_level[level],
         )
-        marked_elements_per_level[level] = reduce(
-            union, get_support.(Ref(hier_space.spaces[level]), basis_in_marked_elements)
+        marked_elements_per_level[level] = mapreduce(
+            basis -> get_support(level_space, basis), union, basis_in_marked_elements
         )
     end
 
-    return marked_elements_per_level
-end
+    if ensure_nestedness
+        for level in L:-1:2
+            if marked_elements_per_level[level] == Int[]
+                continue
+            end
 
-function add_padding!(
-    marked_elements_per_level::Vector{Vector{Int}}, spaces::Vector{S}
-) where {manifold_dim, S <: AbstractFESpace{manifold_dim, 1}}
-    num_levels = length(spaces)
-
-    for level in 1:num_levels
-        if marked_elements_per_level[level] == Int[]
-            continue
+            ts = get_twoscale_operator(space, level - 1)
+            parent_elements = mapreduce(
+                child_el -> get_element_parent(ts, child_el),
+                union,
+                marked_elements_per_level[level],
+            )
+            union!(marked_elements_per_level[level - 1], parent_elements)
         end
-
-        basis_in_marked_elements = reduce(
-            union, get_basis_indices.(Ref(spaces[level]), marked_elements_per_level[level])
-        )
-        marked_elements_per_level[level] = union(
-            get_support.(Ref(spaces[level]), basis_in_marked_elements)...
-        )
     end
 
     return marked_elements_per_level
 end
+
+# function add_padding!(
+#     marked_elements_per_level::Vector{Vector{Int}}, spaces::Vector{S}
+# ) where {manifold_dim, S <: AbstractFESpace{manifold_dim, 1}}
+#     L = length(spaces)
+#     for level in 1:L
+#         if marked_elements_per_level[level] == Int[]
+#             continue
+#         end
+
+#         basis_in_marked_elements = reduce(
+#             union, get_basis_indices.(Ref(spaces[level]), marked_elements_per_level[level])
+#         )
+#         marked_elements_per_level[level] = union(
+#             get_support.(Ref(spaces[level]), basis_in_marked_elements)...
+#         )
+#     end
+
+#     return marked_elements_per_level
+# end
 
 function get_marked_elements_children(
     hier_space::HierarchicalFiniteElementSpace{
@@ -85,22 +100,20 @@ function get_marked_elements_children(
             if marked_elements_per_level[level] == Int[]
                 marked_children[level + 1] = Int[]
             else
-                marked_children[level + 1] = reduce(
+                marked_children[level + 1] = mapreduce(
+                    el ->
+                        get_element_children(get_twoscale_operator(hier_space, level), el),
                     vcat,
-                    get_element_children.(
-                        Ref(get_twoscale_operator(hier_space, level)),
-                        marked_elements_per_level[level],
-                    ),
+                    marked_elements_per_level[level],
                 )
             end
         elseif marked_elements_per_level[level] != Int[]
             push!(
                 marked_children,
-                reduce(
+                mapreduce(
+                    el -> get_element_children(new_operator, el),
                     vcat,
-                    get_element_children.(
-                        Ref(new_operator), marked_elements_per_level[level]
-                    ),
+                    marked_elements_per_level[level],
                 ),
             )
         end
@@ -110,12 +123,14 @@ function get_marked_elements_children(
 end
 
 function get_padding_per_level(
-    hier_space::HierarchicalFiniteElementSpace, marked_elements::Vector{Int}
+    space::HierarchicalFiniteElementSpace,
+    marked_elements::Vector{Int};
+    ensure_nestedness::Bool=true,
 )
     element_ids_per_level = convert_element_vector_to_elements_per_level(
-        hier_space, marked_elements
+        space, marked_elements
     )
-    add_padding!(element_ids_per_level, hier_space)
+    add_padding!(element_ids_per_level, space; ensure_nestedness=ensure_nestedness)
 
     return element_ids_per_level
 end

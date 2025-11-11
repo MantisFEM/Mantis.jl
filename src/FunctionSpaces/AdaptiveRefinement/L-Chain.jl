@@ -19,13 +19,11 @@ function add_lchains!(
             problematic_mesh = false
             current_corners = Int[]
             for (βᵢ, βⱼ) in unchecked_pairs
-                if !is_problematic(space, level, Bll, (βᵢ, βⱼ))
-                    continue
+                if is_problematic(space, level, Bll, (βᵢ, βⱼ))
+                    corner = get_lchain_corner(space, level, Bll, (βᵢ, βⱼ))
+                    append!(current_corners, corner)
+                    problematic_mesh = true
                 end
-
-                corner = get_lchain_corner(space, level, Bll, (βᵢ, βⱼ))
-                push!(current_corners, corner)
-                problematic_mesh = true
             end
 
             if !problematic_mesh
@@ -69,12 +67,12 @@ function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
         return Bll
     end
 
-    Ωₗₗ = get_level_domain(space, level + 1)
+    Ωll = get_level_domain(space, level + 1)
     op = get_twoscale_operator(space, level)
     for βᵢ in 1:get_num_basis(get_space(space, level))
         supp_βᵢ = get_support(get_space(space, level), βᵢ)
         supp_βᵢ = mapreduce(e -> get_element_children(op, e), vcat, supp_βᵢ)
-        if all(e ∈ Ωₗₗ for e in supp_βᵢ)
+        if all(e ∈ Ωll for e in supp_βᵢ)
             push!(Bll, βᵢ)
         end
     end
@@ -93,7 +91,7 @@ function initiate_pairs(
     for βᵢ in Bll
         if !is_resolved(space, level, Bll, βᵢ) &&
             !isempty(get_support(level_space, βᵢ) ∩ marked_els)
-            push!(unchecked, βᵢ)
+            append!(unchecked, βᵢ)
         end
     end
 
@@ -145,21 +143,20 @@ function get_local_pairs(
     unchecked::Vector{Int},
 )
     pairs = Tuple{Int, Int}[]
-    all_candidates = Int[]
     for βᵢ in unchecked
-        append!(all_candidates, get_interaction_box(space, level, Bll, βᵢ))
-    end
-
-    unique!(all_candidates)
-    for (βᵢ, βⱼ) in Combinatorics.combinations(all_candidates, 2)
-        if βᵢ != βⱼ &&
-            !is_resolved(space, level, Bll, βᵢ) &&
-            !is_resolved(space, level, Bll, βⱼ)
-            push!(pairs, (βᵢ, βⱼ))
+        for βⱼ in get_interaction_box(space, level, Bll, βᵢ)
+            if !is_resolved(space, level, Bll, βⱼ) && βᵢ != βⱼ
+				# We do this so that we can call unique! after
+                if βᵢ < βⱼ
+                    push!(pairs, (βᵢ, βⱼ))
+                else
+                    push!(pairs, (βⱼ, βᵢ))
+                end
+            end
         end
     end
 
-    return pairs
+    return unique!(pairs)
 end
 
 function get_interaction_box(
@@ -312,7 +309,7 @@ end
 function get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
     pl_space = get_space(space, level - 1)
     operator = get_twoscale_operator(space, level - 1)
-    parents = get_child_to_parents_basis(operator)[βᵢ]
+    parents = get_basis_parents(operator, βᵢ)
 
     return parents[1]
 end
