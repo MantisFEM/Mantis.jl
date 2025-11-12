@@ -334,7 +334,7 @@ function get_multilevel_extraction(
     # Skip trivial case
     if num_multilevel_elements == 0
         return SparseArrays.spzeros(Int, get_num_objects(active_elements)),
-        Matrix{Float64}[],
+        NTuple{num_components, Matrix{Float64}}[],
         [Int[]]
     end
 
@@ -584,26 +584,24 @@ function truncate_refinement_matrix!(refinement_matrix, active_indices::Vector{I
     return refinement_matrix
 end
 
-function compute_dof_partition(spaces, active_basis, num_levels)
-    level_partition = get_dof_partition.(spaces)
+function compute_dof_partition(spaces, active_basis, L)
+    level_partition = map(get_dof_partition, spaces)
     n_patches = length(level_partition[1])
     n_partitions = [length(level_partition[1][i]) for i in 1:n_patches]
     dof_partition = Vector{Vector{Vector{Int}}}(undef, n_patches)
-
-    for patch in 1:n_patches
+    for patch in eachindex(dof_partition)
         dof_partition[patch] = Vector{Vector{Int}}(undef, n_partitions[patch])
-        for partition in 1:n_partitions[patch]
-            for level in 1:num_levels
-                level_active_basis = [get_level_ids(active_basis, level)]
-                active_dof_partition_checks =
-                    level_partition[level][patch][partition] .∈ level_active_basis
-                dof_ids =
-                    convert_to_hier_id.(
-                        Ref(active_basis),
-                        level,
-                        level_partition[level][patch][partition][active_dof_partition_checks],
-                    )
-
+        for level in 1:L
+            level_active_basis = Set(get_level_ids(active_basis, level))
+            for partition in eachindex(dof_partition[n_patches])
+                active_level_dofs = filter(
+                    basis -> basis in level_active_basis,
+                    level_partition[level][patch][partition],
+                )
+                dof_ids = map(
+                    og_id -> convert_to_hier_id(active_basis, level, og_id),
+                    active_level_dofs,
+                )
                 if level == 1
                     dof_partition[patch][partition] = dof_ids
                 else
@@ -702,7 +700,9 @@ function get_basis_indices(space::HierarchicalFiniteElementSpace, element_id::In
         element_level, element_level_id = convert_to_element_level_and_level_id(
             space, element_id
         )
-        basis_indices = get_basis_indices(get_space(space, element_level), element_level_id)
+        basis_indices = collect(
+            get_basis_indices(get_space(space, element_level), element_level_id)
+        )
         map!(
             basis_id -> convert_to_basis_hier_id(space, element_level, basis_id),
             basis_indices,
@@ -799,10 +799,10 @@ function refine_mesh!(
 )
     L = get_num_levels(space)
     active_elements = get_active_elements(space)
-	new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
-	if isempty(new_marked_els)
-		return space
-	end
+    new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
+    if isempty(new_marked_els)
+        return space
+    end
 
     if level == L
         add_level!(space)
@@ -810,7 +810,7 @@ function refine_mesh!(
 
     active_elements = get_active_elements(space)
     nested_domains = get_nested_domains(space)
-	new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
+    new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
     setdiff!(get_level_ids(active_elements, level), new_marked_els)
     ts = get_twoscale_operator(space, level)
     refined_elements = mapreduce(el -> get_element_children(ts, el), vcat, new_marked_els)
@@ -900,7 +900,11 @@ function update_basis!(space::HierarchicalFiniteElementSpace)
         union!(get_level_ids(active_basis, level + 1), basis_to_add)
     end
 
-    setfield!(space, :active_basis, HierarchicalActiveInfo(get_level_ids(active_basis)))
+    setfield!(
+        active_basis,
+        :level_cum_num_ids,
+        [0; cumsum(map(length, get_level_ids(active_basis)))],
+    )
     multilevel_els, multilevel_coeffs, multilevel_indices = get_multilevel_extraction(
         get_spaces(space),
         get_two_scale_operators(space),

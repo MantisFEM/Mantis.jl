@@ -11,11 +11,14 @@ Computes the indices of elements with at least `dorfler_parameter*100`% of the h
 - `::Vector{Int}`: indices of elements with at least `dorfler_parameter*100`% of the highest error.
 """
 function get_dorfler_marking(element_errors::Vector{Float64}, dorfler_parameter::Float64)
-    0.0 <= dorfler_parameter < 1.0 || throw(
-        ArgumentError(
-            "Dorfler parameter should be between 0 and 1. The given value was $dorfler_parameter.",
-        ),
-    )
+    if !(0.0 <= dorfler_parameter < 1.0)
+        throw(
+            ArgumentError(
+                "Dorfler parameter should be between 0 and 1. " *
+                "The given value was $dorfler_parameter.",
+            ),
+        )
+    end
 
     max_error = maximum(element_errors)
 
@@ -62,26 +65,6 @@ function add_padding!(
 
     return marked_elements_per_level
 end
-
-# function add_padding!(
-#     marked_elements_per_level::Vector{Vector{Int}}, spaces::Vector{S}
-# ) where {manifold_dim, S <: AbstractFESpace{manifold_dim, 1}}
-#     L = length(spaces)
-#     for level in 1:L
-#         if marked_elements_per_level[level] == Int[]
-#             continue
-#         end
-
-#         basis_in_marked_elements = reduce(
-#             union, get_basis_indices.(Ref(spaces[level]), marked_elements_per_level[level])
-#         )
-#         marked_elements_per_level[level] = union(
-#             get_support.(Ref(spaces[level]), basis_in_marked_elements)...
-#         )
-#     end
-
-#     return marked_elements_per_level
-# end
 
 function get_marked_elements_children(
     hier_space::HierarchicalFiniteElementSpace{

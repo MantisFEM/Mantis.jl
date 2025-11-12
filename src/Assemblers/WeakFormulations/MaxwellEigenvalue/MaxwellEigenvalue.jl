@@ -221,6 +221,7 @@ function solve_maxwell_eig(
         println("Solving the problem on initial step...")
     end
 
+    # Exact solution on initial step
     ω², u¹ = get_analytical_maxwell_eig(
         num_eig, Forms.get_geometry(complex[1]), scale_factors
     )
@@ -233,42 +234,41 @@ function solve_maxwell_eig(
             println("Solving the problem on step $step...")
         end
 
-        X⁰ = FunctionSpaces.get_component_spaces(complex[1].fem_space)[1]
-        L = FunctionSpaces.get_num_levels(X⁰)
-        new_operator, new_space = FunctionSpaces.build_two_scale_operator(
-            FunctionSpaces.get_space(X⁰, L), FunctionSpaces.get_num_subdivisions(X⁰)
-        )
+        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
         )
         # Get domains to be refined in current step
-        marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            X⁰, dorfler_marking
-        )
         if Lchains
-            FunctionSpaces.add_Lchains_supports!(
-                marked_elements_per_level, X⁰, new_operator
+            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
+                H⁰, dorfler_marking; ensure_nestedness=false
             )
+            FunctionSpaces.add_lchains!(H⁰, marked_elements_per_level)
+        else
+            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
+                H⁰, dorfler_marking; ensure_nestedness=true
+            )
+            L = FunctionSpaces.get_num_levels(H⁰)
+            for level in 1:L
+                if !isempty(marked_elements_per_level[level])
+                    FunctionSpaces.refine_mesh!(H⁰, level, marked_elements_per_level[level])
+                end
+            end
+
+            FunctionSpaces.update_basis!(H⁰)
         end
 
-        refinement_domains = FunctionSpaces.get_refinement_domains(
-            X⁰, marked_elements_per_level, new_operator
-        )
-        complex = Forms.update_hierarchical_de_rham_complex(
-            complex, refinement_domains, new_operator, new_space
-        )
-        geom = Forms.get_geometry(complex...)
+        complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
+        geo = Forms.get_geometry(complex...)
         dΩₐ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )
         dΩₑ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geo)
         )
-        ω², u¹ = get_analytical_maxwell_eig(
-            num_eig, Forms.get_geometry(complex[1]), scale_factors
-        )
+        # Update exact solution
+        ω², u¹ = get_analytical_maxwell_eig(num_eig, geo, scale_factors)
         ω²ₕ, u¹ₕ = solve_maxwell_eig(complex[1], complex[2], dΩₐ, num_eig; verbose)
-
         err_per_element = Analysis._compute_square_error_per_element(
             u¹ₕ[eigenfunction], u¹[eigenfunction], dΩₑ
         )

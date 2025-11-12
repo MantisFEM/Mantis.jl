@@ -31,8 +31,10 @@ nq_error = nq_assembly .* 2
 ∫ₐ, ∫ₑ = Quadrature.get_canonical_quadrature_rules(
     Quadrature.gauss_legendre, nq_assembly, nq_error
 )
-
-forcing_function = sinusoidal_data
+dΩₐ, dΩₑ = (
+    Quadrature.StandardQuadrature(∫ₐ, prod(num_elements)),
+    Quadrature.StandardQuadrature(∫ₑ, prod(num_elements)),
+)
 
 verbose = true # Set to true for problem information.
 export_vtk = false # Set to true to export the computed solutions.
@@ -46,8 +48,8 @@ export_vtk = false # Set to true to export the computed solutions.
 )
 
 # Solve problem
-uₕ, δuₕ = Assemblers.solve_one_form_hodge_laplacian(
-    ℌ, forcing_function, num_steps, θ, Lchains, ∫ₐ, ∫ₑ; verbose
+δuₕ, uₕ = Assemblers.solve_one_form_hodge_laplacian(
+    ℌ, sinusoidal_data, dΩₐ, num_steps, θ, dΩₑ, Lchains; verbose
 )
 
 ############################################################################################
@@ -57,7 +59,7 @@ if export_vtk
     println("Exporting computed solutions to VTK...")
     geometry = Forms.get_geometry(uₕ)
     num_elements = Geometry.get_num_elements(geometry)
-    u, δu = forcing_function(1, geometry)
+    δu, u = sinusoidal_data(1, geometry)
 
     compt_file_name = "1-Form-HodgeLaplacian-HBsplines-computed-p=$(p)-k=$(k)-nels=$(num_elements)"
     exact_file_name = "1-Form-HodgeLaplacian-HBsplines-exact-p=$(p)-k=$(k)-nels=$(num_elements)"

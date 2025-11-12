@@ -18,7 +18,7 @@ mutable struct HierarchicalActiveInfo
     level_cum_num_ids::Vector{Int}
 
     function HierarchicalActiveInfo(level_ids::Vector{Vector{Int}})
-		level_cum_num_ids = [0; cumsum(map(level -> length(level), level_ids))]
+		level_cum_num_ids = [0; cumsum(map(length, level_ids))]
 
         return new(level_ids, level_cum_num_ids)
     end
@@ -102,12 +102,6 @@ end
 
 function convert_to_hier_id(active_info::HierarchicalActiveInfo, level::Int, level_id::Int)
     level_id_count = findfirst(id -> id == level_id, get_level_ids(active_info, level))
-	if isnothing(level_id_count)
-		@show level
-		@show level_id
-		@show get_level_ids(active_info, level)
-		readline()
-	end
 
     return level_id_count + get_level_cum_num_ids(active_info, level - 1)
 end
