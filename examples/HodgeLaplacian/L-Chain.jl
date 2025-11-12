@@ -21,7 +21,7 @@ B0 = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements,
 # Hierarchical parameters
 truncate = true
 simplified = false
-num_steps = 2 # Number of refinement steps.
+num_steps = 1 # Number of refinement steps.
 num_sub = (2, 2) # Number of subdivisions per dimension per step.
 θ = 0.06 # Dorfler parameter.
 Lchains = false # Decide if Lchains are added to fix inexact refinements.

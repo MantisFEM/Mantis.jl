@@ -460,58 +460,6 @@ function create_hierarchical_de_rham_complex(
 end
 
 function update_hierarchical_de_rham_complex(
-    complex::C,
-    refinement_domains::Vector{Vector{Int}},
-    new_zero_form_ts::FunctionSpaces.AbstractTwoScaleOperator{2},
-    new_zero_form_space::FunctionSpaces.AbstractFESpace{2, 1},
-) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
-    zero_form_space = FunctionSpaces.get_component_spaces(complex[1].fem_space)[1]
-    one_form_space_x, one_form_space_y = FunctionSpaces.get_component_spaces(
-        complex[2].fem_space
-    )
-    two_form_space = FunctionSpaces.get_component_spaces(complex[3].fem_space)[1]
-
-    num_sub = FunctionSpaces.get_num_subdivisions(zero_form_space)
-    L = FunctionSpaces.get_num_levels(zero_form_space)
-
-    # Build refined 0-form space, get domains and geometry
-    zero_form_space = FunctionSpaces.update_hierarchical_space!(
-        zero_form_space, refinement_domains, new_zero_form_ts, new_zero_form_space
-    )
-    zero_form_space_domains = FunctionSpaces.get_level_ids(zero_form_space.nested_domains)
-
-    # Update other k-forms using 0-form domains
-    new_one_form_x_ts, new_one_form_x_space = FunctionSpaces.build_two_scale_operator(
-        FunctionSpaces.get_space(one_form_space_x, L), num_sub
-    )
-    new_one_form_y_ts, new_one_form_y_space = FunctionSpaces.build_two_scale_operator(
-        FunctionSpaces.get_space(one_form_space_y, L), num_sub
-    )
-    new_two_form_ts, new_two_form_space = FunctionSpaces.build_two_scale_operator(
-        FunctionSpaces.get_space(two_form_space, L), num_sub
-    )
-
-    one_form_space_x = FunctionSpaces.update_hierarchical_space!(
-        one_form_space_x, zero_form_space_domains, new_one_form_x_ts, new_one_form_x_space
-    )
-    one_form_space_y = FunctionSpaces.update_hierarchical_space!(
-        one_form_space_y, zero_form_space_domains, new_one_form_y_ts, new_one_form_y_space
-    )
-    two_form_space = FunctionSpaces.update_hierarchical_space!(
-        two_form_space, zero_form_space_domains, new_two_form_ts, new_two_form_space
-    )
-
-    # Build new form spaces
-    geom = Geometry.HierarchicalGeometry(zero_form_space)
-    one_form_space_sum = FunctionSpaces.DirectSumSpace((one_form_space_x, one_form_space_y))
-    zero_form = Forms.FormSpace(0, geom, zero_form_space, "β")
-    one_form = Forms.FormSpace(1, geom, one_form_space_sum, "σ")
-    two_form = Forms.FormSpace(2, geom, two_form_space, "u")
-
-    return zero_form, one_form, two_form
-end
-
-function update_hierarchical_de_rham_complex(
     complex::C, H⁰::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim}
 ) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
     active_elements = FunctionSpaces.get_active_elements(H⁰)

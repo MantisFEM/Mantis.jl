@@ -1,4 +1,25 @@
-function add_lchains!(
+#=
+This file is based on the work done in https://arxiv.org/abs/2502.19542, where more
+extensive explanations of the algorithms below are provided.
+=#
+
+"""
+	update_space_with_lchains!(
+	    space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
+	)
+
+Takes as input a `space` corresponding to an exact de Rham complex and a set of `marked_els`
+for refinement, and returns  a refined space corresponding to an exact complex by adding
+L-chains where needed.
+
+# Arguments
+- `space::HierarchicalFiniteElementSpace{2}`: The space to be updated.
+- `marked_els::Vector{Vector{Int}}`: The marked elements.
+
+# Returns
+- `space::HierarchicalFiniteElementSpace{2}`: The refined space, with no problematic pairs.
+"""
+function update_space_with_lchains!(
     space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
 )
     previous_parents = Int[]
@@ -60,6 +81,15 @@ function add_lchains!(
     return update_basis!(space)
 end
 
+"""
+	get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
+
+Returns the basis indices the original space at the given `level` whose support is contained
+in the domain of `level +1`.
+
+# Returns
+- `Vector{Int}`: The basis contained in the domain of `level+1`.
+"""
 function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
     Bll = Int[]
     L = get_num_levels(space)
@@ -80,6 +110,22 @@ function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
     return Bll
 end
 
+"""
+	initiate_pairs(
+	    space::HierarchicalFiniteElementSpace{2},
+	    level::Int,
+	    Bll::Vector{Int},
+	    marked_els::Vector{Int},
+	)
+
+Generates all the possibly problematic pairs at `level` that need to be checked for
+problems.
+
+# Returns
+- `Vector{Tuple{Int, Int}}`: The pairs that need to be checked for problems.
+
+See also [`add_lchains!`](@ref), [`get_Bll`](@ref) and [`get_local_pairs`](@ref).
+"""
 function initiate_pairs(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
@@ -100,6 +146,16 @@ function initiate_pairs(
     return unchecked_pairs
 end
 
+"""
+	is_resolved(
+	    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+	)
+
+Checks whether the basis function `βᵢ` at `level` is resolved or not.
+
+# Returns
+- `Bool`: Whether `βᵢ` is resolved.
+"""
 function is_resolved(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
 )
@@ -136,6 +192,25 @@ function is_resolved(
     return false
 end
 
+"""
+	get_local_pairs(
+	    space::HierarchicalFiniteElementSpace{2},
+	    level::Int,
+	    Bll::Vector{Int},
+	    unchecked::Vector{Int},
+	)
+
+Returns a list of pairs of basis functions that need to be checked for problems from a set
+of `unchecked` basis functions.
+
+# Arguments
+- `unchecked::Vector{Int}`: A list of unresolved basis functions.
+
+# Returns
+- `Vector{Tuple{Int, Int}}`: The list of possibly problematic pairs.
+
+See also [`initiate_pairs`](@ref) and [`is_resolved`](@ref).
+"""
 function get_local_pairs(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
@@ -146,7 +221,7 @@ function get_local_pairs(
     for βᵢ in unchecked
         for βⱼ in get_interaction_box(space, level, Bll, βᵢ)
             if !is_resolved(space, level, Bll, βⱼ) && βᵢ != βⱼ
-				# We do this so that we can call unique! after
+                # We do this so that we can call unique! after
                 if βᵢ < βⱼ
                     push!(pairs, (βᵢ, βⱼ))
                 else
@@ -159,6 +234,17 @@ function get_local_pairs(
     return unique!(pairs)
 end
 
+"""
+	get_interaction_box(
+	    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+	)
+
+Returns a list of basis functions that are at most `p[k]+1` away from `βᵢ` in index space
+for each manifold dimension `k`, where `p[k]` is the polynomial degree.
+
+# Returns
+- `Vector{Int}`: The list of basis functions interacting with `βᵢ`.
+"""
 function get_interaction_box(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
 )
@@ -188,6 +274,19 @@ function get_interaction_box(
     return inter_box
 end
 
+"""
+	is_problematic(
+	    space::HierarchicalFiniteElementSpace{2},
+	    level::Int,
+	    Bll::Vector{Int},
+	    (βᵢ, βⱼ)::Tuple{Int, Int},
+	)
+
+Checks whether a `(βᵢ, βⱼ)` is a problematic pair.
+
+# Returns
+- `Bool`: Whether the pair is problematic.
+"""
 function is_problematic(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
@@ -198,6 +297,16 @@ function is_problematic(
            !has_shortest_chain(space, level, Bll, (βᵢ, βⱼ))
 end
 
+"""
+	has_minimal_intersection(
+	    space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
+	)
+
+Checks whether a `(βᵢ, βⱼ)` share a minimal-(l+1) intersection.
+
+# Returns
+- `Bool`: Whether the pair shares a minimal intersection.
+"""
 function has_minimal_intersection(
     space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
 )
@@ -222,6 +331,19 @@ function has_minimal_intersection(
     return false
 end
 
+"""
+	get_contained_knot_vector(
+	    boundary_breakpoints::NTuple{2, Int},
+	    ts::AbstractTwoScaleOperator,
+	    fine_space::BSplineSpace,
+	)
+
+Returns a `KnotVector` corresponding to the largest subset of the knot-vector defining
+`fine_space` that is contained between `boundary_breakpoints`.
+
+# Returns
+- `KnotVector`: The largest knot-vector contained between `boundary_breakpoints`.
+"""
 function get_contained_knot_vector(
     boundary_breakpoints::NTuple{2, Int},
     ts::AbstractTwoScaleOperator,
@@ -247,6 +369,19 @@ function get_contained_knot_vector(
     )
 end
 
+"""
+	has_shortest_chain(
+	    space::HierarchicalFiniteElementSpace{2},
+	    level::Int,
+	    Bll::Vector{Int},
+	    (βᵢ, βⱼ)::Tuple{Int, Int},
+	)
+
+Checks whether a `(βᵢ, βⱼ)` have a shortest chain between them.
+
+# Returns
+- `Bool`: Whether `(βᵢ, βⱼ)` have a shortest chain between them.
+"""
 function has_shortest_chain(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
@@ -288,6 +423,20 @@ function has_shortest_chain(
     return Graphs.has_path(graph, 1, Graphs.nv(graph))
 end
 
+"""
+	get_lchain_corner(
+	    space::HierarchicalFiniteElementSpace{2},
+	    level::Int,
+	    Bll::Vector{Int},
+	    (βᵢ, βⱼ)::Tuple{Int, Int},
+	)
+
+Returns a corner basis function of an L-chain between `βᵢ` and `βⱼ`, with preference for
+resolved corners.
+
+# Returns
+- `Int`: The id of the corner basis function.
+"""
 function get_lchain_corner(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
@@ -306,6 +455,14 @@ function get_lchain_corner(
     return lin_num_basis[const_βⱼ[1], const_βᵢ[2]]
 end
 
+"""
+	get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
+
+Returns the first basis function of `βᵢ`.
+
+# Returns
+- `Int`: The id of the parent basis function.
+"""
 function get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
     pl_space = get_space(space, level - 1)
     operator = get_twoscale_operator(space, level - 1)

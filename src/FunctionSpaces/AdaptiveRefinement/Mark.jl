@@ -28,7 +28,6 @@ end
 function add_padding!(
     marked_elements_per_level::Vector{Vector{Int}},
     space::HierarchicalFiniteElementSpace;
-    ensure_nestedness::Bool=true,
 )
     L = get_num_levels(space)
     for level in 1:L
@@ -45,22 +44,6 @@ function add_padding!(
         marked_elements_per_level[level] = mapreduce(
             basis -> get_support(level_space, basis), union, basis_in_marked_elements
         )
-    end
-
-    if ensure_nestedness
-        for level in L:-1:2
-            if marked_elements_per_level[level] == Int[]
-                continue
-            end
-
-            ts = get_twoscale_operator(space, level - 1)
-            parent_elements = mapreduce(
-                child_el -> get_element_parent(ts, child_el),
-                union,
-                marked_elements_per_level[level],
-            )
-            union!(marked_elements_per_level[level - 1], parent_elements)
-        end
     end
 
     return marked_elements_per_level
@@ -108,12 +91,11 @@ end
 function get_padding_per_level(
     space::HierarchicalFiniteElementSpace,
     marked_elements::Vector{Int};
-    ensure_nestedness::Bool=true,
 )
     element_ids_per_level = convert_element_vector_to_elements_per_level(
         space, marked_elements
     )
-    add_padding!(element_ids_per_level, space; ensure_nestedness=ensure_nestedness)
+    add_padding!(element_ids_per_level, space)
 
     return element_ids_per_level
 end

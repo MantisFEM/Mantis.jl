@@ -12,7 +12,7 @@ include("../../examples/HelperFunctions.jl")
 ############################################################################################
 # Mesh
 const starting_point = (0.0, 0.0)
-const box_size = (fpi, fpi) # This size is so that the eigenvalues are unique.
+const box_size = (fpi, fpi)
 num_elements = (2, 2) .^ 3 # Initial mesh size.
 
 # B-spline parameters

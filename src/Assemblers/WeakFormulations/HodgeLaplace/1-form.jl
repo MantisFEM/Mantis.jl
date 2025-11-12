@@ -119,23 +119,13 @@ function solve_one_form_hodge_laplacian(
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
         )
+        marked_elements_per_level = FunctionSpaces.get_padding_per_level(
+            H⁰, dorfler_marking
+        )
         if Lchains
-            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-                H⁰, dorfler_marking; ensure_nestedness=false
-            )
-            FunctionSpaces.add_lchains!(H⁰, marked_elements_per_level)
+            FunctionSpaces.update_space_with_lchains!(H⁰, marked_elements_per_level)
         else
-            marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-                H⁰, dorfler_marking; ensure_nestedness=true
-            )
-            L = FunctionSpaces.get_num_levels(H⁰)
-            for level in 1:L
-                if !isempty(marked_elements_per_level[level])
-                    FunctionSpaces.refine_mesh!(H⁰, level, marked_elements_per_level[level])
-                end
-            end
-
-            FunctionSpaces.update_basis!(H⁰)
+            FunctionSpaces.update_space!(H⁰, marked_elements_per_level)
         end
 
         complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)

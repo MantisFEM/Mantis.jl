@@ -11,19 +11,26 @@ A hierarchical space that is built from nested hierarchies of `manifold_dim`-var
 function spaces and domains.
 
 # Fields
-- `spaces::Vector{AbstractFESpace{manifold_dim, num_components, num_patches}} `: collection of `manifold_dim`-
-    variate function spaces.
-- `two_scale_operators::Vector{AbstractTwoScaleOperator}`: collection of two-scale
-    operators relating each consecutive pair of finite element spaces.
-- `active_elements::HierarchicalActiveInfo`: information about the active elements in
-    each level.
-- `active_basis::HierarchicalActiveInfo`: information about the active basis in each level.
-- `multilevel_elements::SparseArrays.SparseVector{Int, Int}`: elements where basis from
+- `spaces::Vector{S} `: Collection of `manifold_dim`- variate function spaces.
+- `two_scale_operators::Vector{T}`: Collection of two-scale operators relating each
+	consecutive pair of finite element spaces. See [`AbstractTwoScaleOperator`](@ref).
+- `active_elements::HierarchicalActiveInfo`: Information about the active elements in each
+	level.
+- `active_basis::HierarchicalActiveInfo`: Information about the active basis in each level.
+- `nested_domains::HierarchicalActiveInfo`: Information about the nested domains in each
+	level. This is the usual definition of Ωₗ in the literature.
+- `multilevel_elements::SparseArrays.SparseVector{Int, Int}`: Elements where basis from
     multiple levels have non-empty support.
-- `multilevel_extraction_coeffs::Vector{Matrix{Float64}}`: extraction coefficients of
-active basis in `multilevel_elements`.
-- `multilevel_basis_indices::Vector{Vector{Int}}`: indices of active basis in
-    `multilevel_elements`.
+- `multilevel_extraction_coeffs::Vector{NTuple{num_components, Matrix{Float64}}}`:
+	Extraction coefficients of active basis functions in `multilevel_elements`.
+- `multilevel_basis_indices::Vector{Vector{Int}}`: Indices of active basis in
+	`multilevel_elements`, in hierarchical indexing.
+- `num_subdivisions::NTuple{manifold_dim, Int}`: Number of subdivisions per `manifold_dim`,
+	per level for the hierarchical mesh.
+- `truncated::Bool`: Flag for truncated hierarchical spaces.
+- `simplified::Bool`: Flag for simplified hierarchical spaces.
+- `dof_partition::Vector{Vector{Vector{Int}}}`: The degree-of-freedom partitioning of the
+	hierarchical space, in hierarchical indexing.
 """
 mutable struct HierarchicalFiniteElementSpace{
     manifold_dim, num_components, num_patches, S, T
@@ -41,7 +48,24 @@ mutable struct HierarchicalFiniteElementSpace{
     simplified::Bool
     dof_partition::Vector{Vector{Vector{Int}}}
 
-    # Constructor that builds the space
+    """
+    	HierarchicalFiniteElementSpace(
+    		spaces::Vector{S},
+    		two_scale_operators::Vector{T},
+    		domains::HierarchicalActiveInfo,
+    		num_subdivisions::NTuple{manifold_dim, Int},
+    		truncated::Bool=true,
+    		simplified::Bool=false,
+    	) where {
+    		manifold_dim,
+    		num_components,
+    		num_patches,
+    		S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+    		T <: AbstractTwoScaleOperator,
+    	}
+
+    Main constructor with compatibility checks.
+    """
     function HierarchicalFiniteElementSpace(
         spaces::Vector{S},
         two_scale_operators::Vector{T},
@@ -57,7 +81,6 @@ mutable struct HierarchicalFiniteElementSpace{
         T <: AbstractTwoScaleOperator,
     }
         num_levels = length(spaces)
-
         # Checks for incompatible arguments
         if num_levels < 1
             throw(ArgumentError("At least 1 level is required, but 0 were given."))
@@ -79,7 +102,6 @@ mutable struct HierarchicalFiniteElementSpace{
             spaces, two_scale_operators, active_elements, active_basis, truncated
         )
         dof_partition = compute_dof_partition(spaces, active_basis, num_levels)
-
         # Creates the structure
         return new{manifold_dim, num_components, num_patches, S, T}(
             spaces,
@@ -97,7 +119,24 @@ mutable struct HierarchicalFiniteElementSpace{
         )
     end
 
-    # Helper constructor for domains given in a per-level vector.
+    """
+    	HierarchicalFiniteElementSpace(
+    		spaces::Vector{S},
+    		two_scale_operators::Vector{T},
+    		domains_per_level::Vector{Vector{Int}},
+    		num_subdivisions::NTuple{manifold_dim, Int},
+    		truncated::Bool=true,
+    		simplified::Bool=false,
+    	) where {
+    		manifold_dim,
+    		num_components,
+    		num_patches,
+    		S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+    		T <: AbstractTwoScaleOperator,
+    	}
+
+    Helper constructor for domains given in a per-level vector.
+    """
     function HierarchicalFiniteElementSpace(
         spaces::Vector{S},
         two_scale_operators::Vector{T},
@@ -119,7 +158,16 @@ mutable struct HierarchicalFiniteElementSpace{
         )
     end
 
-    # Constructor for a Hierarchical space with no refinement
+    """
+    	HierarchicalFiniteElementSpace(
+    		space::S,
+    		num_subdivisions::NTuple{manifold_dim, Int},
+    		truncated::Bool=true,
+    		simplified::Bool=false,
+    	) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
+
+    Constructor for a Hierarchical space with no refinement
+    """
     function HierarchicalFiniteElementSpace(
         space::S,
         num_subdivisions::NTuple{manifold_dim, Int},
@@ -141,31 +189,32 @@ end
 
 """
     get_active_objects_and_nested_domains(
-        spaces::Vector{S}, two_scale_operators::Vector{T}, domains::HierarchicalActiveInfo
-    ) where {manifold_dim, num_components, num_patches, S <: AbstractFESpace{manifold_dim, num_components, num_patches}, T <: AbstractTwoScaleOperator}
+		spaces::Vector{S},
+		two_scale_operators::Vector{T},
+		domains::HierarchicalActiveInfo,
+		simplified::Bool,
+	) where {S <: AbstractFESpace, T <: AbstractTwoScaleOperator}
 
 Computes the active elements and basis on each level based on `spaces`,
 `two_scale_operators` and the set of nested `domains`.
 
-The construction loops over the `domains` on each level and selects the active basis in the
-next level as the children of deactivated basis, based on their supports, in the current
-level. The active elments in the next level are then given as the union of support of said
-basis in the next level. This differs slightly from the usual algorithm for generating the
-hierarchical space, where basis in the next level are only determined by whether their
-support is fully contained in the next level domain, regardless of whether their parent
-basis are active or not.
-
+The construction loops over the `domains` on each level, deactivates basis functions fully
+supported on the next level's domain, and then selects the active basis in the next level as
+either the basis functions supported on the domain of the next level, or the children of
+deactivated basis, based on wheter the space is `simplified` or not. A similar logic is
+applied to determine the active elements.
 
 # Arguments
-- `spaces::Vector{AbstractFESpace{manifold_dim, num_components, num_patches}}`: finite element spaces at each level.
-- `two_scale_operators::Vector{AbstractTwoScaleOperator}`: two scale operators relating the
+- `spaces::Vector{AbstractFESpace{manifold_dim, num_components, num_patches}}`: Finite
+	element spaces at each level.
+- `two_scale_operators::Vector{AbstractTwoScaleOperator}`: Two scale operators relating the
     finite element spaces at each level.
-- `domains::HierarchicalActiveInfo`: nested domains where the support of active basis is
+- `domains::HierarchicalActiveInfo`: Nested domains where the support of active basis is
     determined.
 
 # Returns
-- `active_elements::HierarchicalActiveInfo`: active elements on each level.
-- `active_basis::HierarchicalActiveInfo`: active basis on each level.
+- `active_elements::HierarchicalActiveInfo`: Active elements on each level.
+- `active_basis::HierarchicalActiveInfo`: Active basis on each level.
 """
 function get_active_objects_and_nested_domains(
     spaces::Vector{S},
@@ -716,84 +765,104 @@ function get_basis_indices(space::HierarchicalFiniteElementSpace, element_id::In
     return basis_indices
 end
 
-# Needs to be fixed
-function update_hierarchical_space!(
-    hier_space::HierarchicalFiniteElementSpace{
-        manifold_dim, num_components, num_patches, S, T
-    },
-    domains::Vector{Vector{Int}},
-    new_operator::T,
-    new_space::S,
-) where {manifold_dim, num_components, num_patches, S, T}
-    num_levels = get_num_levels(hier_space)
-    complete_domains = Vector{Vector{Int}}(undef, length(domains))
-    complete_domains[1] = Int[]
-    for level in 2:num_levels
-        complete_domains[level] = union(domains[level], get_level_domain(hier_space, level))
-    end
-    for level in (num_levels + 1):length(domains)
-        complete_domains[level] = domains[level]
-    end
+############################################################################################
+#                                       Update Space                                       #
+############################################################################################	
 
-    num_sub = get_num_subdivisions(hier_space)
+"""
+	update_space!(
+	    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
+	)
 
-    if length(domains) > num_levels
-        return HierarchicalFiniteElementSpace(
-            vcat(hier_space.spaces, new_space),
-            vcat(hier_space.two_scale_operators, new_operator),
-            complete_domains,
-            num_sub,
-            hier_space.truncated,
-            hier_space.simplified,
-        )
-    end
+Updates the given hierarchical `space` based on  `marked_elements_per_level`.
 
-    return HierarchicalFiniteElementSpace(
-        hier_space.spaces,
-        hier_space.two_scale_operators,
-        complete_domains,
-        num_sub,
-        hier_space.truncated,
-        hier_space.simplified,
-    )
-end
+# Returns
+- `space::HierarchicalFiniteElementSpace`: The updated space.
 
-function get_level_inactive_domain(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    inactive_basis = setdiff(
-        1:get_num_elements(hier_space.spaces[level]),
-        get_level_element_ids(hier_space, level),
-    )
-    if level > 1
-        inactive_basis = setdiff(
-            inactive_basis, get_level_element_ids(hier_space, level - 1)
-        )
-    end
-
-    return inactive_basis
-end
-
-function get_basis_contained_in_next_level_domain(
-    hier_space::HierarchicalFiniteElementSpace, level::Int
+See also [`refine_mesh!`](@ref) and [`update_basis!`](@ref).
+"""
+function update_space!(
+    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
 )
-    basis_contained_in_next_level = Int[]
-    next_level_domain = [get_level_domain(hier_space, level + 1)]
+    refine_mesh!(space, marked_elements_per_level)
+    update_basis!(space)
 
-    for basis in setdiff(
-        1:get_num_basis(hier_space.spaces[level]), get_level_basis_ids(hier_space, level)
-    )
-        basis_support = get_support(hier_space.spaces[level], basis)
-        basis_support_children = get_element_children(
-            get_twoscale_operator(hier_space, level), basis_support
-        )
+    return space
+end
 
-        if all(basis_support_children .∈ next_level_domain)
-            append!(basis_contained_in_next_level, basis)
+"""
+	refine_mesh!(
+	    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
+	)
+
+Updates the hierarchical mesh underlying `space` based on `marked_elements_per_level`.
+
+# Returns
+- `space::HierarchicalFiniteElementSpace`: Space with refined mesh.
+"""
+function refine_mesh!(
+    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
+)
+    L = get_num_levels(space)
+    if !isempty(marked_elements_per_level[L])
+        add_level!(space)
+    end
+
+    for level in 1:L
+        marked_elements = marked_elements_per_level[level]
+        if !isempty(marked_elements)
+            refine_mesh!(space, level, marked_elements)
         end
     end
 
-    return basis_contained_in_next_level
+    return space
 end
 
+"""
+	add_level!(space::HierarchicalFiniteElementSpace)
+
+Adds an empty level to `space`.
+
+# Returns
+- `space::HierarchicalFiniteElementSpace`: Space with an extra refinement level.
+"""
+function add_level!(space::HierarchicalFiniteElementSpace)
+    L = get_num_levels(space)
+    new_ts, new_space = build_two_scale_operator(
+        get_space(space, L), get_num_subdivisions(space)
+    )
+    push!(get_spaces(space), new_space)
+    push!(get_two_scale_operators(space), new_ts)
+    push!(get_level_ids(get_active_elements(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_active_elements(space)),
+        last(get_level_cum_num_ids(get_active_elements(space))),
+    )
+    push!(get_level_ids(get_nested_domains(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_nested_domains(space)),
+        last(get_level_cum_num_ids(get_nested_domains(space))),
+    )
+    push!(get_level_ids(get_active_basis(space)), Int[])
+    append!(
+        get_level_cum_num_ids(get_active_basis(space)),
+        last(get_level_cum_num_ids(get_active_basis(space))),
+    )
+
+    return space
+end
+
+"""
+	refine_mesh!(
+	    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
+	)
+
+Updates the hierarchical mesh underlying `space` based on `marked_elements_per_level` at
+`level`.
+
+# Returns
+- `space::HierarchicalFiniteElementSpace`: Space with refined mesh at `level`.
+"""
 function refine_mesh!(
     space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
 )
@@ -824,32 +893,14 @@ function refine_mesh!(
     return space
 end
 
-function add_level!(space::HierarchicalFiniteElementSpace)
-    L = get_num_levels(space)
-    new_ts, new_space = build_two_scale_operator(
-        get_space(space, L), get_num_subdivisions(space)
-    )
-    push!(get_spaces(space), new_space)
-    push!(get_two_scale_operators(space), new_ts)
-    push!(get_level_ids(get_active_elements(space)), Int[])
-    append!(
-        get_level_cum_num_ids(get_active_elements(space)),
-        last(get_level_cum_num_ids(get_active_elements(space))),
-    )
-    push!(get_level_ids(get_nested_domains(space)), Int[])
-    append!(
-        get_level_cum_num_ids(get_nested_domains(space)),
-        last(get_level_cum_num_ids(get_nested_domains(space))),
-    )
-    push!(get_level_ids(get_active_basis(space)), Int[])
-    append!(
-        get_level_cum_num_ids(get_active_basis(space)),
-        last(get_level_cum_num_ids(get_active_basis(space))),
-    )
+"""
+	update_basis!(space::HierarchicalFiniteElementSpace)
 
-    return space
-end
+Updates the hierarchical basis underlying `space`, after the latter has had mesh refinement.
 
+# Returns
+- `space::HierarchicalFiniteElementSpace`: Space with updated hierarchical basis.
+"""
 function update_basis!(space::HierarchicalFiniteElementSpace)
     L = get_num_levels(space)
     active_basis = get_active_basis(space)

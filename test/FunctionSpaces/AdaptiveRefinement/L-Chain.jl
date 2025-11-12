@@ -117,7 +117,7 @@ marked_elements = [
 FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
 Bll = FunctionSpaces.get_Bll(H, 1)
 @test Bll == [61, 85, 109]
-FunctionSpaces.add_lchains!(H, marked_elements)
+FunctionSpaces.update_space_with_lchains!(H, marked_elements)
 Bll = FunctionSpaces.get_Bll(H, 1)
 @test Bll == [59, 60, 61, 72, 83, 84, 85, 96, 109]
 
