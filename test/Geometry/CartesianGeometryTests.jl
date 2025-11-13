@@ -137,7 +137,7 @@ answers_MP2 = (
 )
 basic_tests(geometryMP2, answers_MP2)
 
-# Multi-patch input. 2 patches, 2D. Heterogeneous input (not recommended).
+# Multi-patch input. 2 patches, 2D. Heterogeneous input.
 geometryMP = Geometry.CartesianGeometry((
     (LinRange(0.5, 2.5, 5), [-0.75, 0.1, 0.75]),
     (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 6)),

@@ -7,11 +7,6 @@ A structure representing a Cartesian grid geometry in `manifold_dim` dimensions.
 multiple patches, even though each patch is still a Cartesian grid. Note that the patches
 are not required to have a matching grid.
 
-!!! warning "Avoid heterogeneous breakpoints."
-    While the constructors allow different types of breakpoints (LinRange, Vector, etc.), it
-    is strongly recommended to use only one type to initialise a CartesianGeometry. Failing
-    to do so can cause type instabilities and therefore a significant performance penalty.
-
 # Fields
 - `breakpoints::T`: A tuple of vectors defining the grid points in each dimension.
 - `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of

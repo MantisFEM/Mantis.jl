@@ -318,28 +318,8 @@ function jacobian(
         J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
         geo_id[] = 1
     end
-    # Jp = zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim})
-    # for point in eachindex(J)
-    #     for geo_id in 1:num_geometries
-    #         Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= const_jacobians[geo_id][cart_num_points[point][geo_id]]
-    #     end
-    #     J[point] = SMatrix{image_dim, manifold_dim}(Jp)
-    # end
     return J
 end
-
-# using Mantis
-# using BenchmarkTools
-# cg1d = Geometry.CartesianGeometry((
-#            (LinRange(0.0, 1.0, 2),), (LinRange(1.0, 2.0, 3),), (LinRange(2.0, 3.0, 4),)
-#        ))
-# cg2d = Geometry.CartesianGeometry((
-#            (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)), # First patch
-#            (LinRange(1.0, 2.0, 6), LinRange(0.0, 1.0, 7)), # Second patch
-#        ))
-# tpgeometry2 = Geometry.TensorProductGeometry((cg2d, cg1d))
-# xi = Points.CartesianPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 6)))
-# @benchmark Geometry.jacobian($tpgeometry2, 1, $xi)
 
 function jacobian(
     geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
@@ -367,13 +347,6 @@ function jacobian(
         J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
         geo_id[] = 1
     end
-    # Jp = zero(MMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim})
-    # for point in 1:num_eval_points
-    #     for geo_id in 1:num_geometries
-    #         Jp[const_image_indices[geo_id], const_manifold_indices[geo_id]] .= const_jacobians[geo_id][point]
-    #     end
-    #     J[point] = SMatrix{image_dim, manifold_dim}(Jp)
-    # end
 
     return J
 end
