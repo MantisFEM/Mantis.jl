@@ -124,7 +124,7 @@ problems.
 # Returns
 - `Vector{Tuple{Int, Int}}`: The pairs that need to be checked for problems.
 
-See also [`add_lchains!`](@ref), [`get_Bll`](@ref) and [`get_local_pairs`](@ref).
+See also [`update_space_with_lchains!`](@ref), [`get_Bll`](@ref) and [`get_local_pairs`](@ref).
 """
 function initiate_pairs(
     space::HierarchicalFiniteElementSpace{2},
