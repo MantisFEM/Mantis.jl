@@ -25,7 +25,7 @@ for example in readdir(examples_dir)
         Literate.markdown(
             path_to_example,
             joinpath(mantis_dir, "docs", "src", "Examples"),
-            flavor = Literate.DocumenterFlavor(),
+            flavor=Literate.DocumenterFlavor(),
         )
     end
 end
@@ -85,7 +85,7 @@ Pages = [
 # math. The default options for MathJax will do for now.
 math_engine = Documenter.MathJax3(Dict(
     :tex => Dict(
-        "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
+        "inlineMath" => [["\$", "\$"], ["\\(", "\\)"]],
         "tags" => "ams",
         "packages" => ["base", "ams", "autoload"])
 ))
@@ -99,12 +99,12 @@ bib = CitationBibliography(
 # Update the formatting to include the new math engine. Also make sure
 # that the favicon is found (the small logo in the tab bar).
 format_setup = Documenter.HTML(
-    assets = [
+    assets=[
         "assets/favicon.ico"
         "assets/citations.css"
     ],
     mathengine=math_engine,
-    size_threshold = nothing, # Prevents errors for large HTML files. Temporary only.
+    size_threshold=nothing, # Prevents errors for large HTML files. Temporary only.
 )
 
 
@@ -115,14 +115,15 @@ format_setup = Documenter.HTML(
 # definitions as work-around.
 # Author names are ordered alphabetically on last name.
 makedocs(
-    modules  = [Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
-    format   = format_setup,
-    sitename = "MANTIS.jl",
-    authors  = "Diogo Costa Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
-    pages    = Pages,
-    plugins  = [bib],
+    modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
+    format=format_setup,
+    sitename="MANTIS.jl",
+    authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
+    pages=Pages,
+    plugins=[bib],
 )
 
 deploydocs(
-    repo = "github.com/MantisFEM/MantisDev.jl.git",
+    repo="github.com/MantisFEM/MantisDev.jl.git",
+    push_preview=true,
 )
