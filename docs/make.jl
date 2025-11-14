@@ -122,3 +122,7 @@ makedocs(
     pages    = Pages,
     plugins  = [bib],
 )
+
+deploydocs(
+    repo = "github.com/MantisFEM/MantisDev.jl.git",
+)
