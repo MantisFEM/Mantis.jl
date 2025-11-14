@@ -118,7 +118,7 @@ format_setup = Documenter.HTML(
 makedocs(
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
     format=MarkdownVitepress(
-        repo="github.com/MantisFEM/MantisDev.jl.git",
+        repo="github.com/MantisFEM/MantisDev.jl",
     ),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
