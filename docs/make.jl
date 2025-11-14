@@ -119,6 +119,8 @@ makedocs(
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
     format=MarkdownVitepress(
         repo="github.com/MantisFEM/MantisDev.jl",
+        devbranch="main",
+        deploy_url="github.com/MantisFEM/MantisDev.jl.git",
     ),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
