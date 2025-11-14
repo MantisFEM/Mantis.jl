@@ -1,7 +1,7 @@
 name = "Mantis"
 uuid = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
-authors = ["Diogo Costa Cabanas <d.costacabanas@tudelft.nl>", "Joey Dekker <j.dekker-2@tudelft.nl>", "Deepesh Toshniwal <d.toshniwal@tudelft.nl>", "Artur Palha <a.palha@tudelft.nl>"]
 version = "0.1.0"
+authors = ["Diogo Costa Cabanas <d.costacabanas@tudelft.nl>", "Joey Dekker <j.dekker-2@tudelft.nl>", "Deepesh Toshniwal <d.toshniwal@tudelft.nl>", "Artur Palha <a.palha@tudelft.nl>"]
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"

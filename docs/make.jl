@@ -2,6 +2,7 @@ using Documenter
 using DocumenterCitations
 using Mantis
 using Literate
+using DocumenterVitepress
 
 # Generate the notebooks and example pages based on the .jl files in Mantis/examples/src.
 # This generation ensures that the examples are up-to-date with the latest version of
@@ -116,8 +117,10 @@ format_setup = Documenter.HTML(
 # Author names are ordered alphabetically on last name.
 makedocs(
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
-    format=format_setup,
-    sitename="MANTIS.jl",
+    format=MarkdownVitepress(
+        repo="github.com/MantisFEM/MantisDev.jl.git",
+    ),
+    sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
