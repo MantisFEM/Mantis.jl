@@ -376,11 +376,7 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_element_measure(geometry::AbstractGeometry, element_id::Int)
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
-        ),
-    )
+    throw(MethodError(get_element_measure, (geometry, element_id)))
 end
 
 """
@@ -405,11 +401,7 @@ geometry type.
 function get_element_lengths(
     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
 ) where {manifold_dim, image_dim, num_patches}
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
-        ),
-    )
+    throw(MethodError(get_element_lengths, (geometry, element_id)))
 end
 
 """
@@ -436,11 +428,7 @@ geometry type.
 function get_element_vertices(
     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
 ) where {manifold_dim, image_dim, num_patches}
-    throw(
-        ArgumentError(
-            LazyString("Method not defined for geometry of type ", typeof(geometry), ".")
-        ),
-    )
+    throw(MethodError(get_element_vertices, (geometry, element_id)))
 end
 
 """
