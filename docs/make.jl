@@ -125,10 +125,12 @@ makedocs(
         repo="github.com/MantisFEM/MantisDev.jl.git",
         devbranch="main",
     ),
-	output="docs",
 )
 
-deploydocs(
+DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/MantisDev.jl.git",
+    target="build", # this is where Vitepress stores its output
+    devbranch="main",
+    branch="gh-pages",
     push_preview=true,
 )
