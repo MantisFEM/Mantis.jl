@@ -35,7 +35,7 @@ end
 # TODO Similar thing here. This is a concrete expression. If we make general expressions and combine them, everything becomes simpler.
 """
     evaluate_sharp_pushforward(
-        form_expression::AbstractFormExpression{manifold_dim, 1, 0},
+        form_expression::AbstractForm{manifold_dim, 1, 0},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
     ) where {manifold_dim}
@@ -45,7 +45,7 @@ manifold, converting the form into a vector field. Note that the output vector-f
 defined in physical coordinates.
 
 # Arguments
-- `form_expression::AbstractFormExpression{manifold_dim, 1, G}`: An expression representing
+- `form_expression::AbstractForm{manifold_dim, 1, G}`: An expression representing
     the 1-form on the manifold.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point
@@ -60,7 +60,7 @@ defined in physical coordinates.
     the evaluated basis functions.
 """
 function evaluate_sharp_pushforward(
-    form_expression::AbstractFormExpression{manifold_dim, 1, 0},
+    form_expression::AbstractForm{manifold_dim, 1, 0},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}

@@ -4,12 +4,12 @@
 
 """
     Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
-    AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+    AbstractForm{manifold_dim, form_rank, expression_rank, G}
 
-Represents the hodge star of an `AbstractFormExpression`.
+Represents the hodge star of an `AbstractForm`.
 
 # Fields
-- `form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}`: The form to
+- `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
     which the hodge star is applied.
 - `label::String`: The hodge star label. This is a concatenation of `"★"` with the
     label of `form`.
@@ -22,14 +22,14 @@ Represents the hodge star of an `AbstractFormExpression`.
     with one single set of basis forms have rank 1, with two sets of basis forms have rank
     2. Higher ranks are not possible.
 - `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
-- `F <: Forms.AbstractFormExpression{manifold_dim, manifold_dim-form_rank, expression_rank,
+- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank,
     G}`: The type of `form`.
 
 # Inner Constructors
 - `Hodge(form::F)`: General constructor.
 """
 struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
-       AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+       AbstractForm{manifold_dim, form_rank, expression_rank, G}
     form::F
     label::String
 
@@ -40,7 +40,7 @@ struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
         form_rank,
         expression_rank,
         G <: Geometry.AbstractGeometry{manifold_dim},
-        F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
     }
         if expression_rank > 1
             msg_1 = "Hodge-star only valid for expressions with expression rank < 2. "
@@ -56,19 +56,12 @@ struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
 end
 
 """
-    ★(form::AbstractFormExpression)
+    ★
 
 Symbolic wrapper for the hodge star operator. The unicode character command is `\\bigstar`.
-
-# Arguments
-- `form::AbstractFormExpression`: The form to which the hodge star is applied.
-
-# Returns
-- `Hodge`: The hodge operator.
+See [`Hodge`](@ref) for the details.
 """
-function ★(form::AbstractFormExpression)
-    return Hodge(form)
-end
+const ★ = Hodge
 
 ############################################################################################
 #                                         Getters                                          #
@@ -83,9 +76,27 @@ Returns the form to which the hodge star is applied.
 - `form_expression::Hodge`: The hodge star structure.
 
 # Returns
-- `<:AbstractFormExpression`: The form to which the hodge star is applied.
+- `<:AbstractForm`: The form to which the hodge star is applied.
 """
 get_form(form_expression::Hodge) = form_expression.form
+
+"""
+    get_form_space_tree(hodge::Hodge)
+
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the Hodge,
+e.g., for `★((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have
+exprssion_rank > 1. If `α` has expression_rank = 0, it returns only the spaces of `β` and
+`γ`.
+
+# Arguments
+- `hodge::Hodge`: The Hodge structure.
+
+# Returns
+- `Tuple(<:AbstractForm)`: The list of spaces forms present in the tree of the Hodge.
+"""
+function get_form_space_tree(hodge::Hodge)
+    return get_form_space_tree(get_form(hodge))
+end
 
 """
     get_geometry(form_expression::Hodge)
@@ -137,7 +148,7 @@ end
 ############################################################################################
 
 function _evaluate_hodge(
-    form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+    form::AbstractForm{manifold_dim, form_rank, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, expression_rank, G <: Geometry.AbstractGeometry}
@@ -150,7 +161,7 @@ end
 
 # 0-forms (manifold_dim)
 function _evaluate_hodge(
-    form_expression::AbstractFormExpression{manifold_dim, 0, expression_rank, G},
+    form_expression::AbstractForm{manifold_dim, 0, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, expression_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
@@ -171,7 +182,7 @@ end
 
 # n-forms (manifold_dim)
 function _evaluate_hodge(
-    form_expression::AbstractFormExpression{manifold_dim, manifold_dim, expression_rank, G},
+    form_expression::AbstractForm{manifold_dim, manifold_dim, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, expression_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
@@ -192,7 +203,7 @@ end
 
 # 1-forms (2 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractFormExpression{2, 1, expression_rank, G},
+    form_expression::AbstractForm{2, 1, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{2},
 ) where {expression_rank, G <: Geometry.AbstractGeometry{2}}
@@ -221,7 +232,7 @@ end
 
 # 1-forms (3 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractFormExpression{3, 1, expression_rank, G},
+    form_expression::AbstractForm{3, 1, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{3},
 ) where {expression_rank, G <: Geometry.AbstractGeometry{3}}
@@ -256,7 +267,7 @@ end
 
 # 2-forms (3 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractFormExpression{3, 2, expression_rank, G},
+    form_expression::AbstractForm{3, 2, expression_rank, G},
     element_id::Int,
     xi::Points.AbstractPoints{3},
 ) where {expression_rank, G <: Geometry.AbstractGeometry{3}}

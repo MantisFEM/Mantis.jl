@@ -66,9 +66,13 @@ end
     int0 = ∫(w0 ∧ ★(x0), dΩ)
     int1 = ∫(w1 ∧ ★(x1), dΩ)
     int2 = ∫(w2 ∧ ★(x2), dΩ)
+    int3 = ∫(W2, dΩ)
+    int4 = ∫(W0 ∧ ★(W0), dΩ)
     int0_val = w0_c * x0_c
     int1_val = 2.0 * w1_c * x1_c
     int2_val = w2_c * x2_c
+    # Error barriers: incompatible spaces 
+    @test_throws ArgumentError int3 + int4
     # Addition
     @test isapprox(Forms.evaluate(int0 + int1, 1)[1][1], int0_val + int1_val)
     @test isapprox(Forms.evaluate(int1 + int2, 1)[1][1], int1_val + int2_val)

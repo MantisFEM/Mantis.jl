@@ -21,7 +21,7 @@ Represents a differential form field.
 - `FS`: Type of the form space.
 
 # Inner Constructors
-- `FormField(form_space::FS, coefficients::Vector{Int} label::String)`: General constructor
+- `FormField(form_space::FS, coefficients::Vector{Int}, label::String)`: General constructor
     for form fields.
 - `FormField(form_space::FS, label::String)`: Constructor with zero coefficients.
 """
@@ -174,6 +174,19 @@ Returns the coefficients of the form field.
 get_coefficients(form_field::FormField) = form_field.coefficients
 
 """
+    get_num_coefficients(form_field::FormField)
+
+Returns the number of coefficients of the form field.
+
+# Arguments
+- `form_field::FormField`: The form field.
+
+# Returns
+- `Int`: The number of coefficients (dofs) of the form field.
+"""
+get_num_coefficients(form_field::FormField) = size(form_field.coefficients, 1)
+
+"""
     get_expression(form_field::AnalyticalFormField)
 
 Returns the expression of the analytical form field.
@@ -220,12 +233,7 @@ function evaluate(
     form_field::FormField{manifold_dim, form_rank, G, FS},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {
-    manifold_dim,
-    form_rank,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-}
+) where {manifold_dim, form_rank, G, FS}
     n_form_components = binomial(manifold_dim, form_rank)
     form_basis_eval, form_basis_indices = evaluate(
         get_form_space(form_field), element_idx, xi

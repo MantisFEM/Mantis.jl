@@ -57,7 +57,7 @@ function create_bspline_space(
     if box_size > 0.0
         nothing
     else
-        throw(ArgumentError("The argumente 'box_size' must be greater than 0."))
+        throw(ArgumentError("The argument 'box_size' must be greater than 0."))
     end
 
     breakpoints = collect(
@@ -466,10 +466,10 @@ function create_scalar_polar_spline_space(
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int};
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
-    R::Float64 = 1.0,
+    R::Float64=1.0,
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 )
     return create_scalar_polar_spline_space(
         num_elements,
@@ -479,7 +479,7 @@ function create_scalar_polar_spline_space(
         R=R,
         two_poles=two_poles,
         zero_at_poles=zero_at_poles,
-        box_sizes=box_sizes
+        box_sizes=box_sizes,
     )
 end
 
@@ -521,7 +521,7 @@ function create_scalar_polar_spline_space(
     R::Float64=1.0,
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     # spaces used for creating degenerate geometry
     Bθ_g, Br_g = create_dim_wise_bspline_spaces(
@@ -542,8 +542,13 @@ function create_scalar_polar_spline_space(
     if zero_at_poles
         # reduce degree and regularity by 1
         Bθ, Br = create_dim_wise_bspline_spaces(
-            (0.0, 0.0), box_sizes, num_elements,
-            get_derivative_space.(section_spaces), regularities .- 1, (1, 1), (1, 1)
+            (0.0, 0.0),
+            box_sizes,
+            num_elements,
+            get_derivative_space.(section_spaces),
+            regularities .- 1,
+            (1, 1),
+            (1, 1),
         )
         GBθ = GTBSplineSpace((Bθ,), [regularities[1] - 1])
 
@@ -552,7 +557,7 @@ function create_scalar_polar_spline_space(
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
             two_poles,
-            zero_at_poles
+            zero_at_poles,
         )
     else
         return PolarSplineSpace(
@@ -560,7 +565,7 @@ function create_scalar_polar_spline_space(
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
             two_poles,
-            zero_at_poles
+            zero_at_poles,
         )
     end
 end
@@ -598,7 +603,7 @@ function create_vector_polar_spline_space(
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 )
     return create_vector_polar_spline_space(
         num_elements,
@@ -607,7 +612,7 @@ function create_vector_polar_spline_space(
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
-        box_sizes=box_sizes
+        box_sizes=box_sizes,
     )
 end
 
@@ -644,7 +649,7 @@ function create_vector_polar_spline_space(
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     # spaces used for creating degenerate geometry
     Bθ_g, Br_g = create_dim_wise_bspline_spaces(
@@ -670,7 +675,7 @@ function create_vector_polar_spline_space(
         geom_coeffs_tp,
         TensorProductSpace((GBθ_g, Br_g)),
         two_poles,
-        false
+        false,
     )
 end
 
@@ -704,7 +709,7 @@ function create_polar_geometry_data(
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 )
     return create_polar_geometry_data(
         num_elements,
@@ -713,7 +718,7 @@ function create_polar_geometry_data(
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
-        box_sizes=box_sizes
+        box_sizes=box_sizes,
     )
 end
 
@@ -724,7 +729,7 @@ function create_polar_geometry_data(
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0)
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     Bθ, Br = create_dim_wise_bspline_spaces(
         (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
@@ -746,7 +751,7 @@ function create_polar_geometry_data(
         geom_coeffs_tp,
         TensorProductSpace((GBθ, Br)),
         two_poles,
-        false
+        false,
     )
     E_geom = assemble_global_extraction_matrix(P_geom)
 
@@ -770,17 +775,16 @@ Refine the polar geometry data.
 - `P_geom_ref`: The refined polar spline geometry space.
 - `geom_coeffs_polar_tp_ref`: The refined polar geometry coefficients.
 """
-function refine_polar_geometry_data(
-    P_geom, geom_coeffs_polar; two_poles=false
-)
+function refine_polar_geometry_data(P_geom, geom_coeffs_polar; two_poles=false)
     # refine the space and build two-scale operator
     TS, P_geom_ref = build_two_scale_operator(P_geom, 2)
     subdiv_mat = get_global_subdiv_matrix(TS)
     # refine input polar geometry coefficients
     geom_coeffs_polar_ref = subdiv_mat * geom_coeffs_polar
 
-    return P_geom_ref, geom_coeffs_polar_ref,
-        get_num_elements.(get_constituent_spaces(P_geom_ref))
+    return P_geom_ref,
+    geom_coeffs_polar_ref,
+    get_num_elements.(get_constituent_spaces(P_geom_ref))
 end
 
 """
@@ -817,11 +821,11 @@ end
 
 function create_evaluation_mask_from_hierarchical_mesh(
     hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T};
-    exclude_elements::Vector{Int}=Int[]
+    exclude_elements::Vector{Int}=Int[],
 ) where {
     manifold_dim,
-    S<:FunctionSpaces.AbstractFESpace{manifold_dim, 1},
-    T<:FunctionSpaces.AbstractTwoScaleOperator
+    S <: FunctionSpaces.AbstractFESpace{manifold_dim, 1},
+    T <: FunctionSpaces.AbstractTwoScaleOperator,
 }
     # initialize trivial evaluation mask for first level space
     base_space = FunctionSpaces.get_space(hierarchical_space, 1)
@@ -841,19 +845,17 @@ function create_evaluation_mask_from_hierarchical_mesh(
         undef, num_elements
     )
     for i in 1:num_elements
-        element_level, element_level_id =
-        FunctionSpaces.convert_to_element_level_and_level_id(
+        element_level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
             hierarchical_space, i
         )
         eval_element_vertices[i] = FunctionSpaces.get_element_vertices(
-                FunctionSpaces.get_space(hierarchical_space, element_level),
-                element_level_id
+            FunctionSpaces.get_space(hierarchical_space, element_level), element_level_id
         )
         element_idx_map[i] = FunctionSpaces.get_element_ancestor(
             hierarchical_space.two_scale_operators,
             element_level_id,
             element_level,
-            element_level-1
+            element_level - 1,
         )
     end
 
@@ -867,23 +869,21 @@ function create_evaluation_mask_from_hierarchical_mesh(
         base_el_verts = base_element_vertices[element_idx_base]
         eval_el_verts = eval_element_vertices[element_idx]
 
-        length_scales = [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./
-        [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
+        length_scales =
+            [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./ [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
         scalings[element_idx] = tuple(length_scales...)
 
         translations[element_idx] = tuple(
-            [(eval_el_verts[k][1] - base_el_verts[k][1]) /
-            (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim]...
+            [
+                (eval_el_verts[k][1] - base_el_verts[k][1]) /
+                (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim
+            ]...,
         )
     end
 
     # create corresponding evaluation mask
     E = EvaluationMask.AffineEvaluationMask(
-        num_elements,
-        num_elements_base,
-        element_idx_map,
-        translations,
-        scalings
+        num_elements, num_elements_base, element_idx_map, translations, scalings
     )
     # return trimmed mask
     return EvaluationMask.trim_evaluation_mask(E, exclude_elements)

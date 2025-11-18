@@ -1,6 +1,6 @@
 # Quadrature
 
-## All functions and stuff from Mantis.Quadrature
+## All docstrings from Mantis.Quadrature
 ```@autodocs
 Modules = [Mantis.Quadrature]
 ```

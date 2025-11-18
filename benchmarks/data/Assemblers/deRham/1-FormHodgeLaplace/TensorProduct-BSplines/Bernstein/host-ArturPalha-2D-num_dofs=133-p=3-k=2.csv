@@ -2,3 +2,4 @@ benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=133-p=3-k=2,69d1161,2025-06-18,1.10.7,2025-06-25,20.333 ms,0.000 ms,0.000 ms,19.357 ms,0.000 ns,24.69 MiB,344593
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=133-p=3-k=2,c11bc61,2025-06-26,1.10.7,2025-08-14,3.927 ms,0.000 ms,0.000 ms,3.744 ms,0.000 ns,9.88 MiB,31090
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=133-p=3-k=2,2625f63,2025-09-22,1.10.7,2025-10-30,4.418 ms,4.902 ms,1.317 ms,3.849 ms,0.000 ns,9.88 MiB,31090
+Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=133-p=3-k=2,18c880f,2025-10-30,1.10.7,2025-11-06,3.587 ms,3.978 ms,1.013 ms,3.078 ms,0.000 ns,9.97 MiB,28773

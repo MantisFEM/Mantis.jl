@@ -4,22 +4,22 @@ module FormTests
 
 using Test
 
-@testset "ExteriorDerivatives" begin
+@testset "ExteriorDerivatives" verbose=true begin
     include("ExteriorDerivativeTests.jl")
 end
-@testset "FormEvaluations" begin
+@testset "FormEvaluations" verbose=true begin
     include("FormEvaluationTests.jl")
 end
-@testset "Hodges" begin
+@testset "Hodges" verbose=true begin
     include("HodgeTests.jl")
 end
-@testset "Wedge" begin
+@testset "Wedge" verbose=true begin
     include("WedgeTests.jl")
 end
-@testset "Integral" begin
+@testset "Integral" verbose=true begin
     include("IntegralTests.jl")
 end
-@testset "Algebraic" begin
+@testset "Algebraic" verbose=true begin
     include("FormOperators/Algebraic.jl")
 end
 

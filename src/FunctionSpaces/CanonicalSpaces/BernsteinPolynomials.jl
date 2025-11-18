@@ -78,92 +78,34 @@ by all other implementations of the Bernstein polynomial.
 function _evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)
     # degree
     p = get_polynomial_degree(polynomial)
-
-    # arg checks
-    if xi < 0.0 || xi > 1.0
-        msg = "x = $xi is outside the interval [0.0, 1.0]."
-        throw(ArgumentError(msg))
-    end
-
-    # compute upper and lower triangular values that combine to form values and derivatives
-    ndu = zeros(Float64, p + 1, p + 1)
-    left = zeros(Float64, p + 1)
-    right = zeros(Float64, p + 1)
-    ndu[1, 1] = 1
-    for j in 1:p
-        left[j + 1] = xi
-        right[j + 1] = 1.0 - xi
-        saved = 0.0
-        for r in 0:(j - 1)
-            #lower trinagle
-            ndu[j + 1, r + 1] = right[r + 2] + left[j - r + 1]
-            temp = ndu[r + 1, j] / ndu[j + 1, r + 1]
-
-            # upper triangle
-            ndu[r + 1, j + 1] = saved + right[r + 2] * temp
-            saved = left[j - r + 1] * temp
-        end
-        ndu[j + 1, j + 1] = saved
-    end
-
     # store the values and derivatives here
     ders = zeros(Float64, p + 1, nderivatives + 1)
-    # values are contained in the last column of ndu
-    ders[:, 1] = ndu[:, p + 1]
-
-    # if nderivatves>0, the next section computes the derivatives
-    if nderivatives > 0
-        a = zeros(Int64, 2, nderivatives + 1)
-        for r in 0:p
-            s1 = 0
-            s2 = 1
-            a[1, 1] = 1
-            # loop to compute kth derivative
-            for k in 1:nderivatives
-                d = 0
-                rk = r - k
-                pk = p - k
-                if (r >= k)
-                    a[s2 + 1, 1] = a[s1 + 1, 1] / ndu[pk + 2, rk + 1]
-                    d = a[s2 + 1, 1] * ndu[rk + 1, pk + 1]
-                end
-                if (rk >= -1)
-                    j1 = 1
-                else
-                    j1 = -rk
-                end
-                if (r - 1 <= pk)
-                    j2 = k - 1
-                else
-                    j2 = p - r
-                end
-
-                for j in j1:j2
-                    a[s2 + 1, j + 1] =
-                        (a[s1 + 1, j + 1] - a[s1 + 1, j]) / ndu[pk + 2, rk + j + 1]
-                    d = d + a[s2 + 1, j + 1] * ndu[rk + j + 1, pk + 1]
-                end
-
-                if (r <= pk)
-                    a[s2 + 1, k + 1] = -a[s1 + 1, k] / ndu[pk + 2, r + 1]
-                    d = d + a[s2 + 1, k + 1] * ndu[r + 1, pk + 1]
-                end
-                ders[r + 1, k + 1] = d
-                j = s1
-                s1 = s2
-                s2 = j
-            end
-        end
-
-        # multiply by the correct factors
-        r = p
-        for k in 1:nderivatives
-            ders[:, k + 1] *= r
-            r = r * (p - k)
+    for k in 0:nderivatives
+        for i in 0:p
+            ders[i + 1, k + 1] = _dbpoly(p, i, k, xi)
         end
     end
-
     return ders
+end
+function _bpoly(p::Int, i::Int, xi::Float64)
+    if i < 0 || i > p
+        return 0.0
+    else
+        return binomial(p, i) * xi^i * (1 - xi)^(p-i)
+    end
+end
+function _dbpoly(p::Int, i::Int, k::Int, xi::Float64)
+    if k == 0
+        return _bpoly(p, i, xi)
+    elseif k > p
+        return 0.0
+    else
+        val = 0.0
+        for r in max(0, i + k - p):min(i, k)
+            val += (-1)^(r+k) * binomial(k, r) * _bpoly(p-k, i-r, xi)
+        end
+        return val * prod((p - k + 1):p)
+    end
 end
 
 """

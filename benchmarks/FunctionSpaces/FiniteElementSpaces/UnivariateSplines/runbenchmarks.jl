@@ -13,7 +13,9 @@ if verbose
     println("Generating benchmarkable objects...")
 end
 
-group = add_benchmark_group!(group, "UnivariateSplines", "UnivariateSplines.jl")
+mod = include("UnivariateSplines.jl")
+sub_group = getproperty(mod, :group)
+group["UnivariateSplines"] = sub_group
 
 if verbose
     println("Done!")

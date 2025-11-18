@@ -23,7 +23,7 @@ struct Sharp{manifold_dim, G, F}
 
     function Sharp(
         form::F
-    ) where {manifold_dim, G, F <: AbstractFormExpression{manifold_dim, 1, 0, G}}
+    ) where {manifold_dim, G, F <: AbstractForm{manifold_dim, 1, 0, G}}
         if manifold_dim < 2
             throw(
                 ArgumentError(
@@ -37,9 +37,13 @@ struct Sharp{manifold_dim, G, F}
     end
 end
 
-function ♯(form::AbstractFormExpression)
-    return Sharp(form)
-end
+"""
+    ♯
+
+Symbolic wrapper for the sharp operator. The unicode character command is `\\sharp`. See
+[`Sharp`](@ref) for the details.
+"""
+const ♯ = Sharp
 
 ############################################################################################
 #                                         Getters                                          #
@@ -54,9 +58,26 @@ Returns the form to which the sharp is applied.
 - `sharp::Sharp`: The sharp structure.
 
 # Returns
-- `<:AbstractFormExpression`: The form to which the sharp is applied.
+- `<:AbstractForm`: The form to which the sharp is applied.
 """
 get_form(sharp::Sharp) = sharp.form
+
+"""
+    get_form_space_tree(wedge::Wedge)
+
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp operator, e.g., for
+`♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1.
+If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+
+# Arguments
+- `sharp::Sharp`: The sharp structure.
+
+# Returns
+- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the sharp.
+"""
+function get_form_space_tree(sharp::Sharp)
+    return get_form_space_tree(get_form(sharp))
+end
 
 ############################################################################################
 #                                     Evaluate methods                                     #
@@ -94,7 +115,7 @@ function evaluate(
 end
 
 function _evaluate_sharp(
-    form_expression::AbstractFormExpression{manifold_dim},
+    form_expression::AbstractForm{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}

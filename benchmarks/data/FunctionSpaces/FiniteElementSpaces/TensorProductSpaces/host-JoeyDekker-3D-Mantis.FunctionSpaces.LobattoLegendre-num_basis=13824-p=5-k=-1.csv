@@ -1,2 +1,3 @@
 benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
 FunctionSpaces\FiniteElementSpaces\TensorProductSpaces\3D-Mantis.FunctionSpaces.LobattoLegendre-num_basis=13824-p=5-k=-1,2625f63,2025-09-22,1.11.7,2025-09-29,5.578 ms,5.673 ms,622.822 μs,4.067 ms,0.000 ns,25.93 MiB,113
+FunctionSpaces\FiniteElementSpaces\TensorProductSpaces\3D-Mantis.FunctionSpaces.LobattoLegendre-num_basis=13824-p=5-k=-1,18c880f,2025-10-30,1.12.1,2025-10-31,4.829 ms,10.569 ms,28.245 ms,3.906 ms,0.000 ns,51.68 MiB,97

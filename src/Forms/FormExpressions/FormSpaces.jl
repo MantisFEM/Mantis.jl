@@ -84,67 +84,10 @@ end
 ############################################################################################
 #                                   Getters and setters                                    #
 ############################################################################################
-"""
-    get_fe_space(form_space::AbstractFormSpace)
 
-Returns the finite element space associated with the given form space.
-
-# Arguments
-- `form_space::AbstractFormSpace`: The form space.
-
-# Returns
-- `<:FunctionSpaces.AbstractFESpace`: The finite element space.
-"""
-get_fe_space(form_space::AbstractFormSpace) = form_space.fem_space
-
-"""
-    get_num_basis(form_space::AbstractFormSpace)
-
-Returns the number of basis functions of the function space associated with the given form
-space.
-
-# Arguments
-- `form_space::AbstractFormSpace`: The form space.
-
-# Returns
-- `Int`: The number of basis functions of the function space.
-"""
-function get_num_basis(form_space::AbstractFormSpace)
-    return FunctionSpaces.get_num_basis(get_fe_space(form_space))
-end
-
-"""
-    get_num_basis(form_space::AbstractFormSpace, element_id::Int)
-
-Returns the number of basis functions at the given element of the function space associated
-the given form space.
-
-# Arguments
-- `form_space::AbstractFormSpace`: The form space.
-
-# Returns
-- `Int`: The number of basis functions at the given element.
-"""
-function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
-    return FunctionSpaces.get_num_basis(get_fe_space(form_space), element_id)
-end
+get_form(form_space::FormSpace) = form_space
 
 get_estimated_nnz_per_elem(form_space::FormSpace) = get_max_local_dim(form_space)
-
-"""
-    get_max_local_dim(form_space::AbstractFormSpace)
-
-Compute an upper bound of the element-local dimension of `form_space`. Note that this is not
-necessarily a tight upper bound.
-
-# Arguments
-- `form_space::AbstractFormSpace`: The form space.
-# Returns
-- `::Int`: The element-local upper bound.
-"""
-function get_max_local_dim(form_space::AbstractFormSpace)
-    return FunctionSpaces.get_max_local_dim(get_fe_space(form_space))
-end
 
 ############################################################################################
 #                                     Evaluate methods                                     #
@@ -152,19 +95,16 @@ end
 
 """
     evaluate(
-        form_space::FS, element_idx::Int, xi::Points.AbstractPoints{manifold_dim}
-    ) where {
-        manifold_dim,
-        form_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-    }
+        form_space::FormSpace{manifold_dim, form_rank, G},
+        element_idx::Int,
+        xi::Points.AbstractPoints{manifold_dim},
+    ) where {manifold_dim, form_rank, G}
 
 Evaluate the basis functions of a differential form space at given canonical points `xi`
 mapped to the parametric element given by `element_idx`.
 
 # Arguments
-- `form_space::FS`: The differential form space.
+- `form_space::FormSpace{manifold_dim, form_rank, G}`: The differential form space.
 - `element_idx::Int`: The parametric element identifier.
 - `xi::NTuple{manifold_dim, Vector{Float64}`: The set of canonical points.
 
@@ -176,13 +116,10 @@ mapped to the parametric element given by `element_idx`.
     canonical coordinates of the element.
 """
 function evaluate(
-    form_space::FS, element_idx::Int, xi::Points.AbstractPoints{manifold_dim}
-) where {
-    manifold_dim,
-    form_rank,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-}
+    form_space::FormSpace{manifold_dim, form_rank, G},
+    element_idx::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, form_rank, G}
     # The form space is made up of components
     # e.g,
     #   0-forms: single component
@@ -203,21 +140,16 @@ end
 
 """
     _evaluate_form_in_canonical_coordinates(
-        form_space::FS,
+        form_space::FormSpace{manifold_dim, form_rank, G},
         element_idx::Int,
         xi::Points.AbstractPoints{manifold_dim},
         nderivatives::Int,
-    ) where {
-        manifold_dim,
-        form_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-    }
+    ) where {manifold_dim, form_rank, G}
 
 Evaluate the form basis functions and their arbitrary derivatives in canonical coordinates.
 
 # Arguments
-- `form_space::FS`: The form space.
+- `form_space::FormSpace{manifold_dim, form_rank, G}`: The form space.
 - `element_idx::Int`: Index of the element where the evaluation is performed.
 - `xi::Points.AbstractPoints{manifold_dim}`: Canonical points for evaluation.
 
@@ -228,16 +160,11 @@ Evaluate the form basis functions and their arbitrary derivatives in canonical c
     element.
 """
 function _evaluate_form_in_canonical_coordinates(
-    form_space::FS,
+    form_space::FormSpace{manifold_dim, form_rank, G},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-) where {
-    manifold_dim,
-    form_rank,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-}
+) where {manifold_dim, form_rank, G}
     # Evaluate the form spaces on parametric domain ...
     local_form_basis, form_basis_indices = FunctionSpaces.evaluate(
         get_fe_space(form_space), element_idx, xi, nderivatives

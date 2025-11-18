@@ -549,13 +549,12 @@ function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing,
-    R::Float64 = 1.0,
+    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
+    R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0),
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
     refine::Bool=false,
 )
-
     return create_polar_spline_de_rham_complex(
         num_elements,
         FunctionSpaces.Bernstein.(degrees),
@@ -564,7 +563,7 @@ function create_polar_spline_de_rham_complex(
         R=R,
         two_poles=two_poles,
         box_sizes=box_sizes,
-        refine=refine
+        refine=refine,
     )
 end
 
@@ -597,21 +596,25 @@ function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing,
-    R::Float64 = 1.0,
+    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
+    R::Float64=1.0,
     two_poles::Bool=false,
-    box_sizes::NTuple{2, Float64} = (1.0, 1.0),
+    box_sizes::NTuple{2, Float64}=(1.0, 1.0),
     refine::Bool=false,
 ) where {F <: NTuple{2, FunctionSpaces.AbstractCanonicalSpace}}
-
     form_spaces = Vector{AbstractFormSpace}(undef, 3)
 
     ##############################
     # Geometry
     ##############################
     P_geom, geom_coeffs_polar = FunctionSpaces.create_polar_geometry_data(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes,
     )
     if refine
         P_geom, geom_coeffs_polar, num_elements = FunctionSpaces.refine_geometry_data(
@@ -625,8 +628,14 @@ function create_polar_spline_de_rham_complex(
     # 0-Forms
     ##############################
     P⁰ = FunctionSpaces.create_scalar_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, zero_at_poles=false, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        zero_at_poles=false,
+        box_sizes=box_sizes,
     )
     form_spaces[1] = FormSpace(0, geometry, P⁰, "ω_0")
 
@@ -634,8 +643,13 @@ function create_polar_spline_de_rham_complex(
     # 1-Forms
     ##############################
     P¹ = FunctionSpaces.create_vector_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        box_sizes=box_sizes,
     )
     form_spaces[2] = FormSpace(1, geometry, P¹, "ω_1")
 
@@ -643,8 +657,14 @@ function create_polar_spline_de_rham_complex(
     # 2-Forms
     ##############################
     P² = FunctionSpaces.create_scalar_polar_spline_space(
-        num_elements, section_spaces, regularities;
-        geom_coeffs_tp=geom_coeffs_tp, R=R, two_poles=two_poles, zero_at_poles=true, box_sizes=box_sizes
+        num_elements,
+        section_spaces,
+        regularities;
+        geom_coeffs_tp=geom_coeffs_tp,
+        R=R,
+        two_poles=two_poles,
+        zero_at_poles=true,
+        box_sizes=box_sizes,
     )
     form_spaces[3] = FormSpace(2, geometry, P², "ω_2")
 
@@ -673,19 +693,19 @@ end
 
 """
     trace_basis_idxs(
-        form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+        form::AbstractForm{manifold_dim, form_rank, expression_rank, G}
     ) where {manifold_dim, form_rank, expression_rank, G}
 
 Creates a list of basis function idxs which control the trace of the form on the boundary.
 
 # Arguments
-- `form::AbstractFormExpression`: The form for which to compute the boundary conditions.
+- `form::AbstractForm`: The form for which to compute the boundary conditions.
 
 # Returns
 - `Vector{Int}`: The list of basis idxs.
 """
 function trace_basis_idxs(
-    form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+    form::AbstractForm{manifold_dim, form_rank, expression_rank, G}
 ) where {manifold_dim, form_rank, expression_rank, G}
     if FunctionSpaces.get_num_patches(get_fe_space(form)) > 1
         # This will require topological information to know which interfaces are outer
@@ -695,7 +715,8 @@ function trace_basis_idxs(
     dof_partition = FunctionSpaces.get_dof_partition(get_fe_space(form))
     num_sides = 3^manifold_dim
     basis_idxs = [
-        i for j in setdiff(1:num_sides, Int((num_sides + 1) / 2)) for i in dof_partition[1][j]
+        i for j in setdiff(1:num_sides, Int((num_sides + 1) / 2)) for
+        i in dof_partition[1][j]
     ]
     return basis_idxs
 end
