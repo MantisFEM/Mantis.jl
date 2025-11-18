@@ -122,13 +122,13 @@ makedocs(
     pages=Pages,
     plugins=[bib],
     format=MarkdownVitepress(
-        repo="github.com/MantisFEM/MantisDev.jl.git",
+        repo="github.com/MantisFEM/MantisDev.jl",
         devbranch="main",
     ),
 )
 
 DocumenterVitepress.deploydocs(;
-    repo="github.com/MantisFEM/MantisDev.jl.git",
+    repo="github.com/MantisFEM/MantisDev.jl",
     target="build", # this is where Vitepress stores its output
     devbranch="main",
     branch="gh-pages",
