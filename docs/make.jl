@@ -124,11 +124,11 @@ makedocs(
     format=MarkdownVitepress(
         repo="github.com/MantisFEM/MantisDev.jl.git",
         devbranch="main",
-        # deploy_url="github.com/MantisFEM/MantisDev.jl.git",
     ),
+	output="docs",
 )
 
-# deploydocs(
-#     repo="github.com/MantisFEM/MantisDev.jl.git",
-#     push_preview=true,
-# )
+deploydocs(
+    repo="github.com/MantisFEM/MantisDev.jl.git",
+    push_preview=true,
+)
