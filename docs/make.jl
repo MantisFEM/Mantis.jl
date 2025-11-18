@@ -128,7 +128,7 @@ makedocs(
     ),
 )
 
-deploydocs(
-    repo="github.com/MantisFEM/MantisDev.jl.git",
-    push_preview=true,
-)
+# deploydocs(
+#     repo="github.com/MantisFEM/MantisDev.jl.git",
+#     push_preview=true,
+# )
