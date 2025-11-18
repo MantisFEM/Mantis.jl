@@ -117,15 +117,15 @@ format_setup = Documenter.HTML(
 # Author names are ordered alphabetically on last name.
 makedocs(
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
-    format=MarkdownVitepress(
-        repo="github.com/MantisFEM/MantisDev.jl.git",
-        devbranch="main",
-        deploy_url="github.com/MantisFEM/MantisDev.jl.git",
-    ),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
+    format=MarkdownVitepress(
+        repo="github.com/MantisFEM/MantisDev.jl.git",
+        devbranch="main",
+        # deploy_url="github.com/MantisFEM/MantisDev.jl.git",
+    ),
 )
 
 deploydocs(
