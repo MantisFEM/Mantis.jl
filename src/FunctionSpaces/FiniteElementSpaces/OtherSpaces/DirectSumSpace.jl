@@ -18,7 +18,6 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
        AbstractFESpace{manifold_dim, num_components, num_patches}
     component_spaces::F
     basis_offsets::NTuple{num_components, Int}
-    num_elements::Int
     space_dim::Int
 
     function DirectSumSpace(
@@ -29,14 +28,11 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
         num_patches,
         F <: NTuple{num_components, AbstractFESpace{manifold_dim, 1, num_patches}},
     }
-        num_elements_per_component_space = get_num_elements.(component_spaces)
-        if any(num_elements_per_component_space .!= num_elements_per_component_space[1])
-            throw(
-                ArgumentError("All component spaces must have the same number of elements.")
-            )
+        foreach(component_spaces) do component_space
+            if !(get_geometry(component_space) === get_geometry(component_spaces[1]))
+                throw(ArgumentError("All component spaces must have the same geometry."))
+            end
         end
-        # All components have the same number of elements, so we can just take the first.
-        num_elements = get_num_elements(component_spaces[1])
 
         # Since each component in a direct sum space only contributes to its own component,
         # the number of global d.o.f.s is the sum of the number of d.o.f.s in each component
@@ -57,10 +53,7 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
         end
 
         return new{manifold_dim, num_components, num_patches, F}(
-            component_spaces,
-            NTuple{num_components, Int}(basis_offsets),
-            num_elements,
-            max_global_dof,
+            component_spaces, NTuple{num_components, Int}(basis_offsets), max_global_dof
         )
     end
 end
@@ -81,8 +74,10 @@ function get_num_basis(space::DirectSumSpace, element_id::Int)
     return num_basis
 end
 
-function get_num_elements(space::DirectSumSpace)
-    return space.num_elements
+function get_geometry(space::DirectSumSpace)
+    # The geometries of each of the component spaces are enforced to be equal, so we can
+    # just pick the first.
+    return get_geometry(first(get_component_spaces(space)))
 end
 
 function get_basis_indices(space::DirectSumSpace, element_id::Int)

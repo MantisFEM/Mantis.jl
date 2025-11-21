@@ -725,7 +725,7 @@ end
 include("ExtractionOperator.jl")
 
 include("OtherSpaces/RationalFESpaces.jl")
-# include("OtherSpaces/DirectSumSpace.jl")
+include("OtherSpaces/DirectSumSpace.jl")
 
 include("UnivariateSplines/UnivariateSplines.jl")
 # include("TensorProductSpaces/TensorProductSpaces.jl")
