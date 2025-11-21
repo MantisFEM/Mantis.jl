@@ -71,6 +71,6 @@ include("FiniteElementSpaces/FiniteElementSpaces.jl")
 # include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
 # helper functions for convenience
-# include("./FunctionSpaceHelpers.jl")
+include("./FunctionSpaceHelpers.jl")
 
 end

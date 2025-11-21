@@ -162,7 +162,6 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
     patch_spaces::T
     extraction_op::ExtractionOperator{num_components, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
-    num_elements_per_patch::NTuple{1, Int}
     regularity::Int
 
     global_extraction_matrix::NTuple{
@@ -213,17 +212,11 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
         n_r = get_num_basis(space_r) + zero_at_poles
         if n_p != size(degenerate_control_points, 1)
             throw(
-                ArgumentError(
-                    "The poloidal space does not match the input coefficients."
-                ),
+                ArgumentError("The poloidal space does not match the input coefficients.")
             )
         end
         if n_r != size(degenerate_control_points, 2)
-            throw(
-                ArgumentError(
-                    "The radial space does not match the input coefficients."
-                ),
-            )
+            throw(ArgumentError("The radial space does not match the input coefficients."))
         end
         if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
             throw(
@@ -261,19 +254,18 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             1,
             typeof(patch_spaces),
             typeof(degenerate_space),
-            get_EIJ_types(extraction_op)...
+            get_EIJ_types(extraction_op)...,
         }(
             patch_spaces,
             extraction_op,
             dof_partition,
-            (get_num_elements(patch_spaces[1]),),
             regularity,
             (E,),
             control_triangle,
             two_poles,
             zero_at_poles,
             degenerate_control_points,
-            degenerate_space
+            degenerate_space,
         )
     end
 
@@ -317,17 +309,11 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
         n_r = get_num_basis(space_r)
         if n_p != size(degenerate_control_points, 1)
             throw(
-                ArgumentError(
-                    "The poloidal space does not match the input coefficients."
-                ),
+                ArgumentError("The poloidal space does not match the input coefficients.")
             )
         end
         if n_r != size(degenerate_control_points, 2)
-            throw(
-                ArgumentError(
-                    "The radial space does not match the input coefficients."
-                ),
-            )
+            throw(ArgumentError("The radial space does not match the input coefficients."))
         end
         if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
             throw(
@@ -351,11 +337,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             )
         end
         if n_r != get_num_basis(dspace_r) + 1
-            throw(
-                ArgumentError(
-                    "Input radial space and its derivative are incompatible."
-                ),
-            )
+            throw(ArgumentError("Input radial space and its derivative are incompatible."))
         end
 
         # first, build extraction operator and control triangle
@@ -373,19 +355,18 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             2,
             typeof(patch_spaces),
             typeof(degenerate_space),
-            get_EIJ_types(extraction_op)...
+            get_EIJ_types(extraction_op)...,
         }(
             patch_spaces,
             extraction_op,
             dof_partition,
-            (get_num_elements(patch_spaces[1]),),
             regularity,
             E,
             control_triangle,
             two_poles,
             false,
             degenerate_control_points,
-            degenerate_space
+            degenerate_space,
         )
     end
 end
@@ -558,9 +539,7 @@ The first element corresponds to the horizontal edges and the second element to 
 - `tri::Matrix{Float64}`: The control triangle.
 """
 function extract_vector_polar_splines_to_tensorproduct(
-    degenerate_control_points::Array{Float64, 3},
-    num_basis_r::Int,
-    two_poles::Bool=false,
+    degenerate_control_points::Array{Float64, 3}, num_basis_r::Int, two_poles::Bool=false
 )
     if size(degenerate_control_points, 3) != 2
         throw(
@@ -724,10 +703,6 @@ function get_local_basis(
     return evaluate(space.patch_spaces[component_id], element_id, xi, nderivatives)[1]
 end
 
-function get_num_elements_per_patch(space::PolarSplineSpace)
-    return space.num_elements_per_patch
-end
-
 get_patch_spaces(space::PolarSplineSpace) = space.patch_spaces
 function get_max_local_dim(space::PolarSplineSpace)
     return sum(get_max_local_dim.(get_patch_spaces(space)))
@@ -747,6 +722,6 @@ function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
 end
 
-function get_element_lengths(space::PolarSplineSpace, element_id::Int)
-    return get_element_lengths(get_patch_spaces(space)[1], element_id)
+function get_geometry(space::PolarSplineSpace)
+    return get_geometry(first(get_patch_spaces(space)))
 end

@@ -15,10 +15,10 @@
 
 Create a 1D B-spline space based on the provided starting point, box size, number of
 elements, section space, and regularity. It constructs a uniform distribution of
-breakpoints and uses them to define a `Mesh.Patch1D` object. The function then creates a
-regularity vector, with the first and last entries set to -1 to ensure an open knot vector,
-and returns the corresponding `BSplineSpace`. Optional arguments include the number of
-degrees of freedom on the left and right boundaries.
+breakpoints and uses them to define a `Geometry.CartesianGeometry` object. The function
+then creates a regularity vector, with the first and last entries set to -1 to ensure an
+open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
+the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -63,7 +63,7 @@ function create_bspline_space(
     breakpoints = collect(
         LinRange(starting_point, starting_point + box_size, num_elements + 1)
     )
-    patch = Mesh.Patch1D(breakpoints)
+    patch = Geometry.CartesianGeometry(breakpoints)
 
     regularity_vector = fill(regularity, (num_elements + 1,))
     regularity_vector[1] = regularity_vector[end] = -1 # Open knot vector
@@ -84,10 +84,10 @@ end
 
 Create a piecewise-polynomial 1D B-spline space based on the provided starting point, box
 size, number of elements, polynomial degree, and regularity. It constructs a uniform
-distribution of breakpoints and uses them to define a `Mesh.Patch1D` object. The function
-then creates a regularity vector, with the first and last entries set to -1 to ensure an
-open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
-the number of degrees of freedom on the left and right boundaries.
+distribution of breakpoints and uses them to define a `Geometry.CartesianGeometry` object.
+The function then creates a regularity vector, with the first and last entries set to -1 to
+ensure an open knot vector, and returns the corresponding `BSplineSpace`. Optional
+arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -135,10 +135,10 @@ end
 
 Create a 1D B-spline space based on the provided starting point, box size, number of
 elements, section space, and regularity. It constructs a uniform distribution of
-breakpoints and uses them to define a `Mesh.Patch1D` object. The function then creates a
-regularity vector, with the first and last entries set to -1 to ensure an open knot vector,
-and returns the corresponding `BSplineSpace`. Optional arguments include the number of
-degrees of freedom on the left and right boundaries.
+breakpoints and uses them to define a `Geometry.CartesianGeometry` object. The function
+then creates a regularity vector, with the first and last entries set to -1 to ensure an
+open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
+the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::NTuple{1, Float64}`: The coordinate of the starting point of the
@@ -199,10 +199,10 @@ end
 
 Create a piecewise-polynomial 1D B-spline space based on the provided starting point,
 box size, number of elements, polynomial degree, and regularity. It constructs a uniform
-distribution of breakpoints and uses them to define a `Mesh.Patch1D` object. The function
-then creates a regularity vector, with the first and last entries set to -1 to ensure an
-open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
-the number of degrees of freedom on the left and right boundaries.
+distribution of breakpoints and uses them to define a `Geometry.CartesianGeometry` object.
+The function then creates a regularity vector, with the first and last entries set to -1 to
+ensure an open knot vector, and returns the corresponding `BSplineSpace`. Optional
+arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -815,76 +815,76 @@ function _build_standard_degenerate_control_points(n_p::Int, n_r::Int, R::Float6
     return degenerate_control_points, radii, theta
 end
 
-################################################################################
-# Masking for hierarchical spaces
-################################################################################
+# ################################################################################
+# # Masking for hierarchical spaces
+# ################################################################################
 
-function create_evaluation_mask_from_hierarchical_mesh(
-    hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T};
-    exclude_elements::Vector{Int}=Int[],
-) where {
-    manifold_dim,
-    S <: FunctionSpaces.AbstractFESpace{manifold_dim, 1},
-    T <: FunctionSpaces.AbstractTwoScaleOperator,
-}
-    # initialize trivial evaluation mask for first level space
-    base_space = FunctionSpaces.get_space(hierarchical_space, 1)
-    # number of elements in base mesh
-    num_elements_base = FunctionSpaces.get_num_elements(base_space)
-    # get element vertices for the base space
-    base_element_vertices = [
-        FunctionSpaces.get_element_vertices(base_space, i) for i in 1:num_elements_base
-    ]
+# function create_evaluation_mask_from_hierarchical_mesh(
+#     hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T};
+#     exclude_elements::Vector{Int}=Int[],
+# ) where {
+#     manifold_dim,
+#     S <: FunctionSpaces.AbstractFESpace{manifold_dim, 1},
+#     T <: FunctionSpaces.AbstractTwoScaleOperator,
+# }
+#     # initialize trivial evaluation mask for first level space
+#     base_space = FunctionSpaces.get_space(hierarchical_space, 1)
+#     # number of elements in base mesh
+#     num_elements_base = FunctionSpaces.get_num_elements(base_space)
+#     # get element vertices for the base space
+#     base_element_vertices = [
+#         FunctionSpaces.get_element_vertices(base_space, i) for i in 1:num_elements_base
+#     ]
 
-    # number of elements in evaluation mask (i.e., the active hierarchical mesh)
-    num_elements = FunctionSpaces.get_num_elements(hierarchical_space)
-    # get eval to base element index map
-    element_idx_map = zeros(Int64, num_elements)
-    # get element vertices for the eval mask
-    eval_element_vertices = Vector{NTuple{manifold_dim, Vector{Float64}}}(
-        undef, num_elements
-    )
-    for i in 1:num_elements
-        element_level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
-            hierarchical_space, i
-        )
-        eval_element_vertices[i] = FunctionSpaces.get_element_vertices(
-            FunctionSpaces.get_space(hierarchical_space, element_level), element_level_id
-        )
-        element_idx_map[i] = FunctionSpaces.get_element_ancestor(
-            hierarchical_space.two_scale_operators,
-            element_level_id,
-            element_level,
-            element_level - 1,
-        )
-    end
+#     # number of elements in evaluation mask (i.e., the active hierarchical mesh)
+#     num_elements = FunctionSpaces.get_num_elements(hierarchical_space)
+#     # get eval to base element index map
+#     element_idx_map = zeros(Int64, num_elements)
+#     # get element vertices for the eval mask
+#     eval_element_vertices = Vector{NTuple{manifold_dim, Vector{Float64}}}(
+#         undef, num_elements
+#     )
+#     for i in 1:num_elements
+#         element_level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
+#             hierarchical_space, i
+#         )
+#         eval_element_vertices[i] = FunctionSpaces.get_element_vertices(
+#             FunctionSpaces.get_space(hierarchical_space, element_level), element_level_id
+#         )
+#         element_idx_map[i] = FunctionSpaces.get_element_ancestor(
+#             hierarchical_space.two_scale_operators,
+#             element_level_id,
+#             element_level,
+#             element_level - 1,
+#         )
+#     end
 
-    # allocate memory for translations and scalings
-    translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
-    scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+#     # allocate memory for translations and scalings
+#     translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+#     scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
 
-    # create length scales (i.e., ratios of child and ancestor)
-    for element_idx in 1:num_elements
-        element_idx_base = element_idx_map[element_idx]
-        base_el_verts = base_element_vertices[element_idx_base]
-        eval_el_verts = eval_element_vertices[element_idx]
+#     # create length scales (i.e., ratios of child and ancestor)
+#     for element_idx in 1:num_elements
+#         element_idx_base = element_idx_map[element_idx]
+#         base_el_verts = base_element_vertices[element_idx_base]
+#         eval_el_verts = eval_element_vertices[element_idx]
 
-        length_scales =
-            [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./ [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
-        scalings[element_idx] = tuple(length_scales...)
+#         length_scales =
+#             [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./ [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
+#         scalings[element_idx] = tuple(length_scales...)
 
-        translations[element_idx] = tuple(
-            [
-                (eval_el_verts[k][1] - base_el_verts[k][1]) /
-                (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim
-            ]...,
-        )
-    end
+#         translations[element_idx] = tuple(
+#             [
+#                 (eval_el_verts[k][1] - base_el_verts[k][1]) /
+#                 (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim
+#             ]...,
+#         )
+#     end
 
-    # create corresponding evaluation mask
-    E = EvaluationMask.AffineEvaluationMask(
-        num_elements, num_elements_base, element_idx_map, translations, scalings
-    )
-    # return trimmed mask
-    return EvaluationMask.trim_evaluation_mask(E, exclude_elements)
-end
+#     # create corresponding evaluation mask
+#     E = EvaluationMask.AffineEvaluationMask(
+#         num_elements, num_elements_base, element_idx_map, translations, scalings
+#     )
+#     # return trimmed mask
+#     return EvaluationMask.trim_evaluation_mask(E, exclude_elements)
+# end

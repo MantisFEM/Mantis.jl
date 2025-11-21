@@ -728,10 +728,10 @@ include("OtherSpaces/RationalFESpaces.jl")
 include("OtherSpaces/DirectSumSpace.jl")
 
 include("UnivariateSplines/UnivariateSplines.jl")
-# include("TensorProductSpaces/TensorProductSpaces.jl")
+include("TensorProductSpaces/TensorProductSpaces.jl")
 
-# include("UnstructuredSpaces/GTBSplines.jl")
-# include("UnstructuredSpaces/PolarSplines.jl")
+include("UnstructuredSpaces/GTBSplines.jl")
+include("UnstructuredSpaces/PolarSplines.jl")
 
 # include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 

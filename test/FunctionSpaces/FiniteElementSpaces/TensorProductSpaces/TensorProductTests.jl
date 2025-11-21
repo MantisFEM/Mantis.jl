@@ -14,9 +14,9 @@ using Test
 
 # patch breakpoints in x and y
 breakpoints1 = [0.0, 0.5, 0.8, 0.9, 1.0]
-patch1 = Mesh.Patch1D(breakpoints1)
+patch1 = Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [0.0, 0.5, 0.6, 1.0]
-patch2 = Mesh.Patch1D(breakpoints2)
+patch2 = Geometry.CartesianGeometry(breakpoints2)
 num_derivatives = 3
 for deg1 in 0:5
     for deg2 in 0:5
@@ -91,9 +91,9 @@ end
 
 # first B-spline patch
 breakpoints1 = [0.0, 0.5, 1.0]
-patch1 = Mesh.Patch1D(breakpoints1)
+patch1 = Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [0.0, 0.5, 0.6, 1.0]
-patch2 = Mesh.Patch1D(breakpoints2)
+patch2 = Geometry.CartesianGeometry(breakpoints2)
 deg1 = 3
 B1_tensor_prod = FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1 - 1, -1])
 # second B-spline patch

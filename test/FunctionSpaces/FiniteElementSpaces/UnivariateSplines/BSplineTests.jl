@@ -17,6 +17,7 @@ B1_univariate_bs = FunctionSpaces.BSplineSpace(geometry, deg1, [-1, 1, -1])
 quad_rule = Quadrature.gauss_legendre(deg1 + 1)
 x1 = Quadrature.get_nodes(quad_rule)
 
+@test FunctionSpaces.get_component_spaces(B1_univariate_bs) == (B1_univariate_bs,)
 for el in 1:1:FunctionSpaces.get_num_elements(B1_univariate_bs)
     # check extraction coefficients
     ex_coeffs = FunctionSpaces.get_extraction_coefficients(B1_univariate_bs, el)
@@ -41,6 +42,7 @@ geometry2 = Geometry.CartesianGeometry(breakpoints2)
 B2_univariate_bs = FunctionSpaces.BSplineSpace(geometry2, deg2, [-1, 1, 3, -1])
 quad_rule2 = Quadrature.gauss_legendre(deg2 + 1)
 x2 = Quadrature.get_nodes(quad_rule2)
+@test FunctionSpaces.get_component_spaces(B2_univariate_bs) == (B2_univariate_bs,)
 for el in 1:1:FunctionSpaces.get_num_elements(B2_univariate_bs)
     # check extraction coefficients
     ex_coeffs = FunctionSpaces.get_extraction_coefficients(B2_univariate_bs, el)
@@ -68,6 +70,7 @@ weights = [1.0, 2.0, 2.0, 3.0, 1.0]
 Nurbs_univariate = FunctionSpaces.RationalFESpace(Bsp_univariate, weights)
 quad_rule = Quadrature.gauss_legendre(deg3 + 1)
 x3 = Quadrature.get_nodes(quad_rule)
+@test FunctionSpaces.get_component_spaces(Bsp_univariate) == (Bsp_univariate,)
 for el in 1:1:FunctionSpaces.get_num_elements(Nurbs_univariate)
     # check Nurbs evaluation
     Nurbs_eval, _ = FunctionSpaces.evaluate(Nurbs_univariate, el, x3, 0)
@@ -84,6 +87,7 @@ geometry4 = Geometry.CartesianGeometry(breakpoints4)
 B = FunctionSpaces.BSplineSpace(geometry4, b, [-1, deg4 - 1, deg4 - 1, -1])
 nbasis = FunctionSpaces.get_num_basis(B)
 nel = FunctionSpaces.get_num_elements(B)
+@test FunctionSpaces.get_component_spaces(B) == (B,)
 for el in 1:1:nel
     # check extraction coefficients
     ex_coeffs = FunctionSpaces.get_extraction_coefficients(B, el)

@@ -26,6 +26,10 @@ struct RationalFESpace{manifold_dim, F} <: AbstractFESpace{manifold_dim, 1, 1}
     end
 end
 
+function get_geometry(space::RationalFESpace)
+    return get_geometry(space.function_space)
+end
+
 function get_num_basis(space::RationalFESpace)
     return get_num_basis(space.function_space)
 end
@@ -134,24 +138,4 @@ end
 
 function get_basis_permutation(space::RationalFESpace, element_id::Int, component_id::Int=1)
     return 1:get_num_basis(space, element_id)
-end
-
-"""
-    get_element_measure(space::RationalFESpace, element_id::Int)
-
-Returns the size of the element for the rational finite element space.
-
-# Arguments
-- `space::RationalFESpace`: The rational finite element space.
-- `element_id::Int`: The index of the element.
-
-# Returns
-The size of the element for the rational finite element space.
-"""
-function get_element_measure(space::RationalFESpace, element_id::Int)
-    return get_element_measure(space.function_space, element_id)
-end
-
-function get_element_lengths(space::RationalFESpace, element_id::Int)
-    return get_element_lengths(space.function_space, element_id)
 end
