@@ -12,7 +12,7 @@ import PolynomialBases
 import SparseArrays
 import ToeplitzMatrices
 
-using ..Mesh
+using ..Geometry
 using ..Points
 using ..GeneralHelpers
 
@@ -68,9 +68,9 @@ function get_num_patches(
 end
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
-include("AdaptiveRefinement/AdaptiveRefinement.jl")
+# include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
 # helper functions for convenience
-include("./FunctionSpaceHelpers.jl")
+# include("./FunctionSpaceHelpers.jl")
 
 end

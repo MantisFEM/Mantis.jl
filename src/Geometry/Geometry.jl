@@ -8,7 +8,6 @@ module Geometry
 using LinearAlgebra
 using StaticArrays
 
-import ..FunctionSpaces
 import ..Points
 
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
@@ -498,10 +497,10 @@ end
 
 # core functionality
 include("./CartesianGeometry.jl")
-include("./FEGeometry.jl")
+# include("./FEGeometry.jl")
 include("./MappedGeometry.jl")
 include("./TensorProductGeometry.jl")
-include("./HierarchicalGeometry.jl")
+# include("./HierarchicalGeometry.jl")
 include("./UnstructuredGeometry.jl")
 include("./Metric.jl")
 

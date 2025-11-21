@@ -55,11 +55,18 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
     ) where {manifold_dim, NT <: Number}
         return CartesianGeometry((breakpoints,))
     end
+
+    # Convenience constructor for 1D, single patch geometries.
+    function CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}
+        return CartesianGeometry(((breakpoints,),))
+    end
 end
 
 # Get properties.
 get_breakpoints(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.breakpoints[patch_id]
+get_breakpoints_per_dim(geometry::CartesianGeometry{1}, patch_id::Int=1, dim::Int=1) =
+    geometry.breakpoints[patch_id][dim]
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
