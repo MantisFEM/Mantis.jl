@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Forms/FormExpressions/FormFields/evaluate-3-form-3D,b4eee92,2025-11-18,1.12.1,2025-11-21,105.547 μs,81.990 μs,74.928 μs,26.921 μs,0.000 ns,441.88 KiB,122

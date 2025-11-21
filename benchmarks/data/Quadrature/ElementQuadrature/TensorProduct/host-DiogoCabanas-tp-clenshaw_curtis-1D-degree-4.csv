@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Quadrature/ElementQuadrature/TensorProduct/tp-clenshaw_curtis-1D-degree-4,b4eee92,2025-11-18,1.12.1,2025-11-21,3.627 μs,3.709 μs,1.003 μs,2.796 μs,0.000 ns,2.42 KiB,52

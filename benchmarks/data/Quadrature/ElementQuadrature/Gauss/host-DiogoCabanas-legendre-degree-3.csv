@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Quadrature/ElementQuadrature/Gauss/legendre-degree-3,b4eee92,2025-11-18,1.12.1,2025-11-21,50.000 ns,56.318 ns,37.163 ns,40.000 ns,0.000 ns,192 bytes,4
