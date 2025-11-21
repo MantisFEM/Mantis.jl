@@ -1,7 +1,6 @@
 """
-    TensorProductGeometry{
-        manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
-    } <: AbstractGeometry{manifold_dim, image_dim, num_patches}
+    TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, CI} <:
+        AbstractGeometry{manifold_dim, image_dim, num_patches}
 
 A geometry build by tensoring multiple constituent geometries.
 
@@ -10,14 +9,12 @@ A geometry build by tensoring multiple constituent geometries.
 - `cart_num_elements::CI`: A collection of Cartesian indices representing the
   multi-dimensional positions of each tensor product element. Useful to convert from linear
   to Cartesian indexing.
-- `lin_num_elements::LI`: Useful to convert from Cartesian to linear indexing.
+- `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elements on each patch.
 """
-struct TensorProductGeometry{
-    manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
-} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
+struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, CI} <:
+       AbstractGeometry{manifold_dim, image_dim, num_patches}
     geometries::T
     cart_num_elements::CI
-    lin_num_elements::LI
     num_elements_per_patch::NTuple{num_patches, Int}
 
     function TensorProductGeometry(
@@ -27,7 +24,6 @@ struct TensorProductGeometry{
             geometry -> get_num_elements(geometries[geometry]), num_geometries
         )
         cart_num_elements = CartesianIndices(const_num_elements)
-        lin_num_elements = LinearIndices(cart_num_elements)
 
         manifold_dim = sum(get_manifold_dim, geometries)
         image_dim = sum(get_image_dim, geometries)
@@ -52,20 +48,18 @@ struct TensorProductGeometry{
             num_geometries,
             T,
             typeof(cart_num_elements),
-            typeof(lin_num_elements),
         }(
-            geometries, cart_num_elements, lin_num_elements, num_elements_per_patch
+            geometries, cart_num_elements, num_elements_per_patch
         )
     end
 end
 
 # Get properties.
 get_cart_num_elements(geometry::TensorProductGeometry) = geometry.cart_num_elements
-get_lin_num_elements(geometry::TensorProductGeometry) = geometry.lin_num_elements
 get_constituent_geometries(geometry::TensorProductGeometry) = geometry.geometries
 get_num_geometries(
-    ::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI}
-) where {manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI} = num_geometries
+    ::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries}
+) where {manifold_dim, image_dim, num_patches, num_geometries} = num_geometries
 function get_constituent_geometry(geometry::TensorProductGeometry, geometry_id::Int)
     return get_constituent_geometries(geometry)[geometry_id]
 end
