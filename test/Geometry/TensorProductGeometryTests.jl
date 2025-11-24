@@ -46,7 +46,7 @@ nθ_elements = 4
 Wt = 2.0 * pi / nθ_elements
 b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = collect(LinRange(0.0, nθ_elements, nθ_elements + 1))
-patch = Mesh.Patch1D(breakpoints)
+patch = Geometry.CartesianGeometry(breakpoints)
 B = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 GB = FunctionSpaces.GTBSplineSpace((B,), [1])
 

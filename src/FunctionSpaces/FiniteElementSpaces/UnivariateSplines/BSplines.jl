@@ -1,8 +1,8 @@
 """
     BSplineSpace{F, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
 
-Structure containing information about a univariate B-Spline function space defined on
-`patch_1d::Mesh.Patch1D`, with given `polynomial_degree` and `regularity` per breakpoint.
+Structure containing information about a univariate B-Spline function space defined on the
+`knot_vector::KnotVector`, with given `polynomial_degree` and `regularity` per breakpoint.
 Note that while the section spaces on each element are the same, they don't necessarily have
 to be polynomials; they are just named `polynomials` for convention.
 

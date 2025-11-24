@@ -8,9 +8,9 @@ using Test
 
 # Test parameters
 breakpoints1 = [0.0, 0.5, 1.0]
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [0.0, 0.8, 1.0]
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 
 #############################################################################################
 ### Univariate test 1
@@ -35,7 +35,7 @@ ts_GTB, _ = Mantis.FunctionSpaces.build_two_scale_operator(
 )
 
 breakpoints = vcat(breakpoints1, breakpoints2[2:end] .+ breakpoints1[end])
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, deg1, [-1, deg1 - 1, 1, deg1 - 1, -1])
 ts, B_fine = Mantis.FunctionSpaces.build_two_scale_operator(B, nsub1)
 

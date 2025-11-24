@@ -16,9 +16,9 @@ Ltop = 1.0
 
 # First the FEM spaces
 breakpoints1 = [Lleft, 0.5, Lright]
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [Lbottom, 0.5, 0.6, Ltop]
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 
 # first B-spline patch
 deg1 = 2
@@ -94,16 +94,16 @@ for geom in [geo_2d_cart, tensor_prod_geo, geom_crazy]
     dα⁰ = Mantis.Forms.ExteriorDerivative(α⁰)
     dζ¹ = Mantis.Forms.ExteriorDerivative(ζ¹)
 
-    # Compute exterior derivative of wedge product 
+    # Compute exterior derivative of wedge product
     α⁰_wedge_ζ¹ = Mantis.Forms.Wedge(α⁰, ζ¹)
     d_α⁰_wedge_ζ¹ = Mantis.Forms.ExteriorDerivative(α⁰_wedge_ζ¹)
 
     # Reference via Leibniz rule
     dα⁰_wedge_ζ¹_via_leibniz = Mantis.Forms.Wedge(dα⁰, ζ¹) + Mantis.Forms.Wedge(α⁰, Mantis.Forms.ExteriorDerivative(ζ¹))
-    
-    # Error form 
+
+    # Error form
     error_form_d_wedge = d_α⁰_wedge_ζ¹ - dα⁰_wedge_ζ¹_via_leibniz
-    
+
     # Check error of automatic exterior derivative vs explicit Leibniz rule on all elements
     for elem_id in 1:1:Mantis.Geometry.get_num_elements(geom)
         # Evaluate the Leibniz rule form to check we are not in the trivial case (= 0)
@@ -133,7 +133,7 @@ end
 
 # # First the FEM spaces
 # breakpoints = [Lleft, 0.5, Lright]
-# patch = Mantis.Mesh.Patch1D(breakpoints)
+# patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 
 # # first B-spline patch
 # deg = 2

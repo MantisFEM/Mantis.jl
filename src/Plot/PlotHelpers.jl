@@ -88,7 +88,7 @@ function visualize_tensor_product_controlnet(control_points::Array{Float64,proje
     end
 
     # create bilinear geometry
-    B = [FunctionSpaces.BSplineSpace(Mesh.Patch1D(collect(LinRange(0.0, 1.0, size(control_points,i)+periodic[i]))), 1, 0) for i in 1:manifold_dim]
+    B = [FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry(LinRange(0.0, 1.0, size(control_points,i)+periodic[i])), 1, 0) for i in 1:manifold_dim]
 
     # impose periodicity if required
     for i = 1:manifold_dim

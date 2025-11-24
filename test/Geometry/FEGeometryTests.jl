@@ -36,10 +36,10 @@ deg = 2
 Wt = pi / 2
 b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((GB, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -82,10 +82,10 @@ output_points, output_cells = get_point_cell_data(output_file_path)
 deg = 1
 b = Mantis.FunctionSpaces.LobattoLegendre(deg)
 breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 0, 0, 0, -1])
 GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [0])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((GB, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -129,7 +129,7 @@ deg = 2
 Wt = pi / 2
 b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 GB = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 
 # control points for geometry
@@ -171,10 +171,10 @@ deg = 2
 Wt = pi / 2
 b = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 GB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((GB, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -216,9 +216,9 @@ output_points, output_cells = get_point_cell_data(output_file_path)
 
 # Test FEGeometry (NURBS quarter annulus) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
 B = Mantis.FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((B, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -261,11 +261,11 @@ Mantis.Plot.plot(
 
 # Test FEGeometry (NURBS annulus) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
 br = Mantis.FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
 B = (br, br, br, br)
 GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((GB, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -309,11 +309,11 @@ Mantis.Plot.plot(
 
 # Test FEGeometry (NURBS wavy surface) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
 br = Mantis.FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
 B = (br, br, br, br)
 GB = Mantis.FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 TP = Mantis.FunctionSpaces.TensorProductSpace((GB, b1))
 # control points for geometry
 geom_coeffs_0 = [
@@ -357,7 +357,7 @@ Mantis.Plot.plot(
 
 # Test FEGeometry (NURBS vs GTB basis) ---------------------------------------------
 deg = 2
-b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), deg, [-1, -1])
+b = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
 br = Mantis.FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
 Bsp = Mantis.FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
 Nurbs = Mantis.FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
@@ -365,11 +365,11 @@ Nurbs = Mantis.FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
 Wt = pi / 2
 gt = Mantis.FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 B = Mantis.FunctionSpaces.BSplineSpace(
-    Mantis.Mesh.Patch1D([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
+    Mantis.Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
 )
 GTB = Mantis.FunctionSpaces.GTBSplineSpace((B,), [1])
 
-b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Mesh.Patch1D([0.0, 1.0]), 1, [-1, -1])
+b1 = Mantis.FunctionSpaces.BSplineSpace(Mantis.Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 
 TP_bsp = Mantis.FunctionSpaces.TensorProductSpace((Bsp, b1))
 TP_nurbs = Mantis.FunctionSpaces.TensorProductSpace((Nurbs, b1))

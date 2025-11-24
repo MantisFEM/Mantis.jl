@@ -3,13 +3,11 @@
 ############################################################################################
 
 """
-    FormField{manifold_dim, form_rank, G, FS} <:
-    AbstractFormField{manifold_dim, form_rank, 0, G}
+    FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim, form_rank}
 
 Represents a differential form field.
 
 # Fields
-- `geometry::G`: The geometry associated with this field.
 - `form_space::FS`: The form space associated with this field.
 - `coefficients::Vector{Float64}`: Coefficients of the form field.
 - `label::String`: Label for the form field.
@@ -17,7 +15,6 @@ Represents a differential form field.
 # Type parameters
 - `manifold_dim`: Dimension of the manifold.
 - `form_rank`: Rank of the differential form.
-- `G`: Type of the geometry.
 - `FS`: Type of the form space.
 
 # Inner Constructors
@@ -25,22 +22,15 @@ Represents a differential form field.
     for form fields.
 - `FormField(form_space::FS, label::String)`: Constructor with zero coefficients.
 """
-struct FormField{manifold_dim, form_rank, G, FS} <:
-       AbstractFormField{manifold_dim, form_rank, G}
-    geometry::G
+struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim, form_rank}
     form_space::FS
     coefficients::Vector{Float64}
     label::String
 
     """
         FormField(
-            form_space::FS, label::String
-        ) where {
-            manifold_dim,
-            form_rank,
-            G <: Geometry.AbstractGeometry{manifold_dim},
-            FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-        }
+            form_space::FS, coefficients::Vector{Float64}, label::String
+        ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
 
     Construct a FormField with zero coefficients.
 
@@ -54,12 +44,7 @@ struct FormField{manifold_dim, form_rank, G, FS} <:
     """
     function FormField(
         form_space::FS, coefficients::Vector{Float64}, label::String
-    ) where {
-        manifold_dim,
-        form_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-    }
+    ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
         if length(coefficients) != get_num_basis(form_space)
             throw(ArgumentError("""\
                       The number of coefficients ($(length(coefficients))) must match the\
@@ -67,7 +52,7 @@ struct FormField{manifold_dim, form_rank, G, FS} <:
                       """))
         end
 
-        return new{manifold_dim, form_rank, G, FS}(
+        return new{manifold_dim, form_rank, FS}(
             get_geometry(form_space), form_space, coefficients, label
         )
     end
@@ -93,7 +78,7 @@ end
 
 """
     AnalyticalFormField{manifold_dim, form_rank, G, E} <:
-    AbstractFormField{manifold_dim, form_rank, G}
+    AbstractFormField{manifold_dim, form_rank}
 
 Represents an analytical differential form field.
 
@@ -114,7 +99,7 @@ Represents an analytical differential form field.
 
 """
 struct AnalyticalFormField{manifold_dim, form_rank, G, E} <:
-       AbstractFormField{manifold_dim, form_rank, G}
+       AbstractFormField{manifold_dim, form_rank}
     geometry::G
     expression::E
     label::String
@@ -206,14 +191,13 @@ get_expression(form_field::AnalyticalFormField) = form_field.expression
 
 """
     evaluate(
-        form_field::FormField{manifold_dim, form_rank, G, FS},
+        form_field::FormField{manifold_dim, form_rank, FS},
         element_idx::Int,
         xi::Points.AbstractPoints{manifold_dim},
     ) where {
         manifold_dim,
         form_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        FS <: AbstractFormSpace{manifold_dim, form_rank, G},
+        FS <: AbstractFormSpace{manifold_dim, form_rank},
     }
 
 Evaluates a differential form field at given canonical points `xi` mapped to the parametric
@@ -230,10 +214,10 @@ element given by `element_idx`.
 - `Vector{Vector{Int}}`: This vector is always `[[1]]` because form fields have no basis.
 """
 function evaluate(
-    form_field::FormField{manifold_dim, form_rank, G, FS},
+    form_field::FormField{manifold_dim, form_rank, FS},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, form_rank, G, FS}
+) where {manifold_dim, form_rank, FS}
     n_form_components = binomial(manifold_dim, form_rank)
     form_basis_eval, form_basis_indices = evaluate(
         get_form_space(form_field), element_idx, xi

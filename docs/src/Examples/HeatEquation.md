@@ -202,7 +202,7 @@ n = N * (p + 1) - (k + 1) * (N - 1)
 
 # Create the mesh and the function space
 breakpoints = LinRange(0.0, L, N+1)
-patch = Mantis.Mesh.Patch1D(collect(breakpoints))
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, p, k)
 line_geo = Mantis.Geometry.CartesianGeometry((breakpoints,))
 
@@ -409,4 +409,3 @@ computing a decent solution.
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

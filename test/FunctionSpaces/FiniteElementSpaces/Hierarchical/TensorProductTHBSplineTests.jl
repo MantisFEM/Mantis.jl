@@ -8,9 +8,9 @@ using Test
 ne1 = 5
 ne2 = 5
 breakpoints1 = collect(range(0,1,ne1+1))
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = collect(range(0,1,ne2+1))
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 deg1 = 2
 deg2 = 2
 nsubs = (3, 3)

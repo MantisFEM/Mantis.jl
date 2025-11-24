@@ -115,8 +115,8 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
 end
 
 """
-  UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T} <:
-  AbstractForm{manifold_dim, form_rank, expression_rank, G}
+  UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T} <:
+  AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Structure holding the necessary information to evaluate a unary, algebraic transformation
 of a differential form expression.
@@ -130,9 +130,8 @@ of a differential form expression.
 - `manifold_dim::Int`: The dimension of the manifold where the form is defined.
 - `form_rank::Int`: The rank of the differential form.
 - `expression_rank::Int`: The rank of the expression.
-- `G <: AbstractGeometry{manifold_dim}`: The type of the geometry where the form is defined.
-- `F <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The
-    type of the original form expression .
+- `F <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the original
+    form expression .
 - `T <: Function`: The type of the algebraic transformation.
 
 # Inner constructors
@@ -143,8 +142,8 @@ differential form expression .
 - `Base.:*(factor::Number, form::AbstractForm)`: Alias for the
     multiplication of a differential form expression with a constant factor.
 """
-struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank, G}
+struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T} <:
+       AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
     transformation::T
     label::String
@@ -155,13 +154,12 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T
         manifold_dim,
         form_rank,
         expression_rank,
-        G,
-        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank},
         T <: Function,
     }
         label = "(" * label * get_label(form) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, G, F, T}(
+        return new{manifold_dim, form_rank, expression_rank, F, T}(
             form, transformation, label
         )
     end
@@ -176,8 +174,8 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T
 end
 
 """
-  BinaryFormTransformation{manifold_dim, form_rank, F1, F2, G, T} <:
-  AbstractForm{manifold_dim, form_rank, G}
+  BinaryFormTransformation{manifold_dim, form_rank, F1, F2, T} <:
+  AbstractForm{manifold_dim, form_rank}
 
 Structure holding the necessary information to evaluate a binary, algebraic transformation
 acting on two differential form expressions.
@@ -192,10 +190,8 @@ acting on two differential form expressions.
 - `manifold_dim::Int`: The dimension of the manifold where the form expressions are defined.
 - `form_rank::Int`: The rank of both differential form expressions.
 - `expression_rank::Int`: The expression rank of both differential form expressions.
-- `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The type of the first form expression.
-- `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The type of the second form expression.
-- `G <: AbstractGeometry{manifold_dim}`: The type of the geometry where both form expressions are
-  defined.
+- `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the first form expression.
+- `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the second form expression.
 - `T <: Function`: The type of the algebraic transformation.
 
 # Inner constructors
@@ -204,8 +200,8 @@ acting on two differential form expressions.
 - `Base.:+(form_1::F1, form_2::F2)`: Alias for the sum of two differential form expressions.
 - `Base.:-(form_1::F1, form_2::F2)`: Alias for the difference of two differential form expressions.
 """
-struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, G, T} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank, G}
+struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T} <:
+       AbstractForm{manifold_dim, form_rank, expression_rank}
     form_1::F1
     form_2::F2
     transformation::T
@@ -217,11 +213,24 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         manifold_dim,
         form_rank,
         expression_rank,
-        G,
-        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
-        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank},
+        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank},
         T <: Function,
     }
+        if !(get_geometry(form_1) == get_geometry(form_2))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The two forms must have the same geometry. Instead they have ",
+                        get_geometry(form_1),
+                        " for the first form, and ",
+                        get_geometry(form_2),
+                        " for the second form.",
+                    ),
+                ),
+            )
+        end
+
         # Check if both forms contain the same forms in their tree
         tree_form_1 = get_form_space_tree(form_1)
         tree_form_2 = get_form_space_tree(form_2)
@@ -236,7 +245,7 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
 
         label = "(" * get_label(form_1) * label * get_label(form_2) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2, G, T}(
+        return new{manifold_dim, form_rank, expression_rank, F1, F2, T}(
             form_1, form_2, transformation, label
         )
     end

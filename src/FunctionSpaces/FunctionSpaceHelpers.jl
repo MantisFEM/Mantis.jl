@@ -60,9 +60,7 @@ function create_bspline_space(
         throw(ArgumentError("The argument 'box_size' must be greater than 0."))
     end
 
-    breakpoints = collect(
-        LinRange(starting_point, starting_point + box_size, num_elements + 1)
-    )
+    breakpoints = LinRange(starting_point, starting_point + box_size, num_elements + 1)
     patch = Geometry.CartesianGeometry(breakpoints)
 
     regularity_vector = fill(regularity, (num_elements + 1,))

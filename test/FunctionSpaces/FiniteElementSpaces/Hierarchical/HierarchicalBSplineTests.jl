@@ -12,7 +12,7 @@ nlevels = 3
 subdiv = 2
 
 brk = collect(LinRange(0, 1, nq))
-patch = Mesh.Patch1D(brk)
+patch = Geometry.CartesianGeometry(brk)
 regularity = fill(p - 1, nq)
 regularity[1] = regularity[nq] = -1
 bspline1 = FunctionSpaces.BSplineSpace(patch, p, regularity)

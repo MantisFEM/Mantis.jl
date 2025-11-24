@@ -18,9 +18,9 @@ Ltop = 1.0
 # Setup the form spaces
 # First the FEM spaces
 breakpoints1 = [Lleft, 0.5, Lright]
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [Lbottom, 0.5, 0.6, Ltop]
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 
 # first B-spline patch
 deg1 = 2
@@ -218,7 +218,7 @@ Ltop = 1.0
 
 # First the FEM spaces
 breakpoints = [Lleft, 0.5, Lright]
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 
 # first B-spline patch
 deg = 2

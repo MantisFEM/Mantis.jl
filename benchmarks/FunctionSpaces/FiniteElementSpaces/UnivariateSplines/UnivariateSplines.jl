@@ -14,7 +14,7 @@ function run_problem(
     section_space::Type{T}, num_els::Int, p::Int, k::Int
 ) where {T <: FunctionSpaces.AbstractCanonicalSpace}
     breakpoints = collect(LinRange(0.0, 1.0, num_els + 1))
-    patch = Mesh.Patch1D(breakpoints)
+    patch = Geometry.CartesianGeometry(breakpoints)
     regularity = fill(k, num_els + 1)
     regularity[1] = regularity[end] = -1
     Bpk = FunctionSpaces.BSplineSpace(patch, section_space(p), regularity)

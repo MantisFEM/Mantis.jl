@@ -6,11 +6,11 @@ using Test
 
 # Test parameters
 breakpoints1 = [0.0, 0.5, 1.0]
-patch1 = Mesh.Patch1D(breakpoints1)
+patch1 = Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [0.0, 0.5, 0.6, 1.0]
-patch2 = Mesh.Patch1D(breakpoints2)
+patch2 = Geometry.CartesianGeometry(breakpoints2)
 breakpoints3 = [0.0, 1.0]
-patch3 = Mesh.Patch1D(breakpoints3)
+patch3 = Geometry.CartesianGeometry(breakpoints3)
 
 deg1 = 2
 deg2 = 3
