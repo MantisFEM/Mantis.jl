@@ -65,7 +65,7 @@ end
 # Get properties.
 get_breakpoints(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.breakpoints[patch_id]
-get_breakpoints_per_dim(geometry::CartesianGeometry{1}, patch_id::Int=1, dim::Int=1) =
+get_breakpoints_per_dim(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1) =
     geometry.breakpoints[patch_id][dim]
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]

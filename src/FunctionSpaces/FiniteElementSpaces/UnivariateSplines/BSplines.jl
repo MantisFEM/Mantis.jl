@@ -12,10 +12,9 @@ to be polynomials; they are just named `polynomials` for convention.
 - `polynomials::F`: local section space F, named `polynomials` just for convention.
 - `dof_partition::Vector{Vector{Vector{Int}}}`: Indices of boundary degrees of freedom.
 """
-struct BSplineSpace{F, G, TB, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
-    knot_vector::KnotVector{TB, TM}
+struct BSplineSpace{F, G, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
+    knot_vector::KnotVector{G, TM}
     polynomials::F
-    geometry::G
     extraction_op::ExtractionOperator{1, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
 
@@ -112,7 +111,7 @@ struct BSplineSpace{F, G, TB, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
         end
 
         knot_vector = create_knot_vector(
-            breakpoints, polynomial_degree, regularity, "regularity"
+            geometry, polynomial_degree, regularity, "regularity"
         )
         extraction_op = extract_bspline_to_section_space(knot_vector, polynomials)
         bspline_dim = get_num_basis(extraction_op)
@@ -127,9 +126,9 @@ struct BSplineSpace{F, G, TB, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
         dof_partition[1][3] = collect((bspline_dim - n_dofs_right + 1):bspline_dim)
 
         return new{
-            F, G, get_knot_vector_types(knot_vector)..., get_EIJ_types(extraction_op)...
+            F, get_knot_vector_types(knot_vector)..., get_EIJ_types(extraction_op)...
         }(
-            knot_vector, polynomials, geometry, extraction_op, dof_partition
+            knot_vector, polynomials, extraction_op, dof_partition
         )
     end
 end
@@ -164,6 +163,10 @@ function BSplineSpace(
     num_breakpoints = length(breakpoints)
     regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
     return BSplineSpace(geometry, Bernstein(polynomial_degree), regularity)
+end
+
+function get_geometry(space::BSplineSpace)
+    return get_geometry(get_knot_vector(space))
 end
 
 """
@@ -274,14 +277,16 @@ function get_local_knot_vector(space::BSplineSpace, basis_idx::Int)
     first_knot_mult = knot_cum_sum[first_breakpoint_idx] - basis_idx + 1
     last_knot_mult = basis_idx + deg + 1 - knot_cum_sum[last_breakpoint_idx - 1]
 
-    breakpoints = get_breakpoints(space)[first_breakpoint_idx:last_breakpoint_idx]
+    geometry = Geometry.CartesianGeometry(
+        get_breakpoints(space)[first_breakpoint_idx:last_breakpoint_idx]
+    )
     multiplicity = vcat(
         first_knot_mult,
         get_multiplicity(knot_vector)[(first_breakpoint_idx + 1):(last_breakpoint_idx - 1)],
         last_knot_mult,
     )
 
-    return KnotVector(breakpoints, deg, multiplicity)
+    return KnotVector(geometry, deg, multiplicity)
 end
 
 function get_max_local_dim(space::BSplineSpace)

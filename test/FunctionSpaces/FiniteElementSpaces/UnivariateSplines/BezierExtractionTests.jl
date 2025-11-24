@@ -26,8 +26,8 @@ mult_length_test = fill(1, n + 1)
 mult_value_test = fill(1, n)
 mult_value_test[3] = -1
 
-@test_throws ArgumentError KnotVector(test_brk, 1, mult_length_test) # Different length test
-@test_throws ArgumentError KnotVector(test_brk, 1, mult_value_test) # Negative multiplicity test
+@test_throws ArgumentError KnotVector(test_patch, 1, mult_length_test) # Different length test
+@test_throws ArgumentError KnotVector(test_patch, 1, mult_value_test) # Negative multiplicity test
 
 # Tests for the BSplineSpace structure construction
 polynomial_degree = 3

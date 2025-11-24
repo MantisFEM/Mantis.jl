@@ -4,26 +4,31 @@
 1-dimensional knot vector.
 
 # Fields
-- `breakpoints::TB`: Vector-like object of the breakpoints.
+- `geometry::G`: A 1D geometry.
 - `polynomial_degree::Int`: Polynomial degree.
 - `multiplicity::TM`: Number of repetitions of each knot.
 """
-struct KnotVector{TB, TM}
-    breakpoints::TB
+struct KnotVector{G, TM}
+    geometry::G
     polynomial_degree::Int
     multiplicity::TM
 
     function KnotVector(
-        breakpoints::TB, polynomial_degree::Int, multiplicity::TM
-    ) where {NT <: Number, TB <: AbstractVector{NT}, TM <: AbstractVector{Int}}
-        if length(breakpoints) != length(multiplicity)
+        geometry::G, polynomial_degree::Int, multiplicity::TM
+    ) where {
+        image_dim,
+        G <: Geometry.AbstractGeometry{1, image_dim, 1},
+        TM <: AbstractVector{Int},
+    }
+        num_elements = Geometry.get_num_elements(geometry)
+        if num_elements + 1 != length(multiplicity)
             throw(
                 ArgumentError(
                     LazyString(
-                        "The number of knots and multiplicities must be the same, but ",
-                        "there are ",
-                        length(breakpoints),
-                        " knots and ",
+                        "The number of breakpoints and multiplicities must be the same, ",
+                        "but there are ",
+                        num_elements + 1,
+                        " breakpoints and ",
                         length(multiplicity),
                         " multiplicities.",
                     ),
@@ -48,19 +53,22 @@ struct KnotVector{TB, TM}
             )
         end
 
-        return new{TB, TM}(breakpoints, polynomial_degree, multiplicity)
+        return new{G, TM}(geometry, polynomial_degree, multiplicity)
     end
 end
 
 function KnotVector(
-    breakpoints::AbstractVector{NT}, polynomial_degree::Int, multiplicity::Int
-) where {NT <: Number}
-    return KnotVector(breakpoints, polynomial_degree, [multiplicity])
+    geometry::G, polynomial_degree::Int, multiplicity::Int
+) where {G <: Geometry.AbstractGeometry{1}}
+    return KnotVector(geometry, polynomial_degree, [multiplicity])
 end
 
-get_knot_vector_types(::KnotVector{TB, TM}) where {TB, TM} = TB, TM
+get_geometry(knot_vector::KnotVector) = knot_vector.geometry
 
-get_num_elements(knot_vector::KnotVector) = length(get_breakpoints(knot_vector)) - 1
+get_knot_vector_types(::KnotVector{G, TM}) where {G, TM} = G, TM
+
+get_num_elements(knot_vector::KnotVector) =
+    Geometry.get_num_elements(get_geometry(knot_vector))
 
 """
     create_knot_vector(
@@ -85,11 +93,11 @@ degree `p` and continuity `regularity[i]` on `breakpoints[i]`.
 - `::KnotVector`: Knot vector.
 """
 function create_knot_vector(
-    breakpoints::AbstractVector{NT},
+    geometry::Geometry.AbstractGeometry{1},
     p::Int,
     breakpoint_condition::AbstractVector{Int},
     condition_type::String,
-) where {NT <: Number}
+)
     if condition_type == "regularity"
         multiplicity = similar(breakpoint_condition)
 
@@ -98,10 +106,10 @@ function create_knot_vector(
             multiplicity[i] = p - breakpoint_condition[i]
         end
 
-        return KnotVector(breakpoints, p, multiplicity)
+        return KnotVector(geometry, p, multiplicity)
 
     elseif condition_type == "multiplicity"
-        return KnotVector(breakpoints, p, breakpoint_condition)
+        return KnotVector(geometry, p, breakpoint_condition)
 
     else
         throw(
@@ -134,23 +142,14 @@ end
 
 get_polynomial_degree(knot_vector::KnotVector) = knot_vector.polynomial_degree
 
-get_breakpoints(knot_vector::KnotVector) = knot_vector.breakpoints
+function get_breakpoints(knot_vector::KnotVector)
+    return Geometry.get_breakpoints_per_dim(
+        Geometry.get_parametric_geometry(get_geometry(knot_vector))
+    )
+end
 
-"""
-    get_element_measure(knot_vector::KnotVector, element_id::Int)
-
-Returns the size of the element specified by `element_id`.
-
-# Arguments
-- `knot_vector::KnotVector`: The B-Spline function space.
-- `element_id::Int`: The id of the element.
-
-# Returns
-- `::Float64`: The size of the element.
-"""
 function get_element_measure(knot_vector::KnotVector, element_id::Int)
-    breakpoints = get_breakpoints(knot_vector)
-    return breakpoints[element_id + 1] - breakpoints[element_id]
+    return Geometry.get_element_measure(get_geometry(knot_vector), element_id)
 end
 
 """
@@ -274,10 +273,10 @@ function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
             knot_vector, basis_id + knot_vector.polynomial_degree + 1
         )
 
-    local_breakpoints = get_breakpoints(knot_vector)[local_idx]
+    local_geometry = Geometry.CartesianGeometry(get_breakpoints(knot_vector)[local_idx])
     local_multiplicity = knot_vector.multiplicity[local_idx]
 
-    return KnotVector(local_breakpoints, knot_vector.polynomial_degree, local_multiplicity)
+    return KnotVector(local_geometry, knot_vector.polynomial_degree, local_multiplicity)
 end
 
 """
