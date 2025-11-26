@@ -25,7 +25,7 @@ include("FormsExports.jl")
 ############################################################################################
 
 """
-    AbstractForm{manifold_dim, form_rank, G}
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Supertype for all form expressions representing differential forms.
 

@@ -8,7 +8,6 @@
 Concrete implementation of a function space for differential forms.
 
 # Fields
-- `geometry::G`: The geometry of the manifold
 - `fem_space::F`: The finite element space(s) used for the form components
 - `label::String`: Label for the form space
 
