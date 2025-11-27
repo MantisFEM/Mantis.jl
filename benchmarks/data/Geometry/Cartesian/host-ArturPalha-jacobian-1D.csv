@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Geometry/Cartesian/jacobian-1D,b4eee92,2025-11-18,1.10.7,2025-11-27,250.000 ns,282.172 ns,280.373 ns,208.000 ns,0.000 ns,400 bytes,15
