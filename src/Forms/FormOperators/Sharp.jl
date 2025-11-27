@@ -125,13 +125,14 @@ function _evaluate_sharp(
 
     form_eval, form_indices = evaluate(form_expression, element_id, xi)
 
-    sharp_eval = Vector{Matrix{Float64}}(undef, num_form_components)
-
+    sharp_eval = [zeros(size(form_eval[1], 1), manifold_dim) for _ in 1:num_form_components]
     # ♯: dξⁱ ↦ ♯(dξⁱ) = gⁱʲ∂ⱼ
-    for component in 1:num_form_components
-        sharp_eval[component] = @views hcat(
-            [form_eval[i] .* inv_g[:, i, component] for i in 1:num_form_components]...
-        )
+    for point in 1:size(form_eval[1], 1)
+        for component in 1:num_form_components
+            for i in 1:num_form_components
+                @views sharp_eval[component][point, :] .+= form_eval[i][point, :] .* inv_g[point][i, component]
+            end
+        end
     end
 
     return sharp_eval, form_indices

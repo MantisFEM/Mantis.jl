@@ -2,14 +2,14 @@
 #                                        Structure                                         #
 ############################################################################################
 
-struct HierarchicalGeometry{manifold_dim, H} <: AbstractGeometry{manifold_dim}
+struct HierarchicalGeometry{manifold_dim, image_dim, H} <: AbstractGeometry{manifold_dim, image_dim, 1}
     hier_space::H
 
     function HierarchicalGeometry(
         hier_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T}
     ) where {manifold_dim, S, T}
         return new{
-            manifold_dim, FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T}
+            manifold_dim, manifold_dim, FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T}
         }(
             hier_space
         )
@@ -20,28 +20,27 @@ end
 #                                      Basic Getters                                       #
 ############################################################################################
 
-function get_space(geometry::HierarchicalGeometry)
+function get_fe_space(geometry::HierarchicalGeometry)
     return geometry.hier_space
 end
 
 function get_num_elements(geometry::HierarchicalGeometry)
-    return FunctionSpaces.get_num_elements(get_space(geometry))
+    return FunctionSpaces.get_num_elements(get_fe_space(geometry))
 end
 
 function get_num_levels(geometry::HierarchicalGeometry)
-    return FunctionSpaces.get_num_levels(get_space(geometry))
-end
-
-function get_domain_dim(::HierarchicalGeometry{manifold_dim, H}) where {manifold_dim, H}
-    return manifold_dim
-end
-
-function get_image_dim(::HierarchicalGeometry{manifold_dim, H}) where {manifold_dim, H}
-    return manifold_dim
+    return FunctionSpaces.get_num_levels(get_fe_space(geometry))
 end
 
 function get_num_subdivisions(geometry::HierarchicalGeometry)
-    return FunctionSpaces.get_num_subdivisions(get_space(geometry))
+    return FunctionSpaces.get_num_subdivisions(get_fe_space(geometry))
+end
+
+# This functions will need to be updated, since it currently assumes a single patch
+# geometry. This will also change when the dependency on FunctionSpaces is flipped.
+function get_parametric_geometry(geometry::HierarchicalGeometry, patch_id::Int)
+    @warn "The `patch_id` argument is currently ignored."
+    return compute_parametric_geometry(get_fe_space(geometry))
 end
 
 ############################################################################################
@@ -53,7 +52,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, H}
-    element_vertices = FunctionSpaces.get_element_vertices(get_space(geometry), element_id)
+    element_vertices = FunctionSpaces.get_element_vertices(get_fe_space(geometry), element_id)
     A = zeros(Float64, manifold_dim, manifold_dim)
     b = zeros(Float64, manifold_dim)
     for k in 1:manifold_dim
@@ -72,30 +71,25 @@ function jacobian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, H}
-    element_vertices = FunctionSpaces.get_element_vertices(get_space(geometry), element_id)
+    element_vertices = FunctionSpaces.get_element_vertices(get_fe_space(geometry), element_id)
     delta = zeros(Float64, manifold_dim)
     for k in 1:manifold_dim
         delta[k] = (element_vertices[k][2] - element_vertices[k][1])
     end
-
     num_points = Points.get_num_points(xi)
-    J = zeros(Float64, num_points, manifold_dim, manifold_dim)
-    for k in range(1, manifold_dim)
-        for point in 1:num_points
-            J[point, k, k] = delta[k]
-        end
-    end
 
-    return J
+    return [
+        SMatrix{manifold_dim, manifold_dim}(LinearAlgebra.I) .* delta for _ in 1:num_points
+    ]
 end
 
 function get_element_vertices(geometry::HierarchicalGeometry, element_id::Int)
     level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
-        get_space(geometry), element_id
+        get_fe_space(geometry), element_id
     )
 
     return FunctionSpaces.get_element_vertices(
-        FunctionSpaces.get_space(get_space(geometry), level), element_level_id
+        FunctionSpaces.get_space(get_fe_space(geometry), level), element_level_id
     )
 end
 

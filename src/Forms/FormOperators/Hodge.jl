@@ -218,9 +218,9 @@ function _evaluate_hodge(
     for id in CartesianIndices(mat_size)
         for component in 1:2
             # First: -(α₁¹g²¹+α₂¹g²²)dξ₁
-            hodge_eval[1][id] += -form_eval[component][id] * inv_g[id[1], 2, component]
+            hodge_eval[1][id] += -form_eval[component][id] * inv_g[id[1]][2, component]
             # Second: (α₁¹g¹¹+α₂¹g¹²)dξ₂
-            hodge_eval[2][id] += form_eval[component][id] * inv_g[id[1], 1, component]
+            hodge_eval[2][id] += form_eval[component][id] * inv_g[id[1]][1, component]
         end
 
         hodge_eval[1][id] *= sqrt_g[id[1]]
@@ -255,7 +255,7 @@ function _evaluate_hodge(
         for h_component in 1:3
             for x_component in 1:3
                 hodge_eval[h_component][id] +=
-                    form_eval[x_component][id] * inv_g[id[1], h_component, x_component]
+                    form_eval[x_component][id] * inv_g[id[1]][h_component, x_component]
             end
 
             hodge_eval[h_component][id] *= sqrt_g[id[1]]
@@ -291,7 +291,7 @@ function _evaluate_hodge(
         for h_component in 1:3
             for x_component in 1:3
                 hodge_eval[h_component][id] +=
-                    form_eval[x_component][id] * g[id[1], h_component, x_component]
+                    form_eval[x_component][id] * g[id[1]][h_component, x_component]
             end
 
             hodge_eval[h_component][id] /= sqrt_g[id[1]]

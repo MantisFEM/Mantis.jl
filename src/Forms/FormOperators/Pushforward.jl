@@ -14,16 +14,19 @@ Evaluate the pushforward of the vector field at the discrete points where it has
 - `::Vector{Matrix{Float64}}`: The evaluated pushforward of the vector field at the discrete points.
 """
 function evaluate_pushforward(
-    vfield::Vector{Matrix{Float64}}, jacobian::Array{Float64, 3}, manifold_dim::Int
+    vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
 )
-    image_dim = size(jacobian, 2)
+    image_dim = size(jacobian[1], 1)
 
     # Gᵢ: v ↦ Gᵢ(v) = Jᵢⱼvʲ
     evaluated_pushforward = Vector{Matrix{Float64}}(undef, image_dim)
-    for component in 1:image_dim
-        evaluated_pushforward[component] = @views reduce(
-            +, [vfield[i] .* jacobian[:, component, i] for i in 1:manifold_dim]
-        )
+    for point in 1:size(vfield[1], 1)
+        for component in 1:image_dim
+            evaluated_pushforward[component] = zeros(size(vfield[1]))
+            for i in 1:manifold_dim
+                @views evaluated_pushforward[component][point, :] .+= vfield[i][point, :] .* jacobian[point][i, component]
+            end
+        end
     end
 
     return evaluated_pushforward
