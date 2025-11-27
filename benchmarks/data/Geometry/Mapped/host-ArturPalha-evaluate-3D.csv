@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Geometry/Mapped/evaluate-3D,b4eee92,2025-11-18,1.10.7,2025-11-27,222.229 μs,232.839 μs,69.154 μs,213.375 μs,0.000 ns,406.72 KiB,19010
