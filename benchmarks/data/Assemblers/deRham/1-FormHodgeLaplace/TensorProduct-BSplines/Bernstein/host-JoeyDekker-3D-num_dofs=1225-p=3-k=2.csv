@@ -4,3 +4,4 @@ Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dof
 Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dofs=1225-p=3-k=2,2625f63,2025-09-22,1.11.7,2025-09-29,2.248 s,2.275 s,119.113 ms,2.076 s,241.901 ms,1.86 GiB,388293
 Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dofs=1225-p=3-k=2,18c880f,2025-10-30,1.12.1,2025-10-31,1.770 s,1.766 s,11.027 ms,1.750 s,287.816 ms,1.91 GiB,507457
 Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dofs=1225-p=3-k=2,b4eee92,2025-11-18,1.12.1,2025-11-18,1.801 s,1.801 s,11.072 ms,1.784 s,294.081 ms,1.90 GiB,507265
+Assemblers\deRham\1-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dofs=1225-p=3-k=2,081cb17,2025-11-27,1.12.2,2025-11-28,1.770 s,1.766 s,23.509 ms,1.734 s,285.454 ms,1.90 GiB,251649
