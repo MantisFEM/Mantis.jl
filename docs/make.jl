@@ -127,10 +127,11 @@ makedocs(
     ),
 )
 
-DocumenterVitepress.deploydocs(;
-    repo="github.com/MantisFEM/MantisDev.jl",
-    target="build", # this is where Vitepress stores its output
-    devbranch="main",
-    branch="gh-pages",
-    push_preview=true,
-)
+# This is only intended for the public repo
+# DocumenterVitepress.deploydocs(;
+#     repo="github.com/MantisFEM/MantisDev.jl",
+#     target="build", # this is where Vitepress stores its output
+#     devbranch="main",
+#     branch="gh-pages",
+#     push_preview=true,
+# )
