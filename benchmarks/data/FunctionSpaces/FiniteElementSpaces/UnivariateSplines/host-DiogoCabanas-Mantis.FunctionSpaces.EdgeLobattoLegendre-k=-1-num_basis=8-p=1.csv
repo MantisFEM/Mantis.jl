@@ -2,4 +2,4 @@ benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,
 FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.EdgeLobattoLegendre-k=-1-num_basis=8-p=1,2625f63,2025-09-22,1.11.7,2025-09-29,662.000 ns,720.298 ns,757.446 ns,601.000 ns,0.000 ns,752 bytes,8
 FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.EdgeLobattoLegendre-k=-1-num_basis=8-p=1,18c880f,2025-10-30,1.11.7,2025-11-03,641.000 ns,723.264 ns,643.402 ns,591.000 ns,0.000 ns,1.08 KiB,16
 FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.EdgeLobattoLegendre-k=-1-num_basis=8-p=1,b4eee92,2025-11-18,1.12.1,2025-11-21,591.000 ns,671.638 ns,461.353 ns,551.000 ns,0.000 ns,1.08 KiB,16
-FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.EdgeLobattoLegendre-k=-1-num_basis=8-p=1,081cb17,2025-11-27,1.12.2,2025-11-28,711.000 ns,782.228 ns,536.585 ns,661.000 ns,0.000 ns,1.08 KiB,16
+FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.EdgeLobattoLegendre-k=-1-num_basis=8-p=1,081cb17,2025-11-27,1.12.2,2025-12-02,601.500 ns,706.440 ns,887.834 ns,531.000 ns,0.000 ns,1.08 KiB,16

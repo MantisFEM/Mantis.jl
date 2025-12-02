@@ -4,4 +4,4 @@ Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dof
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=65-p=3-k=2,2625f63,2025-09-22,1.11.7,2025-09-29,1.571 ms,1.674 ms,249.243 μs,1.518 ms,0.000 ns,2.50 MiB,11900
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=65-p=3-k=2,18c880f,2025-10-30,1.11.7,2025-11-03,1.250 ms,1.392 ms,313.085 μs,1.146 ms,0.000 ns,2.53 MiB,11088
 Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=65-p=3-k=2,b4eee92,2025-11-18,1.12.1,2025-11-21,1.191 ms,1.218 ms,135.787 μs,1.093 ms,0.000 ns,2.52 MiB,11240
-Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=65-p=3-k=2,081cb17,2025-11-27,1.12.2,2025-11-28,1.043 ms,1.086 ms,139.901 μs,1.030 ms,0.000 ns,2.44 MiB,7748
+Assemblers/deRham/1-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=65-p=3-k=2,081cb17,2025-11-27,1.12.2,2025-12-02,1.050 ms,1.041 ms,33.781 μs,977.765 μs,0.000 ns,2.44 MiB,7748
