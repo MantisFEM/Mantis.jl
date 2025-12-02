@@ -210,13 +210,81 @@ geom_cart_ext = Geometry.CartesianGeometry((0.0:1.0:1.0, 0.0:1.0:1.0))
 geometry2to3_ext = Mantis.Geometry.MappedGeometry(geom_cart_ext, mapping2to3_ext)
 
 Jans(u, v) = [1.0 0.0; 0.0 1.0; v u]
+gans(u, v) = [1.0+v^2 u*v; u*v 1.0+u^2]
+sqrtgans(u, v) = sqrt(1.0 + u^2 + v^2)
+ginvans(u, v) = (1.0 / (1.0 + u^2 + v^2)) .* [1.0+u^2 -u*v; -u*v 1.0+v^2]
+Hans(u, v) = ([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0], [0.0 1.0; 1.0 0.0])
+dgduans(u, v) = [0.0 v; v 2*u]
+dgdvans(u, v) = [2*v u; u 0.0]
+dginvgduans(u, v) =
+    (1.0 / (1.0 + u^2 + v^2)^2) .*
+    [2.0*u*v^2 -v + u^2 * v-v^3; -v + u^2 * v-v^3 -2 * u-2.0 * u * v^2]
+dginvgdvans(u, v) =
+    (1.0 / (1.0 + u^2 + v^2)^2) .*
+    [-2 * v-2.0 * u^2 * v -u + u * v^2-u^3; -u + u * v^2-u^3 2.0*u^2*v]
 
-xi = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
     geometry2to3_ext, 1, xi
 )
 for p in eachindex(xi)
     @test all(isapprox.(J[p], Jans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(g[p], gans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(sqrt_g[p], sqrtgans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(inv_g[p], ginvans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(Hs[p][1], Hans(xi[p]...)[1], rtol=1e-14))
+    @test all(isapprox.(Hs[p][2], Hans(xi[p]...)[2], rtol=1e-14))
+    @test all(isapprox.(Hs[p][3], Hans(xi[p]...)[3], rtol=1e-14))
+    @test all(isapprox.(dgdxs[1][p], dgduans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(dgdxs[2][p], dgdvans(xi[p]...), rtol=1e-14))
+    @test all(isapprox.(dinv_g_dxs[1][p], dginvgduans(xi[p]...), rtol=1e-12))
+    @test all(isapprox.(dinv_g_dxs[2][p], dginvgdvans(xi[p]...), rtol=1e-12))
+end
+
+# Same geometry as before, but using multiple elements.
+mapping2to3_ext2 = Mantis.Geometry.Mapping((2, 3), geo, dgeo, ddgeo)
+geom_cart_ext2 = Geometry.CartesianGeometry((0.0:(1.0 / 3):1.0, 0.0:(1.0 / 4):1.0))
+geometry2to3_ext2 = Mantis.Geometry.MappedGeometry(geom_cart_ext2, mapping2to3_ext2)
+
+Jans(u, v) = [1.0/3 0.0; 0.0 1.0/4; v/3 u/4]
+gans(u, v) = [(1.0 + v^2)/9 (u * v)/12; (u * v)/12 (1.0 + u^2)/16]
+sqrtgans(u, v) = sqrt(1.0 + u^2 + v^2) * 1 / 12.0
+ginvans(u, v) =
+    (144.0 / (1.0 + u^2 + v^2)) .* [(1.0 + u^2)/16 (-u * v)/12; (-u * v)/12 (1.0 + v^2)/9]
+Hans(u, v) = ([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0], [0.0 1.0/12; 1.0/12 0.0])
+dgduans(u, v) = [0.0 v/36; v/36 (2 * u)/48]
+dgdvans(u, v) = [(2 * v)/36 u/48; u/48 0.0]
+dginvgduans(u, v) =
+    (144.0 / (1.0 + u^2 + v^2)^2) .* [
+        (2.0 * u * v^2) / 16/3 (-v + u^2 * v - v^3) / 12/3
+        (-v + u^2 * v - v^3) / 12/3 (-2 * u - 2.0 * u * v^2) / 9/3
+    ]
+dginvgdvans(u, v) =
+    (144.0 / (1.0 + u^2 + v^2)^2) .* [
+        (-2 * v - 2.0 * u^2 * v) / 16/4 (-u + u * v^2 - u^3) / 12/4
+        (-u + u * v^2 - u^3) / 12/4 (2.0 * u^2 * v) / 9/4
+    ]
+
+xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+for (k, IJ) in enumerate(CartesianIndices((3, 4)))
+    J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+        geometry2to3_ext2, k, xi
+    )
+    uv = Geometry.evaluate(geom_cart_ext2, k, xi)
+    for p in eachindex(xi)
+        u, v = uv[p, :]
+        @test all(isapprox.(J[p], Jans(u, v), rtol=1e-12))
+        @test all(isapprox.(g[p], gans(u, v), rtol=1e-14))
+        @test all(isapprox.(sqrt_g[p], sqrtgans(u, v), rtol=1e-14))
+        @test all(isapprox.(inv_g[p], ginvans(u, v), rtol=1e-14))
+        @test all(isapprox.(Hs[p][1], Hans(u, v)[1], rtol=1e-14))
+        @test all(isapprox.(Hs[p][2], Hans(u, v)[2], rtol=1e-14))
+        @test all(isapprox.(Hs[p][3], Hans(u, v)[3], rtol=1e-14))
+        @test all(isapprox.(dgdxs[1][p], dgduans(u, v), rtol=1e-14))
+        @test all(isapprox.(dgdxs[2][p], dgdvans(u, v), rtol=1e-14))
+        @test all(isapprox.(dinv_g_dxs[1][p], dginvgduans(u, v), rtol=1e-12))
+        @test all(isapprox.(dinv_g_dxs[2][p], dginvgdvans(u, v), rtol=1e-12))
+    end
 end
 
 end

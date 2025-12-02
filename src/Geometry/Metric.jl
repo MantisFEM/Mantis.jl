@@ -113,20 +113,16 @@ function metric_derivatives(
             transpose(dJ[i][p]) * J[p] + transpose(J[p]) * dJ[i][p] for
             p in eachindex(dJ[i], J)
         ]
-        # return @. transpose(dJ[i]) * J + transpose(J) * dJ[i]
     end
-    # dg^-1 = -g^-1 dg g
+    # dg^-1 = -g^-1 dg g^-1
     dinv_g_dxs = ntuple(Val(manifold_dim)) do i
         return [-inv_g[p] * dgdxs[i][p] * inv_g[p] for p in eachindex(inv_g, dgdxs[i])]
-        # return @. -inv_g * dgdxs[i] * inv_g
     end
-    # sqrt(det(g)) = 0.5 sqrt(det(g)) tr(dg g^-1)
     dsqrt_g_dxs = ntuple(Val(manifold_dim)) do i
         return [
             0.5 * sqrt_g[p] * LinearAlgebra.tr(dgdxs[i][p] * inv_g[p]) for
             p in eachindex(sqrt_g, inv_g, dgdxs[i])
         ]
-        # return @. 0.5 * sqrt_g * LinearAlgebra.tr(dgdxs[i] * inv_g)
     end
 
     return J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs
