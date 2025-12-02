@@ -164,6 +164,7 @@ basic_tests(geometryMP, answers_MP)
 
 for i in 1:Geometry.get_num_elements(geometryMP)
     jac = Geometry.jacobian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
+    hess = Geometry.hessian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
     if i <= 4
         for p in axes(jac, 1)
             @test all(isapprox.(jac[p][:, :], [0.5 0.0; 0.0 0.85], rtol=1e-14))
@@ -176,6 +177,10 @@ for i in 1:Geometry.get_num_elements(geometryMP)
         for p in axes(jac, 1)
             @test all(isapprox.(jac[p][:, :], [1/3 0.0; 0.0 1/5], rtol=1e-14))
         end
+    end
+    for p in eachindex(hess)
+        @test all(isapprox.(hess[p][1][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
+        @test all(isapprox.(hess[p][2][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
     end
 end
 
@@ -207,16 +212,22 @@ basic_tests(geometryMP100, answers_MP100)
 @test Geometry.get_patch_and_local_element_id(geometryMP100, 12) == (5, 2)
 
 all_jac_MP100 = true
+all_hess_MP100 = true
 for i in 1:Geometry.get_num_elements(geometryMP100)
     jac = Geometry.jacobian(geometryMP100, i, Points.CartesianPoints(([0.0, 1.0],)))
+    hess = Geometry.hessian(geometryMP100, i, Points.CartesianPoints(([0.0, 1.0],)))
 
-    for p in axes(jac, 1)
+    for p in eachindex(jac, hess)
         if !all(isapprox.(jac[p][:, :], [1.0 / i], rtol=1e-14))
             all_jac_MP100 = false
+        end
+        if !all(isapprox.(hess[p][1][:, :], [0.0], rtol=1e-14))
+            all_hess_MP100 = false
         end
     end
 end
 @test all_jac_MP100
+@test all_hess_MP100
 
 # Test errors:
 # Element_id is too high

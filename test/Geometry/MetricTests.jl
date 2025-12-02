@@ -189,4 +189,34 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     )
 end
 
+# Same geometry as before, but using only 1 element. This way, all the expressions are just
+# those coming from the mapping.
+ddgeo(x) = (
+    [
+        [0.0 0.0]
+        [0.0 0.0]
+    ],
+    [
+        [0.0 0.0]
+        [0.0 0.0]
+    ],
+    [
+        [0.0 1.0]
+        [1.0 0.0]
+    ],
+)
+mapping2to3_ext = Mantis.Geometry.Mapping((2, 3), geo, dgeo, ddgeo)
+geom_cart_ext = Geometry.CartesianGeometry((0.0:1.0:1.0, 0.0:1.0:1.0))
+geometry2to3_ext = Mantis.Geometry.MappedGeometry(geom_cart_ext, mapping2to3_ext)
+
+Jans(u, v) = [1.0 0.0; 0.0 1.0; v u]
+
+xi = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+    geometry2to3_ext, 1, xi
+)
+for p in eachindex(xi)
+    @test all(isapprox.(J[p], Jans(xi[p]...), rtol=1e-14))
+end
+
 end
