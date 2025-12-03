@@ -16,26 +16,22 @@ function evaluate_pushforward(
     vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
 )
     image_dim = size(jacobian[1], 1)
-
     # Gᵢ: v ↦ Gᵢ(v) = Jᵢⱼvʲ
-    evaluated_pushforward = Vector{Matrix{Float64}}(undef, image_dim)
-
-    for new_component in 1:image_dim
-        evaluated_pushforward[new_component] = zeros(size(vfield[1]))
-        for point in 1:size(vfield[1], 1)
+    eval_dims = size(vfield[1])
+    evaluated_pushforward = [zeros(eval_dims) for _ in 1:image_dim]
+    for point in 1:eval_dims[1]
+        jacobian_point = jacobian[point]
+        for new_component in 1:image_dim
+            pushforward_row = view(evaluated_pushforward[new_component], point, :)
             for old_component in 1:manifold_dim
-                for b in axes(evaluated_pushforward[new_component], 2)
-                    evaluated_pushforward[new_component][point, b] +=
-                        jacobian[point][new_component, old_component] *
-                        vfield[old_component][point, b]
-                end
+                old_row = view(vfield[old_component], point, :)
+                pushforward_row .+= jacobian_point[new_component, old_component] .* old_row
             end
         end
     end
 
     return evaluated_pushforward
 end
-
 
 """
     evaluate_sharp_pushforward(
