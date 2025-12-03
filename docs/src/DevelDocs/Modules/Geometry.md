@@ -1,7 +1,5 @@
 # Geometry
-```@meta
-CurrentModule = Mantis.Geometry
-```
+
 Mantis' `Geometry` module contains all functionality related to geometry.
 
 ## Geometry
@@ -110,5 +108,5 @@ where ``r = \mathtt{element\_idx}``, and ``k = j_{1} + \sum_{i=2}^{n} (j_{i} -
 
 ## All docstrings from Mantis.Geometry
 ```@autodocs
-Modules = []
+Modules = [Mantis.Geometry]
 ```
