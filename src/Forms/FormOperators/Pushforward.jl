@@ -1,4 +1,3 @@
-# There should be a vector expression and a vector field.
 """
     evaluate_pushforward(vfield::Vector{Matrix{Float64}},
                          jacobian::Array{Float64,3})
@@ -20,11 +19,16 @@ function evaluate_pushforward(
 
     # Gᵢ: v ↦ Gᵢ(v) = Jᵢⱼvʲ
     evaluated_pushforward = Vector{Matrix{Float64}}(undef, image_dim)
-    for point in 1:size(vfield[1], 1)
-        for component in 1:image_dim
-            evaluated_pushforward[component] = zeros(size(vfield[1]))
-            for i in 1:manifold_dim
-                @views evaluated_pushforward[component][point, :] .+= vfield[i][point, :] .* jacobian[point][i, component]
+
+    for new_component in 1:image_dim
+        evaluated_pushforward[new_component] = zeros(size(vfield[1]))
+        for point in 1:size(vfield[1], 1)
+            for old_component in 1:manifold_dim
+                for b in axes(evaluated_pushforward[new_component], 2)
+                    evaluated_pushforward[new_component][point, b] +=
+                        jacobian[point][new_component, old_component] *
+                        vfield[old_component][point, b]
+                end
             end
         end
     end
@@ -32,7 +36,7 @@ function evaluate_pushforward(
     return evaluated_pushforward
 end
 
-# TODO Similar thing here. This is a concrete expression. If we make general expressions and combine them, everything becomes simpler.
+
 """
     evaluate_sharp_pushforward(
         form_expression::AbstractForm{manifold_dim, 1, 0},
