@@ -82,7 +82,8 @@ makedocs(;
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
-    format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main"),
+    format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main",
+        deploy_url="https://mantisfem.github.io/Mantis.jl"),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
