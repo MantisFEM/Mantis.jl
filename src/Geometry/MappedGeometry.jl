@@ -1,44 +1,72 @@
 
-struct Mapping{M, dM}
+abstract type AbstractMapping{manifold_dim, image_dim} end
+
+struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
+       AbstractMapping{manifold_dim, image_dim}
     dimensions::NTuple{2, Int}
     mapping::M
     dmapping::dM
+    ddmapping::ddM
 
     function Mapping(
-        dimensions::NTuple{2, Int}, mapping::M, dmapping::dM
-    ) where {M <: Function, dM <: Function}
-        return new{M, dM}(dimensions, mapping, dmapping)
+        dimensions::NTuple{2, Int}, mapping::M, dmapping::dM, ddmapping::ddM=nothing
+    ) where {M <: Function, dM <: Function, ddM <: Union{Nothing, Function}}
+        return new{dimensions[1], dimensions[2], M, dM, ddM}(
+            dimensions, mapping, dmapping, ddmapping
+        )
+    end
+
+    function Mapping(
+        ::Val{manifold_dim},
+        ::Val{image_dim},
+        mapping::M,
+        dmapping::dM,
+        ddmapping::ddM=nothing,
+    ) where {
+        manifold_dim,
+        image_dim,
+        M <: Function,
+        dM <: Function,
+        ddM <: Union{Nothing, Function},
+    }
+        return new{manifold_dim, image_dim, M, dM, ddM}(
+            dimensions, mapping, dmapping, ddmapping
+        )
     end
 end
 
 """
-    get_manifold_dim(mapping::Mapping)
+    get_manifold_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
 
 Returns the dimension of the domain manifold of the mapping.
 
 # Arguments
-- `mapping::Mapping`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the domain manifold.
 """
-function get_manifold_dim(mapping::Mapping)
-    return mapping.dimensions[1]
+function get_manifold_dim(
+    ::Mapping{manifold_dim, image_dim, M, dM}
+) where {manifold_dim, image_dim, M, dM}
+    return manifold_dim
 end
 
 """
-    get_image_dim(mapping::Mapping)
+    get_image_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
 
 Returns the dimension of the image manifold of the mapping.
 
 # Arguments
-- `mapping::Mapping`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the image manifold.
 """
-function get_image_dim(mapping::Mapping)
-    return mapping.dimensions[2]
+function get_image_dim(
+    ::Mapping{manifold_dim, image_dim, M, dM}
+) where {manifold_dim, image_dim, M, dM}
+    return image_dim
 end
 
 """
@@ -67,92 +95,245 @@ function evaluate(mapping::Mapping, x::Matrix{Float64})
     return eval
 end
 
-"""
-    jacobian(mapping::Mapping, x::Matrix{Float64})
-
-Evaluates the jacobian at the physical points mapped from the parametric points `x`.
-
-# Arguments
-- `mapping::Mapping`: The mapping defining the transformation of the points `x`.
-- `x::Matrix{Float64}`: The points in parametric space to be mapped.
-
-# Returns
-- `::Matrix{Float64}`: The mapped points in physical space. The size of the matrix is
-    `(num_points, image_dim, manifold_dim)`, where `num_points` is the number of rows in
-    `x`, `image_dim` is the dimension of the mapped points and `manifold_dim` is the number
-    of columns in `x`.
-"""
 function jacobian(
-    mapping::Mapping{M, dM}, x::Matrix{Float64}
-) where {M <: Function, dM <: Function}
-    manifold_dim = get_manifold_dim(mapping)
-    image_dim = get_image_dim(mapping)
+    mapping::Mapping{manifold_dim, image_dim, M, dM}, x::Matrix{Float64}
+) where {manifold_dim, image_dim, M <: Function, dM <: Function}
     num_points = size(x, 1)
-    J = zeros(num_points, image_dim, manifold_dim)
 
-    for i in 1:num_points
-        # Compute Jacobian for each input point
-        J[i, :, :] .= mapping.dmapping(view(x, i, :))
-    end
-
-    return J
+    return [
+        SMatrix{image_dim, manifold_dim}(mapping.dmapping(view(x, i, :))) for
+        i in 1:num_points
+    ]
 end
 
-struct MappedGeometry{manifold_dim, G, Map} <: AbstractGeometry{manifold_dim}
+function hessian(
+    mapping::Mapping{manifold_dim, image_dim, M, dM, ddM}, x::Matrix{Float64}
+) where {manifold_dim, image_dim, M <: Function, dM <: Function, ddM <: Function}
+    return [
+        ntuple(image_dim) do i
+            return SMatrix{manifold_dim, manifold_dim}(mapping.ddmapping(view(x, p, :))[i])
+        end for p in axes(x, 1)
+    ]
+end
+
+struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
+       AbstractGeometry{manifold_dim, image_dim, num_patches}
     geometry::G
     mapping::Map
     num_elements::Int
+    num_elements_per_patch::NTuple{num_patches, Int}
 
+    # Constructor for multiple mappings, one per patch, with each parametric geometry being
+    # a different object for each patch.
+    function MappedGeometry(
+        geometry::G, mapping::M
+    ) where {
+        manifold_dim,
+        image_dim_base,
+        image_dim,
+        num_patches,
+        G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
+        M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
+    }
+        num_elements_per_patch = ntuple(num_patches) do geo_i
+            get_num_elements(geometry[geo_i])
+        end
+
+        return new{manifold_dim, image_dim, num_patches, G, M}(
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        )
+    end
+
+    # Constructor for multiple mappings, one per patch, with the parametric geometry being
+    # only one object. If this is a single patch geometry, this one geometry will be used
+    # for every patch. If it is a multi-patch geometry, it must have the same number of
+    # patches as the number of mappings.
+    function MappedGeometry(
+        geometry::G, mapping::M
+    ) where {
+        manifold_dim,
+        image_dim_base,
+        image_dim,
+        num_patches,
+        num_patches_G,
+        G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
+        M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
+    }
+        if !(num_patches_G == 1 || num_patches_G == num_patches)
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The underlying geometry must have either one patch or the same ",
+                        "number of patches as there are mappings, but the geometry has ",
+                        num_patches_G,
+                        " patches, while there are ",
+                        num_patches,
+                        " mappings.",
+                    ),
+                ),
+            )
+        end
+
+        if num_patches_G == 1
+            num_elements_per_patch = ntuple(num_patches) do i
+                return get_num_elements(geometry)
+            end
+        else
+            num_elements_per_patch = get_num_elements_per_patch(geometry)
+        end
+
+        return new{manifold_dim, image_dim, num_patches, G, M}(
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        )
+    end
+
+    # Constructor for a single mapping for all patches.
     function MappedGeometry(
         geometry::G, mapping::Map
-    ) where {manifold_dim, G <: AbstractGeometry{manifold_dim}, Map <: Mapping}
-        num_elements = get_num_elements(geometry)
+    ) where {
+        manifold_dim,
+        image_dim_base,
+        image_dim,
+        num_patches,
+        G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
+        Map <: AbstractMapping{manifold_dim, image_dim},
+    }
+        num_elements_per_patch = ntuple(num_patches) do geo_i
+            get_num_elements(geometry[geo_i])
+        end
 
-        return new{manifold_dim, G, Map}(geometry, mapping, num_elements)
+        return new{manifold_dim, image_dim, num_patches, G, Map}(
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        )
+    end
+
+    # Constructor for a single mapping for a single patch.
+    function MappedGeometry(
+        geometry::G, mapping::Map
+    ) where {
+        manifold_dim,
+        image_dim_base,
+        image_dim,
+        G <: AbstractGeometry{manifold_dim, image_dim_base, 1},
+        Map <: AbstractMapping{manifold_dim, image_dim},
+    }
+        num_elements_per_patch = get_num_elements_per_patch(geometry)
+
+        return new{manifold_dim, image_dim, 1, G, Map}(
+            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        )
     end
 end
 
-function get_image_dim(geometry::MappedGeometry)
-    return geometry.mapping.dimensions[2]
+# Get properties.
+function get_base_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    return geometry.geometry
 end
 
+function get_base_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+) where {
+    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
+}
+    return geometry.geometry[patch_id]
+end
+
+function get_mapping(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+) where {manifold_dim, image_dim, num_patches, G, Map <: Mapping}
+    return geometry.mapping
+end
+
+function get_mapping(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+) where {manifold_dim, image_dim, num_patches, G, Map <: NTuple{num_patches, Mapping}}
+    return geometry.mapping[patch_id]
+end
+
+# Getters for geometries.
+function get_parametric_geometry(geometry::MappedGeometry)
+    return get_parametric_geometry(get_base_geometry(geometry))
+end
+
+function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
+    return get_parametric_geometry(get_base_geometry(geometry, patch_id))
+end
+
+# Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
-    return get_element_lengths(geometry.geometry, element_id)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_lengths(
+        get_parametric_geometry(geometry, patch_id), local_element_id
+    )
 end
 
 function get_element_measure(geometry::MappedGeometry, element_id::Int)
-    return get_element_measure(geometry.geometry, element_id)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_measure(
+        get_parametric_geometry(geometry, patch_id), local_element_id
+    )
 end
 
+function get_element_vertices(geometry::MappedGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_vertices(
+        get_parametric_geometry(geometry, patch_id), local_element_id
+    )
+end
+
+# Evaluations and derivatives.
 function evaluate(
-    geometry::MappedGeometry, element_idx::Int, xi::Points.AbstractPoints{manifold_dim}
-) where {manifold_dim}
-    x = evaluate(geometry.geometry, element_idx, xi)
-    x_mapped = evaluate(geometry.mapping, x)
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, G, Map}
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    x = evaluate(get_base_geometry(geometry, patch_id), local_element_id, xi)
+    x_mapped = evaluate(get_mapping(geometry, patch_id), x)
 
     return x_mapped
 end
 
 function jacobian(
-    geometry::MappedGeometry, element_idx::Int, xi::Points.AbstractPoints{manifold_dim}
-) where {manifold_dim}
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, G, Map}
     # the Jacobian for the mapping from the elements to base geometry image
-    J_1 = jacobian(geometry.geometry, element_idx, xi)
-    x = evaluate(geometry.geometry, element_idx, xi)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, patch_id)
+    J_1 = jacobian(base_geometry, local_element_id, xi)
+    x = evaluate(base_geometry, local_element_id, xi)
     # the mapping from the image of the  base geometry to the image of the mapping
-    J_2 = jacobian(geometry.mapping, x)
+    J_2 = jacobian(get_mapping(geometry, patch_id), x)
 
-    num_points = size(x, 1)
-    image_dim = get_image_dim(geometry)
-    J_1_image_dim = get_image_dim(geometry.geometry)
+    return J_2 .* J_1
+end
 
-    J = zeros(num_points, image_dim, manifold_dim)
-    for k_im_1 in 1:J_1_image_dim
-        for cart_id in CartesianIndices(J)
-            (point, k_im, k_mani) = Tuple(cart_id)
-            J[point, k_im, k_mani] += J_2[point, k_im, k_im_1] * J_1[point, k_im_1, k_mani]
-        end
-    end
+function hessian(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches}
+    # Jacobian and Hessian of the base geometry
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, patch_id)
+    x = evaluate(base_geometry, local_element_id, xi)
+    Jb = jacobian(base_geometry, local_element_id, xi)
+    Hbs = hessian(base_geometry, local_element_id, xi)
 
-    return J
+    Jm = jacobian(get_mapping(geometry, patch_id), x)
+    Hms = hessian(get_mapping(geometry, patch_id), x)
+
+    return [
+        ntuple(image_dim) do i
+            return transpose(Jb[p]) * Hms[p][i] * Jb[p] +
+                   SMatrix{manifold_dim, manifold_dim}(
+                sum(Jm[p][i, j] * Hbs[p][j][uv] for j in 1:manifold_dim) for
+                uv in eachindex(Hbs[p][1])
+            )
+        end for p in eachindex(Jb, Jm, Hms, Hbs)
+    ]
 end

@@ -3,19 +3,22 @@
 ################################################################################
 
 """
-    create_cartesian_box(starting_points::NTuple{manifold_dim, Float64}, box_sizes::NTuple{manifold_dim, Float64}, num_elements::NTuple{manifold_dim, Int}) where {manifold_dim}
+    create_cartesian_box(
+        starting_points::NTuple{manifold_dim, Float64},
+        box_sizes::NTuple{manifold_dim, Float64},
+        num_elements::NTuple{manifold_dim, Int},
+    ) where {manifold_dim}
 
-Create a Cartesian box geometry with `manifold_dim` dimensions, starting at `starting_points` and with `box_sizes` and `num_elements` defining the size of the box.
+Create a Cartesian box geometry with `manifold_dim` dimensions, starting at
+`starting_points` and with `box_sizes` and `num_elements` defining the size of the box.
 
 # Arguments
-
   - `starting_points::NTuple{manifold_dim, Float64}`: The starting points of the box.
   - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box.
   - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
 
 # Output
-
-  - `geometry::CartesianGeometry{manifold_dim}`: The Cartesian box geometry.
+  - `::CartesianGeometry{manifold_dim}`: The Cartesian box geometry.
 """
 function create_cartesian_box(
     starting_points::NTuple{manifold_dim, Float64},
@@ -25,22 +28,27 @@ function create_cartesian_box(
     breakpoints = map(
         LinRange, starting_points, starting_points .+ box_sizes, num_elements .+ 1
     )
-    return CartesianGeometry(map(collect, breakpoints))
+    return CartesianGeometry(breakpoints)
 end
 
 """
-    create_curvilinear_square(num_el::NTuple{2,Int}, crazy_c::Float64 = 0.2)
+    create_curvilinear_square(
+        starting_points::NTuple{2, Float64},
+        box_sizes::NTuple{2, Float64},
+        num_elements::NTuple{2, Int};
+        c::Float64=0.1,
+    )
 
-Create a curvilinear square geometry with `num_el` elements in each direction and a `crazy_c` parameter.
+Create a single-patch curvilinear square geometry with `num_elements` elements in each
+direction and a `c` parameter to change the deformation of the mapping. Not that the mapping
+becomes singular with `c` = 0.3.
 
 # Arguments
-
-  - `num_el::NTuple{2,Int}`: The number of elements in each direction.
-  - `crazy_c::Float64 = 0.2`: The `crazy_c` parameter.
+  - `num_elements::NTuple{2,Int}`: The number of elements in each direction.
+  - `c::Float64 = 0.2`: The `c` parameter.
 
 # Output
-
-  - `geometry::MappedGeometry{2}`: The curvilinear square geometry.
+  - `geometry::MappedGeometry{2, 2, 1}`: The curvilinear square geometry.
 """
 function create_curvilinear_square(
     starting_points::NTuple{2, Float64},
@@ -50,9 +58,6 @@ function create_curvilinear_square(
 )
     # build underlying Cartesian geometry
     unit_square = create_cartesian_box(starting_points, box_sizes, num_elements)
-    if crazy_c == 0.0
-        return unit_square
-    end
 
     # build curved mapping
     function mapping(x::AbstractVector)
@@ -71,8 +76,8 @@ function create_curvilinear_square(
         x2_new =
             (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
         return [
-            1.0+pi * crazy_c * cospi(x1_new) * sinpi(x2_new) ((box_sizes[1])/(box_sizes[2]))*pi*crazy_c*sinpi(x1_new)*cospi(x2_new)
-            ((box_sizes[2])/(box_sizes[1]))*pi*crazy_c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
+            1.0+pi * crazy_c * cospi(x1_new) * sinpi(x2_new) (box_sizes[1]/box_sizes[2])*pi*crazy_c*sinpi(x1_new)*cospi(x2_new)
+            (box_sizes[2]/box_sizes[1])*pi*crazy_c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
         ]
     end
     dimension = (2, 2)

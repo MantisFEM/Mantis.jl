@@ -14,8 +14,17 @@ end
 @testset "TensorProductGeometry" begin
     include("TensorProductGeometryTests.jl")
 end
+@testset "UnstructuredGeometry" begin
+    include("UnstructuredGeometryTests.jl")
+end
 @testset "Metric" begin
     include("MetricTests.jl")
+end
+@testset "ErrorBehaviour" begin
+    include("GeometryErrorsTests.jl")
+end
+@testset "Inference" begin
+    include("GeometryInferenceTests.jl")
 end
 
 end

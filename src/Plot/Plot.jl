@@ -7,6 +7,7 @@ The exported names are:
 module Plot
 
 import WriteVTK
+using GLMakie
 
 using ..GeneralHelpers
 using ..Points
