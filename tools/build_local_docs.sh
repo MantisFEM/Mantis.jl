@@ -5,7 +5,7 @@ cd docs
 
 # Build the html pages. Make sure to instantiate the correct environment.
 # Also takes care of dev-ing Mantis.
-julia -e 'import Pkg; Pkg.activate("."); Pkg.develop(path=dirname(pwd())); Pkg.instantiate();'
+julia -e 'import Pkg; Pkg.activate("."); Pkg.develop(path=".."); Pkg.instantiate();'
 julia --color=yes --project make.jl
 if [ $? -ne 0 ]; then  
     echo "[build_local_docs.sh]: Failed to build the documentation. Exiting..."  

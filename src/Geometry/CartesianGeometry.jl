@@ -174,3 +174,17 @@ function jacobian(
         _ in 1:Points.get_num_points(xi)
     ]
 end
+
+function hessian(
+    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches}
+    # The Hessian is zero for Cartesian geometries.
+    num_points = Points.get_num_points(xi)
+    return [
+        ntuple(image_dim) do _
+            return zeros(SMatrix{manifold_dim, manifold_dim})
+        end for _ in 1:num_points
+    ]
+end

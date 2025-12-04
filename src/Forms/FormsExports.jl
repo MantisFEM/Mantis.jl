@@ -1,1 +1,1 @@
-export d, ★, ♯, ∧, ∫
+export d, ★, ♯, ∧, ∫, codifferential, dstar, δ

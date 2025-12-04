@@ -172,6 +172,19 @@ function get_constituent_jacobians(
     return const_jac
 end
 
+function get_constituent_hessians(
+    geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, num_geometries}
+    const_geometries = get_constituent_geometries(geometry)
+    const_element_id = get_constituent_element_id(geometry, element_id)
+    const_xi = get_constituent_evaluation_points(geometry, xi)
+    const_jac = map(hessian, const_geometries, const_element_id, const_xi)
+
+    return const_jac
+end
+
 # Getters for geometries.
 function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
     const_num_patches = ntuple(
@@ -343,4 +356,92 @@ function jacobian(
     end
 
     return J
+end
+
+function hessian(
+    geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
+    element_id::Int,
+    xi::Points.CartesianPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, num_geometries}
+    const_hessians = get_constituent_hessians(geometry, element_id, xi)
+    const_image_indices = get_constituent_image_indices(geometry)
+    const_manifold_indices = get_constituent_manifold_indices(geometry)
+    const_eval_points = get_constituent_evaluation_points(geometry, xi)
+    const_num_points = map(Points.get_num_points, const_eval_points)
+    cart_num_points = CartesianIndices(const_num_points)
+
+    num_eval_points = Points.get_num_points(xi)
+
+    H = [
+        _hessian_per_point(
+            geometry,
+            const_hessians,
+            const_image_indices,
+            const_manifold_indices,
+            Tuple(cart_num_points[point]),
+        ) for point in 1:num_eval_points
+    ]
+
+    return H
+end
+
+function hessian(
+    geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches, num_geometries}
+    const_hessians = get_constituent_hessians(geometry, element_id, xi)
+    const_image_indices = get_constituent_image_indices(geometry)
+    const_manifold_indices = get_constituent_manifold_indices(geometry)
+
+    num_eval_points = Points.get_num_points(xi)
+
+    H = [
+        _hessian_per_point(
+            geometry,
+            const_hessians,
+            const_image_indices,
+            const_manifold_indices,
+            ntuple(i -> i, num_geometries),
+        ) for point in 1:num_eval_points
+    ]
+
+    return H
+end
+
+function _hessian_per_point(
+    geometry::TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries},
+    const_hessians,
+    const_image_indices,
+    const_manifold_indices,
+    tup,
+) where {manifold_dim, image_dim, num_patches, num_geometries}
+    Hp = Ref(
+        zero(MMatrix{manifold_dim, manifold_dim, Float64, manifold_dim * manifold_dim})
+    )
+    geo_id = Ref(1)
+
+    const_hessians_per_point = map(getindex, const_hessians, tup)
+
+    return ntuple(Val(image_dim)) do im_i
+        Hp[] = zero(
+            MMatrix{manifold_dim, manifold_dim, Float64, manifold_dim * manifold_dim}
+        )
+
+        foreach(const_hessians_per_point) do hessian_i
+            const_im_i = findfirst(isequal(im_i), const_image_indices[geo_id[]])
+            if !isnothing(const_im_i)
+                setindex!(
+                    Hp[],
+                    hessian_i[const_im_i],
+                    const_manifold_indices[geo_id[]],
+                    const_manifold_indices[geo_id[]],
+                )
+            end
+            geo_id[] += 1
+        end
+        geo_id[] = 1
+
+        return SMatrix{manifold_dim, manifold_dim}(Hp[])
+    end
 end

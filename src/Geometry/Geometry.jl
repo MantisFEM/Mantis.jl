@@ -496,6 +496,40 @@ function jacobian(
     throw(MethodError(jacobian, (geometry, element_id, xi)))
 end
 
+"""
+    hessian(
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
+        element_id::Int,
+        xi::Points.AbstractPoints{manifold_dim},
+    ) where {manifold_dim, image_dim, num_patches}
+
+Computes the hessian at the physical points, given the canonical points `xi,` on the
+element identified by `element_id` of a given `geometry`.
+
+# Arguments
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
+- `element_id::Int`: The global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain to evaluate
+    the hessian at.
+
+# Returns
+- `::Vector{NTuple{image_dim, SMatrix{manifold_dim, manifold_dim}}`: The hessian at the
+    physical points corresponding to the canonical points `xi` on element `element_id`. The
+    length of the vector equals the number of evaluation points. Per points, there are
+    `image_dim` many hessian metrices, hence the tuple.
+
+# Notes
+There is no generic fallback for this method. It should be implemented for each concrete
+geometry type.
+"""
+function hessian(
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches}
+    throw(MethodError(hessian, (geometry, element_id, xi)))
+end
+
 # core functionality
 include("./CartesianGeometry.jl")
 include("./FEGeometry.jl")
