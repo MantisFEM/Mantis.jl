@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Assemblers/deRham/0-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/2D-num_dofs=49-p=3-k=2,b4eee92,2025-11-18,1.10.7,2025-11-27,881.792 μs,872.579 μs,31.896 μs,820.208 μs,0.000 ns,1.98 MiB,9752

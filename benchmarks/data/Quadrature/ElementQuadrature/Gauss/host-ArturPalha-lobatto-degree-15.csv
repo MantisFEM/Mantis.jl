@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Quadrature/ElementQuadrature/Gauss/lobatto-degree-15,b4eee92,2025-11-18,1.10.7,2025-11-27,2.917 μs,3.113 μs,798.609 ns,2.833 μs,0.000 ns,1.78 KiB,10

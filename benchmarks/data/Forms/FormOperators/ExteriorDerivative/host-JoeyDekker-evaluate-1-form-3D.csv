@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms\FormOperators\ExteriorDerivative\evaluate-1-form-3D,b4eee92,2025-11-18,1.12.1,2025-11-18,7.310 ms,10.186 ms,19.497 ms,5.752 ms,0.000 ns,25.43 MiB,849

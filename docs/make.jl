@@ -15,7 +15,7 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
 
         Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -82,14 +82,13 @@ makedocs(;
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
-    format=MarkdownVitepress(; repo="github.com/MantisFEM/MantisDev.jl", devbranch="main"),
+    format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main"),
 )
 
-# This is only intended for the public repo
-# DocumenterVitepress.deploydocs(;
-#     repo="github.com/MantisFEM/MantisDev.jl",
-#     target="build", # this is where Vitepress stores its output
-#     devbranch="main",
-#     branch="gh-pages",
-#     push_preview=true,
-# )
+DocumenterVitepress.deploydocs(;
+    repo="github.com/MantisFEM/Mantis.jl",
+    target="build", # this is where Vitepress stores its output
+    devbranch="main",
+    branch="gh-pages",
+    push_preview=true,
+)

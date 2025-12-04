@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Geometry/Cartesian/inv-metric-3D,b4eee92,2025-11-18,1.10.7,2025-11-27,472.542 μs,502.806 μs,181.307 μs,451.333 μs,0.000 ns,539.94 KiB,5012
