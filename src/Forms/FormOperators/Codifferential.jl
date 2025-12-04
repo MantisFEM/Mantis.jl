@@ -100,15 +100,12 @@ function _evaluate_codifferential(
     d_form_basis_eval, form_basis_indices = _evaluate_codifferential(
         form.form_space, element_id, xi
     )
-
     # This is equal to binomial(manifold_dim, form_rank + 1).
     n_derivative_components = size(d_form_basis_eval, 1)
-
     d_form_eval = Vector{Vector{Float64}}(undef, n_derivative_components)
-
-    for derivative_form_component_idx in 1:n_derivative_components
-        d_form_eval[derivative_form_component_idx] =
-            d_form_basis_eval[derivative_form_component_idx] *
+    for derivative_form_component_id in eachindex(d_form_eval)
+        d_form_eval[derivative_form_component_id] =
+            d_form_basis_eval[derivative_form_component_id] *
             form.coefficients[form_basis_indices[1]]
     end
 
@@ -125,37 +122,33 @@ end
 function _evaluate_codifferential(
     form_space::FS, element_id::Int, xi::Points.AbstractPoints{1}
 ) where {G <: Geometry.AbstractGeometry{1}, FS <: FormSpace{1, 1, G}}
-    manifold_dim = 1
+    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
+    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
+        form_space, element_id, xi, 1
+    )
     n_coderivative_form_components = 1
-    n_basis_functions = Forms.get_num_basis(form_space, element_id)
+    n_basis_functions = length(form_basis_indices[1])
     n_evaluation_points = Points.get_num_points(xi)
-
     # Preallocate memory for output array
     codiff_eval = [
         zeros(Float64, n_evaluation_points, n_basis_functions) for
         _ in 1:n_coderivative_form_components
     ]
-
-    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
-        form_space, element_id, xi, 1
-    )
-
     # Compute the metric terms, including derivative of the metric.
     J, inv_g, g, sqrt_g, dgdu, dinv_g_du, dsqrt_g_du, Hs = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
-
     # Compute the codifferential.
     # α^1 = α¹ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
     idx_du = FunctionSpaces.get_derivative_idx([1])
-    for i in 1:n_evaluation_points
+    for i in axes(codiff_eval[1], 1)
+        inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
-            (1.0 / sqrt_g[i]) .* (
-                .+fem_evals[1][1][1][i, :] .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
+            inv_sqrt_point .* (
+                .+view(fem_evals[1][1][1], i, :) .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
                 .+
-                fem_evals[2][idx_du][1][i, :] .* (1.0 / sqrt_g[i])  # ∂u α¹ * 1 / sqrt(g)
+                view(fem_evals[2][idx_du][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
     end
 
@@ -170,40 +163,36 @@ function _evaluate_codifferential(
     FS <: FormSpace{1, 0, G},
     F <: ExteriorDerivative{1, 1, 1, G, FS},
 }
-    manifold_dim = 1
-    n_coderivative_form_components = 1
-    n_basis_functions = Forms.get_num_basis(form_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Preallocate memory for output array
-    codiff_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_coderivative_form_components
-    ]
-
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, we do not have to scale the derivatives.
     fem_evals, form_basis_indices = FunctionSpaces.evaluate(
         get_fe_space(form_space), element_id, xi, 2
     )
-
+    n_coderivative_form_components = 1
+    n_basis_functions = length(form_basis_indices)
+    n_evaluation_points = Points.get_num_points(xi)
+    # Preallocate memory for output array
+    codiff_eval = [
+        zeros(Float64, n_evaluation_points, n_basis_functions) for
+        _ in 1:n_coderivative_form_components
+    ]
     # Compute the metric terms, including derivative of the metric.
     J, inv_g, g, sqrt_g, (dgdu,), (dinv_g_du,), (dsqrt_g_du,), Hs = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
-
     # Compute the laplacian.
     # α^1 = α¹ du
     # α¹ = d(β⁰) = ∂ᵤ β⁰ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
     idx_du = FunctionSpaces.get_derivative_idx([1])
     idx_duu = FunctionSpaces.get_derivative_idx([2])
-    for i in 1:n_evaluation_points
+    for i in axes(codiff_eval[1], 1)
+        inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
-            (1.0 / sqrt_g[i]) .* (
-                .+fem_evals[2][idx_du][1][i, :] .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
+            inv_sqrt_point .* (
+                .+view(fem_evals[2][idx_du][1], i, :) .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
                 .+
-                fem_evals[3][idx_duu][1][i, :] .* (1.0 / sqrt_g[i])  # ∂u α¹ * 1 / sqrt(g)
+                view(fem_evals[3][idx_duu][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
     end
 
@@ -214,50 +203,45 @@ end
 function _evaluate_codifferential(
     form_space::FS, element_id::Int, xi::Points.AbstractPoints{2}
 ) where {G <: Geometry.AbstractGeometry{2}, FS <: FormSpace{2, 1, G}}
-    manifold_dim = 2
+    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
+    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
+        form_space, element_id, xi, 1
+    )
     n_coderivative_form_components = 1
-    n_basis_functions = Forms.get_num_basis(form_space, element_id)
+    n_basis_functions = length(form_basis_indices[1])
     n_evaluation_points = Points.get_num_points(xi)
-
     # Preallocate memory for output array
     codiff_eval = [
         zeros(Float64, n_evaluation_points, n_basis_functions) for
         _ in 1:n_coderivative_form_components
     ]
-
-    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
-        form_space, element_id, xi, 1
-    )
-
     # Compute the metric terms, including derivative of the metric.
     J, inv_g, g, sqrt_g, (dgdu, dgdv), (dinv_g_du, dinv_g_dv), (dsqrt_g_du, dsqrt_g_dv), Hs = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
-
     # Compute the coderivative.
     # α^1 = α¹ du + α² dv
-    # d*α¹ = β⁰ =
+    # d*α¹ = β⁰
     idx_du = FunctionSpaces.get_derivative_idx([1, 0])
     idx_dv = FunctionSpaces.get_derivative_idx([0, 1])
-    for i in 1:n_evaluation_points
+    for i in axes(codiff_eval[1], 1)
         codiff_eval[1][i, :] .=
-            fem_evals[2][idx_du][1][i, :] .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
-            fem_evals[1][1][1][i, :] .* dinv_g_du[i][1, 1] .+  # α¹ * ∂u g¹¹
-            fem_evals[2][idx_du][2][i, :] .* inv_g[i][1, 2] .+  # ∂u α² * g¹²
-            fem_evals[1][1][2][i, :] .* dinv_g_du[i][1, 2] .+  # α² * ∂u g¹²
-            fem_evals[2][idx_dv][1][i, :] .* inv_g[i][2, 1] .+  # ∂v α¹ * g²¹
-            fem_evals[1][1][1][i, :] .* dinv_g_dv[i][2, 1] .+  # α¹ * ∂v g²¹
-            fem_evals[2][idx_dv][2][i, :] .* inv_g[i][2, 2] .+  # ∂v α² * g²²
-            fem_evals[1][1][2][i, :] .* dinv_g_dv[i][2, 2] .+  # α² * ∂v g²²
+            view(fem_evals[2][idx_du][1], i, :) .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
+            view(fem_evals[1][1][1], i, :) .* dinv_g_du[i][1, 1] .+  # α¹ * ∂u g¹¹
+            view(fem_evals[2][idx_du][2], i, :) .* inv_g[i][1, 2] .+  # ∂u α² * g¹²
+            view(fem_evals[1][1][2], i, :) .* dinv_g_du[i][1, 2] .+  # α² * ∂u g¹²
+            view(fem_evals[2][idx_dv][1], i, :) .* inv_g[i][2, 1] .+  # ∂v α¹ * g²¹
+            view(fem_evals[1][1][1], i, :) .* dinv_g_dv[i][2, 1] .+  # α¹ * ∂v g²¹
+            view(fem_evals[2][idx_dv][2], i, :) .* inv_g[i][2, 2] .+  # ∂v α² * g²²
+            view(fem_evals[1][1][2], i, :) .* dinv_g_dv[i][2, 2] .+  # α² * ∂v g²²
             (1.0 / sqrt_g[i]) .* (
-                .+fem_evals[1][1][1][i, :] .* inv_g[i][1, 1] .* dsqrt_g_du[i]  # α¹ * g¹¹ * ∂u sqrt(g)
+                .+view(fem_evals[1][1][1], i, :) .* inv_g[i][1, 1] .* dsqrt_g_du[i]  # α¹ * g¹¹ * ∂u sqrt(g)
                 .+
-                fem_evals[1][1][2][i, :] .* inv_g[i][1, 2] .* dsqrt_g_du[i]  # α² * g¹² * ∂u sqrt(g)
+                view(fem_evals[1][1][2], i, :) .* inv_g[i][1, 2] .* dsqrt_g_du[i]  # α² * g¹² * ∂u sqrt(g)
                 .+
-                fem_evals[1][1][1][i, :] .* inv_g[i][2, 1] .* dsqrt_g_dv[i]  # α¹ * g²¹ * ∂v sqrt(g)
+                view(fem_evals[1][1][1], i, :) .* inv_g[i][2, 1] .* dsqrt_g_dv[i]  # α¹ * g²¹ * ∂v sqrt(g)
                 .+
-                fem_evals[1][1][2][i, :] .* inv_g[i][2, 2] .* dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
+                view(fem_evals[1][1][2], i, :) .* inv_g[i][2, 2] .* dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
             )
     end
 
@@ -273,53 +257,47 @@ function _evaluate_codifferential(
     FS <: FormSpace{2, 0, G},
     F <: ExteriorDerivative{2, 1, 1, G, FS},
 }
-    manifold_dim = 2
-    n_coderivative_form_components = 1
-    n_basis_functions = Forms.get_num_basis(form_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Preallocate memory for output array
-    codiff_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_coderivative_form_components
-    ]
-
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, the basis functions we do not have to
     # scale the derivatives.
     fem_evals, form_basis_indices = FunctionSpaces.evaluate(
         get_fe_space(form_space), element_id, xi, 2
     )
-
+    n_coderivative_form_components = 1
+    n_basis_functions = length(form_basis_indices)
+    n_evaluation_points = Points.get_num_points(xi)
+    # Preallocate memory for output array
+    codiff_eval = [
+        zeros(Float64, n_evaluation_points, n_basis_functions) for
+        _ in 1:n_coderivative_form_components
+    ]
     # # Compute the metric terms, including derivative of the metric.
     J, inv_g, g, sqrt_g, (dgdu, dgdv), (dinv_g_du, dinv_g_dv), (dsqrt_g_du, dsqrt_g_dv), Hs = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
-
     # Compute the laplacian, which is the coderivative of the exterior derivative.
-    # α^1 = α¹ du + α² dv
+    # α¹ = α¹ du + α² dv
     # α¹ = d(β⁰) = ∂ᵤ β⁰ du + ∂ᵥ β⁰ dv
     idx_du = FunctionSpaces.get_derivative_idx([1, 0])
     idx_dv = FunctionSpaces.get_derivative_idx([0, 1])
     idx_duu = FunctionSpaces.get_derivative_idx([2, 0])
     idx_dvv = FunctionSpaces.get_derivative_idx([0, 2])
     idx_duv = FunctionSpaces.get_derivative_idx([1, 1])
-
     for i in 1:n_evaluation_points
         codiff_eval[1][i, :] .=
-            fem_evals[3][idx_duu][1][i, :] .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
-            fem_evals[2][idx_du][1][i, :] .* dinv_g_du[i][1, 1] .+  # α¹ * ∂u g¹¹
-            fem_evals[3][idx_duv][1][i, :] .* inv_g[i][1, 2] .+  # ∂u α² * g¹²
-            fem_evals[2][idx_dv][1][i, :] .* dinv_g_du[i][1, 2] .+  # α² * ∂u g¹²
-            fem_evals[3][idx_duv][1][i, :] .* inv_g[i][2, 1] .+  # ∂v α¹ * g²¹
-            fem_evals[2][idx_du][1][i, :] .* dinv_g_dv[i][2, 1] .+  # α¹ * ∂v g²¹
-            fem_evals[3][idx_dvv][1][i, :] .* inv_g[i][2, 2] .+  # ∂v α² * g²²
-            fem_evals[2][idx_dv][1][i, :] .* dinv_g_dv[i][2, 2] .+  # α² * ∂v g²²
+            view(fem_evals[3][idx_duu][1], i, :) .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
+            view(fem_evals[2][idx_du][1], i, :) .* dinv_g_du[i][1, 1] .+  # α¹ * ∂u g¹¹
+            view(fem_evals[3][idx_duv][1], i, :) .* inv_g[i][1, 2] .+  # ∂u α² * g¹²
+            view(fem_evals[2][idx_dv][1], i, :) .* dinv_g_du[i][1, 2] .+  # α² * ∂u g¹²
+            view(fem_evals[3][idx_duv][1], i, :) .* inv_g[i][2, 1] .+  # ∂v α¹ * g²¹
+            view(fem_evals[2][idx_du][1], i, :) .* dinv_g_dv[i][2, 1] .+  # α¹ * ∂v g²¹
+            view(fem_evals[3][idx_dvv][1], i, :) .* inv_g[i][2, 2] .+  # ∂v α² * g²²
+            view(fem_evals[2][idx_dv][1], i, :) .* dinv_g_dv[i][2, 2] .+  # α² * ∂v g²²
             (1.0 / sqrt_g[i]) .* (
-                fem_evals[2][idx_du][1][i, :] .* inv_g[i][1, 1] .* dsqrt_g_du[i] .+  # α¹ * g¹¹ * ∂u sqrt(g)
-                fem_evals[2][idx_dv][1][i, :] .* inv_g[i][1, 2] .* dsqrt_g_du[i] .+  # α² * g¹² * ∂u sqrt(g)
-                fem_evals[2][idx_du][1][i, :] .* inv_g[i][2, 1] .* dsqrt_g_dv[i] .+  # α¹ * g²¹ * ∂v sqrt(g)
-                fem_evals[2][idx_dv][1][i, :] .* inv_g[i][2, 2] .* dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
+                view(fem_evals[2][idx_du][1], i, :) .* inv_g[i][1, 1] .* dsqrt_g_du[i] .+  # α¹ * g¹¹ * ∂u sqrt(g)
+                view(fem_evals[2][idx_dv][1], i, :) .* inv_g[i][1, 2] .* dsqrt_g_du[i] .+  # α² * g¹² * ∂u sqrt(g)
+                view(fem_evals[2][idx_du][1], i, :) .* inv_g[i][2, 1] .* dsqrt_g_dv[i] .+  # α¹ * g²¹ * ∂v sqrt(g)
+                view(fem_evals[2][idx_dv][1], i, :) .* inv_g[i][2, 2] .* dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
             )
     end
 
