@@ -84,7 +84,6 @@ makedocs(;
     plugins=[bib],
     format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main"),
 )
-
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
     target="build", # this is where Vitepress stores its output
