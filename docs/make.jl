@@ -89,5 +89,5 @@ DocumenterVitepress.deploydocs(;
     target="build", # this is where Vitepress stores its output
     devbranch="main",
     branch="gh-pages",
-    push_preview=true,
+    push_preview=false,
 )
