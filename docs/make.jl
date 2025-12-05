@@ -65,6 +65,7 @@ Pages = [
     "Examples" => Examples,
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
+    "references.md",
 ]
 
 # References are handled by DocumenterCitations so this should be set up.

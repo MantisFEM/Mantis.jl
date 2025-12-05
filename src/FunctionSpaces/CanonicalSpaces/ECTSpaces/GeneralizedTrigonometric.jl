@@ -2,7 +2,7 @@
     GeneralizedTrigonometric <: AbstractECTSpaces
 
 Concrete type for Generalized Trignometric section space spanned by
-``<1, x, ..., x^(p-2), cos(wx), sin(wx)>`` on ``[0,l]``.
+``<1, x, ..., x^(p-2), cos(wx), sin(wx)>`` on ``[0,l]``; see [Schumaker2007](@cite).
 
 # Fields
 - `p::Int`: Degree of the space.

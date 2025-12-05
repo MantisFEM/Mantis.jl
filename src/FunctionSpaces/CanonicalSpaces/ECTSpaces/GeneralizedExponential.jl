@@ -3,7 +3,7 @@
 
 Concrete type for Generalized Exponential section space spanned by
 `<1, x, ..., x^(p-2), exp(wx), exp(-wx)>`, equivalently
-`<1, x, ..., x^(p-2), cosh(wx), sinh(wx)>`, on `[0,l]`.
+`<1, x, ..., x^(p-2), cosh(wx), sinh(wx)>`, on `[0,l]`; see [Schumaker2007](@cite).
 
 # Fields
 - `p::Int`: Degree of the space.
