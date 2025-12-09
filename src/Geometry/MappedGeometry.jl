@@ -29,43 +29,39 @@ struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
         dM <: Function,
         ddM <: Union{Nothing, Function},
     }
-        return new{manifold_dim, image_dim, M, dM, ddM}(
-            dimensions, mapping, dmapping, ddmapping
-        )
+        return new{manifold_dim, image_dim, M, dM, ddM}(mapping, dmapping, ddmapping)
     end
 end
 
 """
-    get_manifold_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
+    get_manifold_dim(mapping::Mapping{manifold_dim, image_dim})
 
 Returns the dimension of the domain manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the domain manifold.
 """
 function get_manifold_dim(
-    ::Mapping{manifold_dim, image_dim, M, dM}
-) where {manifold_dim, image_dim, M, dM}
+    ::Mapping{manifold_dim, image_dim}
+) where {manifold_dim, image_dim}
     return manifold_dim
 end
 
 """
-    get_image_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
+    get_image_dim(mapping::Mapping{manifold_dim, image_dim})
 
 Returns the dimension of the image manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the image manifold.
 """
-function get_image_dim(
-    ::Mapping{manifold_dim, image_dim, M, dM}
-) where {manifold_dim, image_dim, M, dM}
+function get_image_dim(::Mapping{manifold_dim, image_dim}) where {manifold_dim, image_dim}
     return image_dim
 end
 
