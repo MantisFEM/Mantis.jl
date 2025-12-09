@@ -1,4 +1,3 @@
-# There should be a vector expression and a vector field.
 """
     evaluate_pushforward(vfield::Vector{Matrix{Float64}},
                          jacobian::Array{Float64,3})
@@ -17,14 +16,16 @@ function evaluate_pushforward(
     vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
 )
     image_dim = size(jacobian[1], 1)
-
     # Gᵢ: v ↦ Gᵢ(v) = Jᵢⱼvʲ
-    evaluated_pushforward = Vector{Matrix{Float64}}(undef, image_dim)
-    for point in 1:size(vfield[1], 1)
-        for component in 1:image_dim
-            evaluated_pushforward[component] = zeros(size(vfield[1]))
-            for i in 1:manifold_dim
-                @views evaluated_pushforward[component][point, :] .+= vfield[i][point, :] .* jacobian[point][i, component]
+    eval_dims = size(vfield[1])
+    evaluated_pushforward = [zeros(eval_dims) for _ in 1:image_dim]
+    for point in 1:eval_dims[1]
+        jacobian_point = jacobian[point]
+        for new_component in 1:image_dim
+            pushforward_row = view(evaluated_pushforward[new_component], point, :)
+            for old_component in 1:manifold_dim
+                old_row = view(vfield[old_component], point, :)
+                pushforward_row .+= jacobian_point[new_component, old_component] .* old_row
             end
         end
     end
@@ -32,7 +33,6 @@ function evaluate_pushforward(
     return evaluated_pushforward
 end
 
-# TODO Similar thing here. This is a concrete expression. If we make general expressions and combine them, everything becomes simpler.
 """
     evaluate_sharp_pushforward(
         form_expression::AbstractForm{manifold_dim, 1, 0},

@@ -97,8 +97,20 @@ function dmapping_patch_1_slant(x::AbstractVector{Float64}, slant_factor=0.25)
         [0.0 1.0]
     ]
 end
+function ddmapping_patch_1_slant(x::AbstractVector{Float64}, slant_factor=0.25)
+    return (
+        [
+            [0.0 slant_factor]
+            [slant_factor 0.0]
+        ],
+        [
+            [0.0 0.0]
+            [0.0 0.0]
+        ],
+    )
+end
 mapping_patch_1_slanted = Geometry.Mapping(
-    (2, 2), mapping_patch_1_slant, dmapping_patch_1_slant
+    (2, 2), mapping_patch_1_slant, dmapping_patch_1_slant, ddmapping_patch_1_slant
 )
 function mapping_patch_2_slant(x::AbstractVector{Float64}, slant_factor=0.25)
     return [x[1] + 1.0 + slant_factor * (1.0 - x[1]) * x[2], x[2]]
@@ -109,8 +121,20 @@ function dmapping_patch_2_slant(x::AbstractVector{Float64}, slant_factor=0.25)
         [0.0 1.0]
     ]
 end
+function ddmapping_patch_2_slant(x::AbstractVector{Float64}, slant_factor=0.25)
+    return (
+        [
+            [0.0 -slant_factor]
+            [-slant_factor 0.0]
+        ],
+        [
+            [0.0 0.0]
+            [0.0 0.0]
+        ],
+    )
+end
 mapping_patch_2_slanted = Geometry.Mapping(
-    (2, 2), mapping_patch_2_slant, dmapping_patch_2_slant
+    (2, 2), mapping_patch_2_slant, dmapping_patch_2_slant, ddmapping_patch_1_slant
 )
 num_elements_per_dim_per_patch = ((4, 4), (5, 6))
 geom_cart_patch_1 = Geometry.CartesianGeometry((
@@ -204,7 +228,21 @@ basic_tests(geom_slanted_2patch_11, answers_geom_slanted_2patch_11)
 # Surface embedded in 3D.
 geo(x) = [x[1], x[2], x[1] * x[2]]
 dgeo(x) = [[1.0 0.0]; [0.0 1.0]; [x[2] x[1]]]
-mapping2to3 = Mantis.Geometry.Mapping((2, 3), geo, dgeo)
+ddgeo(x) = (
+    [
+        [0.0 0.0]
+        [0.0 0.0]
+    ],
+    [
+        [0.0 0.0]
+        [0.0 0.0]
+    ],
+    [
+        [0.0 1.0]
+        [1.0 0.0]
+    ],
+)
+mapping2to3 = Mantis.Geometry.Mapping((2, 3), geo, dgeo, ddgeo)
 geometry2to3 = Mantis.Geometry.MappedGeometry(geom_cart_patch_1, mapping2to3)
 answers_geometry2to3 = (
     1, 16, 2, 3, (16,), 16, (0.25, 0.25), 0.0625, (1, 14), 14, ((0.0, 0.25), (0.0, 0.25))
@@ -213,6 +251,9 @@ basic_tests(geometry2to3, answers_geometry2to3)
 
 for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     jac = Geometry.jacobian(
+        geometry2to3, k, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+    )
+    hess = Geometry.hessian(
         geometry2to3, k, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
     )
 
@@ -230,6 +271,23 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
         end
     end
     @test jactest
+
+    hesstest = true
+    for p in eachindex(hess)
+        if !all(isapprox.(hess[p][1][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
+            println(1)
+            hesstest = false
+        end
+        if !all(isapprox.(hess[p][2][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
+            println(2)
+            hesstest = false
+        end
+        if !all(isapprox.(hess[p][3][:, :], [0.0 1.0/16.0; 1.0/16.0 0.0], rtol=1e-14))
+            println(3)
+            hesstest = false
+        end
+    end
+    @test hesstest
 end
 
 # Non-matching number of patches

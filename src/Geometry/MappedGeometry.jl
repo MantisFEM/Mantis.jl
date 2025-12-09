@@ -1,21 +1,37 @@
 
 abstract type AbstractMapping{manifold_dim, image_dim} end
 
-struct Mapping{manifold_dim, image_dim, M, dM} <: AbstractMapping{manifold_dim, image_dim}
+struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
+       AbstractMapping{manifold_dim, image_dim}
     dimensions::NTuple{2, Int}
     mapping::M
     dmapping::dM
+    ddmapping::ddM
 
     function Mapping(
-        dimensions::NTuple{2, Int}, mapping::M, dmapping::dM
-    ) where {M <: Function, dM <: Function}
-        return new{dimensions[1], dimensions[2], M, dM}(dimensions, mapping, dmapping)
+        dimensions::NTuple{2, Int}, mapping::M, dmapping::dM, ddmapping::ddM=nothing
+    ) where {M <: Function, dM <: Function, ddM <: Union{Nothing, Function}}
+        return new{dimensions[1], dimensions[2], M, dM, ddM}(
+            dimensions, mapping, dmapping, ddmapping
+        )
     end
 
     function Mapping(
-        ::Val{manifold_dim}, ::Val{image_dim}, mapping::M, dmapping::dM
-    ) where {manifold_dim, image_dim, M <: Function, dM <: Function}
-        return new{manifold_dim, image_dim, M, dM}(dimensions, mapping, dmapping)
+        ::Val{manifold_dim},
+        ::Val{image_dim},
+        mapping::M,
+        dmapping::dM,
+        ddmapping::ddM=nothing,
+    ) where {
+        manifold_dim,
+        image_dim,
+        M <: Function,
+        dM <: Function,
+        ddM <: Union{Nothing, Function},
+    }
+        return new{manifold_dim, image_dim, M, dM, ddM}(
+            dimensions, mapping, dmapping, ddmapping
+        )
     end
 end
 
@@ -87,6 +103,16 @@ function jacobian(
     return [
         SMatrix{image_dim, manifold_dim}(mapping.dmapping(view(x, i, :))) for
         i in 1:num_points
+    ]
+end
+
+function hessian(
+    mapping::Mapping{manifold_dim, image_dim, M, dM, ddM}, x::Matrix{Float64}
+) where {manifold_dim, image_dim, M <: Function, dM <: Function, ddM <: Function}
+    return [
+        ntuple(image_dim) do i
+            return SMatrix{manifold_dim, manifold_dim}(mapping.ddmapping(view(x, p, :))[i])
+        end for p in axes(x, 1)
     ]
 end
 
@@ -284,4 +310,30 @@ function jacobian(
     J_2 = jacobian(get_mapping(geometry, patch_id), x)
 
     return J_2 .* J_1
+end
+
+function hessian(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches}
+    # Jacobian and Hessian of the base geometry
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, patch_id)
+    x = evaluate(base_geometry, local_element_id, xi)
+    Jb = jacobian(base_geometry, local_element_id, xi)
+    Hbs = hessian(base_geometry, local_element_id, xi)
+
+    Jm = jacobian(get_mapping(geometry, patch_id), x)
+    Hms = hessian(get_mapping(geometry, patch_id), x)
+
+    return [
+        ntuple(image_dim) do i
+            return transpose(Jb[p]) * Hms[p][i] * Jb[p] +
+                   SMatrix{manifold_dim, manifold_dim}(
+                sum(Jm[p][i, j] * Hbs[p][j][uv] for j in 1:manifold_dim) for
+                uv in eachindex(Hbs[p][1])
+            )
+        end for p in eachindex(Jb, Jm, Hms, Hbs)
+    ]
 end

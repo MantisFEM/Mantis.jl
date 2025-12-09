@@ -10,10 +10,22 @@ Export the geometry to a VTK file.
 - `degree::Int`: The degree of the basis functions used in the visualization.
 - `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
 """
-function export_geometry_to_vtk(geo::Geometry.AbstractGeometry, filename::String; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
-
+function export_geometry_to_vtk(
+    geo::Geometry.AbstractGeometry,
+    filename::String;
+    n_subcells::Int=1,
+    degree::Int=4,
+    output_directory_tree::Vector{String}=["examples", "data", "output"],
+)
     output_file = export_path(output_directory_tree, filename)
-    plot(geo; vtk_filename = output_file, n_subcells = n_subcells, degree = degree, ascii = false, compress = false)
+    plot(
+        geo;
+        vtk_filename=output_file,
+        n_subcells=n_subcells,
+        degree=degree,
+        ascii=false,
+        compress=false,
+    )
 
     return nothing
 end
@@ -31,12 +43,25 @@ Export the form solutions to VTK files.
 - `degree::Int`: The degree of the basis functions used in the visualization.
 - `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
 """
-function export_form_fields_to_vtk(form_sols, var_names, filename; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
-
+function export_form_fields_to_vtk(
+    form_sols,
+    var_names,
+    filename;
+    n_subcells::Int=1,
+    degree::Int=4,
+    output_directory_tree::Vector{String}=["examples", "data", "output"],
+)
     for (form_sol, var_name) in zip(form_sols, var_names)
         println("Writing form '$var_name' to file ...")
         output_file = export_path(output_directory_tree, "$filename-$var_name")
-        plot(form_sol; vtk_filename = output_file, n_subcells = n_subcells, degree = degree, ascii = false, compress = false)
+        plot(
+            form_sol;
+            vtk_filename=output_file,
+            n_subcells=n_subcells,
+            degree=degree,
+            ascii=false,
+            compress=false,
+        )
     end
 
     return nothing
@@ -54,13 +79,25 @@ Export the form solutions to VTK files.
 - `degree::Int`: The degree of the basis functions used in the visualization.
 - `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
 """
-function export_form_fields_to_vtk(form_sols, filename; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
-
+function export_form_fields_to_vtk(
+    form_sols,
+    filename;
+    n_subcells::Int=1,
+    degree::Int=4,
+    output_directory_tree::Vector{String}=["examples", "data", "output"],
+)
     for form in form_sols
         label = form.label
         println("Writing form '$label' to file ...")
         output_file = export_path(output_directory_tree, "$filename-$label")
-        plot(form; vtk_filename = output_file, n_subcells = n_subcells, degree = degree, ascii = false, compress = false)
+        plot(
+            form;
+            vtk_filename=output_file,
+            n_subcells=n_subcells,
+            degree=degree,
+            ascii=false,
+            compress=false,
+        )
     end
 
     return nothing
@@ -79,19 +116,42 @@ Given a tensor-product control net, create a `manifold_dim`-linear geometry and 
 - `filename::String`: The name of the output file.
 - `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
 """
-function visualize_tensor_product_controlnet(control_points::Array{Float64,projective_dim}, manifold_dim::Int, range_dim::Int, periodic::Vector{Bool}, filename::String; output_directory_tree::Vector{String} = ["examples", "data", "output"]) where {projective_dim}
-    if projective_dim != manifold_dim+1
-        throw(ArgumentError("The control points must be structured into a `manifold_dim+1`-dimensional array."))
+function visualize_tensor_product_controlnet(
+    control_points::Array{Float64, projective_dim},
+    manifold_dim::Int,
+    range_dim::Int,
+    periodic::Vector{Bool},
+    filename::String;
+    output_directory_tree::Vector{String}=["examples", "data", "output"],
+) where {projective_dim}
+    if projective_dim != manifold_dim + 1
+        throw(
+            ArgumentError(
+                "The control points must be structured into a `manifold_dim+1`-dimensional array.",
+            ),
+        )
     end
     if length(periodic) != manifold_dim
-        throw(ArgumentError("The periodicity vector must have length equal to the manifold dimension."))
+        throw(
+            ArgumentError(
+                "The periodicity vector must have length equal to the manifold dimension."
+            ),
+        )
     end
 
     # create bilinear geometry
-    B = [FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry(LinRange(0.0, 1.0, size(control_points,i)+periodic[i])), 1, 0) for i in 1:manifold_dim]
+    B = [
+        FunctionSpaces.BSplineSpace(
+            Mesh.Patch1D(
+                collect(LinRange(0.0, 1.0, size(control_points, i) + periodic[i]))
+            ),
+            1,
+            0,
+        ) for i in 1:manifold_dim
+    ]
 
     # impose periodicity if required
-    for i = 1:manifold_dim
+    for i in 1:manifold_dim
         if periodic[i]
             B[i] = FunctionSpaces.GTBSplineSpace((B[i],), [0])
         end
@@ -104,7 +164,36 @@ function visualize_tensor_product_controlnet(control_points::Array{Float64,proje
     geo = Geometry.FEGeometry(TP, reshape(control_points, :, range_dim))
 
     # export to vtk
-    visualize_geometry(geo, filename; n_subcells=1, degree=1, output_directory_tree=output_directory_tree)
+    visualize_geometry(
+        geo, filename; n_subcells=1, degree=1, output_directory_tree=output_directory_tree
+    )
 
     return nothing
+end
+
+function plot_solution(
+    fields::T, num_plot_points_per_element=25; title="Solution", xlabel="x", ylabel="phi(x)"
+) where {n_fields, T <: NTuple{n_fields, Forms.AbstractFormField{1}}}
+    fig = Figure()
+    ax = Axis(fig[1, 1]; title=title, xlabel=xlabel, ylabel=ylabel)
+
+    geometry = Forms.get_geometry(fields[1])
+
+    n_elements = Geometry.get_num_elements(geometry)
+    xi = Points.CartesianPoints((LinRange(0.0, 1.0, num_plot_points_per_element),))
+
+    colors = [:blue, :green, :red, :purple, :orange, :black, :pink, :brown]
+    for field_id in eachindex(fields)
+        field = fields[field_id]
+        color_i = colors[field_id]
+        for element_idx in 1:n_elements
+            form_eval, _ = Forms.evaluate(field, element_idx, xi)
+            x = Geometry.evaluate(geometry, element_idx, xi)
+
+            lines!(ax, x[:], form_eval[1]; color=color_i, label=field.label)
+        end
+    end
+    fig[1, 2] = Legend(fig, ax; marge=true, unique=true)
+
+    return fig
 end

@@ -61,8 +61,20 @@ end
                 [0.0 1.0]
             ]
         end
+        function ddmapping_patch_1_slant(x::AbstractVector{Float64}, slant_factor=0.25)
+            return (
+                [
+                    [0.0 slant_factor]
+                    [slant_factor 0.0]
+                ],
+                [
+                    [0.0 0.0]
+                    [0.0 0.0]
+                ],
+            )
+        end
         mapping_patch_1_slanted = Geometry.Mapping(
-            (2, 2), mapping_patch_1_slant, dmapping_patch_1_slant
+            (2, 2), mapping_patch_1_slant, dmapping_patch_1_slant, ddmapping_patch_1_slant
         )
         function mapping_patch_2_slant(x::AbstractVector{Float64}, slant_factor=0.25)
             return [x[1] + 1.0 + slant_factor * (1.0 - x[1]) * x[2], x[2]]
@@ -73,8 +85,20 @@ end
                 [0.0 1.0]
             ]
         end
+        function ddmapping_patch_2_slant(x::AbstractVector{Float64}, slant_factor=0.25)
+            return (
+                [
+                    [0.0 -slant_factor]
+                    [-slant_factor 0.0]
+                ],
+                [
+                    [0.0 0.0]
+                    [0.0 0.0]
+                ],
+            )
+        end
         mapping_patch_2_slanted = Geometry.Mapping(
-            (2, 2), mapping_patch_2_slant, dmapping_patch_2_slant
+            (2, 2), mapping_patch_2_slant, dmapping_patch_2_slant, ddmapping_patch_2_slant
         )
         num_elements_per_dim_per_patch = ((4, 4), (5, 6))
         geom_cart_patch_1 = Geometry.CartesianGeometry((
@@ -224,40 +248,54 @@ end
             @test_opt Geometry.get_element_measure(geo, 24)
 
             if Geometry.get_manifold_dim(geo) == 1
-                @test_opt Geometry.Geometry.evaluate(geo, 5, xi_1D)
-                @test_opt Geometry.Geometry.jacobian(geo, 5, xi_1D)
-                @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_1D)
+                @test_opt Geometry.evaluate(geo, 5, xi_1D)
+                @test_opt Geometry.jacobian(geo, 5, xi_1D)
+                @test_opt Geometry.hessian(geo, 5, xi_1D)
+                @test_opt Geometry.inv_metric(geo, 5, xi_1D)
+                @test_opt Geometry.metric_derivatives(geo, 5, xi_1D)
             elseif Geometry.get_manifold_dim(geo) == 2
-                @test_opt Geometry.Geometry.evaluate(geo, 5, xi_2D)
-                @test_opt Geometry.Geometry.jacobian(geo, 5, xi_2D)
-                @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_2D)
+                @test_opt Geometry.evaluate(geo, 5, xi_2D)
+                @test_opt Geometry.jacobian(geo, 5, xi_2D)
+                @test_opt Geometry.hessian(geo, 5, xi_2D)
+                @test_opt Geometry.inv_metric(geo, 5, xi_2D)
+                @test_opt Geometry.metric_derivatives(geo, 5, xi_2D)
             elseif Geometry.get_manifold_dim(geo) == 3
-                @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D)
-                @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D)
-                @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_3D)
+                @test_opt Geometry.evaluate(geo, 5, xi_3D)
+                @test_opt Geometry.jacobian(geo, 5, xi_3D)
+                @test_opt Geometry.hessian(geo, 5, xi_3D)
+                @test_opt Geometry.inv_metric(geo, 5, xi_3D)
+                @test_opt Geometry.metric_derivatives(geo, 5, xi_3D)
 
                 if typeof(geo) <: Geometry.TensorProductGeometry
                     # Also test the method for non-cartesian points. This is only a
                     # different method for tensor product geometries.
-                    @test_opt Geometry.Geometry.evaluate(geo, 5, xi_3D_set)
-                    @test_opt Geometry.Geometry.jacobian(geo, 5, xi_3D_set)
+                    @test_opt Geometry.evaluate(geo, 5, xi_3D_set)
+                    @test_opt Geometry.jacobian(geo, 5, xi_3D_set)
+                    @test_opt Geometry.hessian(geo, 5, xi_3D_set)
                 end
             elseif Geometry.get_manifold_dim(geo) == 4
-                @test_opt Geometry.Geometry.evaluate(geo, 5, xi_4D)
-                @test_opt Geometry.Geometry.jacobian(geo, 5, xi_4D)
-                @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_4D)
+                @test_opt Geometry.evaluate(geo, 5, xi_4D)
+                @test_opt Geometry.jacobian(geo, 5, xi_4D)
+                @test_opt Geometry.hessian(geo, 5, xi_4D)
+                @test_opt Geometry.inv_metric(geo, 5, xi_4D)
+                @test_opt Geometry.metric_derivatives(geo, 5, xi_4D)
             elseif Geometry.get_manifold_dim(geo) == 11
-                # println(@code_warntype Geometry.Geometry.jacobian(geo, 5, xi_11D))
+                # println(@code_warntype Geometry.jacobian(geo, 5, xi_11D))
                 # error()
-                @test_opt Geometry.Geometry.evaluate(geo, 5, xi_11D)
-                @test_opt Geometry.Geometry.jacobian(geo, 5, xi_11D)
-                @test_opt Geometry.Geometry.inv_metric(geo, 5, xi_11D)
+                @test_opt Geometry.evaluate(geo, 5, xi_11D)
+                @test_opt Geometry.jacobian(geo, 5, xi_11D)
+                @test_opt Geometry.hessian(geo, 5, xi_11D)
+                @test_opt Geometry.inv_metric(geo, 5, xi_11D)
+                # The 11D metric_derivative is not type stable, so we avoid testing it for
+                # now.
+                # @test_opt Geometry.metric_derivatives(geo, 5, xi_11D)
 
                 if typeof(geo) <: Geometry.TensorProductGeometry
                     # Also test the method for non-cartesian points. This is only a
                     # different method for tensor product geometries.
-                    @test_opt Geometry.Geometry.evaluate(geo, 5, xi_11D_set)
-                    @test_opt Geometry.Geometry.jacobian(geo, 5, xi_11D_set)
+                    @test_opt Geometry.evaluate(geo, 5, xi_11D_set)
+                    @test_opt Geometry.jacobian(geo, 5, xi_11D_set)
+                    @test_opt Geometry.hessian(geo, 5, xi_11D_set)
                 end
             else
                 @warn "GeometryInference: This geometry was not tested: $(geo)"

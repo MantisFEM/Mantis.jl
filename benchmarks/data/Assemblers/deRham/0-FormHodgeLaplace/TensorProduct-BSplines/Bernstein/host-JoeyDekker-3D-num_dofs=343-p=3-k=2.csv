@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Assemblers\deRham\0-FormHodgeLaplace\TensorProduct-BSplines\Bernstein\3D-num_dofs=343-p=3-k=2,b4eee92,2025-11-18,1.12.1,2025-11-18,166.865 ms,186.372 ms,55.256 ms,156.720 ms,4.984 ms,210.58 MiB,169281

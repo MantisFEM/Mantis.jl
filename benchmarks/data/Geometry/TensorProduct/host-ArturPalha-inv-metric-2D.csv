@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Geometry/TensorProduct/inv-metric-2D,b4eee92,2025-11-18,1.10.7,2025-11-27,36.834 μs,37.606 μs,2.227 μs,35.208 μs,0.000 ns,32.34 KiB,235
