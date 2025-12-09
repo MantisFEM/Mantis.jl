@@ -17,7 +17,7 @@ struct KnotVector{G, TM}
         geometry::G, polynomial_degree::Int, multiplicity::TM
     ) where {
         image_dim,
-        G <: Geometry.AbstractGeometry{1, image_dim, 1},
+        G <: Geometry.CartesianGeometry{1, image_dim, 1},
         TM <: AbstractVector{Int},
     }
         num_elements = Geometry.get_num_elements(geometry)
@@ -143,9 +143,7 @@ end
 get_polynomial_degree(knot_vector::KnotVector) = knot_vector.polynomial_degree
 
 function get_breakpoints(knot_vector::KnotVector)
-    return Geometry.get_breakpoints_per_dim(
-        Geometry.get_parametric_geometry(get_geometry(knot_vector))
-    )
+    return Geometry.get_breakpoints_per_dim(get_geometry(knot_vector), 1, 1)
 end
 
 function get_element_measure(knot_vector::KnotVector, element_id::Int)

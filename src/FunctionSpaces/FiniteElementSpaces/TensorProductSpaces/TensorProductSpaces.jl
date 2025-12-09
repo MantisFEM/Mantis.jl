@@ -1,6 +1,6 @@
 """
     TensorProductSpace{
-        manifold_dim, num_components, num_patches, num_spaces, T, CIE, LIE, CIB, LIB
+        manifold_dim, num_components, num_patches, num_spaces, T, G, GP, CIB, LIB, D
     } <: AbstractFESpace{manifold_dim, num_components, num_patches}
 
 A structure representing a `TensorProductSpace`, defined by the tensor product of
@@ -9,41 +9,86 @@ the sum of the constituent spaces' manifold dimensions.
 
 # Fields
 - `constituent_spaces::T`: A tuple of constituent finite element spaces to be tensored.
-- `cart_num_elements::CIE`: To convert from tensor-product indexing to constituent-wise
-  indexing for elements.
-- `lin_num_elements::LIE`: To convert from constituent-wise indexing to tensor-product
-  indexing for elements.
+- `geometry::G`: The underlying physical geometry.
+- `parametric_geometry::GP`: The underlying parametric geometry. The function space is
+    defined with respect to this.
 - `cart_num_basis::CIB`: To convert from tensor-product indexing to constituent-wise
-  indexing for basis functions.
+    indexing for basis functions.
 - `lin_num_basis::LIB`: To convert from constituent-wise indexing to tensor-product indexing
-  for basis functions.
-- `dof_partition::Vector{Vector{Vector{Int}}}`: See [`get_dof_partition`](@ref).
+    for basis functions.
+- `dof_partition::D`: See [`get_dof_partition`](@ref).
 """
 struct TensorProductSpace{
-    manifold_dim, num_components, num_patches, num_spaces, T, G, CIB, LIB
+    manifold_dim, num_components, num_patches, num_spaces, T, G, GP, CIB, LIB, D
 } <: AbstractFESpace{manifold_dim, num_components, num_patches}
     constituent_spaces::T
     geometry::G
+    parametric_geometry::GP
     cart_num_basis::CIB
     lin_num_basis::LIB
-    dof_partition::Vector{Vector{Vector{Int}}}
+    dof_partition::D
 
     function TensorProductSpace(
-        constituent_spaces::T
-    ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+        constituent_spaces::T,
+        geometry::Geometry.AbstractGeometry{manifold_dim_G, image_dim, num_patches_G},
+        parametric_geometry::Geometry.AbstractGeometry{
+            manifold_dim_G, manifold_dim_G, num_patches_G
+        },
+    ) where {
+        manifold_dim_G,
+        image_dim,
+        num_patches_G,
+        num_spaces,
+        T <: NTuple{num_spaces, AbstractFESpace},
+    }
         if all(get_num_components.(constituent_spaces) .== 1)
             num_components = 1
         else
-            throw(ArgumentError("All spaces must have only one component."))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "All input spaces must have only one component, but got ",
+                        get_num_components.(constituent_spaces),
+                        "as the number of components for each space.",
+                    ),
+                ),
+            )
         end
 
-        # Create a tensor-product geometry from the constituent ones.
-        constituent_geometries = map(get_geometry, constituent_spaces)
-        geometry = Geometry.TensorProductGeometry(constituent_geometries)
-
-        # Tensor-product space
+        # Parameters for the Tensor-product space
         manifold_dim = sum(get_manifold_dim, constituent_spaces)
-        num_patches = Geometry.get_num_patches(geometry)
+        num_patches = prod(get_num_patches, constituent_spaces)
+        if manifold_dim != manifold_dim_G
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The sum of the `manifold_dim`s of each of the ",
+                        "`constituent_spaces` must match the `manifold_dim` of the ",
+                        "`geometry`, but got ",
+                        manifold_dim,
+                        "and ",
+                        manifold_dim_G,
+                        ", resprectively.",
+                    ),
+                ),
+            )
+        end
+        if num_patches != num_patches_G
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The product of the `num_patches` of each of the ",
+                        "`constituent_spaces` must match the `num_patches` of the ",
+                        "`geometry`, but got ",
+                        num_patches,
+                        "and ",
+                        num_patches_G,
+                        ", resprectively.",
+                    ),
+                ),
+            )
+        end
+
         # Pre-allocate memory for degree of freedom partitioning
         dof_partition = Vector{Vector{Vector{Int}}}(undef, num_patches)
         # Constituent spaces
@@ -90,11 +135,39 @@ struct TensorProductSpace{
             num_spaces,
             T,
             typeof(geometry),
+            typeof(parametric_geometry),
             typeof(cart_num_basis),
             typeof(lin_num_basis),
+            typeof(dof_partition),
         }(
-            constituent_spaces, geometry, cart_num_basis, lin_num_basis, dof_partition
+            constituent_spaces,
+            geometry,
+            parametric_geometry,
+            cart_num_basis,
+            lin_num_basis,
+            dof_partition,
         )
+    end
+
+    function TensorProductSpace(
+        constituent_spaces::T
+    ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+        # Create a tensor-product geometry from the constituent ones.
+        constituent_geometries = map(get_geometry, constituent_spaces)
+        geometry = Geometry.TensorProductGeometry(constituent_geometries)
+        constituent_parametric_geometries = map(get_parametric_geometry, constituent_spaces)
+        parametric_geometry = Geometry.TensorProductGeometry(
+            constituent_parametric_geometries
+        )
+        return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
+    end
+
+    function TensorProductSpace(
+        constituent_spaces::T, geometry::Geometry.MappedGeometry
+    ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+        # Create a tensor-product geometry from the constituent ones.
+        parametric_geometry = Geometry.get_base_geometry(geometry)
+        return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
     end
 end
 

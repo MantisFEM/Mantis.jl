@@ -3,13 +3,13 @@
 ############################################################################################
 
 """
-    ExteriorDerivative{manifold_dim, form_rank, expression_rank, G, F} <:
-    AbstractForm{manifold_dim, form_rank, expression_rank, G}
+    ExteriorDerivative{manifold_dim, form_rank, expression_rank, F} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Represents the exterior derivative of an `AbstractForm`.
 
 # Fields
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
+- `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
     which the exterior derivative is applied.
 - `label::String`: The exterior derivative label. This is a concatenation of `"d"` with the
     label of `form`.
@@ -21,8 +21,7 @@ Represents the exterior derivative of an `AbstractForm`.
 - `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
     with one single set of basis forms have rank 1, with two sets of basis forms have rank
     2. Higher ranks are not possible.
-- `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
-- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank, G}`: The
+- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank}`: The
     type of `form`.
 
 # Inner Constructors

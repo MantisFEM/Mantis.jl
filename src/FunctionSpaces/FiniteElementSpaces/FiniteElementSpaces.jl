@@ -268,6 +268,21 @@ function get_geometry(space::AbstractFESpace)
 end
 
 """
+    get_parametric_geometry(space::AbstractFESpace)
+
+Get the parametric geometry underlying the given `space`.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+
+# Returns
+- `::AbstractGeometry`: The underlying parametric geometry.
+"""
+function get_parametric_geometry(space::AbstractFESpace)
+    return space.parametric_geometry
+end
+
+"""
     get_num_elements(space::AbstractFESpace)
 
 Returns the total number of elements of the geometry on which the `space` is build.

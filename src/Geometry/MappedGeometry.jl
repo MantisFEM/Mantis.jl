@@ -249,34 +249,28 @@ function get_mapping(
 end
 
 # Getters for geometries.
-function get_parametric_geometry(geometry::MappedGeometry)
-    return get_parametric_geometry(get_base_geometry(geometry))
-end
+# function get_parametric_geometry(geometry::MappedGeometry)
+#     return get_parametric_geometry(get_base_geometry(geometry))
+# end
 
-function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
-    return get_parametric_geometry(get_base_geometry(geometry, patch_id))
-end
+# function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
+#     return get_parametric_geometry(get_base_geometry(geometry, patch_id))
+# end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_lengths(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_lengths(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 function get_element_measure(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_measure(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_measure(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 function get_element_vertices(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_vertices(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_vertices(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 # Evaluations and derivatives.

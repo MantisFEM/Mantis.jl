@@ -186,30 +186,30 @@ function get_constituent_hessians(
 end
 
 # Getters for geometries.
-function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
-    const_num_patches = ntuple(
-        gi -> get_num_patches(get_constituent_geometry(geometry, gi)),
-        get_num_geometries(geometry),
-    )
-    cart_num_patches = CartesianIndices(const_num_patches)
-    patch_id_per_geo = cart_num_patches[patch_id]
-    breakpoints_per_geo = ntuple(
-        geo_id -> get_breakpoints(
-            get_parametric_geometry(get_constituent_geometry(geometry, geo_id)),
-            patch_id_per_geo[geo_id],
-        ),
-        get_num_geometries(geometry),
-    )
-    return CartesianGeometry(Base.IteratorsMD.flatten(breakpoints_per_geo))
-end
+# function get_parametric_geometry(geometry::TensorProductGeometry, patch_id::Int)
+#     const_num_patches = ntuple(
+#         gi -> get_num_patches(get_constituent_geometry(geometry, gi)),
+#         get_num_geometries(geometry),
+#     )
+#     cart_num_patches = CartesianIndices(const_num_patches)
+#     patch_id_per_geo = cart_num_patches[patch_id]
+#     breakpoints_per_geo = ntuple(
+#         geo_id -> get_breakpoints(
+#             get_parametric_geometry(get_constituent_geometry(geometry, geo_id)),
+#             patch_id_per_geo[geo_id],
+#         ),
+#         get_num_geometries(geometry),
+#     )
+#     return CartesianGeometry(Base.IteratorsMD.flatten(breakpoints_per_geo))
+# end
 
-function get_parametric_geometry(geometry::TensorProductGeometry)
-    return CartesianGeometry(
-        ntuple(Val(get_num_patches(geometry))) do patch_id
-            return get_breakpoints(get_parametric_geometry(geometry, patch_id))
-        end,
-    )
-end
+# function get_parametric_geometry(geometry::TensorProductGeometry)
+#     return CartesianGeometry(
+#         ntuple(Val(get_num_patches(geometry))) do patch_id
+#             return get_breakpoints(get_parametric_geometry(geometry, patch_id))
+#         end,
+#     )
+# end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_num_elements(geometry::TensorProductGeometry)

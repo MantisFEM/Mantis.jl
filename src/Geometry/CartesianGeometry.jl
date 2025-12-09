@@ -93,13 +93,13 @@ function get_geometry(geometry::CartesianGeometry, patch_id::Int)
     return CartesianGeometry((geometry.breakpoints[patch_id],))
 end
 
-function get_parametric_geometry(geometry::CartesianGeometry)
-    return geometry
-end
+# function get_parametric_geometry(geometry::CartesianGeometry)
+#     return geometry
+# end
 
-function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
-    return get_geometry(geometry, patch_id)
-end
+# function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
+#     return get_geometry(geometry, patch_id)
+# end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_num_elements(geometry::CartesianGeometry, patch_id::Int)
