@@ -20,9 +20,7 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
     function TensorProductGeometry(
         geometries::T
     ) where {num_geometries, T <: NTuple{num_geometries, AbstractGeometry}}
-        const_num_elements = ntuple(
-            geometry -> get_num_elements(geometries[geometry]), num_geometries
-        )
+        const_num_elements = map(get_num_elements, geometries)
         cart_num_elements = CartesianIndices(const_num_elements)
 
         manifold_dim = sum(get_manifold_dim, geometries)
@@ -32,10 +30,8 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
         # The above iterators over the elements also work in the multi-patch case due to the
         # (global) tensor-product structure. However, to make it compatible with other multi
         # -patch functions, an efficient get_num_elements_per_patch is needed. This is
-        # easily and efficiently done once here and then stored. Hence the next 10 lines.
-        const_num_patches = ntuple(
-            geometry -> get_num_patches(geometries[geometry]), num_geometries
-        )
+        # easily and efficiently done once here and then stored. Hence the next 5 lines.
+        const_num_patches = map(get_num_patches, geometries)
         cart_num_patches = CartesianIndices(const_num_patches)
         num_elements_per_patch = ntuple(num_patches) do patch_id
             return prod(map(get_num_elements, geometries, Tuple(cart_num_patches[patch_id])))
@@ -73,7 +69,11 @@ function get_constituent_num_elements(geometry::TensorProductGeometry)
 end
 
 function get_constituent_element_id(geometry::TensorProductGeometry, element_id::Int)
-    return Tuple(get_cart_num_elements(geometry)[element_id])
+    # While the elements are globally tensored in TPGeometry, the output should be
+    # consistent with the same function for CartesianGeometry, which also returns the
+    # patch_id, so we do that here too.
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_cart_num_elements(geometry)[element_id], patch_id
 end
 
 function get_constituent_manifold_dim(geometry::TensorProductGeometry)
@@ -118,16 +118,18 @@ end
 
 function get_constituent_element_vertices(geometry::TensorProductGeometry, element_id::Int)
     const_spaces = get_constituent_geometries(geometry)
-    const_element_id = get_constituent_element_id(geometry, element_id)
-    const_element_vertices = map(get_element_vertices, const_spaces, const_element_id)
+    const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
+    const_element_vertices = map(
+        get_element_vertices, const_spaces, Tuple(const_element_id)
+    )
 
     return const_element_vertices
 end
 
 function get_constituent_element_lengths(geometry::TensorProductGeometry, element_id::Int)
     const_spaces = get_constituent_geometries(geometry)
-    const_element_id = get_constituent_element_id(geometry, element_id)
-    const_element_lengths = map(get_element_lengths, const_spaces, const_element_id)
+    const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
+    const_element_lengths = map(get_element_lengths, const_spaces, Tuple(const_element_id))
 
     return const_element_lengths
 end
@@ -152,9 +154,9 @@ function get_constituent_evaluations(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_geometries = get_constituent_geometries(geometry)
-    const_element_id = get_constituent_element_id(geometry, element_id)
+    const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_eval = map(evaluate, const_geometries, const_element_id, const_xi)
+    const_eval = map(evaluate, const_geometries, Tuple(const_element_id), const_xi)
 
     return const_eval
 end
@@ -165,9 +167,9 @@ function get_constituent_jacobians(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_geometries = get_constituent_geometries(geometry)
-    const_element_id = get_constituent_element_id(geometry, element_id)
+    const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_jac = map(jacobian, const_geometries, const_element_id, const_xi)
+    const_jac = map(jacobian, const_geometries, Tuple(const_element_id), const_xi)
 
     return const_jac
 end

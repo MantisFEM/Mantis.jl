@@ -26,14 +26,14 @@ TP_Space_2d = FunctionSpaces.create_bspline_space(
 dsTP_1_form_2d = FunctionSpaces.DirectSumSpace((TP_Space_2d, TP_Space_2d))
 
 # Generate the form spaces
-zero_form_space_2d = Forms.FormSpace(0, geo_2d_cart, TP_Space_2d, "ν")
-one_form_space_2d = Forms.FormSpace(1, geo_2d_cart, dsTP_1_form_2d, "η")
-top_form_space_2d = Forms.FormSpace(2, geo_2d_cart, TP_Space_2d, "σ")
+zero_form_space_2d = Forms.FormSpace(0, TP_Space_2d, "ν")
+one_form_space_2d = Forms.FormSpace(1, dsTP_1_form_2d, "η")
+top_form_space_2d = Forms.FormSpace(2, TP_Space_2d, "σ")
 
 # Checks if incorrect arguments throw errors
-@test_throws ArgumentError Forms.FormSpace(1, geo_2d_cart, TP_Space_2d, "ν")
-@test_throws ArgumentError Forms.FormSpace(0, geo_2d_cart, dsTP_1_form_2d, "ν")
-@test_throws ArgumentError Forms.FormSpace(2, geo_2d_cart, dsTP_1_form_2d, "ν")
+@test_throws ArgumentError Forms.FormSpace(0, dsTP_1_form_2d, "ν")
+@test_throws ArgumentError Forms.FormSpace(1, TP_Space_2d, "ν")
+@test_throws ArgumentError Forms.FormSpace(2, dsTP_1_form_2d, "ν")
 
 # Evaluate forms
 # Evaluation points
@@ -178,19 +178,16 @@ dsTP_2_form_3d = dsTP_1_form_3d
 dsTP_top_form_3d = dsTP_0_form_3d
 
 # Generate the form spaces
-zero_form_space_3d = Forms.FormSpace(0, geo_3d_cart, dsTP_0_form_3d, "ν")
-one_form_space_3d = Forms.FormSpace(1, geo_3d_cart, dsTP_1_form_3d, "η")
-two_form_space_3d = Forms.FormSpace(2, geo_3d_cart, dsTP_2_form_3d, "ψ")
-top_form_space_3d = Forms.FormSpace(3, geo_3d_cart, dsTP_top_form_3d, "σ")
+zero_form_space_3d = Forms.FormSpace(0, dsTP_0_form_3d, "ν")
+one_form_space_3d = Forms.FormSpace(1, dsTP_1_form_3d, "η")
+two_form_space_3d = Forms.FormSpace(2, dsTP_2_form_3d, "ψ")
+top_form_space_3d = Forms.FormSpace(3, dsTP_top_form_3d, "σ")
 
 # Checks if incorrect arguments throw errors
-@test_throws ArgumentError Forms.FormSpace(1, geo_3d_cart, dsTP_0_form_3d, "ν")
-@test_throws ArgumentError Forms.FormSpace(2, geo_3d_cart, dsTP_0_form_3d, "ν")
-@test_throws ArgumentError Forms.FormSpace(0, geo_3d_cart, dsTP_1_form_3d, "ν")
-@test_throws ArgumentError Forms.FormSpace(3, geo_3d_cart, dsTP_1_form_3d, "ν")
-@test_throws MethodError Forms.FormSpace(3, geo_2d_cart, dsTP_top_form_3d, "ν")  # incompatible manifold size (2D) for the components
-@test_throws MethodError Forms.FormSpace(1, geo_2d_cart, dsTP_1_form_3d, "ν")
-@test_throws MethodError Forms.FormSpace(2, geo_2d_cart, dsTP_2_form_3d, "ν")
+@test_throws ArgumentError Forms.FormSpace(1, dsTP_0_form_3d, "ν")
+@test_throws ArgumentError Forms.FormSpace(2, dsTP_0_form_3d, "ν")
+@test_throws ArgumentError Forms.FormSpace(0, dsTP_1_form_3d, "ν")
+@test_throws ArgumentError Forms.FormSpace(3, dsTP_1_form_3d, "ν")
 
 # Evaluate forms
 

@@ -52,9 +52,7 @@ struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim,
                       """))
         end
 
-        return new{manifold_dim, form_rank, FS}(
-            get_geometry(form_space), form_space, coefficients, label
-        )
+        return new{manifold_dim, form_rank, FS}(form_space, coefficients, label)
     end
 
     """
@@ -145,6 +143,8 @@ Returns the form space associated with the form field.
 """
 get_form_space(form_field::FormField) = form_field.form_space
 
+get_form(form_field::FormField) = form_field.form_space
+
 """
     get_coefficients(form_field::FormField)
 
@@ -182,7 +182,6 @@ Returns the expression of the analytical form field.
 # Returns
 - `<:Function`: The expression of the analytical form field.
 """
-
 get_expression(form_field::AnalyticalFormField) = form_field.expression
 
 ############################################################################################

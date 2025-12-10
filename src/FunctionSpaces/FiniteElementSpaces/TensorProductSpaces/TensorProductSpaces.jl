@@ -163,10 +163,28 @@ struct TensorProductSpace{
     end
 
     function TensorProductSpace(
+        constituent_spaces::T, geometry::Geometry.CartesianGeometry
+    ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+        return TensorProductSpace(constituent_spaces, geometry, geometry)
+    end
+
+    function TensorProductSpace(
         constituent_spaces::T, geometry::Geometry.MappedGeometry
     ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
         # Create a tensor-product geometry from the constituent ones.
         parametric_geometry = Geometry.get_base_geometry(geometry)
+        return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
+    end
+
+    function TensorProductSpace(
+        constituent_spaces::T, geometry::Geometry.TensorProductGeometry
+    ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+        # Create a tensor-product geometry from the constituent ones, since the given
+        # physical TPGeometry may consist of mapped or other geometries.
+        constituent_parametric_geometries = map(get_parametric_geometry, constituent_spaces)
+        parametric_geometry = Geometry.TensorProductGeometry(
+            constituent_parametric_geometries
+        )
         return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
     end
 end
@@ -233,10 +251,10 @@ function get_constituent_num_basis(
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_num_basis = ntuple(
-        space -> get_num_basis(const_spaces[space], const_element_id[space]), num_spaces
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
     )
+    const_num_basis = map(get_num_basis, const_spaces, Tuple(const_element_id))
 
     return const_num_basis
 end
@@ -276,10 +294,10 @@ function get_constituent_basis_indices(
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_basis_indices = ntuple(
-        space -> get_basis_indices(const_spaces[space], const_element_id[space]), num_spaces
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
     )
+    const_basis_indices = map(get_basis_indices, const_spaces, Tuple(const_element_id))
 
     return const_basis_indices
 end
@@ -322,11 +340,11 @@ function get_constituent_extraction(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_spaces = get_constituent_spaces(space)
-    const_extraction = ntuple(
-        space -> get_extraction(const_spaces[space], const_element_id[space]), num_spaces
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
     )
+    const_spaces = get_constituent_spaces(space)
+    const_extraction = map(get_extraction, const_spaces, Tuple(const_element_id))
 
     return const_extraction
 end
@@ -372,13 +390,12 @@ function get_constituent_local_basis(
     nderivatives::Int=0,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
+    )
     const_xi = get_constituent_evaluation_points(space, xi)
-    const_local_basis = ntuple(
-        space -> get_local_basis(
-            const_spaces[space], const_element_id[space], const_xi[space], nderivatives
-        ),
-        num_spaces,
+    const_local_basis = map(
+        get_local_basis, const_spaces, Tuple(const_element_id), const_xi, Ref(nderivatives)
     )
 
     return const_local_basis
@@ -401,14 +418,17 @@ function get_constituent_evaluations(
     nderivatives::Int=0,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_xi = get_constituent_evaluation_points(space, xi)
-    const_eval = ntuple(
-        space -> evaluate(
-            const_spaces[space], const_element_id[space], const_xi[space], nderivatives
-        )[1],
-        num_spaces,
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
     )
+    const_xi = get_constituent_evaluation_points(space, xi)
+
+    tup_ders = ntuple(i -> nderivatives, num_spaces)
+    const_eval_and_inds = map(
+        evaluate, const_spaces, Tuple(const_element_id), const_xi, tup_ders
+    )
+
+    const_eval = map(getindex, const_eval_and_inds, ntuple(i -> 1, num_spaces))
 
     return const_eval
 end
@@ -462,10 +482,11 @@ function get_constituent_element_vertices(
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_element_vertices = ntuple(
-        space -> get_element_vertices(const_spaces[space], const_element_id[space]),
-        num_spaces,
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
+    )
+    const_element_vertices = map(
+        get_element_vertices, const_spaces, Tuple(const_element_id)
     )
 
     return const_element_vertices
@@ -476,11 +497,10 @@ function get_constituent_element_lengths(
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_spaces = get_constituent_spaces(space)
-    const_element_id = Geometry.get_constituent_element_id(get_geometry(space), element_id)
-    const_element_lengths = ntuple(
-        space -> get_element_lengths(const_spaces[space], const_element_id[space]),
-        num_spaces,
+    const_element_id, patch_id = Geometry.get_constituent_element_id(
+        get_parametric_geometry(space), element_id
     )
+    const_element_lengths = map(get_element_lengths, const_spaces, Tuple(const_element_id))
 
     return const_element_lengths
 end
@@ -505,7 +525,7 @@ function get_support(
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_support = get_constituent_support(space, basis_id)
-    const_num_elements = Geometry.get_num_elements(get_geometry(space))
+    const_num_elements = Geometry.get_num_elements(get_parametric_geometry(space))
     lin_num_elements = LinearIndices(const_num_elements)
     support = Vector{Int}(undef, prod(length, const_support))
     for (element_count, const_element_id) in enumerate(Iterators.product(const_support...))

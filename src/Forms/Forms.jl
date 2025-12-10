@@ -162,7 +162,7 @@ Returns the geometry of the given form expression.
 # Returns
 - `<:Geometry.AbstractGeometry`: The geometry of the form expression.
 """
-get_geometry(form::AbstractForm) = get_geometry(get_fe_space(form))
+get_geometry(form::AbstractForm) = FunctionSpaces.get_geometry(get_fe_space(form))
 
 """
     get_geometry(
@@ -289,6 +289,10 @@ function get_fe_space(form::FS) where {FS <: AbstractFormSpace}
         return form.fem_space
     end
 
+    return get_fe_space(get_form(form))
+end
+
+function get_fe_space(form::FS) where {FS <: AbstractFormField}
     return get_fe_space(get_form(form))
 end
 
