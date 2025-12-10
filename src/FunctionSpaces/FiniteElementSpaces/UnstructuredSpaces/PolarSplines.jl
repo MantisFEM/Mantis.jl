@@ -215,9 +215,11 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ArgumentError("The poloidal space does not match the input coefficients.")
             )
         end
+
         if n_r != size(degenerate_control_points, 2)
             throw(ArgumentError("The radial space does not match the input coefficients."))
         end
+
         if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
             throw(
                 ArgumentError(
@@ -225,6 +227,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ),
             )
         end
+
         if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
             throw(
                 ArgumentError(
@@ -312,9 +315,11 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ArgumentError("The poloidal space does not match the input coefficients.")
             )
         end
+
         if n_r != size(degenerate_control_points, 2)
             throw(ArgumentError("The radial space does not match the input coefficients."))
         end
+
         if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
             throw(
                 ArgumentError(
@@ -322,6 +327,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ),
             )
         end
+
         if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
             throw(
                 ArgumentError(
@@ -329,6 +335,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ),
             )
         end
+
         if n_p != get_num_basis(dspace_p)
             throw(
                 ArgumentError(
@@ -336,6 +343,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
                 ),
             )
         end
+
         if n_r != get_num_basis(dspace_r) + 1
             throw(ArgumentError("Input radial space and its derivative are incompatible."))
         end
@@ -722,6 +730,11 @@ function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
 end
 
+# TODO: This needs the new workflow for FEGeometry
 function get_geometry(space::PolarSplineSpace)
+    throw(ArgumentError("Not yet implemented"))
+end
+
+function get_parametric_geometry(space::PolarSplineSpace)
     return get_geometry(first(get_patch_spaces(space)))
 end

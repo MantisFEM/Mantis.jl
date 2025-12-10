@@ -80,6 +80,10 @@ function get_geometry(space::DirectSumSpace)
     return get_geometry(first(get_component_spaces(space)))
 end
 
+function get_parametric_geometry(space::DirectSumSpace)
+    return get_parametric_geometry(first(get_component_spaces(space)))
+end
+
 function get_basis_indices(space::DirectSumSpace, element_id::Int)
     basis_indices_per_component = ntuple(get_num_components(space)) do i
         return get_basis_indices(get_component_spaces(space)[i], element_id) .+

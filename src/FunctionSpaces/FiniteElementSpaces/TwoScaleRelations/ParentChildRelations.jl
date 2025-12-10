@@ -68,9 +68,3 @@ function get_basis_parents(
 ) where {PCE, CPE, PCB, CPB <: Function}
     return get_child_to_parents_basis(relations)(child)
 end
-
-# get_parent_to_child_relations(TS::TensorProductTwoScaleOperator) =
-#     parent -> get_element_children(TS, parent)
-
-# get_child_to_parent_relations(TS::TensorProductTwoScaleOperator) =
-#     child -> get_element_parent(TS, child)

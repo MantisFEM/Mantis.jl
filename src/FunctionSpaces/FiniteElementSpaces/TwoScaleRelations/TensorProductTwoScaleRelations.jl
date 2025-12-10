@@ -52,11 +52,13 @@ struct TensorProductTwoScaleOperator{
     end
 end
 
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
+
 function get_constituent_twoscale_operators(operator::TensorProductTwoScaleOperator)
     return operator.twoscale_operators
 end
-
-# Basic getters per two scale operator
 
 function get_constituent_element_children(
     operator::TensorProductTwoScaleOperator{
@@ -121,8 +123,6 @@ function get_constituent_basis_parent(
 
     return const_parent
 end
-
-# Basis getters for TensorProductTwoScaleOperator
 
 """
     get_element_children(operator::TensorProductTwoScaleOperator, element_id::Int)
@@ -223,6 +223,10 @@ function get_basis_parents(operator::TensorProductTwoScaleOperator, basis_id::In
     return basis_parents
 end
 
+############################################################################################
+#                                       Subdivision                                        #
+############################################################################################
+
 """
     subdivide_space(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
@@ -294,10 +298,12 @@ function build_two_scale_operator(
             build_two_scale_operator(const_parent_spaces[space], num_subdivisions[space]),
         num_spaces,
     )
-    twoscale_operators = ntuple(space -> twoscale_data[space][1], num_spaces)
+    const_two_scale_operators = ntuple(space -> twoscale_data[space][1], num_spaces)
     const_child_spaces = ntuple(space -> twoscale_data[space][2], num_spaces)
     child_space = TensorProductSpace(const_child_spaces)
 
-    return TensorProductTwoScaleOperator(parent_space, child_space, twoscale_operators),
+    return TensorProductTwoScaleOperator(
+        parent_space, child_space, const_two_scale_operators
+    ),
     child_space
 end

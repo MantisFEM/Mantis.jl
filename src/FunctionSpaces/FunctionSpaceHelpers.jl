@@ -62,7 +62,6 @@ function create_bspline_space(
 
     breakpoints = LinRange(starting_point, starting_point + box_size, num_elements + 1)
     geometry = Geometry.CartesianGeometry(breakpoints) # parametric & physical
-
     regularity_vector = fill(regularity, (num_elements + 1,))
     regularity_vector[1] = regularity_vector[end] = -1 # Open knot vector
 
