@@ -266,6 +266,7 @@ necessarily a tight upper bound.
 
 # Arguments
 - `form_space::AbstractFormSpace`: The form space.
+
 # Returns
 - `::Int`: The element-local upper bound.
 """
@@ -274,25 +275,23 @@ function get_max_local_dim(form_space::AbstractFormSpace)
 end
 
 """
-    get_fe_space(form::FS) where {FS <: AbstractFormSpace}
+    get_fe_space(form::FS) where {FS <: AbstractForm}
 
-Returns the finite element space associated with the given form space.
+Returns the finite element space associated with the given form. Note that this function
+recurses untill it finds a form (usually a `FormSpace`) which has an underlying finite
+element space.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+- `form_space::AbstractForm`: The form space.
 
 # Returns
 - `<:FunctionSpaces.AbstractFESpace`: The finite element space.
 """
-function get_fe_space(form::FS) where {FS <: AbstractFormSpace}
+function get_fe_space(form::FS) where {FS <: AbstractForm}
     if hasfield(FS, :fem_space)
         return form.fem_space
     end
 
-    return get_fe_space(get_form(form))
-end
-
-function get_fe_space(form::FS) where {FS <: AbstractFormField}
     return get_fe_space(get_form(form))
 end
 
