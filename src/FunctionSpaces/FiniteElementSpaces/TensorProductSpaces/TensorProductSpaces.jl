@@ -165,15 +165,30 @@ struct TensorProductSpace{
     function TensorProductSpace(
         constituent_spaces::T, geometry::Geometry.CartesianGeometry
     ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
-        return TensorProductSpace(constituent_spaces, geometry, geometry)
+        # Check the compatibility of the underlying geometries of the constituent spaces
+        # and the given CartesianGeometry (which acts as both parametric and physical
+        # geometry).
+        if check_compatible(constituent_spaces, geometry)
+            return TensorProductSpace(constituent_spaces, geometry, geometry)
+        else
+            error("The geometry and spaces are unexpectedly incompatible. This is a bug.")
+        end
     end
 
     function TensorProductSpace(
-        constituent_spaces::T, geometry::Geometry.MappedGeometry
+        constituent_spaces::T,
+        parametric_geometry::Geometry.CartesianGeometry,
+        map::Geometry.Mapping,
     ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
-        # Create a tensor-product geometry from the constituent ones.
-        parametric_geometry = Geometry.get_base_geometry(geometry)
-        return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
+        if check_compatible(constituent_spaces, parametric_geometry)
+            return TensorProductSpace(
+                constituent_spaces,
+                Geometry.MappedGeometry(parametric_geometry, map),
+                parametric_geometry,
+            )
+        else
+            error("The geometry and spaces are unexpectedly incompatible. This is a bug.")
+        end
     end
 
     function TensorProductSpace(
@@ -187,6 +202,147 @@ struct TensorProductSpace{
         )
         return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
     end
+end
+
+merge_two_tuples(tup::NTuple{N, T}, tup2::NTuple{N2, T}) where {N, N2, T} =
+    (tup..., tup2...)
+function merge_tuples(tup::NTuple{N, T}, tups...) where {N, T}
+    if length(tups) == 1
+        return merge_two_tuples(tup, first(tups))
+    end
+    return merge_tuples(merge_two_tuples(tup, first(tups)), Base.tail(tups)...)
+end
+
+function check_compatible(
+    constituent_spaces::T, geometry::Geometry.CartesianGeometry
+) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
+    # Check that the new manifold dim and number of patches matches.
+    new_manifold_dim = sum(get_manifold_dim, constituent_spaces)
+    if new_manifold_dim != Geometry.get_manifold_dim(geometry)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given CartesianGeometry is not compatible with the given",
+                    " spaces. The sum of the manifold dimensions of the spaces is ",
+                    new_manifold_dim,
+                    " while the given CartesianGeometry has a manifold dimension of ",
+                    Geometry.get_manifold_dim(geometry),
+                    ".",
+                ),
+            ),
+        )
+    end
+    new_num_patches = prod(get_num_patches, constituent_spaces)
+    if new_num_patches != Geometry.get_num_patches(geometry)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given CartesianGeometry is not compatible with the given",
+                    " spaces. The product of the number of patches of the spaces is ",
+                    new_num_patches,
+                    " while the given CartesianGeometry has ",
+                    Geometry.get_num_patches(geometry),
+                    " patches.",
+                ),
+            ),
+        )
+    end
+
+    constituent_geometries = map(get_geometry, constituent_spaces)
+    # Check that all given spaces are build using CartesianGeometries, otherwise we
+    # cannot check the compatibility.
+    is_cartesian = map(i -> i isa Geometry.CartesianGeometry, constituent_geometries)
+    if !all(is_cartesian)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given CartesianGeometry is not compatible with the given",
+                    " spaces. The space at index ",
+                    findfirst(isequal(false), is_cartesian),
+                    " does not have an underlying CartesianGeometry.",
+                ),
+            ),
+        )
+    end
+
+    # Check that the total number of elements match.
+    constituent_num_elements = map(Geometry.get_num_elements, constituent_geometries)
+    tp_num_elements = prod(constituent_num_elements)
+    if tp_num_elements != Geometry.get_num_elements(geometry)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given CartesianGeometry is not compatible with the given",
+                    " spaces. The product of the number of elements of the spaces is ",
+                    tp_num_elements,
+                    " while the given CartesianGeometry has ",
+                    Geometry.get_num_elements(geometry),
+                    " elements.",
+                ),
+            ),
+        )
+    end
+
+    # Check that the structure of the elements matches.
+    cart_num_elements = CartesianIndices(constituent_num_elements)
+    constituent_num_patches = map(Geometry.get_num_patches, constituent_geometries)
+    cart_num_patches = CartesianIndices(constituent_num_patches)
+    for ((patch_id, local_patch_ids), (global_element_id, local_element_ids)) in
+        zip(enumerate(cart_num_patches), enumerate(cart_num_elements))
+        patch_constituent_element_ids, cart_patch_id = Geometry.get_constituent_element_id(
+            geometry, global_element_id
+        )
+
+        if !(patch_id == cart_patch_id)
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The given CartesianGeometry is not compatible with the given",
+                        " spaces. On global element ",
+                        global_element_id,
+                        ", the tensor product spaces would be on patch ",
+                        patch_id,
+                        ", while the given CartesianGeometry is on patch ",
+                        cart_patch_id,
+                        ".",
+                    ),
+                ),
+            )
+        end
+
+        elements_and_patches = map(
+            Geometry.get_constituent_element_id,
+            constituent_geometries,
+            Tuple(local_element_ids),
+        )
+        elements_per_patch_constituent_ci = map(
+            getindex, elements_and_patches, ntuple(i -> 1, num_spaces)
+        )
+        elements_per_patch_constituent_tuptup = map(
+            Tuple, elements_per_patch_constituent_ci
+        )
+        elements_per_patch_constituent_tup = merge_tuples(
+            elements_per_patch_constituent_tuptup...
+        )
+        if !all(elements_per_patch_constituent_tup .== Tuple(patch_constituent_element_ids))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The given CartesianGeometry is not compatible with the given",
+                        " spaces. On global element ",
+                        global_element_id,
+                        ", the tensor product spaces would be on local elements ",
+                        elements_per_patch_constituent_tup,
+                        ", while the given CartesianGeometry is on ",
+                        Tuple(patch_constituent_element_ids),
+                        ".",
+                    ),
+                ),
+            )
+        end
+    end
+
+    return true
 end
 
 # Getters

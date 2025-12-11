@@ -55,12 +55,13 @@ const B2 = FunctionSpaces.BSplineSpace(geo_cart_2, deg, [-1, min(deg - 1, 1), de
 
 # Physical geometries
 const geo_cart = Geometry.CartesianGeometry((breakpoints, breakpoints2))
-const geom_crazy = Geometry.MappedGeometry(geo_cart, crazy_mapping)
 
 # Tensor-product B-spline spaces
 const TP_Space_2d_tp_geo = FunctionSpaces.TensorProductSpace((B1, B2))
 const TP_Space_2d_cart_geo = FunctionSpaces.TensorProductSpace((B1, B2), geo_cart)
-const TP_Space_2d_crazy_geo = FunctionSpaces.TensorProductSpace((B1, B2), geom_crazy)
+const TP_Space_2d_crazy_geo = FunctionSpaces.TensorProductSpace(
+    (B1, B2), geo_cart, crazy_mapping
+)
 
 const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gauss_legendre)
 @testset "2D" verbose = true begin
