@@ -2,7 +2,7 @@
     Tchebycheff <: AbstractECTSpaces
 
 A Tchebycheffian section space. The parameters are the roots of a differential operator with
-constant coefficients.
+constant coefficients; see [Schumaker2007](@cite).
 * A complex root `α + iβ`, `β ≠ 0`, of multiplicity `m` contributes `2m` basis functions of
   the form (upto scaling):
     `x^i e^(αx) cos(βx)`, `x^i e^(αx) sin(βx)`, `i = 0, ..., m-1`
