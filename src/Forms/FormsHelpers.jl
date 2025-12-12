@@ -442,13 +442,13 @@ end
 #         two_form_space, zero_form_space_domains, new_two_form_ts, new_two_form_space
 #     )
 
-    # Build new form spaces
-	# BUG: `HierarchicalGeometry` is deprecated.
-    geom = Geometry.HierarchicalGeometry(zero_form_space)
-    one_form_space_sum = FunctionSpaces.DirectSumSpace((one_form_space_x, one_form_space_y))
-    zero_form = Forms.FormSpace(0, geom, zero_form_space, "β")
-    one_form = Forms.FormSpace(1, geom, one_form_space_sum, "σ")
-    two_form = Forms.FormSpace(2, geom, two_form_space, "u")
+#    # Build new form spaces
+# # BUG: `HierarchicalGeometry` is deprecated.
+#    geom = Geometry.HierarchicalGeometry(zero_form_space)
+#    one_form_space_sum = FunctionSpaces.DirectSumSpace((one_form_space_x, one_form_space_y))
+#    zero_form = Forms.FormSpace(0, geom, zero_form_space, "β")
+#    one_form = Forms.FormSpace(1, geom, one_form_space_sum, "σ")
+#    two_form = Forms.FormSpace(2, geom, two_form_space, "u")
 
 #     return zero_form, one_form, two_form
 # end
@@ -559,7 +559,7 @@ function create_polar_spline_de_rham_complex(
         )
     end
     geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
-	# BUG: `FEGeometry` is deprecated.
+    # BUG: `FEGeometry` is deprecated.
     geometry = Geometry.FEGeometry(P_geom, geom_coeffs_polar)
 
     ##############################

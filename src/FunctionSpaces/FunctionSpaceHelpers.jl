@@ -271,10 +271,6 @@ function create_bspline_space(
     n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
     n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim}
-    breakpoints = map(
-        LinRange, starting_points, starting_points + box_sizes, num_elements .+ 1
-    )
-    geometry = Geometry.CartesianGeometry(breakpoints)
     spaces = create_dim_wise_bspline_spaces(
         starting_points,
         box_sizes,
@@ -285,11 +281,7 @@ function create_bspline_space(
         n_dofs_right=n_dofs_right,
     )
 
-    return TensorProductSpace(
-        spaces,
-        geometry,
-        geometry, # The parametric geometry is the same as the physical geometry here.
-    )
+    return TensorProductSpace(spaces, Geometry.CartesianGeometry)
 end
 
 """
@@ -323,7 +315,7 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::F,
-    regularities::NTuple{manifold_dim, Int};
+    regularities::NTuple{manifold_dim, Int},
     n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
     n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
@@ -333,9 +325,9 @@ function create_dim_wise_bspline_spaces(
             box_sizes[i],
             num_elements[i],
             section_spaces[i],
-            regularities[i],
-            n_dofs_left[i],
-            n_dofs_right[i],
+            regularities[i];
+            n_dofs_left=n_dofs_left[i],
+            n_dofs_right=n_dofs_right[i],
         )
     end
 end
@@ -383,9 +375,9 @@ function create_bspline_space(
         box_sizes,
         num_elements,
         degrees,
-        regularities;
-        n_dofs_left=n_dofs_left,
-        n_dofs_right=n_dofs_right,
+        regularities,
+        n_dofs_left,
+        n_dofs_right,
     )
 
     return TensorProductSpace(
@@ -426,7 +418,7 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
-    regularities::NTuple{manifold_dim, Int};
+    regularities::NTuple{manifold_dim, Int},
     n_dofs_left::NTuple{manifold_dim, Int},
     n_dofs_right::NTuple{manifold_dim, Int},
 ) where {manifold_dim}

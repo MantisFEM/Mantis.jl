@@ -162,6 +162,14 @@ function BSplineSpace(
 end
 function BSplineSpace(
     geometry::Geometry.AbstractGeometry{1, image_dim, 1},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Vector{Int},
+) where {image_dim}
+    parametric_geometry = _create_bspline_parametric_geometry(geometry)
+    return BSplineSpace(geometry, parametric_geometry, polynomials, regularity)
+end
+function BSplineSpace(
+    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
     polynomial_degree::Int,
     regularity::Int,
 ) where {image_dim}
