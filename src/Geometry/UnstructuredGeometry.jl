@@ -40,7 +40,12 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
     end
 end
 
-# Getters and setters.
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
+
+get_geometry_per_patch(geometry::UnstructuredGeometry) = geometry.geometry_per_patch
+
 function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
     return geometry.geometry_per_patch[patch_id]
 end
@@ -61,9 +66,10 @@ function get_element_vertices(geometry::UnstructuredGeometry, element_id::Int)
     return get_element_vertices(get_geometry(geometry, patch_id), local_element_id)
 end
 
-# Evaluation (and related) methods.
-# All these methods first determine the patch on which the element resides, then call the
-# corresponding method on that patch's geometry.
+############################################################################################
+#                                        Evaluation                                        #
+############################################################################################
+
 function evaluate(
     geometry::UnstructuredGeometry{manifold_dim},
     element_id::Int,

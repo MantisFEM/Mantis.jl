@@ -29,9 +29,11 @@ regularity conditions. Periodic spaces are a special case of GTBSplines for
 - `ArgumentError`: If the minimal polynomial degree of any pair of adjacent spaces is less
     than the corresponding regularity condition.
 """
-struct GTBSplineSpace{num_patches, T, G, TE, TI, TJ} <: AbstractFESpace{1, 1, num_patches}
+struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
+       AbstractFESpace{1, 1, num_patches}
     patch_spaces::T
     geometry::G
+    parametric_geometry::GP
     extraction_op::ExtractionOperator{1, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
     regularity::Vector{Int}
@@ -50,6 +52,8 @@ struct GTBSplineSpace{num_patches, T, G, TE, TI, TJ} <: AbstractFESpace{1, 1, nu
         # those geometries is restricted to have only one patch.
         patch_geometries = map(get_geometry, patch_spaces)
         geometry = Geometry.UnstructuredGeometry(patch_geometries) # General, but not ideal.
+        patch_parametric_geometries = map(get_parametric_geometry, patch_spaces)
+        parametric_geometry = Geometry.UnstructuredGeometry(patch_parametric_geometries)
 
         # Check if the number of regularity conditions matches the number of interfaces
         if length(regularity) != num_patches
@@ -157,9 +161,16 @@ struct GTBSplineSpace{num_patches, T, G, TE, TI, TJ} <: AbstractFESpace{1, 1, nu
             dof_partition[i][2] = unique(dof_partition[i][2])
         end
 
-        return new{num_patches, T, typeof(geometry), get_EIJ_types(extraction_op)...}(
+        return new{
+            num_patches,
+            T,
+            typeof(geometry),
+            typeof(parametric_geometry),
+            get_EIJ_types(extraction_op)...,
+        }(
             patch_spaces,
             geometry,
+            parametric_geometry,
             extraction_op,
             dof_partition,
             regularity,

@@ -60,16 +60,10 @@ struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2} <:
         end
 
         if !(get_geometry(form_1) == get_geometry(form_2))
-            throw(
-                ArgumentError(
-                    LazyString(
-                        "The two forms must have the same geometry. Instead they have ",
-                        get_geometry(form_1),
-                        " for the first form, and ",
-                        get_geometry(form_2),
-                        " for the second form.",
-                    ),
-                ),
+            @warn(
+                "Trying to create a `Wedge` where the two forms' geometries" *
+                    " don't point to the same object in memory. " *
+                    "The geometries might not be compatible."
             )
         end
 
@@ -165,7 +159,7 @@ function get_form_space_tree(wedge::Wedge)
 end
 
 function get_geometry(wedge::Wedge)
-    return get_geometry(get_forms(wedge)...)
+    return get_geometry(first(get_forms(wedge)))
 end
 
 ############################################################################################

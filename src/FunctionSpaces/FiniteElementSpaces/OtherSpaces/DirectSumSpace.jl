@@ -30,7 +30,11 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
     }
         foreach(component_spaces) do component_space
             if !(get_geometry(component_space) === get_geometry(component_spaces[1]))
-                throw(ArgumentError("All component spaces must have the same geometry."))
+                @warn(
+                    "Trying to create a `DirectSumSpace` where the component-spaces' " *
+                        "geometries do not point to the same object in memory. " *
+                        "The geometries might not be compatible."
+                )
             end
         end
 
@@ -78,6 +82,10 @@ function get_geometry(space::DirectSumSpace)
     # The geometries of each of the component spaces are enforced to be equal, so we can
     # just pick the first.
     return get_geometry(first(get_component_spaces(space)))
+end
+
+function get_parametric_geometry(space::DirectSumSpace)
+    return get_parametric_geometry(first(get_component_spaces(space)))
 end
 
 function get_basis_indices(space::DirectSumSpace, element_id::Int)

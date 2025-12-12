@@ -30,6 +30,10 @@ function get_geometry(space::RationalFESpace)
     return get_geometry(space.function_space)
 end
 
+function get_parametric_geometry(space::RationalFESpace)
+    return get_parametric_geometry(space.function_space)
+end
+
 function get_num_basis(space::RationalFESpace)
     return get_num_basis(space.function_space)
 end

@@ -212,6 +212,24 @@ get_constituent_spaces(space::TensorProductSpace) = space.constituent_spaces
 get_num_basis(space::TensorProductSpace) = prod(get_constituent_num_basis(space))
 
 """
+	get_cart_num_elements(space::TensorProductSpace)
+
+See [`Geometry.get_cart_num_elements`](@ref).
+"""
+function get_cart_num_elements(space::TensorProductSpace)
+    return Geometry.get_cart_num_elements(get_geometry(space))
+end
+
+"""
+	get_lin_num_elements(space::TensorProductSpace)
+
+See [`Geometry.get_lin_num_elements`](@ref).
+"""
+function get_lin_num_elements(space::TensorProductSpace)
+    return Geometry.get_lin_num_elements(get_geometry(space))
+end
+
+"""
     get_num_spaces(
         ::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
     ) where {manifold_dim, num_components, num_patches, num_spaces}
@@ -231,6 +249,16 @@ Returns the constituent space numbered `space_id` of the tensor product `space`.
 """
 function get_constituent_space(space::TensorProductSpace, space_id::Int)
     return get_constituent_spaces(space)[space_id]
+end
+
+"""
+    get_constituent_element_id(space::TensorProductSpace, element_id::Int)
+
+Returns a tuple corresponding to the conversion of `element_id` in tensor-product numbering
+to constituent-wise numbering.
+"""
+function get_constituent_element_id(space::TensorProductSpace, element_id::Int)
+    return Tuple(get_cart_num_elements(space)[element_id])
 end
 
 """
@@ -410,8 +438,11 @@ function get_constituent_local_basis(
         get_parametric_geometry(space), element_id
     )
     const_xi = get_constituent_evaluation_points(space, xi)
-    const_local_basis = map(
-        get_local_basis, const_spaces, Tuple(const_element_id), const_xi, Ref(nderivatives)
+    const_local_basis = ntuple(
+        space -> get_local_basis(
+            const_spaces[space], const_element_id[space], const_xi[space], nderivatives
+        ),
+        num_spaces,
     )
 
     return const_local_basis
@@ -541,8 +572,7 @@ function get_support(
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_support = get_constituent_support(space, basis_id)
-    const_num_elements = Geometry.get_num_elements(get_parametric_geometry(space))
-    lin_num_elements = LinearIndices(const_num_elements)
+    lin_num_elements = get_lin_num_elements(space)
     support = Vector{Int}(undef, prod(length, const_support))
     for (element_count, const_element_id) in enumerate(Iterators.product(const_support...))
         support[element_count] = lin_num_elements[const_element_id...]

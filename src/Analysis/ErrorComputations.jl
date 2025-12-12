@@ -26,16 +26,10 @@ function _compute_square_error_per_element(
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
-        throw(
-            ArgumentError(
-                LazyString(
-                    "The two forms must have the same geometry. Instead they have ",
-                    Forms.get_geometry(computed_sol),
-                    " for the first form, and ",
-                    Forms.get_geometry(exact_sol),
-                    " for the second form.",
-                ),
-            ),
+        @warn(
+            "Trying to create compute the difference between two forms whose geometries" *
+                " don't point to the same object in memory. " *
+                "The geometries might not be compatible."
         )
     end
 

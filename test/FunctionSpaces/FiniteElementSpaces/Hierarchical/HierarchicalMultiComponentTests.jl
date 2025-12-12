@@ -41,12 +41,13 @@ function create_ds_hier(parent_splines)
     end
 
     # hierarchical space built component wise
-    hier_space = [
-        FunctionSpaces.HierarchicalFiniteElementSpace(
+    hier_space = ntuple(
+        c -> FunctionSpaces.HierarchicalFiniteElementSpace(
             bsplines[c], two_scale_operators[c], refined_domains, subdiv
-        ) for c in 1:2
-    ]
-    hier_space = FunctionSpaces.DirectSumSpace(tuple(hier_space...))
+        ),
+        2,
+    )
+    hier_space = FunctionSpaces.DirectSumSpace(hier_space)
 
     return hier_space
 end
@@ -71,9 +72,9 @@ const refined_domains = FunctionSpaces.HierarchicalActiveInfo([
 ])
 hier_ds = create_hier_ds(bsplines)
 ds_hier = create_ds_hier(bsplines)
-geo = Geometry.HierarchicalGeometry(FunctionSpaces.get_component_spaces(ds_hier)[1])
-fs_hier_ds = Forms.FormSpace(1, geo, hier_ds, "HDS")
-fs_ds_hier = Forms.FormSpace(1, geo, ds_hier, "DSH")
+geo = FunctionSpaces.get_geometry(first(FunctionSpaces.get_component_spaces(ds_hier)))
+fs_hier_ds = Forms.FormSpace(1, hier_ds, "HDS")
+fs_ds_hier = Forms.FormSpace(1, ds_hier, "DSH")
 c1s = rand(4)
 c2s = rand(3)
 sol_expr =

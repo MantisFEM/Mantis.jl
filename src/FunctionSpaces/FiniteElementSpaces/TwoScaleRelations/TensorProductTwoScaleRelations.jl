@@ -12,23 +12,24 @@ relationships between coarse and fine tensor product spaces.
 - `twoscale_operators::TS`: A tuple of two-scale operators for each constituent space.
 """
 struct TensorProductTwoScaleOperator{
-    manifold_dim, num_components, num_patches, num_spaces, TP, TS, R
+    manifold_dim, num_components, num_patches, num_spaces, PTP, CTP, TS, R
 } <: AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
-    parent_space::TP
-    child_space::TP
+    parent_space::PTP
+    child_space::CTP
     global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}
     twoscale_operators::TS
     parent_child_relations::R
 
     function TensorProductTwoScaleOperator(
-        parent_space::TP, child_space::TP, twoscale_operators::TS
+        parent_space::PTP, child_space::CTP, twoscale_operators::TS
     ) where {
         manifold_dim,
         num_components,
         num_patches,
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
-        TP <: TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T},
+        PTP <: TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T},
+        CTP <: TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T},
         TS <: NTuple{num_spaces, AbstractTwoScaleOperator},
     }
         gm = kron(
@@ -42,7 +43,9 @@ struct TensorProductTwoScaleOperator{
                 child -> get_basis_parents(operator_ref[], child),
             )
             R = typeof(parent_child_relations)
-            operator = new{manifold_dim, num_components, num_patches, num_spaces, TP, TS, R}(
+            operator = new{
+                manifold_dim, num_components, num_patches, num_spaces, PTP, CTP, TS, R
+            }(
                 parent_space, child_space, gm, twoscale_operators, parent_child_relations
             )
             operator_ref[] = operator
@@ -52,11 +55,13 @@ struct TensorProductTwoScaleOperator{
     end
 end
 
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
+
 function get_constituent_twoscale_operators(operator::TensorProductTwoScaleOperator)
     return operator.twoscale_operators
 end
-
-# Basic getters per two scale operator
 
 function get_constituent_element_children(
     operator::TensorProductTwoScaleOperator{
@@ -121,8 +126,6 @@ function get_constituent_basis_parent(
 
     return const_parent
 end
-
-# Basis getters for TensorProductTwoScaleOperator
 
 """
     get_element_children(operator::TensorProductTwoScaleOperator, element_id::Int)
@@ -223,6 +226,10 @@ function get_basis_parents(operator::TensorProductTwoScaleOperator, basis_id::In
     return basis_parents
 end
 
+############################################################################################
+#                                       Subdivision                                        #
+############################################################################################
+
 """
     subdivide_space(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
@@ -294,10 +301,16 @@ function build_two_scale_operator(
             build_two_scale_operator(const_parent_spaces[space], num_subdivisions[space]),
         num_spaces,
     )
-    twoscale_operators = ntuple(space -> twoscale_data[space][1], num_spaces)
+    const_two_scale_operators = ntuple(space -> twoscale_data[space][1], num_spaces)
     const_child_spaces = ntuple(space -> twoscale_data[space][2], num_spaces)
-    child_space = TensorProductSpace(const_child_spaces)
+    parent_geo = get_geometry(parent_space)
+    parent_parametric_geo = get_parametric_geometry(parent_space)
+    child_geo = subdivide_geometry(parent_geo, num_subdivisions)
+    child_parametric_geo = subdivide_geometry(parent_parametric_geo, num_subdivisions)
+    child_space = TensorProductSpace(const_child_spaces, child_geo, child_parametric_geo)
 
-    return TensorProductTwoScaleOperator(parent_space, child_space, twoscale_operators),
+    return TensorProductTwoScaleOperator(
+        parent_space, child_space, const_two_scale_operators
+    ),
     child_space
 end

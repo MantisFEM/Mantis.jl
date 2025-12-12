@@ -26,8 +26,10 @@ active basis in `multilevel_elements`.
     `multilevel_elements`.
 """
 mutable struct HierarchicalFiniteElementSpace{
-    manifold_dim, num_components, num_patches, S, T
+    manifold_dim, num_components, num_patches, S, T, G, GP
 } <: AbstractFESpace{manifold_dim, num_components, num_patches}
+    geometry::G
+    parametric_geometry::GP
     spaces::Vector{S}
     two_scale_operators::Vector{T}
     active_elements::HierarchicalActiveInfo
@@ -94,12 +96,12 @@ mutable struct HierarchicalFiniteElementSpace{
         if num_levels < 1
             throw(ArgumentError("At least 1 level is required, but 0 were given."))
         elseif length(two_scale_operators) != num_levels - 1
-            msg1 = "Number of two-scale operators should be one less than the number of levels. "
-            msg2 = "$num_levels refinement levels and $(length(two_scale_operators)) two-scale operators were given."
+            msg1 = "Number of two-scale operators should be `num_levels - 1`. "
+            msg2 = "Evaluated $(length(two_scale_operators)) and $(num_levels - 1)."
             throw(ArgumentError(msg1 * msg2))
         elseif get_num_levels(domains) != num_levels
             msg1 = "Number of nested domains should be the same as the number of levels. "
-            msg2 = "$num_levels refinement levels and $(get_num_levels(domains)) domains were given."
+            msg2 = "Evaluated $(num_levels) and $(get_num_levels(domains))."
             throw(ArgumentError(msg1 * msg2))
         end
 
@@ -110,11 +112,12 @@ mutable struct HierarchicalFiniteElementSpace{
         multilevel_elements, multilevel_extraction_coeffs, multilevel_basis_indices = get_multilevel_extraction(
             spaces, two_scale_operators, active_elements, active_basis, truncated
         )
-
         dof_partition = _compute_dof_partition(spaces, active_basis, num_levels)
-
-        # Creates the structure
-        return new{manifold_dim, num_components, num_patches, S, T}(
+        geometry = create_masked_geometry(spaces, two_scale_operators, active_elements)
+		G = typeof(geometry)
+        hier_space = new{manifold_dim, num_components, num_patches, S, T, G, G}(
+            geometry,
+            geometry,
             spaces,
             two_scale_operators,
             active_elements,
@@ -128,29 +131,30 @@ mutable struct HierarchicalFiniteElementSpace{
             simplified,
             dof_partition,
         )
-    end
 
-    # Helper constructor for domains given in a per-level vector.
-    function HierarchicalFiniteElementSpace(
-        spaces::Vector{S},
-        two_scale_operators::Vector{T},
-        domains_per_level::Vector{Vector{Int}},
-        num_subdivisions::NTuple{manifold_dim, Int},
-        truncated::Bool=true,
-        simplified::Bool=false,
-    ) where {
-        manifold_dim,
-        num_components,
-        num_patches,
-        S <: AbstractFESpace{manifold_dim, num_components, num_patches},
-        T <: AbstractTwoScaleOperator,
-    }
-        domains = HierarchicalActiveInfo(domains_per_level)
-
-        return HierarchicalFiniteElementSpace(
-            spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
-        )
+        return hier_space
     end
+end
+
+function HierarchicalFiniteElementSpace(
+    spaces::Vector{S},
+    two_scale_operators::Vector{T},
+    domains_per_level::Vector{Vector{Int}},
+    num_subdivisions::NTuple{manifold_dim, Int},
+    truncated::Bool=true,
+    simplified::Bool=false,
+) where {
+    manifold_dim,
+    num_components,
+    num_patches,
+    S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+    T <: AbstractTwoScaleOperator,
+}
+    domains = HierarchicalActiveInfo(domains_per_level)
+
+    return HierarchicalFiniteElementSpace(
+        spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
+    )
 end
 
 ############################################################################################
@@ -594,6 +598,62 @@ function truncate_refinement_matrix!(refinement_matrix, active_indices::Vector{I
     refinement_matrix[active_indices, (active_length + 1):end] .= 0.0
 
     return refinement_matrix
+end
+
+function create_masked_geometry(spaces, two_scale_operators, active_elements)
+    eval_mask = create_evaluation_mask(spaces, two_scale_operators, active_elements)
+    base_geoemtry = get_geometry(first(spaces))
+
+    return Geometry.MaskedGeometry(base_geoemtry, eval_mask)
+end
+
+function create_evaluation_mask(
+    spaces::Vector{S}, two_scale_operators, active_elements
+) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
+    num_elements_base = get_num_elements(first(spaces))
+    base_geometry = get_parametric_geometry(first(spaces))
+    base_element_vertices = [
+        Geometry.get_element_vertices(base_geometry, i) for i in 1:num_elements_base
+    ]
+    num_elements = get_num_objects(active_elements)
+    element_id_map = zeros(Int, num_elements)
+    eval_element_vertices = Vector{NTuple{manifold_dim, NTuple{2, Float64}}}(
+        undef, num_elements
+    )
+    for i in 1:num_elements
+        element_level, element_level_id = convert_to_level_and_level_id(active_elements, i)
+        eval_element_vertices[i] = get_element_vertices(
+            spaces[element_level], element_level_id
+        )
+        element_id_map[i] = get_element_ancestor(
+            two_scale_operators, element_level_id, element_level, element_level - 1
+        )
+    end
+
+    translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+    scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+    for element_id in 1:num_elements
+        element_id_base = element_id_map[element_id]
+        base_el_verts = base_element_vertices[element_id_base]
+        eval_el_verts = eval_element_vertices[element_id]
+        scalings[element_id] = ntuple(manifold_dim) do k
+            eval_scaling = eval_el_verts[k][2] - eval_el_verts[k][1]
+            base_scaling = base_el_verts[k][2] - base_el_verts[k][1]
+
+            return eval_scaling / base_scaling
+        end
+
+        translations[element_id] = ntuple(manifold_dim) do k
+            return (eval_el_verts[k][1] - base_el_verts[k][1]) /
+                   (base_el_verts[k][2] - base_el_verts[k][1])
+        end
+    end
+
+    eval_mask = Geometry.AffineEvaluationMask(
+        num_elements, num_elements_base, element_id_map, translations, scalings
+    )
+
+    return eval_mask
 end
 
 ############################################################################################
