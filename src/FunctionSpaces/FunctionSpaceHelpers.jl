@@ -50,7 +50,7 @@ function create_bspline_space(
     box_size::Float64,
     num_elements::Int,
     section_space::F,
-    regularity::Int,
+    regularity::Int;
     n_dofs_left::Int=1,
     n_dofs_right::Int=1,
 ) where {F <: AbstractCanonicalSpace}
@@ -107,7 +107,7 @@ function create_bspline_space(
     box_size::Float64,
     num_elements::Int,
     degree::Int,
-    regularity::Int,
+    regularity::Int;
     n_dofs_left::Int=1,
     n_dofs_right::Int=1,
 )
@@ -116,9 +116,9 @@ function create_bspline_space(
         box_size,
         num_elements,
         Bernstein(degree),
-        regularity,
-        n_dofs_left,
-        n_dofs_right,
+        regularity;
+        n_dofs_left=n_dofs_left,
+        n_dofs_right=n_dofs_right,
     )
 end
 
@@ -171,7 +171,7 @@ function create_bspline_space(
     box_size::NTuple{1, Float64},
     num_elements::NTuple{1, Int},
     section_space::NTuple{1, F},
-    regularity::NTuple{1, Int},
+    regularity::NTuple{1, Int};
     n_dofs_left::NTuple{1, Int}=(1,),
     n_dofs_right::NTuple{1, Int}=(1,),
 ) where {F <: AbstractCanonicalSpace}
@@ -180,9 +180,9 @@ function create_bspline_space(
         box_size[1],
         num_elements[1],
         section_space[1],
-        regularity[1],
-        n_dofs_left[1],
-        n_dofs_right[1],
+        regularity[1];
+        n_dofs_left=n_dofs_left[1],
+        n_dofs_right=n_dofs_right[1],
     )
 end
 
@@ -222,7 +222,7 @@ function create_bspline_space(
     box_size::NTuple{1, Float64},
     num_elements::NTuple{1, Int},
     degree::NTuple{1, Int},
-    regularity::NTuple{1, Int},
+    regularity::NTuple{1, Int};
     n_dofs_left::NTuple{1, Int}=(1,),
     n_dofs_right::NTuple{1, Int}=(1,),
 )
@@ -231,9 +231,9 @@ function create_bspline_space(
         box_size[1],
         num_elements[1],
         Bernstein(degree[1]),
-        regularity[1],
-        n_dofs_left[1],
-        n_dofs_right[1],
+        regularity[1];
+        n_dofs_left=n_dofs_left[1],
+        n_dofs_right=n_dofs_right[1],
     )
 end
 
@@ -268,9 +268,9 @@ function create_bspline_space(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::NTuple{manifold_dim, AbstractCanonicalSpace},
-    regularities::NTuple{manifold_dim, Int},
-    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> Returns(1), manifold_dim),
-    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> Returns(1), manifold_dim),
+    regularities::NTuple{manifold_dim, Int};
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim}
     breakpoints = map(
         LinRange, starting_points, starting_points + box_sizes, num_elements .+ 1
@@ -281,9 +281,9 @@ function create_bspline_space(
         box_sizes,
         num_elements,
         section_spaces,
-        regularities,
-        n_dofs_left,
-        n_dofs_right,
+        regularities;
+        n_dofs_left=n_dofs_left,
+        n_dofs_right=n_dofs_right,
     )
 
     return TensorProductSpace(
@@ -324,9 +324,9 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::F,
-    regularities::NTuple{manifold_dim, Int},
-    n_dofs_left::NTuple{manifold_dim, Int},
-    n_dofs_right::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
     return ntuple(manifold_dim) do i
         create_bspline_space(
@@ -371,7 +371,7 @@ function create_bspline_space(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
-    regularities::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
     n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
     n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim}
@@ -384,9 +384,9 @@ function create_bspline_space(
         box_sizes,
         num_elements,
         degrees,
-        regularities,
-        n_dofs_left,
-        n_dofs_right,
+        regularities;
+        n_dofs_left=n_dofs_left,
+        n_dofs_right=n_dofs_right,
     )
 
     return TensorProductSpace(
@@ -427,20 +427,21 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
-    regularities::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
     n_dofs_left::NTuple{manifold_dim, Int},
     n_dofs_right::NTuple{manifold_dim, Int},
 ) where {manifold_dim}
-    return map(
-        create_bspline_space,
-        starting_points,
-        box_sizes,
-        num_elements,
-        degrees,
-        regularities,
-        n_dofs_left,
-        n_dofs_right,
-    )
+    return ntuple(manifold_dim) do i
+        create_bspline_space(
+            starting_points[i],
+            box_sizes[i],
+            num_elements[i],
+            degrees[i],
+            regularities[i];
+            n_dofs_left=n_dofs_left[i],
+            n_dofs_right=n_dofs_right[i],
+        )
+    end
 end
 
 ################################################################################

@@ -389,5 +389,12 @@ function get_derivative_space(space::BSplineSpace)
         end
     end
 
-    return BSplineSpace(get_geometry(space), dpolynomials, dregularity, n_left, n_right)
+    return BSplineSpace(
+        get_geometry(space),
+        get_parametric_geometry(space),
+        dpolynomials,
+        dregularity,
+        n_left,
+        n_right,
+    )
 end

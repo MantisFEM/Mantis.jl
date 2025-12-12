@@ -53,14 +53,14 @@ const deg = 2
 const B1 = FunctionSpaces.BSplineSpace(geo_cart_1, deg, [-1, deg - 1, -1])
 const B2 = FunctionSpaces.BSplineSpace(geo_cart_2, deg, [-1, min(deg - 1, 1), deg - 1, -1])
 
-# Physical geometries
-const geo_cart = Geometry.CartesianGeometry((breakpoints, breakpoints2))
-
 # Tensor-product B-spline spaces
 const TP_Space_2d_tp_geo = FunctionSpaces.TensorProductSpace((B1, B2))
-const TP_Space_2d_cart_geo = FunctionSpaces.TensorProductSpace((B1, B2), geo_cart)
+const TP_Space_2d_cart_geo = FunctionSpaces.TensorProductSpace(
+    (B1, B2),
+    Geometry.CartesianGeometry,  # Convert the geometry to a CartesianGeometry.
+)
 const TP_Space_2d_crazy_geo = FunctionSpaces.TensorProductSpace(
-    (B1, B2), geo_cart, crazy_mapping
+    (B1, B2), Geometry.CartesianGeometry, crazy_mapping
 )
 
 const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gauss_legendre)
@@ -547,19 +547,20 @@ const B = FunctionSpaces.BSplineSpace(geo_cart_1, deg, [-1, deg - 1, -1])
 
 # tensor-product B-spline spaces
 const TP_Space_2d = FunctionSpaces.TensorProductSpace((B, B))
-const TP_Space_3d = FunctionSpaces.TensorProductSpace((TP_Space_2d, B))
 
-# Physical geometries
-const geo_cart_3D = Geometry.CartesianGeometry((breakpoints, breakpoints, breakpoints))
-const crazy_geo_2d = Geometry.MappedGeometry(geo_cart_2d, crazy_mapping)
-# Crazy mesh 3D (in x and y only, z is straight)
-const geom_crazy_3D = Geometry.TensorProductGeometry((crazy_geo_2d, geo_cart_1))
+const TP_Space_2d_crazy = FunctionSpaces.TensorProductSpace(
+    (B, B), Geometry.CartesianGeometry, crazy_mapping
+)
 
-# tensor-product B-spline spaces
-const TP_Space_3d_tp_geo_1 = FunctionSpaces.TensorProductSpace((TP_Space_2d, B))
-const TP_Space_3d_tp_geo_2 = FunctionSpaces.TensorProductSpace((B, B, B))
-const TP_Space_3d_cart_geo = FunctionSpaces.TensorProductSpace((B, B, B), geo_cart_3D)
-const TP_Space_3d_crazy_geo = FunctionSpaces.TensorProductSpace((B, B, B), geom_crazy_3D)
+const TP_Space_3d_cart_tp_geo = FunctionSpaces.TensorProductSpace((B, B, B))
+const TP_Space_3d_tpcart_tp_geo_1 = FunctionSpaces.TensorProductSpace((TP_Space_2d, B))
+const TP_Space_3d_cart_geo = FunctionSpaces.TensorProductSpace(
+    (B, B, B),
+    Geometry.CartesianGeometry,  # Converts the geometry to the desired Cartesian one.
+)
+const TP_Space_3d_crazycart_tp_geo = FunctionSpaces.TensorProductSpace((
+    TP_Space_2d_crazy, B
+))
 
 const q_rule_3D = Quadrature.tensor_product_rule(
     (deg, deg, deg) .+ 1, Quadrature.gauss_legendre
@@ -568,10 +569,10 @@ const q_rule_3D = Quadrature.tensor_product_rule(
     @testset "FormField" begin
         # Test on multiple geometries. Type-wise and content/metric wise.
         foreach((
-            TP_Space_3d_tp_geo_1,
-            TP_Space_3d_tp_geo_2,
+            TP_Space_3d_cart_tp_geo,
+            TP_Space_3d_tpcart_tp_geo_1,
             TP_Space_3d_cart_geo,
-            TP_Space_3d_crazy_geo,
+            TP_Space_3d_crazycart_tp_geo,
         )) do space
             dsTP_1_form_3d = FunctionSpaces.DirectSumSpace((space, space, space))
             dsTP_2_form_3d = FunctionSpaces.DirectSumSpace((space, space, space))

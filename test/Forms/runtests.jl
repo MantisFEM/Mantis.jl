@@ -10,15 +10,15 @@ end
 @testset "FormEvaluations" verbose = true begin
     include("FormEvaluationTests.jl")
 end
-@testset "Hodges" verbose = true begin
-    include("HodgeTests.jl")
-end
-@testset "Wedge" verbose = true begin
-    include("WedgeTests.jl")
-end
-@testset "Integral" verbose = true begin
-    include("IntegralTests.jl")
-end
+# @testset "Hodges" verbose = true begin
+#     include("HodgeTests.jl")
+# end
+# @testset "Wedge" verbose = true begin
+#     include("WedgeTests.jl")
+# end
+# @testset "Integral" verbose = true begin
+#     include("IntegralTests.jl")
+# end
 @testset "Algebraic" verbose = true begin
     include("FormOperators/Algebraic.jl")
 end

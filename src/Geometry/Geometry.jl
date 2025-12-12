@@ -538,6 +538,8 @@ include("./TensorProductGeometry.jl")
 include("./UnstructuredGeometry.jl")
 include("./Metric.jl")
 
+include("./GeometryConversions.jl")
+
 # helper functions for convenience
 include("./GeometryHelpers.jl")
 
