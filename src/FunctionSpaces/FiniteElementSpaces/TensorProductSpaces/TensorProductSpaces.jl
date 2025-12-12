@@ -578,8 +578,11 @@ function get_constituent_local_basis(
         get_parametric_geometry(space), element_id
     )
     const_xi = get_constituent_evaluation_points(space, xi)
-    const_local_basis = map(
-        get_local_basis, const_spaces, Tuple(const_element_id), const_xi, Ref(nderivatives)
+    const_local_basis = ntuple(
+        space -> get_local_basis(
+            const_spaces[space], const_element_id[space], const_xi[space], nderivatives
+        ),
+        num_spaces,
     )
 
     return const_local_basis
@@ -709,8 +712,7 @@ function get_support(
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     const_support = get_constituent_support(space, basis_id)
-    const_num_elements = Geometry.get_num_elements(get_parametric_geometry(space))
-    lin_num_elements = LinearIndices(const_num_elements)
+    lin_num_elements = get_lin_num_elements(space)
     support = Vector{Int}(undef, prod(length, const_support))
     for (element_count, const_element_id) in enumerate(Iterators.product(const_support...))
         support[element_count] = lin_num_elements[const_element_id...]

@@ -2,14 +2,17 @@
 #                                        Structure                                         #
 ############################################################################################
 
-struct HierarchicalGeometry{manifold_dim, image_dim, H} <: AbstractGeometry{manifold_dim, image_dim, 1}
+struct HierarchicalGeometry{manifold_dim, image_dim, H} <:
+       AbstractGeometry{manifold_dim, image_dim, 1}
     hier_space::H
 
     function HierarchicalGeometry(
         hier_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T}
     ) where {manifold_dim, S, T}
         return new{
-            manifold_dim, manifold_dim, FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T}
+            manifold_dim,
+            manifold_dim,
+            FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T},
         }(
             hier_space
         )
@@ -52,7 +55,9 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, H}
-    element_vertices = FunctionSpaces.get_element_vertices(get_fe_space(geometry), element_id)
+    element_vertices = FunctionSpaces.get_element_vertices(
+        get_fe_space(geometry), element_id
+    )
     A = zeros(Float64, manifold_dim, manifold_dim)
     b = zeros(Float64, manifold_dim)
     for k in 1:manifold_dim
@@ -71,7 +76,9 @@ function jacobian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, H}
-    element_vertices = FunctionSpaces.get_element_vertices(get_fe_space(geometry), element_id)
+    element_vertices = FunctionSpaces.get_element_vertices(
+        get_fe_space(geometry), element_id
+    )
     delta = zeros(Float64, manifold_dim)
     for k in 1:manifold_dim
         delta[k] = (element_vertices[k][2] - element_vertices[k][1])

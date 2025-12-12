@@ -25,10 +25,11 @@ are not required to have a matching grid.
         breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
     ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
 """
-struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
+struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
     breakpoints::T
     cart_num_elements::CI
+    lin_num_elements::LI
 
     function CartesianGeometry(
         breakpoints::T
@@ -44,8 +45,19 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
             )
         end
 
-        return new{manifold_dim, manifold_dim, num_patches, T, typeof(cart_num_elements)}(
-            breakpoints, cart_num_elements
+        lin_num_elements = ntuple(
+            patch -> LinearIndices(cart_num_elements[patch]), Val(num_patches)
+        )
+
+        return new{
+            manifold_dim,
+            manifold_dim,
+            num_patches,
+            T,
+            typeof(cart_num_elements),
+            typeof(lin_num_elements),
+        }(
+            breakpoints, cart_num_elements, lin_num_elements
         )
     end
 
@@ -71,6 +83,8 @@ get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::
     geometry.breakpoints[patch_id][dim][point]
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.cart_num_elements[patch_id]
+get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
+    geometry.lin_num_elements[patch_id]
 
 # Getters for consituents.
 function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int)

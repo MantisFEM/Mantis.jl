@@ -218,16 +218,10 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         T <: Function,
     }
         if !(get_geometry(form_1) == get_geometry(form_2))
-            throw(
-                ArgumentError(
-                    LazyString(
-                        "The two forms must have the same geometry. Instead they have ",
-                        get_geometry(form_1),
-                        " for the first form, and ",
-                        get_geometry(form_2),
-                        " for the second form.",
-                    ),
-                ),
+            @warn(
+                "Trying to create compute a binary transformation on two forms " *
+                    "whose geometries don't point to the same object in memory. " *
+                    "The geometries might not be compatible."
             )
         end
 
@@ -267,8 +261,10 @@ get_transformation(una_trans::UnaryOperatorTransformation) = una_trans.transform
 get_operator(una_trans::UnaryOperatorTransformation) = una_trans.operator
 
 get_transformation(bin_trans::BinaryOperatorTransformation) = bin_trans.transformation
-get_operators(bin_trans::BinaryOperatorTransformation) =
-    bin_trans.operator_1, bin_trans.operator_2
+
+function get_operators(bin_trans::BinaryOperatorTransformation)
+    return bin_trans.operator_1, bin_trans.operator_2
+end
 
 get_transformation(una_form::UnaryFormTransformation) = una_form.transformation
 get_form(una_form::UnaryFormTransformation) = una_form.form
@@ -277,8 +273,11 @@ get_label(una_form::UnaryFormTransformation) = una_form.label
 
 get_transformation(bin_trans::BinaryFormTransformation) = bin_trans.transformation
 get_forms(bin_trans::BinaryFormTransformation) = bin_trans.form_1, bin_trans.form_2
-get_geometry(bin_trans::BinaryFormTransformation) = get_geometry(get_forms(bin_trans)...)
 get_label(bin_form::BinaryFormTransformation) = bin_form.label
+
+function get_geometry(bin_trans::BinaryFormTransformation)
+    return get_geometry(first(get_forms(bin_trans)))
+end
 
 function get_estimated_nnz_per_elem(una_trans::UnaryOperatorTransformation)
     return get_estimated_nnz_per_elem(get_operator(una_trans))

@@ -529,14 +529,14 @@ function hessian(
     throw(MethodError(hessian, (geometry, element_id, xi)))
 end
 
-# core functionality
-include("./CartesianGeometry.jl")
+include("CartesianGeometry.jl")
 # include("./FEGeometry.jl")
-include("./MappedGeometry.jl")
-include("./TensorProductGeometry.jl")
-# include("./HierarchicalGeometry.jl")
-include("./UnstructuredGeometry.jl")
-include("./Metric.jl")
+include("MappedGeometry.jl")
+include("TensorProductGeometry.jl")
+include("EvaluationMask/EvaluationMask.jl")
+include("MaskedGeometry.jl")
+include("UnstructuredGeometry.jl")
+include("Metric.jl")
 
 # helper functions for convenience
 include("./GeometryHelpers.jl")

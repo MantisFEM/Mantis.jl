@@ -30,7 +30,11 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
     }
         foreach(component_spaces) do component_space
             if !(get_geometry(component_space) === get_geometry(component_spaces[1]))
-                throw(ArgumentError("All component spaces must have the same geometry."))
+                @warn(
+                    "Trying to create a `DirectSumSpace` where the component-spaces' " *
+                        "geometries do not point to the same object in memory. " *
+                        "The geometries might not be compatible."
+                )
             end
         end
 

@@ -196,39 +196,6 @@ end
         starting_points::NTuple{manifold_dim, Float64},
         box_sizes::NTuple{manifold_dim, Float64},
         num_elements::NTuple{manifold_dim, Int},
-        section_spaces::NTuple{manifold_dim, F},
-        regularities::NTuple{manifold_dim, Int},
-    ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
-
-Create a tensor-product B-spline de Rham complex.
-
-# Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
-
-# Returns
-- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
-"""
-function create_tensor_product_bspline_de_rham_complex(
-    starting_points::NTuple{manifold_dim, Float64},
-    box_sizes::NTuple{manifold_dim, Float64},
-    num_elements::NTuple{manifold_dim, Int},
-    section_spaces::NTuple{manifold_dim, F},
-    regularities::NTuple{manifold_dim, Int},
-) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
-    return create_tensor_product_bspline_de_rham_complex(
-        starting_points, box_sizes, num_elements, section_spaces, regularities
-    )
-end
-
-"""
-    create_tensor_product_bspline_de_rham_complex(
-        starting_points::NTuple{manifold_dim, Float64},
-        box_sizes::NTuple{manifold_dim, Float64},
-        num_elements::NTuple{manifold_dim, Int},
         degrees::NTuple{manifold_dim, Int},
         regularities::NTuple{manifold_dim, Int},
     ) where {manifold_dim}
@@ -482,6 +449,7 @@ function update_hierarchical_de_rham_complex(
     )
 
     # Build new form spaces
+	# BUG: `HierarchicalGeometry` is deprecated.
     geom = Geometry.HierarchicalGeometry(zero_form_space)
     one_form_space_sum = FunctionSpaces.DirectSumSpace((one_form_space_x, one_form_space_y))
     zero_form = Forms.FormSpace(0, geom, zero_form_space, "β")
@@ -597,6 +565,7 @@ function create_polar_spline_de_rham_complex(
         )
     end
     geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
+	# BUG: `FEGeometry` is deprecated.
     geometry = Geometry.FEGeometry(P_geom, geom_coeffs_polar)
 
     ##############################

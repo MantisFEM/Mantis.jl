@@ -49,6 +49,44 @@ function get_constituent_points(points::P) where {P <: AbstractPoints}
     return points.constituent_points
 end
 
+"""
+	scale_and_shift_points(
+	    points::P, scalings::S, translations::T
+	) where {
+	    manifold_dim,
+	    P <: AbstractPoints{manifold_dim},
+	    S <: NTuple{manifold_dim, Real},
+	    T <: NTuple{manifold_dim, Real},
+	}
+
+Applies an affine map defined by `scalings` and `translations` to each point in `points`. 
+
+# Arguments
+- `points::P`: The set of points.
+- `scalings::S`: The scaling of the affine map.
+- `translations::T`: The translation of the affine map.
+
+# Returns
+- `transformed_points::P`: The set of transformed points of the same type as the original
+	`points`.
+"""
+function scale_and_shift_points(
+    points::P, scalings::S, translations::T
+) where {
+    manifold_dim,
+    P <: AbstractPoints{manifold_dim},
+    S <: NTuple{manifold_dim, Real},
+    T <: NTuple{manifold_dim, Real},
+}
+    constituent_points = get_constituent_points(points)
+    transformed_points = ntuple(
+        dim -> constituent_points[dim] .* scalings[dim] .+ translations[dim], manifold_dim
+    )
+	constructor = Base.typename(P).wrapper
+
+	return constructor(transformed_points)
+end
+
 Base.firstindex(points::AbstractPoints) = 1
 Base.lastindex(points::AbstractPoints) = get_num_points(points)
 Base.keys(points::AbstractPoints) = firstindex(points):lastindex(points)

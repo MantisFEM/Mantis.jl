@@ -184,6 +184,8 @@ Returns the expression of the analytical form field.
 """
 get_expression(form_field::AnalyticalFormField) = form_field.expression
 
+get_geometry(form_field::AnalyticalFormField) = form_field.geometry
+
 ############################################################################################
 #                                    Evaluation methods                                    #
 ############################################################################################

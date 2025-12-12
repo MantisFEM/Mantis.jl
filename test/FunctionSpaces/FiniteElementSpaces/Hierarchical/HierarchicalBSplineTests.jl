@@ -33,7 +33,6 @@ refined_domains = FunctionSpaces.HierarchicalActiveInfo([
 hier_space = FunctionSpaces.HierarchicalFiniteElementSpace(
     bsplines, two_scale_operators, refined_domains, (subdiv,)
 )
-nothing
 
 # test if active elements are correct
 @test FunctionSpaces.get_level_element_ids(hier_space, 1) == [1, 6]
