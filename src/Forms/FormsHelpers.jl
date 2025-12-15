@@ -190,6 +190,91 @@ end
         starting_points::NTuple{manifold_dim, Float64},
         box_sizes::NTuple{manifold_dim, Float64},
         num_elements::NTuple{manifold_dim, Int},
+        section_spaces::NTuple{manifold_dim, F},
+        regularities::NTuple{manifold_dim, Int},
+		mapping::M,
+    ) where {
+        manifold_dim,
+        F <: FunctionSpaces.AbstractCanonicalSpace,
+    	M <: Geometry.AbstractMapping{manifold_dim},
+    }
+
+Create a tensor-product B-spline de Rham complex.
+
+# Arguments
+- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
+- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+- `mapping::M`: the mapping that applied to be base geometry.
+
+# Returns
+- `::Tuple{<:AbstractFormSpace{manifold_dim, form_rank}}`: Tuple with the form
+    spaces of the complex, for each `form_rank` from `0` to `manifold_dim+1`.
+"""
+function create_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    section_spaces::NTuple{manifold_dim, F},
+    regularities::NTuple{manifold_dim, Int},
+    mapping::M,
+) where {
+    manifold_dim,
+    F <: FunctionSpaces.AbstractCanonicalSpace,
+    M <: Geometry.AbstractMapping{manifold_dim},
+}
+
+    # number of dofs on the left and right boundary of the domain
+    # n_dofs_left = tuple((1 for _ in 1:manifold_dim)...)
+    # n_dofs_right = tuple((1 for _ in 1:manifold_dim)...)
+
+    # store all univariate FEM spaces helper
+    fem_spaces = Vector{NTuple{manifold_dim, FunctionSpaces.AbstractFESpace{1, 1}}}(
+        undef, 2
+    )
+    # first, create all univariate FEM spaces corresponding to directional-zero forms
+    fem_spaces[1] = FunctionSpaces.create_dim_wise_bspline_spaces(
+        starting_points, box_sizes, num_elements, section_spaces, regularities
+    )
+    # next, create all univariate FEM spaces corresponding to directional-one forms
+    fem_spaces[2] = map(FunctionSpaces.get_derivative_space, fem_spaces[1])
+
+    # Build all the form spaces of the complex.
+    form_spaces = ntuple(manifold_dim + 1) do k
+        k = k - 1 # Because form ranks range from 0 to manifold_dim.
+        # Get k-form basis indices, these also inform the directional degree-deficits.
+        k_form_basis_idxs = get_basis_index_combinations(manifold_dim, k)
+        num_form_components = length(k_form_basis_idxs)
+        # Generate tuple with all the k-form finite element spaces.
+        k_form_fem_spaces = ntuple(num_form_components) do component
+            # By default, use direction-zero forms...
+            fem_space_idxs = ones(Int, manifold_dim)
+            # ...unless the basis index is present in the k-form basis indices.
+            fem_space_idxs[k_form_basis_idxs[component]] .= 2
+            # Build and store constituent spaces of the tensor-product FEM space.
+            tp_consituent_spaces = ntuple(manifold_dim) do dim
+                return fem_spaces[fem_space_idxs[dim]][dim]
+            end
+            # Build and return the corresponding tensor-product FEM space.
+            return FunctionSpaces.TensorProductSpace(tp_consituent_spaces, mapping)
+        end
+        if num_form_components == 1
+            return FormSpace(k, k_form_fem_spaces[1], "ω_$k")
+        else
+            return FormSpace(k, FunctionSpaces.DirectSumSpace(k_form_fem_spaces), "ω_$k")
+        end
+    end
+
+    return form_spaces
+end
+
+"""
+    create_tensor_product_bspline_de_rham_complex(
+        starting_points::NTuple{manifold_dim, Float64},
+        box_sizes::NTuple{manifold_dim, Float64},
+        num_elements::NTuple{manifold_dim, Int},
         degrees::NTuple{manifold_dim, Int},
         regularities::NTuple{manifold_dim, Int},
     ) where {manifold_dim}
@@ -222,86 +307,80 @@ function create_tensor_product_bspline_de_rham_complex(
     )
 end
 
-# This method can no longer work like this. The mapped geometry object will have to be given
-# to the FE space now.
-# """
-#     create_curvilinear_tensor_product_bspline_de_rham_complex(
-#         starting_points::NTuple{manifold_dim, Float64},
-#         box_sizes::NTuple{manifold_dim, Float64},
-#         num_elements::NTuple{manifold_dim, Int},
-#         section_spaces::NTuple{manifold_dim, F},
-#         regularities::NTuple{manifold_dim, Int},
-#     ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
+"""
+    create_curvilinear_tensor_product_bspline_de_rham_complex(
+        starting_points::NTuple{manifold_dim, Float64},
+        box_sizes::NTuple{manifold_dim, Float64},
+        num_elements::NTuple{manifold_dim, Int},
+        section_spaces::NTuple{manifold_dim, F},
+        regularities::NTuple{manifold_dim, Int},
+    ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
 
-# Create a tensor-product B-spline de Rham complex on a crazy mesh.
+Create a tensor-product B-spline de Rham complex on a crazy mesh.
 
-# # Arguments
-# - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-# - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-# - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-# - `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
-# - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+# Arguments
+- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
+- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
 
-# # Returns
-# - `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
-# """
-# function create_curvilinear_tensor_product_bspline_de_rham_complex(
-#     starting_points::NTuple{manifold_dim, Float64},
-#     box_sizes::NTuple{manifold_dim, Float64},
-#     num_elements::NTuple{manifold_dim, Int},
-#     section_spaces::NTuple{manifold_dim, F},
-#     regularities::NTuple{manifold_dim, Int};
-#     crazy_c::Float64=0.1,
-# ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
+# Returns
+- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
+"""
+function create_curvilinear_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    section_spaces::NTuple{manifold_dim, F},
+    regularities::NTuple{manifold_dim, Int};
+    crazy_c::Float64=0.1,
+) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
+    mapping = Geometry.create_curvilinear_mapping(starting_points, box_sizes, crazy_c)
 
-#     # create underlying box geometry
-#     geometry = Geometry.create_curvilinear_square(
-#         starting_points, box_sizes, num_elements; crazy_c=crazy_c
-#     )
+    return create_tensor_product_bspline_de_rham_complex(
+        starting_points, box_sizes, num_elements, section_spaces, regularities, mapping
+    )
+end
 
-#     return create_tensor_product_bspline_de_rham_complex(
-#         starting_points, box_sizes, num_elements, section_spaces, regularities
-#     )
-# end
+"""
+    create_curvilinear_tensor_product_bspline_de_rham_complex(
+        starting_points::NTuple{manifold_dim, Float64},
+        box_sizes::NTuple{manifold_dim, Float64},
+        num_elements::NTuple{manifold_dim, Int},
+        degrees::NTuple{manifold_dim, Int},
+        regularities::NTuple{manifold_dim, Int},
+    ) where {manifold_dim}
 
-# """
-#     create_curvilinear_tensor_product_bspline_de_rham_complex(
-#         starting_points::NTuple{manifold_dim, Float64},
-#         box_sizes::NTuple{manifold_dim, Float64},
-#         num_elements::NTuple{manifold_dim, Int},
-#         degrees::NTuple{manifold_dim, Int},
-#         regularities::NTuple{manifold_dim, Int},
-#     ) where {manifold_dim}
+Create a tensor-product B-spline de Rham complex on a crazy geometry.
 
-# Create a tensor-product B-spline de Rham complex on a crazy geometry.
+# Arguments
+- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+- `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
+- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
 
-# # Arguments
-# - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-# - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-# - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-# - `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
-# - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
-
-# # Returns
-# - `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
-# """
-# function create_curvilinear_tensor_product_bspline_de_rham_complex(
-#     starting_points::NTuple{manifold_dim, Float64},
-#     box_sizes::NTuple{manifold_dim, Float64},
-#     num_elements::NTuple{manifold_dim, Int},
-#     degrees::NTuple{manifold_dim, Int},
-#     regularities::NTuple{manifold_dim, Int};
-#     crazy_c::Float64=0.1,
-# ) where {manifold_dim}
-#     return create_curvilinear_tensor_product_bspline_de_rham_complex(
-#         starting_points,
-#         box_sizes,
-#         num_elements,
-#         map(FunctionSpaces.Bernstein, degrees),
-#         regularities;
-#         crazy_c=crazy_c,
-#     )
-# end
+# Returns
+- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
+"""
+function create_curvilinear_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    degrees::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
+    crazy_c::Float64=0.1,
+) where {manifold_dim}
+    return create_curvilinear_tensor_product_bspline_de_rham_complex(
+        starting_points,
+        box_sizes,
+        num_elements,
+        map(FunctionSpaces.Bernstein, degrees),
+        regularities;
+        crazy_c=crazy_c,
+    )
+end
 
 ############################################################################################
 #                               Hierarchical de Rham complex                               #

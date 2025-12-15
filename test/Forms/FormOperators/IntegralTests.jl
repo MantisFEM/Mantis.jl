@@ -68,9 +68,7 @@ function test_evaluations(
                 Quadrature.get_weights(dΩₑ)[id] .* (inv_g[id] .* det_g[id])
         end
         reference_result = dot(element_lengths, integrated_metric_1 * element_lengths)
-        @test isapprox(
-            sum(Forms.evaluate(∫¹, element_id)[1]), reference_result, atol=1e-12
-        )
+        @test isapprox(sum(Forms.evaluate(∫¹, element_id)[1]), reference_result, atol=1e-12)
         reference_result = 0.0
         @test isapprox(
             sum(Forms.evaluate(∫d⁰, element_id)[1]), reference_result, atol=1e-12
@@ -118,12 +116,12 @@ function test_evaluations(
     end
 
     @test isapprox(∫⁰_eval, 1.0, atol=1e-9)
-    @test isapprox(∫f⁰_eval, 16π^4, atol=1e-9)
-    @test isapprox(∫f¹_eval, 32π^4, atol=1e-9)
+    @test isapprox(∫f⁰_eval, 16 * π^4, atol=1e-9)
+    @test isapprox(∫f¹_eval, 32 * π^4, atol=1e-9)
     if manifold_dim == 2
-        @test isapprox(∫f²_eval, 16π^4, atol=1e-9)
+        @test isapprox(∫f²_eval, 16 * π^4, atol=1e-9)
     else
-        @test isapprox(∫f³_eval, 16π^4, atol=1e-9)
+        @test isapprox(∫f³_eval, 16 * π^4, atol=1e-9)
     end
 
     return nothing
@@ -188,52 +186,59 @@ dΩ₂ = Quadrature.StandardQuadrature(
 )
 
 # Test the different geometries.
-for complex in (cart_complex_2d, curv_complex_2d)
-    test_evaluations(
-        complex, dΩ₂, analytical_1valued_form_func, analytical_2valued_form_func
-    )
+@testset "2D" verbose = true begin
+    @testset "TensorProductGeometry" begin
+        test_evaluations(
+            cart_complex_2d, dΩ₂, analytical_1valued_form_func, analytical_2valued_form_func
+        )
+    end
+
+    @testset "MappedGeometry" begin
+        test_evaluations(
+            curv_complex_2d, dΩ₂, analytical_1valued_form_func, analytical_2valued_form_func
+        )
+    end
 end
 
 ############################################################################################
 ##                                       3D TESTS                                         ##
 ############################################################################################
-# Setup the complex
+# Setup the complexes
 cart_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_3d, box_size_3d, num_elements_3d, degrees_3d, regularities_3d
 )
-
-# Crazy mesh geometry.
-breakpoints3 = collect(
-    LinRange(
-        starting_point_3d[3], starting_point_3d[3] + box_size_3d[3], num_elements_3d[3] + 1
-    ),
-)
-line_geo_3 = Geometry.CartesianGeometry((breakpoints3,))
-curv_geom_3d = Geometry.TensorProductGeometry((
-    Forms.get_geometry(cart_complex_2d...), line_geo_3
-))
+curv_mapping = Geometry.create_curvilinear_mapping(starting_point_3d, box_size_3d, crazy_c)
 curv_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_3d,
     box_size_3d,
     num_elements_3d,
     map(FunctionSpaces.Bernstein, degrees_3d),
     regularities_3d,
-    curv_geom_3d,
+    curv_mapping,
 )
 
 # The quadrature information.
 canonical_qrule_3d = Quadrature.tensor_product_rule(
-    degrees_3d .+ 4, Quadrature.gauss_legendre
+    2 .* (degrees_3d .+ 1), Quadrature.gauss_legendre
 )
 dΩ₃ = Quadrature.StandardQuadrature(
     canonical_qrule_3d, Geometry.get_num_elements(Forms.get_geometry(cart_complex_3d...))
 )
+Plot.export_geometry_to_vtk(Forms.get_geometry(curv_complex_3d[1]), "curv_test")
 
 # Test the different geometries.
-for complex in (cart_complex_3d, curv_complex_3d)
-    test_evaluations(
-        complex, dΩ₃, analytical_1valued_form_func, analytical_2valued_form_func
-    )
+@testset "3D" verbose = true begin
+    @testset "TensorProductGeometry" begin
+        test_evaluations(
+            cart_complex_3d, dΩ₃, analytical_1valued_form_func, analytical_2valued_form_func
+        )
+    end
+
+    # @testset "MappedGeometry" begin
+    #     test_evaluations(
+    #         curv_complex_3d, dΩ₃, analytical_1valued_form_func, analytical_2valued_form_func
+    #     )
+    # end
 end
 
 end

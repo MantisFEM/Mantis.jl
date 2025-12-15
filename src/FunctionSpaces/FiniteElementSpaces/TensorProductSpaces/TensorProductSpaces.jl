@@ -217,7 +217,7 @@ get_num_basis(space::TensorProductSpace) = prod(get_constituent_num_basis(space)
 See [`Geometry.get_cart_num_elements`](@ref).
 """
 function get_cart_num_elements(space::TensorProductSpace)
-    return Geometry.get_cart_num_elements(get_geometry(space))
+    return Geometry.get_cart_num_elements(get_parametric_geometry(space))
 end
 
 """
@@ -226,7 +226,7 @@ end
 See [`Geometry.get_lin_num_elements`](@ref).
 """
 function get_lin_num_elements(space::TensorProductSpace)
-    return Geometry.get_lin_num_elements(get_geometry(space))
+    return Geometry.get_lin_num_elements(get_parametric_geometry(space))
 end
 
 """
