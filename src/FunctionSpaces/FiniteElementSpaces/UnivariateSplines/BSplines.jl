@@ -138,74 +138,56 @@ struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
 end
 
 # Constructors with classical choices for defaults.
+# General constructor, given only 1 CartesianGeometry, which is used as poth parametric and
+# physical geometry.
 function BSplineSpace(
-    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Vector{Int},
+) where {image_dim}
+    return BSplineSpace(geometry, geometry, polynomials, regularity)
+end
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    mapping::Geometry.AbstractMapping{1, image_dim},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Vector{Int},
+) where {image_dim}
+    physical_geometry = Geometry.MappedGeometry(geometry, mapping)
+    return BSplineSpace(physical_geometry, geometry, polynomials, regularity)
+end
+# Given polynomial degree and regularity vector, assume the polynomial is Bernstein.
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
     polynomial_degree::Int,
     regularity::Vector{Int},
 ) where {image_dim}
-    parametric_geometry = _create_bspline_parametric_geometry(geometry)
-    return BSplineSpace(
-        geometry, parametric_geometry, Bernstein(polynomial_degree), regularity
-    )
+    return BSplineSpace(geometry, geometry, Bernstein(polynomial_degree), regularity)
 end
+# Given polynomial degree and regularity value, assume the polynomial is Bernstein and the
+# regularity is the same everywhere except at the endpoints (open knot vector).
 function BSplineSpace(
-    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomial_degree::Int,
+    regularity::Int,
+) where {image_dim}
+    breakpoints = Geometry.get_breakpoints_per_dim(geometry)
+    num_breakpoints = length(breakpoints)
+    regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
+    return BSplineSpace(geometry, geometry, Bernstein(polynomial_degree), regularity)
+end
+
+# Given a polynomial and regularity vector, assume the polynomial is Bernstein.
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
     polynomials::AbstractCanonicalSpace,
     regularity::Int,
 ) where {image_dim}
     # Open knot vector (-1 regularity at the endpoints), given internal regularity.
-    parametric_geometry = _create_bspline_parametric_geometry(geometry)
-    breakpoints = Geometry.get_breakpoints_per_dim(parametric_geometry)
+    breakpoints = Geometry.get_breakpoints_per_dim(geometry)
     num_breakpoints = length(breakpoints)
     regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
-    return BSplineSpace(geometry, parametric_geometry, polynomials, regularity)
-end
-function BSplineSpace(
-    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
-    polynomials::AbstractCanonicalSpace,
-    regularity::Vector{Int},
-) where {image_dim}
-    parametric_geometry = _create_bspline_parametric_geometry(geometry)
-    return BSplineSpace(geometry, parametric_geometry, polynomials, regularity)
-end
-function BSplineSpace(
-    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
-    polynomial_degree::Int,
-    regularity::Int,
-) where {image_dim}
-    parametric_geometry = _create_bspline_parametric_geometry(geometry)
-    breakpoints = Geometry.get_breakpoints_per_dim(parametric_geometry)
-    num_breakpoints = length(breakpoints)
-    regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
-    return BSplineSpace(
-        geometry, parametric_geometry, Bernstein(polynomial_degree), regularity
-    )
-end
-
-# Geometry related functions
-function _create_bspline_parametric_geometry(
-    geometry::Geometry.CartesianGeometry{1, image_dim, 1}
-) where {image_dim}
-    return geometry
-end
-function _create_bspline_parametric_geometry(
-    geometry::Geometry.MappedGeometry{1, image_dim, 1}
-) where {image_dim}
-    return _create_bspline_parametric_geometry(Geometry.get_base_geometry(geometry))
-end
-function _create_bspline_parametric_geometry(
-    geometry::Geometry.UnstructuredGeometry{1, image_dim, 1}
-) where {image_dim}
-    # There is only one patch in the unstructured geometry, so we just look at that one.
-    return _create_bspline_parametric_geometry(Geometry.get_geometry(geometry, 1))
-end
-function _create_bspline_parametric_geometry(
-    geometry::Geometry.TensorProductGeometry{1, image_dim, 1}
-) where {image_dim}
-    # There can only be one geometry for the Tensorproduct to be 1D, so we look at that one.
-    return _create_bspline_parametric_geometry(
-        Geometry.get_constituent_geometry(geometry, 1)
-    )
+    return BSplineSpace(geometry, geometry, polynomials, regularity)
 end
 
 function get_parametric_geometry(space::BSplineSpace)
@@ -215,7 +197,7 @@ end
 """
     get_knot_vector(space::BSplineSpace)
 
-Returns the knot vector of the B-spline space `space`.
+Returns the knot vector object of the B-spline space `space`.
 
 # Arguments
 - `space::BSplineSpace`: The B-spline space.

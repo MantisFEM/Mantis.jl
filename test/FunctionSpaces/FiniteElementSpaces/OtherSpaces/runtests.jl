@@ -8,5 +8,8 @@ end
 @testset "DirectSumSpaces" begin
     include("DirectSumSpaceTests.jl")
 end
+@testset "RationalFESpaces" begin
+    include("RationalFESpacesTests.jl")
+end
 
 end
