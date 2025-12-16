@@ -4,7 +4,7 @@ include(joinpath(pwd(), "BenchmarkHelpers.jl"))
 
 verbose = true
 show = true
-save = false
+save = true
 
 group = BenchmarkGroup()
 
