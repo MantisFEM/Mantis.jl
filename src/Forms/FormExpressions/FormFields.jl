@@ -305,9 +305,9 @@ function _evaluate(
     geometry = get_geometry(form_field)
     x = Geometry.evaluate(geometry, element_idx, xi)
     J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
-    form_eval = get_expression(form_field)(x) # size: num_points x image_dim
+    form_eval = get_expression(form_field)(x)
     num_eval_points = size(x, 1)
-    image_dim = length(form_eval)
+    image_dim = Geometry.get_image_dim(geometry)
     form_pullback = Vector{Vector{Float64}}(undef, manifold_dim)
     for j in 1:manifold_dim
         form_pullback[j] = zeros(num_eval_points)
