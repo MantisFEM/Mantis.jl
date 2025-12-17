@@ -127,14 +127,14 @@ for geom in [geo_2d_cart, tensor_prod_geo, geom_crazy]
         @test all(
             isapprox(
                 hodge_dx_one_form_eval[1],
-                -inv_g_times_det_g[:, 1, 2] .* dx_one_form_eval[1];
+                [-inv_g_times_det_g[i][1,2] * dx_one_form_eval[1][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_dx_one_form_eval[2],
-                inv_g_times_det_g[:, 1, 1] .* dx_one_form_eval[1];
+                [inv_g_times_det_g[i][1,1] * dx_one_form_eval[1][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -149,14 +149,14 @@ for geom in [geo_2d_cart, tensor_prod_geo, geom_crazy]
         @test all(
             isapprox(
                 hodge_dy_one_form_eval[1],
-                -inv_g_times_det_g[:, 2, 2] .* dy_one_form_eval[2];
+                [-inv_g_times_det_g[i][2,2] * dy_one_form_eval[2][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_dy_one_form_eval[2],
-                inv_g_times_det_g[:, 2, 1] .* dy_one_form_eval[2];
+                [inv_g_times_det_g[i][2,1] * dy_one_form_eval[2][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -171,16 +171,14 @@ for geom in [geo_2d_cart, tensor_prod_geo, geom_crazy]
         @test all(
             isapprox(
                 hodge_1_eval[1],
-                -inv_g_times_det_g[:, 1, 2] .* zeta_one_form_eval[1] -
-                inv_g_times_det_g[:, 2, 2] .* zeta_one_form_eval[2];
+                [-inv_g_times_det_g[i][1,2] * zeta_one_form_eval[1][i] - inv_g_times_det_g[i][2,2] .* zeta_one_form_eval[2][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_1_eval[2],
-                inv_g_times_det_g[:, 1, 1] .* zeta_one_form_eval[1] +
-                inv_g_times_det_g[:, 2, 1] .* zeta_one_form_eval[2];
+                [inv_g_times_det_g[i][1,1] * zeta_one_form_eval[1][i] + inv_g_times_det_g[i][2,1] .* zeta_one_form_eval[2][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -342,7 +340,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_1_form_dx_eval[1][:, 1],
-                inv_g_times_det_g[:, 1, 1] .* form_dx_eval[1];
+                [inv_g_times_det_g[i][1,1] * form_dx_eval[1][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -356,7 +354,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_1_form_dy_eval[2][:, 1],
-                inv_g_times_det_g[:, 2, 2] .* form_dy_eval[2];
+                [inv_g_times_det_g[i][2,2] * form_dy_eval[2][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -370,7 +368,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_1_form_dz_eval[3][:, 1],
-                inv_g_times_det_g[:, 3, 3] .* form_dz_eval[3];
+                [inv_g_times_det_g[i][3,3] * form_dz_eval[3][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -384,27 +382,27 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_1_eval[1],
-                inv_g_times_det_g[:, 1, 1] .* form_zeta_eval[1] .+
-                inv_g_times_det_g[:, 1, 2] .* form_zeta_eval[2] .+
-                inv_g_times_det_g[:, 1, 3] .* form_zeta_eval[3];
+                [inv_g_times_det_g[i][1,1] * form_zeta_eval[1][i] +
+                inv_g_times_det_g[i][1,2] * form_zeta_eval[2][i] +
+                inv_g_times_det_g[i][1,3] * form_zeta_eval[3][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_1_eval[2],
-                inv_g_times_det_g[:, 2, 1] .* form_zeta_eval[1] .+
-                inv_g_times_det_g[:, 2, 2] .* form_zeta_eval[2] .+
-                inv_g_times_det_g[:, 2, 3] .* form_zeta_eval[3];
+                [inv_g_times_det_g[i][2,1] * form_zeta_eval[1][i] +
+                inv_g_times_det_g[i][2,2] * form_zeta_eval[2][i] +
+                inv_g_times_det_g[i][2,3] * form_zeta_eval[3][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_1_eval[3],
-                inv_g_times_det_g[:, 3, 1] .* form_zeta_eval[1] .+
-                inv_g_times_det_g[:, 3, 2] .* form_zeta_eval[2] .+
-                inv_g_times_det_g[:, 3, 3] .* form_zeta_eval[3];
+                [inv_g_times_det_g[i][3,1] * form_zeta_eval[1][i] +
+                inv_g_times_det_g[i][3,2] * form_zeta_eval[2][i] +
+                inv_g_times_det_g[i][3,3] * form_zeta_eval[3][i] for i in eachindex(inv_g_times_det_g)];
                 atol=1e-12,
             ),
         )
@@ -427,7 +425,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_2_form_dy_dz_eval[1][:, 1],
-                g_div_det_g[:, 1, 1] .* form_dy_dz_eval[1];
+                [g_div_det_g[i][1,1] * form_dy_dz_eval[1][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )
@@ -441,7 +439,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_2_form_dz_dx_eval[2][:, 1],
-                g_div_det_g[:, 2, 2] .* form_dz_dx_eval[2];
+                [g_div_det_g[i][2,2] * form_dz_dx_eval[2][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )
@@ -455,7 +453,7 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_2_form_dx_dy_eval[3][:, 1],
-                g_div_det_g[:, 3, 3] .* form_dx_dy_eval[3];
+                [g_div_det_g[i][3,3] * form_dx_dy_eval[3][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )
@@ -469,27 +467,27 @@ for geom in [geo_3d_cart, crazy_geo_3d_cart]
         @test all(
             isapprox(
                 hodge_2_eval[1],
-                g_div_det_g[:, 1, 1] .* zeta_eval[1] .+
-                g_div_det_g[:, 1, 2] .* zeta_eval[2] .+
-                g_div_det_g[:, 1, 3] .* zeta_eval[3];
+                [g_div_det_g[i][1,1] * zeta_eval[1][i] +
+                g_div_det_g[i][1,2] * zeta_eval[2][i] +
+                g_div_det_g[i][1,3] * zeta_eval[3][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_2_eval[2],
-                g_div_det_g[:, 2, 1] .* zeta_eval[1] .+
-                g_div_det_g[:, 2, 2] .* zeta_eval[2] .+
-                g_div_det_g[:, 2, 3] .* zeta_eval[3];
+                [g_div_det_g[i][2,1] * zeta_eval[1][i] +
+                g_div_det_g[i][2,2] * zeta_eval[2][i] +
+                g_div_det_g[i][2,3] * zeta_eval[3][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )
         @test all(
             isapprox(
                 hodge_2_eval[3],
-                g_div_det_g[:, 3, 1] .* zeta_eval[1] .+
-                g_div_det_g[:, 3, 2] .* zeta_eval[2] .+
-                g_div_det_g[:, 3, 3] .* zeta_eval[3];
+                [g_div_det_g[i][3,1] * zeta_eval[1][i] +
+                g_div_det_g[i][3,2] * zeta_eval[2][i] +
+                g_div_det_g[i][3,3] * zeta_eval[3][i] for i in eachindex(g_div_det_g)];
                 atol=1e-12,
             ),
         )

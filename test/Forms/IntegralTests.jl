@@ -65,7 +65,7 @@ function test_evaluations(
         integrated_metric_1 = zeros((manifold_dim, manifold_dim))
         for id in eachindex(Quadrature.get_weights(dΩₑ))
             integrated_metric_1 .+=
-                Quadrature.get_weights(dΩₑ)[id] .* ((inv_g[id, :, :]) .* det_g[id])
+                Quadrature.get_weights(dΩₑ)[id] .* (inv_g[id] .* det_g[id])
         end
         reference_result = dot(element_lengths, integrated_metric_1 * element_lengths)
         @test isapprox(

@@ -7,6 +7,7 @@ The exported names are:
 module Plot
 
 import WriteVTK
+using GLMakie
 
 using ..GeneralHelpers
 using ..Points
@@ -46,11 +47,11 @@ function plot(
     return _plot(geometry; kwargs...)
 end
 
-function plot(form::Forms.AbstractFormExpression; kwargs...)
+function plot(form::Forms.AbstractForm; kwargs...)
     return _plot(form; kwargs...)
 end
 
-function plot(form::Forms.AbstractFormExpression, offset::Function; kwargs...)
+function plot(form::Forms.AbstractForm, offset::Function; kwargs...)
     return _plot(form, offset; kwargs...)
 end
 

@@ -199,4 +199,8 @@ function get_element(patch::Patch1D, element_id::Int)
     return @view get_breakpoints(patch)[element_id:element_id+1]
 end
 
+
+# TopologyFunctionality
+include("./MeshTopology.jl")
+
 end

@@ -674,19 +674,19 @@ end
 
 """
     trace_basis_idxs(
-        form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+        form::AbstractForm{manifold_dim, form_rank, expression_rank, G}
     ) where {manifold_dim, form_rank, expression_rank, G}
 
 Creates a list of basis function idxs which control the trace of the form on the boundary.
 
 # Arguments
-- `form::AbstractFormExpression`: The form for which to compute the boundary conditions.
+- `form::AbstractForm`: The form for which to compute the boundary conditions.
 
 # Returns
 - `Vector{Int}`: The list of basis idxs.
 """
 function trace_basis_idxs(
-    form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+    form::AbstractForm{manifold_dim, form_rank, expression_rank, G}
 ) where {manifold_dim, form_rank, expression_rank, G}
     if FunctionSpaces.get_num_patches(get_fe_space(form)) > 1
         # This will require topological information to know which interfaces are outer

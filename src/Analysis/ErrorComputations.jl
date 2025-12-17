@@ -16,8 +16,8 @@ function _compute_square_error_per_element(
     expression_rank_1,
     expression_rank_2,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     num_elements = Quadrature.get_num_base_elements(quad_rule)
@@ -64,8 +64,8 @@ function compute_error_per_element(
     expression_rank_1,
     expression_rank_2,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     partial_result = _compute_square_error_per_element(
@@ -92,8 +92,8 @@ function compute_error_total(
     expression_rank_1,
     expression_rank_2,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractFormExpression{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     partial_result = _compute_square_error_per_element(

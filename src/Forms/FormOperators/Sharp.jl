@@ -23,7 +23,7 @@ struct Sharp{manifold_dim, G, F}
 
     function Sharp(
         form::F
-    ) where {manifold_dim, G, F <: AbstractFormExpression{manifold_dim, 1, 0, G}}
+    ) where {manifold_dim, G, F <: AbstractForm{manifold_dim, 1, 0, G}}
         if manifold_dim < 2
             throw(
                 ArgumentError(
@@ -37,9 +37,13 @@ struct Sharp{manifold_dim, G, F}
     end
 end
 
-function ♯(form::AbstractFormExpression)
-    return Sharp(form)
-end
+"""
+    ♯
+
+Symbolic wrapper for the sharp operator. The unicode character command is `\\sharp`. See
+[`Sharp`](@ref) for the details.
+"""
+const ♯ = Sharp
 
 ############################################################################################
 #                                         Getters                                          #
@@ -54,25 +58,26 @@ Returns the form to which the sharp is applied.
 - `sharp::Sharp`: The sharp structure.
 
 # Returns
-- `<:AbstractFormExpression`: The form to which the sharp is applied.
+- `<:AbstractForm`: The form to which the sharp is applied.
 """
 get_form(sharp::Sharp) = sharp.form
 
 """
     get_form_space_tree(wedge::Wedge)
 
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp operator, e.g., for
-`♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1.
-If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
+Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp
+operator, e.g., for `♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all
+have exprssion_rank > 1. If `α` has expression_rank = 0, it returns only the spaces of `β`
+and `γ`.
 
 # Arguments
 - `sharp::Sharp`: The sharp structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of forms present in the tree of the sharp.
+- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the sharp.
 """
 function get_form_space_tree(sharp::Sharp)
-    return get_form_space_tree(sharp.form)
+    return get_form_space_tree(get_form(sharp))
 end
 
 ############################################################################################
@@ -92,8 +97,8 @@ vector-field are defined in reference, curvilinear coordinates.
 - `sharp::Sharp{manifold_dim}`: The sharp structure containing the form to be evaluated.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point
-    numbers representing the coordinates at which the 1-form is evaluated. Each vector within
-    the tuple corresponds to a dimension of the manifold.
+	numbers representing the coordinates at which the 1-form is evaluated. Each vector
+	within the tuple corresponds to a dimension of the manifold.
 
 # Returns
 - `::Vector{Matrix{Float64}}`: Each component of the vector, corresponding to each ∂ᵢ,
@@ -111,23 +116,28 @@ function evaluate(
 end
 
 function _evaluate_sharp(
-    form_expression::AbstractFormExpression{manifold_dim},
+    form_expression::AbstractForm{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
     inv_g, _, _ = Geometry.inv_metric(get_geometry(form_expression), element_id, xi)
-
     num_form_components = manifold_dim # = binomial(manifold_dim, 1)
-
     form_eval, form_indices = evaluate(form_expression, element_id, xi)
-
-    sharp_eval = Vector{Matrix{Float64}}(undef, num_form_components)
-
+    num_points = size(form_eval[1], 1)
+    sharp_eval = [zeros(num_points, 1) for _ in 1:num_form_components]
     # ♯: dξⁱ ↦ ♯(dξⁱ) = gⁱʲ∂ⱼ
-    for component in 1:num_form_components
-        sharp_eval[component] = @views hcat(
-            [form_eval[i] .* inv_g[:, i, component] for i in 1:num_form_components]...
-        )
+    for point in 1:num_points
+        inv_g_point = inv_g[point]
+        for new_component in 1:num_form_components
+            sharp_row = view(sharp_eval[new_component], point, :)
+            for old_component in 1:num_form_components
+                scaling = inv_g_point[new_component, old_component]
+                old_row = view(form_eval[old_component], point, :)
+                if !iszero(scaling)
+                    sharp_row .+= scaling .* old_row
+                end
+            end
+        end
     end
 
     return sharp_eval, form_indices

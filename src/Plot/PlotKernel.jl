@@ -181,7 +181,7 @@ function _plot(
 end
 
 function _plot(
-    form::Forms.AbstractFormExpression{manifold_dim, form_rank, 0, G},
+    form::Forms.AbstractForm{manifold_dim, form_rank, 0, G},
     offset::Union{Nothing, Function}=nothing;
     vtk_filename::String="default",
     n_subcells::Int=1,

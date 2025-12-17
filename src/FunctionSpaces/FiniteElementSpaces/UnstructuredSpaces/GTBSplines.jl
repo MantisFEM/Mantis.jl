@@ -3,7 +3,7 @@
 
 Constructs a GTBSplineSpace from a tuple of NURBS or B-spline spaces and a vector of
 regularity conditions. Periodic spaces are a special case of GTBSplines for
-`num_patches = 1` and `regularity = [r]` with `r > -1`.
+`num_patches = 1` and `regularity = [r]` with `r > -1`; see [Hiemstra2020](@cite).
 
 # Fields
 - `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.

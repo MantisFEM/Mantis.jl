@@ -6,28 +6,6 @@ const rtol = 0.05
 const mantis_dir = joinpath(splitpath(pwd())[1:(end - 1)])
 
 """
-    add_benchmark_group!(group::BenchmarkGroup, name::String, file_path::String)
-
-Append a benchmark sub-group from `file_path` to `group` with a given `name`. Note, added
-sub-group will be the variable named `group` inside `file_path`; the contents of `file_path`
-should be a module.
-
-# Arguments
-- `group::BenchmarkGroup`: The benchmark group to which the sub-group will be appended.
-- `name::String`: The name of the appended sub-group.
-- `file_path::String`: The file containing the appended sub-group.
-# Returns
-- `group::BenchmarkGroup`: The given group with the appended sub-group.
-"""
-function add_benchmark_group!(group::BenchmarkGroup, name::String, file_path::String)
-    mod = include(file_path)
-    sub_group = getproperty(mod, :group)
-    group[name] = sub_group
-
-    return group
-end
-
-"""
     run_benchmark(
         benchmark::BenchmarkTools.Benchmark,
         location::String,
@@ -149,7 +127,7 @@ Returns useful metadata for CSV storage.
 """
 function get_metadata()
     date = string(readchomp(`date +%Y-%m-%d`))
-    long_hash= string(readchomp(`git merge-base remotes/origin/main HEAD`))
+    long_hash = string(readchomp(`git merge-base remotes/origin/main HEAD`))
     commit_hash = string(readchomp(`git rev-parse --short=7 $long_hash`))
     commit_date = string(
         split(string(readchomp(`git show -s --format="%ci" $commit_hash`)))[1]
@@ -443,8 +421,14 @@ example, `12.345 ms`.
 function get_number_in_string(str::AbstractString; new_unit::Union{Nothing, String}=nothing)
     # Conversion factors from different units to second
     factors = Dict(
-        "ns" => 1e-9, "μs" => 1e-6, "ms" => 1e-3, "s" => 1,  # Time
-        "bytes" => 1, "kiB" => 1024, "MiB" => 1024^2, "GiB" => 1024^3  # Memory
+        "ns" => 1e-9,  # Time
+        "μs" => 1e-6,
+        "ms" => 1e-3,
+        "s" => 1,
+        "bytes" => 1,  # Memory
+        "KiB" => 1024,
+        "MiB" => 1024^2,
+        "GiB" => 1024^3,
     )
     str_number, str_unit = split(str) # Assumes "number unit" format of the string
     number = parse(Float64, str_number)

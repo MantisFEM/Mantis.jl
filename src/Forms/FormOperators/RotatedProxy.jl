@@ -1,6 +1,6 @@
 
 @doc raw"""
-    evaluate_rotated_proxy_vector_field(form_expression::AbstractFormExpression{manifold_dim, form_rank, G},
+    evaluate_rotated_proxy_vector_field(form_expression::AbstractForm{manifold_dim, form_rank, G},
                                         element_id::Int,
                                         xi::Points.AbstractPoints{manifold_dim})
                                         where {manifold_dim, form_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
@@ -8,7 +8,7 @@
 Compute the rotated proxy vector-field associated to a differential (n-1)-form over a specified element of an n-dimensional manifold, converting the form into a vector field. Note that both the form and the vector-field are defined in reference, curvilinear coordinates.
 
 # Arguments
-- `form_expression::AbstractFormExpression{manifold_dim, form_rank, G}`: An expression representing the form on the manifold.
+- `form_expression::AbstractForm{manifold_dim, form_rank, G}`: An expression representing the form on the manifold.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point numbers representing the coordinates at which the form is evaluated. Each vector within the tuple corresponds to a dimension of the manifold.
 
@@ -19,7 +19,7 @@ Compute the rotated proxy vector-field associated to a differential (n-1)-form o
 # Throws an error if the manifold dimension is less than 2 or the form rank is not one less than the manifold dimension.
 """
 function evaluate_rotated_proxy_vector_field(
-    form_expression::AbstractFormExpression{manifold_dim, form_rank, G},
+    form_expression::AbstractForm{manifold_dim, form_rank, G},
     element_id::Int,
     xi::NTuple{manifold_dim, Vector{Float64}},
 ) where {manifold_dim, form_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
@@ -48,7 +48,7 @@ function evaluate_rotated_proxy_vector_field(
 end
 
 @doc raw"""
-    evaluate_rotated_proxy_vector_field_pushforward(form_expression::AbstractFormExpression{manifold_dim, form_rank, G},
+    evaluate_rotated_proxy_vector_field_pushforward(form_expression::AbstractForm{manifold_dim, form_rank, G},
                                         element_id::Int,
                                         xi::Points.AbstractPoints{manifold_dim})
                                         where {manifold_dim, form_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
@@ -56,7 +56,7 @@ end
 Compute the pushforward of the rotated proxy vector-field associated to a differential (n-1)-form over a specified element of an n-dimensional manifold, converting the form into a vector field. Note that both the vector-field is defined in physical coordinates.
 
 # Arguments
-- `form_expression::AbstractFormExpression{manifold_dim, form_rank, G}`: An expression representing the form on the manifold.
+- `form_expression::AbstractForm{manifold_dim, form_rank, G}`: An expression representing the form on the manifold.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point numbers representing the coordinates at which the form is evaluated. Each vector within the tuple corresponds to a dimension of the manifold.
 
@@ -67,7 +67,7 @@ Compute the pushforward of the rotated proxy vector-field associated to a differ
 # Throws an error if the manifold dimension is less than 2 or the form rank is not one less than the manifold dimension.
 """
 function evaluate_rotated_proxy_vector_field_pushforward(
-    form_expression::AbstractFormExpression{manifold_dim, form_rank, G},
+    form_expression::AbstractForm{manifold_dim, form_rank, G},
     element_id::Int,
     xi::NTuple{manifold_dim, Vector{Float64}},
 ) where {manifold_dim, form_rank, G <: Geometry.AbstractGeometry{manifold_dim}}

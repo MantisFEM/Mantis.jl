@@ -4,12 +4,12 @@
 
 """
     ExteriorDerivative{manifold_dim, form_rank, expression_rank, G, F} <:
-    AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+    AbstractForm{manifold_dim, form_rank, expression_rank, G}
 
-Represents the exterior derivative of an `AbstractFormExpression`.
+Represents the exterior derivative of an `AbstractForm`.
 
 # Fields
-- `form::AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}`: The form to
+- `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
     which the exterior derivative is applied.
 - `label::String`: The exterior derivative label. This is a concatenation of `"d"` with the
     label of `form`.
@@ -22,14 +22,14 @@ Represents the exterior derivative of an `AbstractFormExpression`.
     with one single set of basis forms have rank 1, with two sets of basis forms have rank
     2. Higher ranks are not possible.
 - `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
-- `F <: Forms.AbstractFormExpression{manifold_dim, form_rank - 1, expression_rank, G}`: The
+- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank, G}`: The
     type of `form`.
 
 # Inner Constructors
 - `ExteriorDerivative(form::F)`: General constructor.
 """
 struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, G, F} <:
-       AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+       AbstractForm{manifold_dim, form_rank, expression_rank, G}
     form::F
     label::String
 
@@ -40,7 +40,7 @@ struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, G, F} <:
         form_rank,
         expression_rank,
         G <: Geometry.AbstractGeometry{manifold_dim},
-        F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
     }
         if form_rank == manifold_dim
             throw(ArgumentError("""\
@@ -55,9 +55,13 @@ struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, G, F} <:
     end
 end
 
-function d(form::AbstractFormExpression)
-    return ExteriorDerivative(form)
-end
+"""
+    d
+
+Symbolic wrapper for the exterior derivative operator. See [`ExteriorDerivative`](@ref) for
+the details.
+"""
+const d = ExteriorDerivative
 
 ############################################################################################
 #                                         Getters                                          #
@@ -71,7 +75,7 @@ Returns the form to which the exterior derivative is applied.
 - `ext_der::ExteriorDerivative`: The exterior derivative.
 
 # Returns
-- `<:AbstractFormExpression`: The form to which the exterior derivative is applied.
+- `<:AbstractForm`: The form to which the exterior derivative is applied.
 """
 get_form(ext_der::ExteriorDerivative) = ext_der.form
 
@@ -86,10 +90,10 @@ If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 - `ext_der::ExteriorDerivative`: The exterior derivative structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of spaces of forms present in the tree of the exterior derivative.
+- `Tuple(<:AbstractForm)`: The list of spaces of forms present in the tree of the exterior derivative.
 """
 function get_form_space_tree(ext_der::ExteriorDerivative)
-    return get_form_space_tree(ext_der.form)
+    return get_form_space_tree(get_form(ext_der))
 end
 
 """
@@ -141,7 +145,7 @@ end
 ############################################################################################
 
 function _evaluate_exterior_derivative(
-    form::AbstractFormExpression{manifold_dim},
+    form::AbstractForm{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
@@ -187,12 +191,10 @@ end
 ############################################################################################
 
 function _evaluate_exterior_derivative(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{manifold_dim}
-) where {
-    manifold_dim,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, 0, G},
-}
+    form_space::FormSpace{manifold_dim, 0, G},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
     # Preallocate memory for output array
     n_derivative_form_components = manifold_dim
     n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
@@ -223,8 +225,8 @@ function _evaluate_exterior_derivative(
 end
 
 function _evaluate_exterior_derivative(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{2}
-) where {G <: Geometry.AbstractGeometry{2}, FS <: AbstractFormSpace{2, 1, G}}
+    form_space::FormSpace{2, 1, G}, element_id::Int, xi::Points.AbstractPoints{2}
+) where {G <: Geometry.AbstractGeometry{2}}
     # manifold_dim = 2
     n_derivative_form_components = 1 # binomial(manifold_dim, 2)
     n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
@@ -253,8 +255,8 @@ function _evaluate_exterior_derivative(
 end
 
 function _evaluate_exterior_derivative(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{3}
-) where {G <: Geometry.AbstractGeometry{3}, FS <: AbstractFormSpace{3, 1, G}}
+    form_space::FormSpace{3, 1, G}, element_id::Int, xi::Points.AbstractPoints{3}
+) where {G <: Geometry.AbstractGeometry{3}}
     # manifold_dim = 3
     n_derivative_form_components = 3 # binomial(manifold_dim, 2)
 
@@ -292,8 +294,8 @@ function _evaluate_exterior_derivative(
 end
 
 function _evaluate_exterior_derivative(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{3}
-) where {FS <: AbstractFormSpace{3, 2, G}} where {G <: Geometry.AbstractGeometry{3}}
+    form_space::FormSpace{3, 2, G}, element_id::Int, xi::Points.AbstractPoints{3}
+) where {G <: Geometry.AbstractGeometry{3}}
     # manifold_dim = 3
     n_derivative_form_components = 1 # binomial(manifold_dim, 2)
 
@@ -327,7 +329,6 @@ function _evaluate_exterior_derivative(
     return local_d_form_basis_eval, form_basis_indices
 end
 
-
 # #############################################################################################
 # #                                           dd                                              #
 # #############################################################################################
@@ -343,7 +344,7 @@ end
 #     G <: Geometry.AbstractGeometry{manifold_dim},
 #     F <: AbstractFormField{manifold_dim, form_rank, G},
 # }
-#     # Determine shape of the output 
+#     # Determine shape of the output
 #     n_evaluation_points = prod(size.(xi, 1))
 #     n_derivative_components = binomial(manifold_dim, form_rank_d + 1)
 #     n_basis_functions = 1
@@ -376,25 +377,24 @@ function _evaluate_exterior_derivative(
     expression_rank_1,
     expression_rank_2,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    F1 <: AbstractFormExpression{manifold_dim, form_rank_1, expression_rank_1, G},
-    F2 <: AbstractFormExpression{manifold_dim, form_rank_2, expression_rank_2, G}
+    F1 <: AbstractForm{manifold_dim, form_rank_1, expression_rank_1, G},
+    F2 <: AbstractForm{manifold_dim, form_rank_2, expression_rank_2, G},
 }
     # The exterior derivative of a wedge product follows the Leibniz rule:
     # d(αᵏ ∧ βᵐ) = dαᵏ ∧ βᵐ + (-1)^k αᵏ ∧ dβᵐ
-    
+
     # Extract the forms that compose the wedge product and their exterior derivatives
     α = form.form_1
     β = form.form_2
     dα = ExteriorDerivative(α)
     dβ = ExteriorDerivative(β)
-    
+
     # Compute the Leibniz expression components
     dα_wedge_β = Forms.Wedge(dα, β)
     α_wedge_dβ = Forms.Wedge(α, dβ)
 
     return evaluate(dα_wedge_β + (-1)^get_form_rank(α) * α_wedge_dβ, element_id, xi)
 end
-
 
 #############################################################################################
 #                                Unary transformation                                     #
@@ -408,20 +408,19 @@ function _evaluate_exterior_derivative(
     form_rank,
     expression_rank,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
-    T <: Function
+    F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+    T <: Function,
 }
     # The exterior derivative of a binary transformation follows the law:
     # d(c*αᵏ) = c*dαᵏ
-    
+
     # Extract the forms that compose the binary transformation and their exterior derivatives
     α = get_form(form)
     uni_transformation = get_transformation(form)
-    
+
     # Evaluate the distributive expression components, sum them, and return
     return evaluate(uni_transformation(d(α)), element_id, xi)
 end
-
 
 #############################################################################################
 #                                 Binary transformation                                     #
@@ -435,17 +434,17 @@ function _evaluate_exterior_derivative(
     form_rank,
     expression_rank,
     G <: Geometry.AbstractGeometry{manifold_dim},
-    F1 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
-    F2 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
-    T <: Function
+    F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+    F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+    T <: Function,
 }
     # The exterior derivative of a binary transformation follows the distributive law:
     # d(αᵏ + βᵏ) = dαᵏ +  dβᵏ
-    
+
     # Extract the forms
     forms = get_forms(form)
 
-    # Extract the transformation 
+    # Extract the transformation
     binary_transformation = get_transformation(form)
 
     # Evaluate the distributive expression components, sum them, and return

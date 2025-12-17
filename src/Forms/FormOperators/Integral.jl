@@ -15,7 +15,7 @@ Structure representing the integral of a form over a manifold.
 - `manifold_dim::Int`: The dimension of the manifold.
 - `F`: The type of the form expression.
 # Inner Constructors
-- `Integral(form::AbstractFormExpression{manifold_dim})`: General constructor.
+- `Integral(form::AbstractForm{manifold_dim})`: General constructor.
 # Outer Constructors
 - `∫`: Symbolic wrapper for the integral operator.
 """
@@ -26,7 +26,7 @@ struct Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
         form::F, quad_rule::Q
     ) where {
         manifold_dim,
-        F <: AbstractFormExpression{manifold_dim, manifold_dim},
+        F <: AbstractForm{manifold_dim, manifold_dim},
         Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
     }
         geom = get_geometry(form)
@@ -46,20 +46,12 @@ struct Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
 end
 
 """
-    ∫(form::AbstractFormExpression)
+    ∫
 
-Symbolic wrapper for the integral operator. The unicode character command is `\\int`.
-
-# Arguments
-- `form::AbstractFormExpression`: The form to be integrated.
-- `quad_rule::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to be used.
-
-# Returns
-- `Integral`: The integral operator.
+Symbolic wrapper for the integral operator. The unicode character command is `\\int`. See
+[`Integral`](@ref) for the details.
 """
-function ∫(form::AbstractFormExpression, quad_rule::Quadrature.AbstractGlobalQuadratureRule)
-    return Integral(form, quad_rule)
-end
+const ∫ = Integral
 
 ############################################################################################
 #                                         Getters                                          #
@@ -74,7 +66,7 @@ Returns the form associated with the integral operator.
 - `integral::Integral`: The integral operator.
 
 # Returns
-- `<: AbstractFormExpression`: The form associated with the integral operator.
+- `<: AbstractForm`: The form associated with the integral operator.
 """
 get_form(integral::Integral) = integral.form
 
@@ -82,31 +74,18 @@ get_form(integral::Integral) = integral.form
     get_form_space_tree(integral::Integral)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the integrand of integral, e.g., for
-`∫c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. 
+`∫c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
 If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 
 # Arguments
 - `integral::Integral`: The Integral structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of form spaces present in the tree of the integrand of integral.
+- `Tuple(<:AbstractForm)`: The list of form spaces present in the tree of the integrand of integral.
 """
 function get_form_space_tree(integral::Integral)
     return get_form_space_tree(get_form(integral))
 end
-
-"""
-    get_expression_rank(integral::Integral)
-
-Returns the rank of the expression associated with the integral operator.
-
-# Arguments
-- `integral::Integral`: The integral operator.
-
-# Returns
-- `::Int`: The rank of the expression associated with the integral operator.
-"""
-get_expression_rank(integral::Integral) = get_expression_rank(get_form(integral))
 
 """
     get_quadrature_rule(integral::Integral)
@@ -180,7 +159,7 @@ end
         manifold_dim,
         form_rank,
         expression_rank,
-        F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank},
     }
 
 Evaluates the integral of a form over a given global element using a specified quadrature
@@ -201,7 +180,7 @@ function evaluate(
     manifold_dim,
     form_rank,
     expression_rank,
-    F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank},
+    F <: AbstractForm{manifold_dim, form_rank, expression_rank},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     quad_rule = get_quadrature_rule(integral)

@@ -21,7 +21,7 @@ Represents a differential form field.
 - `FS`: Type of the form space.
 
 # Inner Constructors
-- `FormField(form_space::FS, coefficients::Vector{Int} label::String)`: General constructor
+- `FormField(form_space::FS, coefficients::Vector{Int}, label::String)`: General constructor
     for form fields.
 - `FormField(form_space::FS, label::String)`: Constructor with zero coefficients.
 """
@@ -161,23 +161,6 @@ Returns the form space associated with the form field.
 get_form_space(form_field::FormField) = form_field.form_space
 
 """
-    get_form_space_tree(form_field::AbstractFormField)
-
-Returns the list of spaces of forms of `expression_rank > 0` in the tree of the expression.
-Since `FormField` has a single form of `expression_rank = 0` it returns an empty `Tuple`.
-
-# Arguments
-- `form_field::AbstractFormField`: The AbstractFormField structure.
-
-# Returns
-- `Tuple(<:AbstractFormExpression)`: The list of forms present in the tree of the expression, in this case empty.
-"""
-function get_form_space_tree(form_field::AbstractFormField)
-    return ()  # return an empty Tuple because AbstractFormField has only one form of expression_rank = 0
-end
-
-
-"""
     get_coefficients(form_field::FormField)
 
 Returns the coefficients of the form field.
@@ -202,7 +185,6 @@ Returns the number of coefficients of the form field.
 - `Int`: The number of coefficients (dofs) of the form field.
 """
 get_num_coefficients(form_field::FormField) = size(form_field.coefficients, 1)
-
 
 """
     get_expression(form_field::AnalyticalFormField)
@@ -251,12 +233,7 @@ function evaluate(
     form_field::FormField{manifold_dim, form_rank, G, FS},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {
-    manifold_dim,
-    form_rank,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-}
+) where {manifold_dim, form_rank, G, FS}
     n_form_components = binomial(manifold_dim, form_rank)
     form_basis_eval, form_basis_indices = evaluate(
         get_form_space(form_field), element_idx, xi
@@ -328,7 +305,7 @@ function _evaluate(
     x = Geometry.evaluate(geometry, element_idx, xi)
     J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
     form_eval = get_expression(form_field)(x)
-    form_eval[1][:] .*= LinearAlgebra.det.(eachslice(J; dims=1))
+    form_eval[1][:] .*= LinearAlgebra.det.(J)
 
     # We need to wrap form_basis_indices in [] to return a vector of vector to allow
     # multi-indexed expressions, like wedges
@@ -354,7 +331,7 @@ function _evaluate(
     a = zeros(num_eval_points, manifold_dim)
     for j in 1:image_dim
         for i in 1:num_eval_points
-            a[i, :] .+= form_eval[j][i] .* J[i, j, :]
+            a[i, :] .+= form_eval[j][i] .* J[i][j, :]
         end
     end
 

@@ -13,7 +13,9 @@ if verbose
     println("Generating benchmarkable objects...")
 end
 
-group = add_benchmark_group!(group, "TensorProductSpaces", "TensorProductSpaces.jl")
+mod = include("TensorProductSpaces.jl")
+sub_group = getproperty(mod, :group)
+group["TensorProductSpaces"] = sub_group
 
 if verbose
     println("Done!")

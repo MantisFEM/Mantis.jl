@@ -91,7 +91,11 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
         tree_form_2 = get_form_space_tree(operator_2)
 
         if !(tree_form_1 === tree_form_2)
-            throw(ArgumentError("Both forms in the binary transformation must contain the same forms in their tree."))
+            throw(
+                ArgumentError(
+                    "Both forms in the binary transformation must contain the same forms in their tree.",
+                ),
+            )
         end
 
         return new{manifold_dim, O1, O2, T}(operator_1, operator_2, transformation)
@@ -112,7 +116,7 @@ end
 
 """
   UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T} <:
-  AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+  AbstractForm{manifold_dim, form_rank, expression_rank, G}
 
 Structure holding the necessary information to evaluate a unary, algebraic transformation
 of a differential form expression.
@@ -127,20 +131,20 @@ of a differential form expression.
 - `form_rank::Int`: The rank of the differential form.
 - `expression_rank::Int`: The rank of the expression.
 - `G <: AbstractGeometry{manifold_dim}`: The type of the geometry where the form is defined.
-- `F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}`: The
+- `F <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The
     type of the original form expression .
 - `T <: Function`: The type of the algebraic transformation.
 
 # Inner constructors
 - `UnaryFormTransformation(form::F, transformation::T, label::String)`:
     General constructor.
-- `Base.:-(form::AbstractFormExpression)`: Alias for the additive inverse of a
+- `Base.:-(form::AbstractForm)`: Alias for the additive inverse of a
 differential form expression .
-- `Base.:*(factor::Number, form::AbstractFormExpression)`: Alias for the
+- `Base.:*(factor::Number, form::AbstractForm)`: Alias for the
     multiplication of a differential form expression with a constant factor.
 """
 struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T} <:
-       AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+       AbstractForm{manifold_dim, form_rank, expression_rank, G}
     form::F
     transformation::T
     label::String
@@ -152,7 +156,7 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T
         form_rank,
         expression_rank,
         G,
-        F <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
         T <: Function,
     }
         label = "(" * label * get_label(form) * ")"
@@ -162,18 +166,18 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, G, F, T
         )
     end
 
-    function Base.:-(form::AbstractFormExpression)
+    function Base.:-(form::AbstractForm)
         return UnaryFormTransformation(form, x -> -x, "-")
     end
 
-    function Base.:*(factor::Number, form::AbstractFormExpression)
+    function Base.:*(factor::Number, form::AbstractForm)
         return UnaryFormTransformation(form, x -> factor * x, "$(factor)*")
     end
 end
 
 """
   BinaryFormTransformation{manifold_dim, form_rank, F1, F2, G, T} <:
-  AbstractFormExpression{manifold_dim, form_rank, G}
+  AbstractForm{manifold_dim, form_rank, G}
 
 Structure holding the necessary information to evaluate a binary, algebraic transformation
 acting on two differential form expressions.
@@ -188,8 +192,8 @@ acting on two differential form expressions.
 - `manifold_dim::Int`: The dimension of the manifold where the form expressions are defined.
 - `form_rank::Int`: The rank of both differential form expressions.
 - `expression_rank::Int`: The expression rank of both differential form expressions.
-- `F1 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}`: The type of the first form expression.
-- `F2 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}`: The type of the second form expression.
+- `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The type of the first form expression.
+- `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The type of the second form expression.
 - `G <: AbstractGeometry{manifold_dim}`: The type of the geometry where both form expressions are
   defined.
 - `T <: Function`: The type of the algebraic transformation.
@@ -201,7 +205,7 @@ acting on two differential form expressions.
 - `Base.:-(form_1::F1, form_2::F2)`: Alias for the difference of two differential form expressions.
 """
 struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, G, T} <:
-       AbstractFormExpression{manifold_dim, form_rank, expression_rank, G}
+       AbstractForm{manifold_dim, form_rank, expression_rank, G}
     form_1::F1
     form_2::F2
     transformation::T
@@ -214,8 +218,8 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         form_rank,
         expression_rank,
         G,
-        F1 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
-        F2 <: AbstractFormExpression{manifold_dim, form_rank, expression_rank, G},
+        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
         T <: Function,
     }
         # Check if both forms contain the same forms in their tree
@@ -223,7 +227,11 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         tree_form_2 = get_form_space_tree(form_2)
 
         if !(tree_form_1 === tree_form_2)
-            throw(ArgumentError("Both forms in the binary transformation must contain the same forms in their tree."))
+            throw(
+                ArgumentError(
+                    "Both forms in the binary transformation must contain the same forms in their tree.",
+                ),
+            )
         end
 
         label = "(" * get_label(form_1) * label * get_label(form_2) * ")"
@@ -233,11 +241,11 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         )
     end
 
-    function Base.:+(form_1::AbstractFormExpression, form_2::AbstractFormExpression)
+    function Base.:+(form_1::AbstractForm, form_2::AbstractForm)
         return BinaryFormTransformation(form_1, form_2, (x, y) -> x + y, "+")
     end
 
-    function Base.:-(form_1::AbstractFormExpression, form_2::AbstractFormExpression)
+    function Base.:-(form_1::AbstractForm, form_2::AbstractForm)
         return BinaryFormTransformation(form_1, form_2, (x, y) -> x - y, "-")
     end
 end
@@ -250,7 +258,8 @@ get_transformation(una_trans::UnaryOperatorTransformation) = una_trans.transform
 get_operator(una_trans::UnaryOperatorTransformation) = una_trans.operator
 
 get_transformation(bin_trans::BinaryOperatorTransformation) = bin_trans.transformation
-get_operators(bin_trans::BinaryOperatorTransformation) = bin_trans.operator_1, bin_trans.operator_2
+get_operators(bin_trans::BinaryOperatorTransformation) =
+    bin_trans.operator_1, bin_trans.operator_2
 
 get_transformation(una_form::UnaryFormTransformation) = una_form.transformation
 get_form(una_form::UnaryFormTransformation) = una_form.form
@@ -286,19 +295,18 @@ function get_num_evaluation_elements(bin_trans::BinaryOperatorTransformation)
     return get_num_evaluation_elements(get_operators(bin_trans)[1])
 end
 
-
 """
     get_form_space_tree(uni_trans::UnaryOperatorTransformation)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the unary transformation, e.g., for
-`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. 
+`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
 If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 
 # Arguments
 - `uni_trans::UnaryOperatorTransformation`: The unary transformation structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of form spaces present in the tree of the unary transformation.
+- `Tuple(<:AbstractForm)`: The list of form spaces present in the tree of the unary transformation.
 """
 function get_form_space_tree(una_trans::UnaryOperatorTransformation)
     return get_form_space_tree(una_trans.operator)
@@ -308,7 +316,7 @@ end
     get_form_space_tree(bin_trans::BinaryOperatorTransformation)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the binary transformation, e.g., for
-`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0, 
+`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0,
 it returns only the spaces of `β` and `γ`.
 
 # Arguments
@@ -322,7 +330,11 @@ function get_form_space_tree(bin_trans::BinaryOperatorTransformation)
     tree_form_2 = get_form_space_tree(bin_trans.operator_2)
 
     if !(tree_form_1 === tree_form_2)
-        throw(ArgumentError("Both forms in the binary transformation must contain the same forms in their tree."))
+        throw(
+            ArgumentError(
+                "Both forms in the binary transformation must contain the same forms in their tree.",
+            ),
+        )
     end
 
     # We can now safely return the tree of just one of the forms, since the trees are the same.
@@ -333,14 +345,14 @@ end
     get_form_space_tree(uni_trans::UnaryFormTransformation)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the unary transformation, e.g., for
-`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. 
+`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
 If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 
 # Arguments
 - `uni_trans::UnaryFormTransformation`: The unary transformation structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of form spaces present in the tree of the unary transformation.
+- `Tuple(<:AbstractForm)`: The list of form spaces present in the tree of the unary transformation.
 """
 function get_form_space_tree(una_trans::UnaryFormTransformation)
     return get_form_space_tree(una_trans.form)
@@ -350,14 +362,14 @@ end
     get_form_space_tree(bin_trans::BinaryFormTransformation)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the binary transformation, e.g., for
-`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0, 
+`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0,
 it returns only the spaces of `β` and `γ`.
 
 # Arguments
 - `bin_trans::BinaryFormTransformation`: The binary transformation structure.
 
 # Returns
-- `Tuple(<:AbstractFormExpression)`: The list of forms present in the tree of the binary transformation.
+- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the binary transformation.
 """
 function get_form_space_tree(bin_trans::BinaryFormTransformation)
     # Note that here we do not need to check if both trees are the same, since this is already
@@ -386,8 +398,8 @@ function evaluate(bin_trans::BinaryOperatorTransformation, element_id::Int)
     eval_1, indices = evaluate(operators[1], element_id)
     eval_2, _ = evaluate(operators[2], element_id)
     eval_1 .= transformation.(eval_1, eval_2)  # we store the output in eval_1 to avoid extra
-                                               # allocations, the same reason for using .= and
-                                               # transformation.()
+    # allocations, the same reason for using .= and
+    # transformation.()
 
     return eval_1, indices
 end
@@ -401,8 +413,8 @@ function evaluate(
     transformation = get_transformation(uni_trans)
     form_eval, indices = evaluate(form, element_id, xi)
     form_eval .= transformation.(form_eval)  # we store the output in form_eval to avoid extra
-                                             # allocations, the same reason for using .= and
-                                             # transformation.()
+    # allocations, the same reason for using .= and
+    # transformation.()
     return form_eval, indices
 end
 
@@ -417,7 +429,7 @@ function evaluate(
     form_1_eval, indices = evaluate(forms[1], element_id, xi)
     form_2_eval, indices = evaluate(forms[2], element_id, xi)
     form_1_eval .= transformation.(form_1_eval, form_2_eval)  # we store the output in form_eval_1 to avoid extra
-                                                            # allocations, the same reason for using .= and
-                                                            # transformation.()
+    # allocations, the same reason for using .= and
+    # transformation.()
     return form_1_eval, indices
 end

@@ -1,6 +1,8 @@
 # Mantis
 
-[![Build Status](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Build Status](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIlts.yml/badge.svg?branch=main)](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIlts.yml?query=branch%3Amain)
+[![Build Status](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIv1withcov.yml/badge.svg?branch=main)](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIv1withcov.yml?query=branch%3Amain)
+[![Build Status](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIpre.yml/badge.svg?branch=main)](https://github.com/MantisFEM/MantisDev.jl/actions/workflows/CIpre.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/MantisFEM/MantisDev.jl/graph/badge.svg?token=8Pc95jcbg8)](https://codecov.io/gh/MantisFEM/MantisDev.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/JuliaDiff/BlueStyle)
 

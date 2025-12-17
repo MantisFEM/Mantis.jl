@@ -1,4 +1,3 @@
-# There should be a vector expression and a vector field.
 """
     evaluate_pushforward(vfield::Vector{Matrix{Float64}},
                          jacobian::Array{Float64,3})
@@ -14,25 +13,29 @@ Evaluate the pushforward of the vector field at the discrete points where it has
 - `::Vector{Matrix{Float64}}`: The evaluated pushforward of the vector field at the discrete points.
 """
 function evaluate_pushforward(
-    vfield::Vector{Matrix{Float64}}, jacobian::Array{Float64, 3}, manifold_dim::Int
+    vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
 )
-    image_dim = size(jacobian, 2)
-
+    image_dim = size(jacobian[1], 1)
     # Gᵢ: v ↦ Gᵢ(v) = Jᵢⱼvʲ
-    evaluated_pushforward = Vector{Matrix{Float64}}(undef, image_dim)
-    for component in 1:image_dim
-        evaluated_pushforward[component] = @views reduce(
-            +, [vfield[i] .* jacobian[:, component, i] for i in 1:manifold_dim]
-        )
+    eval_dims = size(vfield[1])
+    evaluated_pushforward = [zeros(eval_dims) for _ in 1:image_dim]
+    for point in 1:eval_dims[1]
+        jacobian_point = jacobian[point]
+        for new_component in 1:image_dim
+            pushforward_row = view(evaluated_pushforward[new_component], point, :)
+            for old_component in 1:manifold_dim
+                old_row = view(vfield[old_component], point, :)
+                pushforward_row .+= jacobian_point[new_component, old_component] .* old_row
+            end
+        end
     end
 
     return evaluated_pushforward
 end
 
-# TODO Similar thing here. This is a concrete expression. If we make general expressions and combine them, everything becomes simpler.
 """
     evaluate_sharp_pushforward(
-        form_expression::AbstractFormExpression{manifold_dim, 1, 0},
+        form_expression::AbstractForm{manifold_dim, 1, 0},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
     ) where {manifold_dim}
@@ -42,7 +45,7 @@ manifold, converting the form into a vector field. Note that the output vector-f
 defined in physical coordinates.
 
 # Arguments
-- `form_expression::AbstractFormExpression{manifold_dim, 1, G}`: An expression representing
+- `form_expression::AbstractForm{manifold_dim, 1, G}`: An expression representing
     the 1-form on the manifold.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point
@@ -57,7 +60,7 @@ defined in physical coordinates.
     the evaluated basis functions.
 """
 function evaluate_sharp_pushforward(
-    form_expression::AbstractFormExpression{manifold_dim, 1, 0},
+    form_expression::AbstractForm{manifold_dim, 1, 0},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}

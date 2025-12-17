@@ -8,7 +8,7 @@
     } <: AbstractFESpace{manifold_dim, num_components, num_patches}
 
 A hierarchical space that is built from nested hierarchies of `manifold_dim`-variate
-function spaces and domains.
+function spaces and domains; see [Giannelli2013](@cite).
 
 # Fields
 - `spaces::Vector{S} `: Collection of `manifold_dim`- variate function spaces.

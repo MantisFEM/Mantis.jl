@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Forms/FormOperators/Wedge/evaluate-0-form-2-form-2D,b4eee92,2025-11-18,1.12.1,2025-11-21,10.104 μs,10.839 μs,5.602 μs,8.506 μs,0.000 ns,59.55 KiB,176
