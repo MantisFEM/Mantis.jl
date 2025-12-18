@@ -29,10 +29,10 @@ const_j = (8, 6)
 marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), vcat, (βᵢ, βⱼ))]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
-Bll = FunctionSpaces.get_Bll(H, 1)
+Blk = FunctionSpaces.get_Blk(H, 1)
 @test length(Ωₗₗ) == 72
-@test Bll == [31, 32, 33, 58, 59, 60]
-@test isempty(FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1]))
+@test Blk == [31, 32, 33, 58, 59, 60]
+@test isempty(FunctionSpaces.initiate_pairs(H, 1, Blk, marked_elements[1]))
 ## (b)
 H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
 lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
@@ -47,10 +47,10 @@ marked_elements = [
 ]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
-Bll = FunctionSpaces.get_Bll(H, 1)
+Blk = FunctionSpaces.get_Blk(H, 1)
 @test length(Ωₗₗ) == 84
-@test Bll == [34, 35, 44, 45, 56]
-initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1])
+@test Blk == [34, 35, 44, 45, 56]
+initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Blk, marked_elements[1])
 @test initiate_pairs == [
     (34, 44),
     (34, 35),
@@ -66,9 +66,9 @@ initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1])
 for pair in initiate_pairs
     @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
     if 56 in pair
-        @test !FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+        @test !FunctionSpaces.has_shortest_chain(H, 1, Blk, pair)
     else
-        @test FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+        @test FunctionSpaces.has_shortest_chain(H, 1, Blk, pair)
     end
 end
 ## (c)
@@ -82,13 +82,13 @@ const_t = (7, 4)
 marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ))]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
-Bll = FunctionSpaces.get_Bll(H, 1)
-@test Bll == [34, 35, 36, 37, 46, 56]
-initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Bll, marked_elements[1])
+Blk = FunctionSpaces.get_Blk(H, 1)
+@test Blk == [34, 35, 36, 37, 46, 56]
+initiate_pairs = FunctionSpaces.initiate_pairs(H, 1, Blk, marked_elements[1])
 @test initiate_pairs == [(34, 56), (34, 37), (37, 56)]
 for pair in initiate_pairs
     @test FunctionSpaces.has_minimal_intersection(H, 1, pair)
-    @test FunctionSpaces.has_shortest_chain(H, 1, Bll, pair)
+    @test FunctionSpaces.has_shortest_chain(H, 1, Blk, pair)
 end
 # Example of figure 7.1
 # Initial mesh.
@@ -115,10 +115,10 @@ marked_elements = [
     mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (t1, t2, t3)), Int[]
 ]
 FunctionSpaces.refine_mesh!(H, 1, marked_elements[1])
-Bll = FunctionSpaces.get_Bll(H, 1)
-@test Bll == [61, 85, 109]
+Blk = FunctionSpaces.get_Blk(H, 1)
+@test Blk == [61, 85, 109]
 FunctionSpaces.update_space_with_lchains!(H, marked_elements)
-Bll = FunctionSpaces.get_Bll(H, 1)
-@test Bll == [59, 60, 61, 72, 83, 84, 85, 96, 109]
+Blk = FunctionSpaces.get_Blk(H, 1)
+@test Blk == [59, 60, 61, 72, 83, 84, 85, 96, 109]
 
 end
