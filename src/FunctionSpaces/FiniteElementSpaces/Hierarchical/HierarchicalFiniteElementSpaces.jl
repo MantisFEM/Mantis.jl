@@ -271,12 +271,22 @@ function get_active_objects_and_nested_domains(
                 if issubset(support_children, next_level_domain)
                     append!(elements_to_remove, support)
                     append!(basis_to_remove, parent_basis)
-                    # TODO: Add the basis children as basis to be added and
-                    # remove them from the next loop.
+                    basis_children = get_basis_children(
+                        two_scale_operators[level], parent_basis
+                    )
+                    append!(basis_to_add, basis_children)
+                    append!(
+                        elements_to_add,
+                        mapreduce(
+                            child -> get_support(spaces[level + 1], child),
+                            union,
+                            basis_children,
+                        ),
+                    )
                 end
             end
 
-            for child_basis in 1:get_num_basis(spaces[level + 1])
+            for child_basis in setdiff(1:get_num_basis(spaces[level + 1]), basis_to_add)
                 support = get_support(spaces[level + 1], child_basis)
                 if issubset(support, next_level_domain)
                     parents = mapreduce(
@@ -318,7 +328,7 @@ function get_active_objects_and_nested_domains(
         unique!(basis_to_add)
         push!(active_elements_per_level, elements_to_add)
         push!(active_basis_per_level, basis_to_add)
-        # Store nested domains Ωˡ
+        # Store nested domains Ωₗ
         push!(nested_domains_per_level, copy(elements_to_add))
     end
 
