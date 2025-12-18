@@ -1,8 +1,3 @@
-#=
-This file is based on the work done in https://arxiv.org/abs/2502.19542, where more
-extensive explanations of the algorithms below are provided.
-=#
-
 """
 	update_space_with_lchains!(
 	    space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
@@ -10,7 +5,7 @@ extensive explanations of the algorithms below are provided.
 
 Takes as input a `space` corresponding to an exact de Rham complex and a set of `marked_els`
 for refinement, and returns  a refined space corresponding to an exact complex by adding
-L-chains where needed.
+L-chains where needed. We refer the reader to [Cabanas2025](@cite) for further details.
 
 # Arguments
 - `space::HierarchicalFiniteElementSpace{2}`: The space to be updated.
