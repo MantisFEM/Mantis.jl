@@ -27,16 +27,16 @@ function update_space_with_lchains!(
 
         level_space = get_space(space, level)
         refine_mesh!(space, level, level_marked_els)
-        Bll = get_Bll(space, level)
-        unchecked_pairs = initiate_pairs(space, level, Bll, level_marked_els)
+        Blk = get_Blk(space, level)
+        unchecked_pairs = initiate_pairs(space, level, Blk, level_marked_els)
         problematic_mesh = true
         level_corners = Int[]
         while problematic_mesh
             problematic_mesh = false
             current_corners = Int[]
             for (βᵢ, βⱼ) in unchecked_pairs
-                if is_problematic(space, level, Bll, (βᵢ, βⱼ))
-                    corner = get_lchain_corner(space, level, Bll, (βᵢ, βⱼ))
+                if is_problematic(space, level, Blk, (βᵢ, βⱼ))
+                    corner = get_lchain_corner(space, level, Blk, (βᵢ, βⱼ))
                     append!(current_corners, corner)
                     problematic_mesh = true
                 end
@@ -51,8 +51,8 @@ function update_space_with_lchains!(
                 level,
                 mapreduce(c -> get_support(level_space, c), union, current_corners),
             )
-            Bll = get_Bll(space, level)
-            unchecked_pairs = get_local_pairs(space, level, Bll, current_corners)
+            Blk = get_Blk(space, level)
+            unchecked_pairs = get_local_pairs(space, level, Blk, current_corners)
             union!(level_corners, current_corners)
         end
 
@@ -77,39 +77,48 @@ function update_space_with_lchains!(
 end
 
 """
-	get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
+	get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
 
-Returns the basis indices the original space at the given `level` whose support is contained
-in the domain of `level +1`.
+Returns the basis indices the original space at level `l` whose support is contained
+in the domain `Ωₖ`.
 
 # Returns
-- `Vector{Int}`: The basis contained in the domain of `level+1`.
+- `Vector{Int}`: The basis contained in the domain `Ωₖ`.
 """
-function get_Bll(space::HierarchicalFiniteElementSpace, level::Int)
-    Bll = Int[]
-    L = get_num_levels(space)
-    if level == L
-        return Bll
+function get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
+    if k < l
+        throw(ArgumentError("The given argument k=$(k) should be higher than l=$(l)."))
     end
 
-    Ωll = get_level_domain(space, level + 1)
-    op = get_twoscale_operator(space, level)
-    for βᵢ in 1:get_num_basis(get_space(space, level))
-        supp_βᵢ = get_support(get_space(space, level), βᵢ)
-        supp_βᵢ = mapreduce(e -> get_element_children(op, e), vcat, supp_βᵢ)
-        if all(e ∈ Ωll for e in supp_βᵢ)
-            push!(Bll, βᵢ)
+    Blk = Int[]
+    L = get_num_levels(space)
+    if l == L
+        return Blk
+    end
+
+    Ωₖ = get_level_domain(space, k)
+    ops = ntuple(lvl -> get_twoscale_operator(space, l - 1 + lvl), (k - l))
+    for βᵢ in 1:get_num_basis(get_space(space, l))
+        supp_βᵢ = get_support(get_space(space, l), βᵢ)
+        for lvl in 1:(k - l)
+            supp_βᵢ = mapreduce(e -> get_element_children(ops[lvl], e), vcat, supp_βᵢ)
+        end
+
+        if all(e ∈ Ωₖ for e in supp_βᵢ)
+            push!(Blk, βᵢ)
         end
     end
 
-    return Bll
+    return Blk
 end
+
+get_Blk(space::HierarchicalFiniteElementSpace, l::Int) = get_Blk(space, l, l + 1)
 
 """
 	initiate_pairs(
 	    space::HierarchicalFiniteElementSpace{2},
 	    level::Int,
-	    Bll::Vector{Int},
+	    Blk::Vector{Int},
 	    marked_els::Vector{Int},
 	)
 
@@ -119,31 +128,31 @@ problems.
 # Returns
 - `Vector{Tuple{Int, Int}}`: The pairs that need to be checked for problems.
 
-See also [`update_space_with_lchains!`](@ref), [`get_Bll`](@ref) and [`get_local_pairs`](@ref).
+See also [`update_space_with_lchains!`](@ref), [`get_Blk`](@ref) and [`get_local_pairs`](@ref).
 """
 function initiate_pairs(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
-    Bll::Vector{Int},
+    Blk::Vector{Int},
     marked_els::Vector{Int},
 )
     level_space = get_space(space, level)
     unchecked = Int[]
-    for βᵢ in Bll
-        if !is_resolved(space, level, Bll, βᵢ) &&
+    for βᵢ in Blk
+        if !is_resolved(space, level, Blk, βᵢ) &&
             !isempty(get_support(level_space, βᵢ) ∩ marked_els)
             append!(unchecked, βᵢ)
         end
     end
 
-    unchecked_pairs = get_local_pairs(space, level, Bll, unchecked)
+    unchecked_pairs = get_local_pairs(space, level, Blk, unchecked)
 
     return unchecked_pairs
 end
 
 """
 	is_resolved(
-	    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+	    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 	)
 
 Checks whether the basis function `βᵢ` at `level` is resolved or not.
@@ -152,7 +161,7 @@ Checks whether the basis function `βᵢ` at `level` is resolved or not.
 - `Bool`: Whether `βᵢ` is resolved.
 """
 function is_resolved(
-    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 )
     level_space = get_space(space, level)
     const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
@@ -163,14 +172,14 @@ function is_resolved(
         const_right_βᵢ = const_βᵢ .+ (k .== (1, 2))
         if const_βᵢ[k] == 1
             right_βᵢ = lin_num_basis[const_right_βᵢ...]
-            if right_βᵢ ∈ Bll
+            if right_βᵢ ∈ Blk
                 return true
             else
                 continue
             end
         elseif const_βᵢ[k] == const_num_basis[k]
             left_βᵢ = lin_num_basis[const_left_βᵢ...]
-            if left_βᵢ ∈ Bll
+            if left_βᵢ ∈ Blk
                 return true
             else
                 continue
@@ -179,7 +188,7 @@ function is_resolved(
 
         left_βᵢ = lin_num_basis[const_left_βᵢ...]
         right_βᵢ = lin_num_basis[const_right_βᵢ...]
-        if left_βᵢ ∈ Bll && right_βᵢ ∈ Bll
+        if left_βᵢ ∈ Blk && right_βᵢ ∈ Blk
             return true
         end
     end
@@ -191,7 +200,7 @@ end
 	get_local_pairs(
 	    space::HierarchicalFiniteElementSpace{2},
 	    level::Int,
-	    Bll::Vector{Int},
+	    Blk::Vector{Int},
 	    unchecked::Vector{Int},
 	)
 
@@ -209,13 +218,13 @@ See also [`initiate_pairs`](@ref) and [`is_resolved`](@ref).
 function get_local_pairs(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
-    Bll::Vector{Int},
+    Blk::Vector{Int},
     unchecked::Vector{Int},
 )
     pairs = Tuple{Int, Int}[]
     for βᵢ in unchecked
-        for βⱼ in get_interaction_box(space, level, Bll, βᵢ)
-            if !is_resolved(space, level, Bll, βⱼ) && βᵢ != βⱼ
+        for βⱼ in get_interaction_box(space, level, Blk, βᵢ)
+            if !is_resolved(space, level, Blk, βⱼ) && βᵢ != βⱼ
                 # We do this so that we can call unique! after
                 if βᵢ < βⱼ
                     push!(pairs, (βᵢ, βⱼ))
@@ -231,7 +240,7 @@ end
 
 """
 	get_interaction_box(
-	    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+	    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 	)
 
 Returns a list of basis functions that are at most `p[k]+1` away from `βᵢ` in index space
@@ -241,7 +250,7 @@ for each manifold dimension `k`, where `p[k]` is the polynomial degree.
 - `Vector{Int}`: The list of basis functions interacting with `βᵢ`.
 """
 function get_interaction_box(
-    space::HierarchicalFiniteElementSpace{2}, level::Int, Bll::Vector{Int}, βᵢ::Int
+    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 )
     level_space = get_space(space, level)
     p = get_constituent_polynomial_degree(level_space)
@@ -261,7 +270,7 @@ function get_interaction_box(
         end
 
         βⱼ = lin_num_basis[lj, rj]
-        if βⱼ ∈ Bll
+        if βⱼ ∈ Blk
             push!(inter_box, βⱼ)
         end
     end
@@ -273,7 +282,7 @@ end
 	is_problematic(
 	    space::HierarchicalFiniteElementSpace{2},
 	    level::Int,
-	    Bll::Vector{Int},
+	    Blk::Vector{Int},
 	    (βᵢ, βⱼ)::Tuple{Int, Int},
 	)
 
@@ -285,11 +294,11 @@ Checks whether a `(βᵢ, βⱼ)` is a problematic pair.
 function is_problematic(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
-    Bll::Vector{Int},
+    Blk::Vector{Int},
     (βᵢ, βⱼ)::Tuple{Int, Int},
 )
     return has_minimal_intersection(space, level, (βᵢ, βⱼ)) &&
-           !has_shortest_chain(space, level, Bll, (βᵢ, βⱼ))
+           !has_shortest_chain(space, level, Blk, (βᵢ, βⱼ))
 end
 
 """
@@ -368,7 +377,7 @@ end
 	has_shortest_chain(
 	    space::HierarchicalFiniteElementSpace{2},
 	    level::Int,
-	    Bll::Vector{Int},
+	    Blk::Vector{Int},
 	    (βᵢ, βⱼ)::Tuple{Int, Int},
 	)
 
@@ -380,7 +389,7 @@ Checks whether a `(βᵢ, βⱼ)` have a shortest chain between them.
 function has_shortest_chain(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
-    Bll::Vector{Int},
+    Blk::Vector{Int},
     (βᵢ, βⱼ)::Tuple{Int, Int},
 )
     level_space = get_space(space, level)
@@ -392,8 +401,8 @@ function has_shortest_chain(
         return true
     end
 
-    inter_box_i = get_interaction_box(space, level, Bll, βᵢ)
-    inter_box_j = get_interaction_box(space, level, Bll, βⱼ)
+    inter_box_i = get_interaction_box(space, level, Blk, βᵢ)
+    inter_box_j = get_interaction_box(space, level, Blk, βⱼ)
     inter_box_ij = inter_box_i ∩ inter_box_j
     verts_to_rmv = Int[]
     sign_1 = sign(const_diff[1])
@@ -422,7 +431,7 @@ end
 	get_lchain_corner(
 	    space::HierarchicalFiniteElementSpace{2},
 	    level::Int,
-	    Bll::Vector{Int},
+	    Blk::Vector{Int},
 	    (βᵢ, βⱼ)::Tuple{Int, Int},
 	)
 
@@ -435,7 +444,7 @@ resolved corners.
 function get_lchain_corner(
     space::HierarchicalFiniteElementSpace{2},
     level::Int,
-    Bll::Vector{Int},
+    Blk::Vector{Int},
     (βᵢ, βⱼ)::Tuple{Int, Int},
 )
     level_space = get_space(space, level)
@@ -443,7 +452,7 @@ function get_lchain_corner(
     const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
     const_βⱼ = get_constituent_basis_id(level_space, βⱼ)
     corner = lin_num_basis[const_βᵢ[1], const_βⱼ[2]]
-    if is_resolved(space, level, Bll, corner)
+    if is_resolved(space, level, Blk, corner)
         return corner
     end
 
@@ -459,7 +468,6 @@ Returns the first basis function of `βᵢ`.
 - `Int`: The id of the parent basis function.
 """
 function get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
-    pl_space = get_space(space, level - 1)
     operator = get_twoscale_operator(space, level - 1)
     parents = get_basis_parents(operator, βᵢ)
 

@@ -1,8 +1,10 @@
+"""
+	LChainExample
+
+This example was used in the `Numerical Results` section of [Cabanas2025](@cite).
+"""
 module LChainExample
 
-#=
-The following example is based on the work done in https://arxiv.org/abs/2502.19542.
-=#
 
 using Mantis
 
