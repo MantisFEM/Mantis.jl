@@ -46,11 +46,11 @@ function update_space_with_lchains!(
                 break
             end
 
-            refine_mesh!(
-                space,
-                level,
-                mapreduce(c -> get_support(level_space, c), union, current_corners),
+            corner_elements = mapreduce(
+                c -> get_support(level_space, c), union, current_corners
             )
+            intersect!(corner_elements, get_level_element_ids(space, level))
+            refine_mesh!(space, level, corner_elements)
             Blk = get_Blk(space, level)
             unchecked_pairs = get_local_pairs(space, level, Blk, current_corners)
             union!(level_corners, current_corners)
@@ -71,6 +71,8 @@ function update_space_with_lchains!(
                 union!(marked_els[level - 1], get_support(pl_space, parent))
             end
         end
+
+        intersect!(marked_els[level - 1], get_level_element_ids(space, level - 1))
     end
 
     return update_basis!(space)

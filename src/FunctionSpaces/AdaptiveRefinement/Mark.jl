@@ -1,14 +1,16 @@
 """
     get_dorfler_marking(element_errors::Vector{Float64}, dorfler_parameter::Float64)
 
-Computes the indices of elements with at least `dorfler_parameter*100`% of the highest error in `element_errors`.
+Computes the indices of elements with at least `dorfler_parameter*100`% of the highest error
+in `element_errors`.
 
 # Arguments
 - `element_errors::Vector{Float64}`: element-wise errors.
 - `dorfler_parameter::Float64`: dorfler parameter determing how many elements are selected.
 
 # Returns
-- `::Vector{Int}`: indices of elements with at least `dorfler_parameter*100`% of the highest error.
+- `::Vector{Int}`: indices of elements with at least `dorfler_parameter*100`% of the highest
+	error.
 """
 function get_dorfler_marking(element_errors::Vector{Float64}, dorfler_parameter::Float64)
     if !(0.0 <= dorfler_parameter < 1.0)
@@ -25,9 +27,26 @@ function get_dorfler_marking(element_errors::Vector{Float64}, dorfler_parameter:
     return findall(error -> error > (1.0 - dorfler_parameter) * max_error, element_errors)
 end
 
+"""
+	add_padding!(
+	    marked_elements_per_level::Vector{Vector{Int}}, space::HierarchicalFiniteElementSpace
+	)
+
+For each `level` of the hierarchical `space`, adds a padding to
+`marked_elements_per_level[level]`. The padding consists of the support of all basis
+functions whose supports intersect the original `marked_elements_per_level`.
+
+# Arguments
+- `marked_elements_per_level::Vector{Vector{Int}}`: The level-wise indexing of marked
+	elements.
+- `space::HierarchicalFiniteElementSpace`: The hierarchical finite element space.
+
+# Returns
+- `marked_elements_per_level::Vector{Vector{Int}}`: The padded level-wise indexing of marked
+	elements.
+"""
 function add_padding!(
-    marked_elements_per_level::Vector{Vector{Int}},
-    space::HierarchicalFiniteElementSpace;
+    marked_elements_per_level::Vector{Vector{Int}}, space::HierarchicalFiniteElementSpace
 )
     L = get_num_levels(space)
     for level in 1:L
@@ -44,53 +63,31 @@ function add_padding!(
         marked_elements_per_level[level] = mapreduce(
             basis -> get_support(level_space, basis), union, basis_in_marked_elements
         )
+        intersect!(marked_elements_per_level[level], get_level_element_ids(space, level))
     end
 
     return marked_elements_per_level
 end
 
-function get_marked_elements_children(
-    hier_space::HierarchicalFiniteElementSpace{
-        manifold_dim, num_components, num_patches, S, T
-    },
-    marked_elements_per_level::Vector{Vector{Int}},
-    new_operator::T,
-) where {manifold_dim, num_components, num_patches, S, T <: AbstractTwoScaleOperator}
-    num_levels = get_num_levels(hier_space)
+"""
+	get_padding_per_level(
+	    space::HierarchicalFiniteElementSpace, marked_elements::Vector{Int};
+	)
 
-    marked_children = Vector{Vector{Int}}(undef, num_levels)
-    marked_children[1] = Int[]
+Separates a list of `marked_elements` in hierarchical indexing into level-wise indexing, and
+adds a padding to each level.
 
-    for level in 1:num_levels
-        if level < num_levels
-            if marked_elements_per_level[level] == Int[]
-                marked_children[level + 1] = Int[]
-            else
-                marked_children[level + 1] = mapreduce(
-                    el ->
-                        get_element_children(get_twoscale_operator(hier_space, level), el),
-                    vcat,
-                    marked_elements_per_level[level],
-                )
-            end
-        elseif marked_elements_per_level[level] != Int[]
-            push!(
-                marked_children,
-                mapreduce(
-                    el -> get_element_children(new_operator, el),
-                    vcat,
-                    marked_elements_per_level[level],
-                ),
-            )
-        end
-    end
+See also [`convert_element_vector_to_elements_per_level`](@ref) and [`add_padding!`](@ref).
 
-    return marked_children
-end
+# Arguments
+- `space::HierarchicalFiniteElementSpace`: The hierarchical finite element space.
+- `marked_elements::Vector{Int};`: The list of marked elements in hierarchical indexing.
 
+# Returns
+- `element_ids_per_level::Vector{Vector{Int}}`: Level-wise indexing of marked elements.
+"""
 function get_padding_per_level(
-    space::HierarchicalFiniteElementSpace,
-    marked_elements::Vector{Int};
+    space::HierarchicalFiniteElementSpace, marked_elements::Vector{Int};
 )
     element_ids_per_level = convert_element_vector_to_elements_per_level(
         space, marked_elements
@@ -98,14 +95,4 @@ function get_padding_per_level(
     add_padding!(element_ids_per_level, space)
 
     return element_ids_per_level
-end
-
-function get_refinement_domains(
-    hier_space::HierarchicalFiniteElementSpace{
-        manifold_dim, num_components, num_patches, S, T
-    },
-    marked_elements_per_level::Vector{Vector{Int}},
-    new_operator::T,
-) where {manifold_dim, num_components, num_patches, S, T <: AbstractTwoScaleOperator}
-    return get_marked_elements_children(hier_space, marked_elements_per_level, new_operator)
 end

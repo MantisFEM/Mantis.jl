@@ -866,23 +866,20 @@ Updates the hierarchical mesh underlying `space` based on `marked_elements_per_l
 function refine_mesh!(
     space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
 )
-    L = get_num_levels(space)
-    active_elements = get_active_elements(space)
-    new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
-    if isempty(new_marked_els)
+    if isempty(marked_elements)
         return space
     end
 
+    L = get_num_levels(space)
     if level == L
         add_level!(space)
     end
 
     active_elements = get_active_elements(space)
     nested_domains = get_nested_domains(space)
-    new_marked_els = intersect(get_level_ids(active_elements, level), marked_elements)
-    setdiff!(get_level_ids(active_elements, level), new_marked_els)
+    setdiff!(get_level_ids(active_elements, level), marked_elements)
     ts = get_twoscale_operator(space, level)
-    refined_elements = mapreduce(el -> get_element_children(ts, el), vcat, new_marked_els)
+    refined_elements = mapreduce(el -> get_element_children(ts, el), vcat, marked_elements)
     union!(get_level_ids(active_elements, level + 1), refined_elements)
     union!(get_level_ids(nested_domains, level + 1), refined_elements)
     setfield!(
