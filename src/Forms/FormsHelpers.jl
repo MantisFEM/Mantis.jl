@@ -359,6 +359,35 @@ end
 #                               Hierarchical de Rham complex                               #
 ############################################################################################
 
+"""
+	create_hierarchical_de_rham_complex(
+	    starting_points::NTuple{manifold_dim, Float64},
+	    box_sizes::NTuple{manifold_dim, Float64},
+	    num_elements::NTuple{manifold_dim, Int},
+	    section_spaces::NTuple{manifold_dim, F},
+	    regularities::NTuple{manifold_dim, Int},
+	    num_subdivisions::NTuple{manifold_dim, Int},
+	    truncate::Bool,
+	    simplified::Bool,
+	    geometry::G,
+	) where {
+	    manifold_dim,
+	    F <: FunctionSpaces.AbstractCanonicalSpace,
+	    G <: Geometry.AbstractGeometry{manifold_dim},
+	}
+
+Construct a hierarchical discrete de Rham complex of finite element spaces over a
+tensor-product geometry, equivalent to a Cartesian grid, in `manifold_dim` dimensions.
+
+This routine initializes, for each form degree `k = 0,…,manifold_dim`, a hierarchical
+B-spline space of differential `k`‑forms without refinement. 
+
+See also [`create_tensor_product_bspline_de_rham_complex`](@ref) and
+[`FunctionSpaces.HierarchicalFiniteElementSpace`](@ref).
+
+# Returns
+- A tuple with the `manifold_dim + 1` spaces that form the de Rham complex.
+"""
 function create_hierarchical_de_rham_complex(
     starting_points::NTuple{manifold_dim, Float64},
     box_sizes::NTuple{manifold_dim, Float64},
@@ -459,6 +488,27 @@ function create_hierarchical_de_rham_complex(
     )
 end
 
+"""
+	update_hierarchical_de_rham_complex(
+	    complex::C, H⁰::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim}
+	) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+
+Refines each `k-`form space of `complex`, for `k = 1,…,manifold_dim`, according to the
+previously refined `0-`form space `H⁰`.
+
+The active hierarchical mesh is retrieved from `H⁰`, and the basis functions are updated
+independently according to the polynomial degree of each space.
+
+See also [`FunctionSpaces.add_level!`](@ref) and [`FunctionSpaces.update_basis!`](@ref).
+
+# Arguments
+- `complex::C`: The hierarchical B-spline de Rham complex.
+- `H⁰::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim}`: The previously refined
+	`0-`form space.
+
+# Returns
+- A tuple with the `manifold_dim + 1` refined spaces that form the de Rham complex.
+"""
 function update_hierarchical_de_rham_complex(
     complex::C, H⁰::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim}
 ) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
