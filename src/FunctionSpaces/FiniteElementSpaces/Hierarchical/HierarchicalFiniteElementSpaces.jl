@@ -985,92 +985,92 @@ end
 #                                     Getters                                              #
 ############################################################################################
 
-function get_active_elements(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.active_elements
+function get_active_elements(space::HierarchicalFiniteElementSpace)
+    return space.active_elements
 end
 
-function get_active_basis(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.active_basis
+function get_active_basis(space::HierarchicalFiniteElementSpace)
+    return space.active_basis
 end
 
-function get_nested_domains(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.nested_domains
+function get_nested_domains(space::HierarchicalFiniteElementSpace)
+    return space.nested_domains
 end
 
-function get_spaces(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.spaces
+function get_spaces(space::HierarchicalFiniteElementSpace)
+    return space.spaces
 end
 
-function get_two_scale_operators(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.two_scale_operators
+function get_two_scale_operators(space::HierarchicalFiniteElementSpace)
+    return space.two_scale_operators
 end
 
-function is_truncated(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.truncated
+function is_truncated(space::HierarchicalFiniteElementSpace)
+    return space.truncated
 end
 
-function is_simplified(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.simplified
+function is_simplified(space::HierarchicalFiniteElementSpace)
+    return space.simplified
 end
 
-function get_num_levels(hier_space::HierarchicalFiniteElementSpace)
-    return get_num_levels(hier_space.active_elements)
+function get_num_levels(space::HierarchicalFiniteElementSpace)
+    return get_num_levels(space.active_elements)
 end
 
-function get_num_elements(hier_space::HierarchicalFiniteElementSpace)
-    return get_num_objects(hier_space.active_elements)
+function get_num_elements(space::HierarchicalFiniteElementSpace)
+    return get_num_objects(space.active_elements)
 end
 
-function get_num_basis(hier_space::HierarchicalFiniteElementSpace)
-    return get_num_objects(hier_space.active_basis)
+function get_num_basis(space::HierarchicalFiniteElementSpace)
+    return get_num_objects(space.active_basis)
 end
 
-function get_num_subdivisions(hier_space::HierarchicalFiniteElementSpace)
-    return hier_space.num_subdivisions
+function get_num_subdivisions(space::HierarchicalFiniteElementSpace)
+    return space.num_subdivisions
 end
 
-function get_num_basis(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return length(get_basis_indices(hier_space, hier_id))
+function get_num_basis(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return length(get_basis_indices(space, hier_id))
 end
 
-function get_max_local_dim(hier_space::HierarchicalFiniteElementSpace)
-    return get_max_local_dim(hier_space.spaces[1]) * 2
+function get_max_local_dim(space::HierarchicalFiniteElementSpace)
+    return get_max_local_dim(space.spaces[1]) * 2
 end
 
-function get_element_level(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return get_level(hier_space.active_elements, hier_id)
+function get_element_level(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return get_level(space.active_elements, hier_id)
 end
 
-function get_basis_level(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return get_level(hier_space.active_basis, hier_id)
+function get_basis_level(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return get_level(space.active_basis, hier_id)
 end
 
-function get_element_level_id(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return get_level_ids(hier_space.active_elements, hier_id)
+function get_element_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return get_level_ids(space.active_elements, hier_id)
 end
 
-function get_basis_level_id(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return get_level_ids(hier_space.active_basis, hier_id)
+function get_basis_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return get_level_ids(space.active_basis, hier_id)
 end
 
-function get_space(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    return hier_space.spaces[level]
+function get_space(space::HierarchicalFiniteElementSpace, level::Int)
+    return space.spaces[level]
 end
 
-function get_twoscale_operator(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    return hier_space.two_scale_operators[level]
+function get_twoscale_operator(space::HierarchicalFiniteElementSpace, level::Int)
+    return space.two_scale_operators[level]
 end
 
-function get_level_element_ids(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    return get_level_ids(hier_space.active_elements, level)
+function get_level_element_ids(space::HierarchicalFiniteElementSpace, level::Int)
+    return get_level_ids(space.active_elements, level)
 end
 
-function get_level_basis_ids(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    return get_level_ids(hier_space.active_basis, level)
+function get_level_basis_ids(space::HierarchicalFiniteElementSpace, level::Int)
+    return get_level_ids(space.active_basis, level)
 end
 
-function get_level_domain(hier_space::HierarchicalFiniteElementSpace, level::Int)
-    return get_level_ids(hier_space.nested_domains, level)
+function get_level_domain(space::HierarchicalFiniteElementSpace, level::Int)
+    return get_level_ids(space.nested_domains, level)
 end
 
 function get_multilevel_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
@@ -1113,49 +1113,62 @@ end
 ############################################################################################
 
 function convert_to_element_hier_id(
-    hier_space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
+    space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
 )
-    return convert_to_hier_id(hier_space.active_elements, level, level_id)
+    return convert_to_hier_id(get_active_elements(space), level, level_id)
 end
 
-function convert_to_element_level_id(
-    hier_space::HierarchicalFiniteElementSpace, hier_id::Int
-)
-    return convert_to_level_id(hier_space.active_elements, hier_id)
+function convert_to_element_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return convert_to_level_id(get_active_elements(space), hier_id)
 end
 
 function convert_to_element_level_and_level_id(
-    hier_space::HierarchicalFiniteElementSpace, hier_id::Int
+    space::HierarchicalFiniteElementSpace, hier_id::Int
 )
-    return convert_to_level_and_level_id(hier_space.active_elements, hier_id)
+    return convert_to_level_and_level_id(get_active_elements(space), hier_id)
 end
 
 function convert_to_basis_hier_id(
-    hier_space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
+    space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
 )
-    return convert_to_hier_id(hier_space.active_basis, level, level_id)
+    return convert_to_hier_id(get_active_basis(space), level, level_id)
 end
 
-function convert_to_basis_level_id(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return convert_to_level_id(hier_space.active_basis, hier_id)
+function convert_to_basis_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    return convert_to_level_id(get_active_basis(space), hier_id)
 end
 
 function convert_to_basis_level_and_level_id(
-    hier_space::HierarchicalFiniteElementSpace, hier_id::Int
+    space::HierarchicalFiniteElementSpace, hier_id::Int
 )
-    return convert_to_level_and_level_id(hier_space.active_basis, hier_id)
+    return convert_to_level_and_level_id(get_active_basis(space), hier_id)
 end
 
+"""
+	convert_element_vector_to_elements_per_level(
+	    space::HierarchicalFiniteElementSpace, hier_ids::Vector{Int}
+	)
+
+Separates a vector of `hier_ids` in hierarchical indexing into a set of level-wise indices.
+
+# Arguments
+- `space::HierarchicalFiniteElementSpace`: The hierarchical finite element space.
+- `hier_ids::Vector{Int}`: The list of hierarchical indices.
+
+# Returns
+- `Vector{Vector{Int}}`: The level-wise indices. The length of the outer vector is the
+	number of levels of `space`.
+"""
 function convert_element_vector_to_elements_per_level(
-    hier_space::HierarchicalFiniteElementSpace, hier_ids::Vector{Int}
+    space::HierarchicalFiniteElementSpace, hier_ids::Vector{Int}
 )
-    L = get_num_levels(hier_space)
+    L = get_num_levels(space)
     element_ids_per_level = [Int[] for _ in 1:L]
 
     # Separate the marked elements per level
     for hier_id in hier_ids
         element_level, element_level_id = convert_to_element_level_and_level_id(
-            hier_space, hier_id
+            space, hier_id
         )
         append!(element_ids_per_level[element_level], element_level_id)
     end
@@ -1167,34 +1180,30 @@ end
 #                                Geometry (STBD)                                           #
 ############################################################################################
 
-function get_element_vertices(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    element_level, element_level_id = convert_to_element_level_and_level_id(
-        hier_space, hier_id
-    )
+function get_element_vertices(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    element_level, element_level_id = convert_to_element_level_and_level_id(space, hier_id)
 
-    return get_element_vertices(hier_space.spaces[element_level], element_level_id)
+    return get_element_vertices(space.spaces[element_level], element_level_id)
 end
 
-function get_element_measure(hier_space::HierarchicalFiniteElementSpace, hier_id::Int)
-    element_level, element_level_id = convert_to_element_level_and_level_id(
-        hier_space, hier_id
-    )
+function get_element_measure(space::HierarchicalFiniteElementSpace, hier_id::Int)
+    element_level, element_level_id = convert_to_element_level_and_level_id(space, hier_id)
 
-    return get_element_measure(hier_space.spaces[element_level], element_level_id)
+    return get_element_measure(space.spaces[element_level], element_level_id)
 end
 
 function _compute_thb_parametric_geometry_coeffs(
-    hspace::HierarchicalFiniteElementSpace{manifold_dim}
+    space::HierarchicalFiniteElementSpace{manifold_dim}
 ) where {manifold_dim}
-    num_levels = get_num_levels(hspace)
+    num_levels = get_num_levels(space)
 
-    coeffs = Matrix{Float64}(undef, get_num_basis(hspace), manifold_dim)
+    coeffs = Matrix{Float64}(undef, get_num_basis(space), manifold_dim)
 
     id_count = 1
     for level in 1:num_levels
-        greville_points = get_greville_points(get_space(hspace, level))
+        greville_points = get_greville_points(get_space(space, level))
 
-        level_active_basis = get_level_basis_ids(hspace, level)
+        level_active_basis = get_level_basis_ids(space, level)
 
         for (point_id, point) in enumerate(Iterators.product(greville_points...))
             if point_id ∈ level_active_basis
@@ -1208,15 +1217,15 @@ function _compute_thb_parametric_geometry_coeffs(
 end
 
 function _compute_parametric_geometry_coeffs(
-    hspace::HierarchicalFiniteElementSpace{manifold_dim, num_components, num_patches}
+    space::HierarchicalFiniteElementSpace{manifold_dim, num_components, num_patches}
 ) where {manifold_dim, num_components, num_patches}
-    if hspace.truncated
-        return _compute_thb_parametric_geometry_coeffs(hspace)
+    if space.truncated
+        return _compute_thb_parametric_geometry_coeffs(space)
     end
 
     return invoke(
         _compute_parametric_geometry_coeffs,
         Tuple{AbstractFESpace{manifold_dim, num_components, num_patches}},
-        hspace,
+        space,
     )
 end
