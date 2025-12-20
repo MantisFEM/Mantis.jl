@@ -81,6 +81,8 @@ sol_expr =
     x -> [
         sum(c1s[i + 1] * x[:, 1] .^ i for i in 0:p[1]) +
         sum(c2s[i + 1] * x[:, 2] .^ i for i in 0:p[2]),
+        sum(c1s[i + 1] * x[:, 1] .^ i for i in 0:p[1]) +
+        sum(c2s[i + 1] * x[:, 2] .^ i for i in 0:p[2]),
     ]
 sol = Forms.AnalyticalFormField(1, sol_expr, geo, "sol")
 dΩ = Quadrature.StandardQuadrature(∫ₐ, Geometry.get_num_elements(geo))

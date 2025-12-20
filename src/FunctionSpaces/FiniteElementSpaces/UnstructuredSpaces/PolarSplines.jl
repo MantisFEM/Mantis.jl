@@ -735,6 +735,16 @@ function get_geometry(space::PolarSplineSpace)
     throw(ArgumentError("Not yet implemented"))
 end
 
+# WARNING: This is a work-around while `get_geometry` is not implemented
+function get_num_elements(space::PolarSplineSpace)
+	return Geometry.get_num_elements(get_parametric_geometry(space))
+end
+
+# WARNING: This is a work-around while `get_geometry` is not implemented
+function get_num_elements_per_patch(space::PolarSplineSpace)
+    return Geometry.get_num_elements_per_patch(get_parametric_geometry(space))
+end
+
 function get_parametric_geometry(space::PolarSplineSpace)
     return get_geometry(first(get_patch_spaces(space)))
 end

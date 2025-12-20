@@ -33,8 +33,8 @@ function test_direct_sum_space(breakpoints)
     breakpoints_3 = [0.0, 1.0, 2.0]
     patch_3 = Geometry.CartesianGeometry(breakpoints_3)
     B3 = FunctionSpaces.BSplineSpace(patch_3, 3, [-1, 0, -1])
-    @test_throws ArgumentError FunctionSpaces.DirectSumSpace((B1, B3))
-    @test_throws ArgumentError FunctionSpaces.DirectSumSpace((B1, B2, B3))
+    @test_logs (:warn,) FunctionSpaces.DirectSumSpace((B1, B3))
+    @test_logs (:warn,) FunctionSpaces.DirectSumSpace((B1, B2, B3))
 
     num_basis_B1 = FunctionSpaces.get_num_basis(B1)
     num_basis_B2 = FunctionSpaces.get_num_basis(B2)
