@@ -36,7 +36,7 @@ struct PointSet{manifold_dim, T} <: AbstractPoints{manifold_dim}
     end
 end
 
-Base.eltype(::PointSet{manifold_dim, T}) where {manifold_dim, T} = T
+Base.eltype(::PointSet{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
 
 get_num_points(points::PointSet) = points.num_points
 

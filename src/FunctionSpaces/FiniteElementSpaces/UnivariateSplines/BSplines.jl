@@ -232,17 +232,27 @@ function get_local_basis(
     component_id::Int=1,
 )
     # The output of this function must correspond to the general evaluate function, so the
-    # output must be a vector{vector{vector{Matrix{Float64}}}}. The output of the evaluate
-    # on polynomials is a vector{vector{Matrix{Float64}}}, so we need to add an extra layer
-    # of vectors to the output, corresponding to the component.
+    # output must be a vector{vector{vector{Matrix{eltype(xi)}}}}. The output of the
+    # evaluate on polynomials is a vector{vector{Matrix{eltype(xi)}}}, so we need to add an
+    # extra layer of vectors to the output, corresponding to the component.
     section_space_eval = evaluate(get_polynomials(space), xi, nderivatives)
-    ext_eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
-    for i in 1:(nderivatives + 1)
+    ext_eval = Vector{Vector{Vector{Matrix{eltype(xi)}}}}(undef, nderivatives + 1)
+    for i in eachindex(section_space_eval, ext_eval)
         # The section spaces, which are CanonicalSpaces, are always 1D, so one derivative
         # per derivative order.
-        ext_eval[i] = Vector{Vector{Matrix{Float64}}}(undef, 1)
+        ext_eval[i] = Vector{Vector{Matrix{eltype(xi)}}}(undef, 1)
         ext_eval[i][1] = [section_space_eval[i][1]]
     end
+    # npoints = Points.get_num_points(xi)
+    # p = get_polynomial_degree(space)
+    # ext_eval = Vector{Vector{Vector{Matrix{eltype(xi)}}}}(undef, nderivatives + 1)
+    # for j in 0:nderivatives
+    #     ext_eval[j + 1] = [[zeros(eltype(xi), npoints, p + 1)]]
+    # end
+
+    # ext_eval = [[[zeros(eltype(xi), npoints, p + 1)]] for j in 0:nderivatives]
+
+    # evaluate!(ext_eval, get_polynomials(space), xi)
 
     return ext_eval
 end
