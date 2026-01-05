@@ -58,7 +58,7 @@ geom_coeffs_circle = [
     -1.0 +1.0
     -1.0 -1.0
 ]
-cylinder_circle_geometry = Geometry.FEGeometry(GB, geom_coeffs_circle)
+cylinder_circle_geometry = FunctionSpaces.DiscreteGeometry(GB, geom_coeffs_circle)
 dx_cylinder_line = 0.1
 nz_elements = 10
 cylinder_line_geometry = Geometry.create_cartesian_box((0.0,), (1.0,), (nz_elements,))

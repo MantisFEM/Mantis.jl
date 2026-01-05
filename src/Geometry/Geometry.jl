@@ -9,6 +9,7 @@ using LinearAlgebra
 using StaticArrays
 
 import ..Points
+import ..GeneralHelpers
 
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
@@ -530,7 +531,7 @@ function hessian(
 end
 
 include("CartesianGeometry.jl")
-# include("./FEGeometry.jl")
+include("DiscreteGeometry.jl")
 include("MappedGeometry.jl")
 include("TensorProductGeometry.jl")
 include("EvaluationMask/EvaluationMask.jl")

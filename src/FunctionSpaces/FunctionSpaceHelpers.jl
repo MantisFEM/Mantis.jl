@@ -895,3 +895,40 @@ end
 #     # return trimmed mask
 #     return EvaluationMask.trim_evaluation_mask(E, exclude_elements)
 # end
+
+############################################################################################
+#                                     DiscreteGeometry                                     #
+############################################################################################
+
+function DiscreteGeometry(
+    space::S, coefficients::Matrix{T}
+) where {
+    manifold_dim, num_patches, S <: AbstractFESpace{manifold_dim, 1, num_patches}, T <: Real
+}
+    image_dim = size(coefficients, 2)
+    num_elements = get_num_elements(space)
+    num_elements_per_patch = get_num_elements_per_patch(space)
+    function evaluable_function(
+        element_id::Int, xi::Points.AbstractPoints{manifold_dim}, num_derivatives::Int=0
+    )
+        space_basis, basis_indices = evaluate(space, element_id, xi, num_derivatives)
+        eval = Vector{Vector{Matrix{Float64}}}(undef, num_derivatives + 1) # 1 component
+        num_points = Points.get_num_points(xi)
+        for i in eachindex(eval)
+            num_ders = length(space_basis[i])
+            eval[i] = Vector{Matrix{Float64}}(undef, num_ders)
+            for j in eachindex(eval[i])
+                eval[i][j] = Matrix{Float64}(undef, num_points, image_dim)
+                for l in 1:image_dim
+                    eval[i][j][:, l] = space_basis[i][j][1] * coefficients[basis_indices, l]
+                end
+            end
+        end
+
+        return eval
+    end
+
+    return Geometry.DiscreteGeometry(
+        manifold_dim, image_dim, num_elements, num_elements_per_patch, evaluable_function
+    )
+end

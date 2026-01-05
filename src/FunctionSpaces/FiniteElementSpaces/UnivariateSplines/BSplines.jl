@@ -138,7 +138,7 @@ struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
 end
 
 # Constructors with classical choices for defaults.
-# General constructor, given only 1 CartesianGeometry, which is used as poth parametric and
+# General constructor, given only 1 CartesianGeometry, which is used as both parametric and
 # physical geometry.
 function BSplineSpace(
     geometry::Geometry.CartesianGeometry{1, image_dim, 1},
