@@ -24,7 +24,7 @@ manifold dimension.
 - `num_patches`: Number of patches of the geometry.
 - `F`: The type of the evaluable function.
 """
-struct DiscreteGeometry{manifold_dim, image_dim, num_patches, NP, F} <:
+struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, NP} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
     evaluable_function::F
     num_elements::Int
@@ -61,19 +61,19 @@ get_evaluable_function(geometry::DiscreteGeometry) = geometry.evaluable_function
 #                                        Evaluation                                        #
 ############################################################################################
 
-    function evaluate(
-        geometry::DiscreteGeometry{manifold_dim, F},
-        element_id::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, F}
-        return get_evaluable_function(geometry)(element_id, xi)[1][1]
-    end
-
-function jacobian(
-    geometry::DiscreteGeometry{manifold_dim, F},
+function evaluate(
+    geometry::DiscreteGeometry{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, F}
+) where {manifold_dim}
+    return get_evaluable_function(geometry)(element_id, xi)[1][1]
+end
+
+function jacobian(
+    geometry::DiscreteGeometry{manifold_dim, image_dim},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim}
     # evaluate first derivatives of geometry
     x = get_evaluable_function(geometry)(element_id, xi, 1)
     # Generate derivatives indices. For derivative order 1, each dimension is derivated
@@ -88,11 +88,18 @@ function jacobian(
 
     # Compute Jacobian and return
     num_eval_points = Points.get_num_points(xi)
-    image_dim = get_image_dim(geometry)
-    J = zeros(num_eval_points, image_dim, manifold_dim)
-    for cartesian_idx in CartesianIndices(J)
-        (point, k_im, k_mani) = Tuple(cartesian_idx)
-        J[point, k_im, k_mani] = x[2][der_idxs[k_mani]][point, k_im]
+    J = Vector{SMatrix{image_dim, manifold_dim, Float64, image_dim * manifold_dim}}(
+        undef, num_eval_points
+    )
+    cartesian_idxs = CartesianIndices((image_dim, manifold_dim))
+    for point in eachindex(J)
+        Jp = zeros(image_dim, manifold_dim)
+        for cartesian_idx in cartesian_idxs
+            (k_im, k_mani) = Tuple(cartesian_idx)
+            Jp[k_im, k_mani] = x[2][der_idxs[k_mani]][point, k_im]
+        end
+
+        J[point] = SMatrix{image_dim, manifold_dim}(Jp)
     end
 
     return J
