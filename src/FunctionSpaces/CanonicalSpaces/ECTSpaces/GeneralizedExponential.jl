@@ -50,25 +50,23 @@ function _evaluate(ect_space::GeneralizedExponential, xi::Float64, nderivatives:
     # scale the point to lie in the interval [0, l]
     xi = ect_space.l * xi
     if ect_space.t
-        for r = 0:nderivatives
-            k = min(r, ect_space.p-1)
+        for k = 0:nderivatives
             wxl = ect_space.w * xi
             E = [1.0; cumprod((1.0 ./ (1:ect_space.p-k)) * wxl)]
             E[ect_space.p-k, :] .= exp(wxl);
-            E[ect_space.p+1-k, :] .= (-1)^r * exp(-wxl);
+            E[ect_space.p+1-k, :] .= (-1)^k * exp(-wxl);
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r+1] = (ect_space.w^r) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^r)
+            M[1, :, k+1] = (ect_space.w^k) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^k)
         end
     else
-        for r = 0:nderivatives
-            k = min(r, ect_space.p-1)
+        for k = 0:nderivatives
             ww = [1; cumprod(repeat([ect_space.w * ect_space.w], ect_space.m))]
             Ef = [1.0; cumprod((1.0 ./ (1:ect_space.p-k+2*ect_space.m)) * xi)]
             E = Ef[1:ect_space.p+1-k]
             E[ect_space.p-k, :] = Ef[ect_space.p-k:2:end, :]' * ww
             E[ect_space.p-k+1, :] = Ef[ect_space.p-k+1:2:end, :]' * ww
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^r)
+            M[1, :, k+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^k)
         end
     end
 

@@ -14,6 +14,10 @@ for ``\\xi \\in [0.0, 1.0]``.
 Memoization.@memoize function evaluate(
     ect_space::AbstractECTSpaces, ξ::Points.AbstractPoints{1}, nderivatives::Int=0
 )
+
+    if nderivatives >= ect_space.p
+        throw(ArgumentError("Cannot compute derivatives of order higher than $(ect_space.p-1)."))
+    end
     neval = Points.get_num_points(ξ)
     # allocate space for derivatives
     # - ders[j+1][1] contains the matrix of evaluations of the j-th derivative
