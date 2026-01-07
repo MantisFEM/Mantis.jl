@@ -245,7 +245,7 @@ are now the 2D versions.
 ````@example Biharmonic
 starting_point_2D = (0.0, 0.0)
 box_size_2D = (1.0, 1.0)
-num_elements_2D = (2, 2)
+num_elements_2D = (8, 8)
 p_2D = (3, 3)
 k_2D = (2, 2)
 
@@ -317,7 +317,7 @@ VTK file that can be visualized using a VTK viewer, such as Paraview.
 ````@example Biharmonic
 data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
 output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p))D.vtu"
+output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p_2D))D.vtu"
 output_file = joinpath(output_data_folder, output_filename_2D)
 Plot.plot(
     ϕ⁰_2D;

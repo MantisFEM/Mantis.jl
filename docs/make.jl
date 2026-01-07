@@ -60,11 +60,12 @@ DevelDocs = [
 ]
 
 Pages = [
-    "index.md",
+    "Home" => "index.md",
     "Manual" => Manual,
     "Examples" => Examples,
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
+    "references.md",
 ]
 
 # References are handled by DocumenterCitations so this should be set up.
