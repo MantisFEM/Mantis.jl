@@ -84,7 +84,6 @@ makedocs(;
     pages=Pages,
     plugins=[bib],
     format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main",
-        deploy_url="https://mantisfem.github.io/Mantis.jl"),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
