@@ -79,11 +79,12 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric
 # Author names are ordered alphabetically on last name.
 makedocs(;
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
+    repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
-    format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main"),
+    format=DocumenterVitepress.MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl"),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
