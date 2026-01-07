@@ -53,8 +53,8 @@ function create_curvilinear_mapping(
             (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
         return [
             1.0 + pi * crazy_c * cospi(x1_new) * sinpi(x2_new)
-            (box_sizes[1] / box_sizes[2]) * pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
             (box_sizes[2] / box_sizes[1]) * pi * crazy_c * cospi(x1_new) * sinpi(x2_new)
+            (box_sizes[1] / box_sizes[2]) * pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
             1.0 + pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
         ]
     end

@@ -159,13 +159,6 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             # display([n_dofs cond_num])
 
             ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-uh.txt")
-            @show section_space
-            @show mesh
-            @show maximum(ref_coeffs - uₕ.coefficients)
-            if maximum(ref_coeffs - uₕ.coefficients) > 1
-                Plot.export_form_fields_to_vtk((ϕₕ, ϕₑ), "broken-test")
-				exit()
-            end
 
             @test all(
                 isapprox.(uₕ.coefficients, ref_coeffs, atol=atol * 50, rtol=rtol * 50)

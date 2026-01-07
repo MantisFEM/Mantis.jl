@@ -219,7 +219,7 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
     }
         if !(get_geometry(form_1) == get_geometry(form_2))
             @warn(
-                "Trying to create compute a binary transformation on two forms " *
+                "Trying to create a binary transformation on two forms " *
                     "whose geometries don't point to the same object in memory. " *
                     "The geometries might not be compatible."
             )

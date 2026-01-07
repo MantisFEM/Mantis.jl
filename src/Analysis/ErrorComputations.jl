@@ -25,18 +25,10 @@ function _compute_square_error_per_element(
     TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
-    if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
-        @warn(
-            "Trying to create compute the difference between two forms whose geometries" *
-                " don't point to the same object in memory. " *
-                "The geometries might not be compatible."
-        )
-    end
-
     num_elements = Quadrature.get_num_base_elements(quad_rule)
     result = Vector{Float64}(undef, num_elements)
+    difference = computed_sol - exact_sol
     for elem_id in 1:1:num_elements
-        difference = computed_sol - exact_sol
         if norm == "L2"
             result[elem_id] = _L2_norm_square(difference, elem_id, quad_rule)
         elseif norm == "H1"
@@ -77,16 +69,10 @@ function compute_error_per_element(
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
-        throw(
-            ArgumentError(
-                LazyString(
-                    "The two forms must have the same geometry. Instead they have ",
-                    Forms.get_geometry(computed_sol),
-                    " for the first form, and ",
-                    Forms.get_geometry(exact_sol),
-                    " for the second form.",
-                ),
-            ),
+        @warn(
+            "Trying to compute the error between two forms " *
+                "whose geometries don't point to the same object in memory. " *
+                "The geometries might not be compatible."
         )
     end
 
