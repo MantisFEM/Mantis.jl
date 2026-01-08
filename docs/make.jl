@@ -15,7 +15,7 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
 
         Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -79,12 +79,12 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric
 # Author names are ordered alphabetically on last name.
 makedocs(;
     modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
+    repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
     pages=Pages,
     plugins=[bib],
-    format=MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl", devbranch="main",
-        deploy_url="https://mantisfem.github.io/Mantis.jl/dev"),
+    format=DocumenterVitepress.MarkdownVitepress(; repo="github.com/MantisFEM/Mantis.jl"),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
