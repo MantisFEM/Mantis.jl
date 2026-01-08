@@ -730,14 +730,17 @@ function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
 end
 
-# TODO: This needs the new workflow for FEGeometry
 function get_geometry(space::PolarSplineSpace)
-    throw(ArgumentError("Not yet implemented"))
+    E_geom = assemble_global_extraction_matrix(space)
+    geom_coeffs_polar =
+        (E_geom' * E_geom) \ (E_geom' * reshape(space.degenerate_control_points, :, 2))
+
+    return DiscreteGeometry(space, geom_coeffs_polar)
 end
 
 # WARNING: This is a work-around while `get_geometry` is not implemented
 function get_num_elements(space::PolarSplineSpace)
-	return Geometry.get_num_elements(get_parametric_geometry(space))
+    return Geometry.get_num_elements(get_parametric_geometry(space))
 end
 
 # WARNING: This is a work-around while `get_geometry` is not implemented

@@ -637,7 +637,6 @@ function create_polar_spline_de_rham_complex(
     end
 
     geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
-    geometry = FunctionSpaces.DiscreteGeometry(P_geom, geom_coeffs_polar)
 
     ##############################
     # 0-Forms
