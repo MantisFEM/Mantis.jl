@@ -471,7 +471,8 @@ coefficients, and whether the scalars are constrained to zero at poles.
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -481,7 +482,8 @@ function create_scalar_polar_spline_space(
     return create_scalar_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -523,7 +525,8 @@ and whether the scalars are constrained to zero at the poles.
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -563,6 +566,7 @@ function create_scalar_polar_spline_space(
             (TensorProductSpace((GBθ, Br)),),
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
+            geometry,
             two_poles,
             zero_at_poles,
         )
@@ -571,6 +575,7 @@ function create_scalar_polar_spline_space(
             (TensorProductSpace((GBθ_g, Br_g)),),
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
+            geometry,
             two_poles,
             zero_at_poles,
         )
@@ -606,7 +611,8 @@ the geometry coefficients, and whether there are two poles.
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -615,7 +621,8 @@ function create_vector_polar_spline_space(
     return create_vector_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -652,7 +659,8 @@ the geometry coefficients, and whether there are two poles.
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -681,6 +689,7 @@ function create_vector_polar_spline_space(
         ),
         geom_coeffs_tp,
         TensorProductSpace((GBθ_g, Br_g)),
+        geometry,
         two_poles,
         false,
     )
@@ -928,7 +937,16 @@ function DiscreteGeometry(
         return eval
     end
 
+    function element_length_function(element_id::Int)
+        return Geometry.get_element_lengths(get_geometry(space), element_id)
+    end
+
     return Geometry.DiscreteGeometry(
-        manifold_dim, image_dim, num_elements, num_elements_per_patch, evaluable_function
+        manifold_dim,
+        image_dim,
+        num_elements,
+        evaluable_function,
+        element_length_function,
+        num_elements_per_patch,
     )
 end

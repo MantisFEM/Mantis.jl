@@ -24,9 +24,10 @@ manifold dimension.
 - `num_patches`: Number of patches of the geometry.
 - `F`: The type of the evaluable function.
 """
-struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, NP} <:
+struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, L, NP} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
     evaluable_function::F
+    element_length_function::L
     num_elements::Int
     num_elements_per_patch::NP
 
@@ -34,20 +35,32 @@ struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, NP} <:
         manifold_dim::Int,
         image_dim::Int,
         num_elements::Int,
-        num_elements_per_patch::NP,
         evaluable_function::F,
-    ) where {num_patches, NP <: NTuple{num_patches, Int}, F}
-        return new{manifold_dim, image_dim, num_patches, F, NP}(
-            evaluable_function, num_elements, num_elements_per_patch
+        element_length_function::L,
+        num_elements_per_patch::NP,
+    ) where {num_patches, F <: Function, L <: Function, NP <: NTuple{num_patches, Int}}
+        return new{manifold_dim, image_dim, num_patches, F, L, NP}(
+            evaluable_function,
+            element_length_function,
+            num_elements,
+            num_elements_per_patch,
         )
     end
 end
 
 function DiscreteGeometry(
-    manifold_dim::Int, num_elements::Int, evaluable_function::Function
+    manifold_dim::Int,
+    num_elements::Int,
+    evaluable_function::Function,
+    element_length_function::Function,
 )
     return DiscreteGeometry(
-        manifold_dim, manifold_dim, num_elements, (num_elements,), evaluable_function
+        manifold_dim,
+        manifold_dim,
+        num_elements,
+        (num_elements,),
+        evaluable_function,
+        element_length_function,
     )
 end
 
@@ -56,6 +69,11 @@ end
 ############################################################################################
 
 get_evaluable_function(geometry::DiscreteGeometry) = geometry.evaluable_function
+get_element_length_function(geometry::DiscreteGeometry) = geometry.element_length_function
+
+function get_element_lengths(geometry::DiscreteGeometry, element_id::Int)
+    return get_element_length_function(geometry)(element_id)
+end
 
 ############################################################################################
 #                                        Evaluation                                        #

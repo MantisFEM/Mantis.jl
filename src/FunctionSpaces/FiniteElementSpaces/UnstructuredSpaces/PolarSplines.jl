@@ -157,13 +157,12 @@ end
 # PolarSplines
 ############################################################################################
 
-struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
+struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
        AbstractFESpace{2, num_components, 1}
     patch_spaces::T
     extraction_op::ExtractionOperator{num_components, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
     regularity::Int
-
     global_extraction_matrix::NTuple{
         num_components, SparseArrays.SparseMatrixCSC{Float64, Int}
     }
@@ -172,6 +171,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
     zero_at_poles::Bool
     degenerate_control_points::Array{Float64, 3}
     degenerate_space::TD
+    geometry::G
 
     """
         PolarSplineSpace(
@@ -202,9 +202,10 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
         patch_spaces::NTuple{1, TensorProductSpace{2, 1}},
         degenerate_control_points::Array{Float64, 3},
         degenerate_space::TensorProductSpace{2, 1},
+        geometry::G,
         two_poles::Bool=false,
         zero_at_poles::Bool=false,
-    )
+    ) where {G <: Geometry.AbstractGeometry{2}}
         # poloidal and radial spaces
         space_p, space_r = get_constituent_spaces(patch_spaces[1])
         # number of basis functions for the poloidal and radial spaces
@@ -258,6 +259,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             typeof(patch_spaces),
             typeof(degenerate_space),
             get_EIJ_types(extraction_op)...,
+            G,
         }(
             patch_spaces,
             extraction_op,
@@ -269,6 +271,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             zero_at_poles,
             degenerate_control_points,
             degenerate_space,
+            geometry,
         )
     end
 
@@ -301,9 +304,10 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
         patch_spaces::NTuple{2, TensorProductSpace{2, 1}},
         degenerate_control_points::Array{Float64, 3},
         degenerate_space::TensorProductSpace{2, 1},
+        geometry::G,
         two_poles::Bool=false,
         ::Bool=false,
-    )
+    ) where {G <: Geometry.AbstractGeometry{2}}
         # poloidal and radial component spaces
         dspace_p, space_r = get_constituent_spaces(patch_spaces[1])
         space_p, dspace_r = get_constituent_spaces(patch_spaces[2])
@@ -364,6 +368,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             typeof(patch_spaces),
             typeof(degenerate_space),
             get_EIJ_types(extraction_op)...,
+            G,
         }(
             patch_spaces,
             extraction_op,
@@ -375,8 +380,30 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ} <:
             false,
             degenerate_control_points,
             degenerate_space,
+            geometry,
         )
     end
+end
+
+function PolarSplineSpace(
+    patch_spaces::PS,
+    degenerate_control_points::Array{Float64, 3},
+    degenerate_space::TensorProductSpace{2, 1},
+    two_poles::Bool=false,
+    zero_at_poles::Bool=false,
+) where {num_components, PS <: NTuple{num_components, TensorProductSpace{2, 1}}}
+    # This a throwaway geometry to properly initialize the PolarSplineSpace from which the
+    # intended geometry will be created.
+    geometry = get_geometry(patch_spaces[1])
+
+    return PolarSplineSpace(
+        patch_spaces,
+        degenerate_control_points,
+        degenerate_space,
+        geometry,
+        two_poles,
+        zero_at_poles,
+    )
 end
 
 """
@@ -730,13 +757,14 @@ function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
 end
 
-function get_geometry(space::PolarSplineSpace)
-    E_geom = assemble_global_extraction_matrix(space)
-    geom_coeffs_polar =
-        (E_geom' * E_geom) \ (E_geom' * reshape(space.degenerate_control_points, :, 2))
-
-    return DiscreteGeometry(space, geom_coeffs_polar)
-end
+# function get_geometry(space::PolarSplineSpace)
+#     E_geom = assemble_global_extraction_matrix(space)
+#     geom_coeffs_polar =
+#         (E_geom[1]' * E_geom[1]) \
+#         (E_geom[1]' * reshape(space.degenerate_control_points, :, 2))
+#
+#     return DiscreteGeometry(space, geom_coeffs_polar)
+# end
 
 # WARNING: This is a work-around while `get_geometry` is not implemented
 function get_num_elements(space::PolarSplineSpace)

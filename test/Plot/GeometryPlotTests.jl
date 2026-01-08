@@ -13,7 +13,7 @@ output_directory_tree = ["test", "data", "output", "Plot"]
 
 # Test Plotting of 3D Geometry (torus) -------------------------------------------
 deg = 2
-Wt = pi/2
+Wt = pi / 2
 num_elements_θ = 4
 num_elements_r = 1
 box_size_θ = 4.0
@@ -25,22 +25,22 @@ br = FunctionSpaces.Bernstein(deg)
 space_θr, geom_coeffs_θr = FunctionSpaces.create_polar_geometry_data(
     (num_elements_θ, num_elements_r),
     (deg, deg),
-    (deg-1, deg-1);
-    box_sizes = (box_size_θ, box_size_r)
+    (deg - 1, deg - 1);
+    box_sizes=(box_size_θ, box_size_r),
 )
 tp_space_θr = FunctionSpaces.get_patch_spaces(space_θr)[1]
 GBθ, Br = FunctionSpaces.get_constituent_spaces(tp_space_θr)
 space_θrϕ = FunctionSpaces.TensorProductSpace((space_θr, GBθ))
 
 # control points for geometry cross-section
-geom_coeffs_θr0 = [geom_coeffs_θr.+[4 0] zeros(size(geom_coeffs_θr,1))]
+geom_coeffs_θr0 = [geom_coeffs_θr .+ [4 0] zeros(size(geom_coeffs_θr, 1))]
 # rotate the cross-section points around the y-axis to create control points for torus
-geom_coeffs_θrϕ = Vector{Matrix{Float64}}(undef,FunctionSpaces.get_num_basis(GBθ))
+geom_coeffs_θrϕ = Vector{Matrix{Float64}}(undef, FunctionSpaces.get_num_basis(GBθ))
 geom_coeffs_θrϕ[1] = geom_coeffs_θr0
-for i ∈ 1:FunctionSpaces.get_num_basis(GBθ)-1
-    ϕ = i*2*π/FunctionSpaces.get_num_basis(GBθ)
+for i in 1:(FunctionSpaces.get_num_basis(GBθ) - 1)
+    ϕ = i * 2 * π / FunctionSpaces.get_num_basis(GBθ)
     R = [cos(ϕ) 0 sin(ϕ); 0 1 0; -sin(ϕ) 0 cos(ϕ)]
-    geom_coeffs_θrϕ[i+1] = geom_coeffs_θr0 * R'
+    geom_coeffs_θrϕ[i + 1] = geom_coeffs_θr0 * R'
 end
 geom_coeffs_θrϕ = vcat(geom_coeffs_θrϕ...)
 geom = FunctionSpaces.DiscreteGeometry(space_θrϕ, geom_coeffs_θrϕ)
@@ -155,11 +155,17 @@ num_basis = FunctionSpaces.get_num_basis(TP_θrϕ)
 
 # Generate the plot
 output_filename = "fem_geometry_toroidal_annulus_and_forms_test"
-output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename * "-0form")
+output_file = Mantis.GeneralHelpers.export_path(
+    output_directory_tree, output_filename * "-0form"
+)
 Plot.plot(α⁰; vtk_filename=output_file, n_subcells=1, degree=4, ascii=false, compress=false)
-output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename * "-3form")
+output_file = Mantis.GeneralHelpers.export_path(
+    output_directory_tree, output_filename * "-3form"
+)
 Plot.plot(β³; vtk_filename=output_file, n_subcells=1, degree=4, ascii=false, compress=false)
-output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename * "-1form")
+output_file = Mantis.GeneralHelpers.export_path(
+    output_directory_tree, output_filename * "-1form"
+)
 Plot.plot(ξ¹; vtk_filename=output_file, n_subcells=1, degree=4, ascii=false, compress=false)
 
 # Test Plotting of 3D Geometry (hollow cylinder) -------------------------------------------
@@ -253,7 +259,9 @@ n_subcells_range = 1:3:10
 for n_subcells in n_subcells_range
     for degree in degrees_range
         output_filename = @sprintf "mapped_cartesian_test_nx_%02d_ny_%02d__n_sub_%02d_degree_%02d.vtu" nx ny n_subcells degree
-        output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename)
+        output_file = Mantis.GeneralHelpers.export_path(
+            output_directory_tree, output_filename
+        )
 
         # Plot
         Plot.plot(
@@ -320,7 +328,9 @@ n_subcells_range = 1:3:10
 for n_subcells in n_subcells_range
     for degree in degrees_range
         output_filename = @sprintf "spiral_fem_geometry__n_sub_%02d_degree_%02d.vtu" n_subcells degree
-        output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename)
+        output_file = Mantis.GeneralHelpers.export_path(
+            output_directory_tree, output_filename
+        )
 
         # Plot
         Plot.plot(

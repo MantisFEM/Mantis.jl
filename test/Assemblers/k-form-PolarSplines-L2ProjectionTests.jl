@@ -10,8 +10,8 @@ using DelimitedFiles
 include("./AssemblerTestsHelpers.jl")
 
 # PROBLEM PARAMETERS -------------------------------------------------------------------
-# sub-directory for data
-sub_dir = "k-form-PolarSplines-L2Projection"
+# sub-directory for data 
+sub_dir = "k-form-PolarSplines-L2Projection" 
 # manifold dimensions
 manifold_dim = 2
 # number of elements in radial direction
@@ -101,7 +101,7 @@ for (p_idx, p) in enumerate(p⁰)
         )
 
         for form_rank in 0:manifold_dim
-            n_dofs = Forms.get_num_basis(X[form_rank+1])
+            n_dofs = Forms.get_num_basis(X[form_rank + 1])
             if verbose
                 display("   Form rank = $form_rank, n_dofs = $n_dofs")
             end

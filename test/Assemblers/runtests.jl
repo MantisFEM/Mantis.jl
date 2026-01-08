@@ -5,9 +5,9 @@ using Test
 @testset "k-form-TensorProduct-L2ProjectionTests" begin
     include("k-form-TensorProduct-L2ProjectionTests.jl")
 end
-# @testset "k-form-Polarsplines-L2ProjectionTests" begin
-#     include("k-form-PolarSplines-L2ProjectionTests.jl")
-# end
+@testset "k-form-Polarsplines-L2ProjectionTests" begin
+    include("k-form-PolarSplines-L2ProjectionTests.jl")
+end
 @testset "0-form-TensorProduct-LaplacianTests" begin
     include("0-form-TensorProduct-LaplacianTests.jl")
 end

@@ -637,6 +637,7 @@ function create_polar_spline_de_rham_complex(
     end
 
     geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
+    geometry = FunctionSpaces.DiscreteGeometry(P_geom, geom_coeffs_polar)
 
     ##############################
     # 0-Forms
@@ -644,7 +645,8 @@ function create_polar_spline_de_rham_complex(
     P⁰ = FunctionSpaces.create_scalar_polar_spline_space(
         num_elements,
         section_spaces,
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -659,7 +661,8 @@ function create_polar_spline_de_rham_complex(
     P¹ = FunctionSpaces.create_vector_polar_spline_space(
         num_elements,
         section_spaces,
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -673,7 +676,8 @@ function create_polar_spline_de_rham_complex(
     P² = FunctionSpaces.create_scalar_polar_spline_space(
         num_elements,
         section_spaces,
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
