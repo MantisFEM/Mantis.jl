@@ -112,7 +112,7 @@ Mantis works with forms, so we need to define the form space. In this case, we a
 working with ``0``-forms, so we define the form space as follows.
 
 ````@example Biharmonic
-Λ⁰ = Forms.FormSpace(0, geometry, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, "ϕ")
 ````
 
 We define the weak form inputs. The weak form inputs contain the trial and test spaces,
@@ -212,7 +212,7 @@ we created, those are still valid. We just rerun the rest.
 geometry = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
 B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
 
-Λ⁰ = Forms.FormSpace(0, geometry, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, "ϕ")
 
 f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
 
@@ -245,7 +245,7 @@ are now the 2D versions.
 ````@example Biharmonic
 starting_point_2D = (0.0, 0.0)
 box_size_2D = (1.0, 1.0)
-num_elements_2D = (2, 2)
+num_elements_2D = (8, 8)
 p_2D = (3, 3)
 k_2D = (2, 2)
 
@@ -259,7 +259,7 @@ Mantis works with forms, so we need to define the form space. In this case, we a
 working with ``0``-forms, so we define the form space as follows.
 
 ````@example Biharmonic
-Λ⁰_2D = Forms.FormSpace(0, geometry_2D, B_2D, "label")
+Λ⁰_2D = Forms.FormSpace(0, B_2D, "label")
 ````
 
 We define the weak form inputs. The weak form inputs contain the trial and test spaces,
@@ -317,7 +317,7 @@ VTK file that can be visualized using a VTK viewer, such as Paraview.
 ````@example Biharmonic
 data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
 output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p))D.vtu"
+output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p_2D))D.vtu"
 output_file = joinpath(output_data_folder, output_filename_2D)
 Plot.plot(
     ϕ⁰_2D;

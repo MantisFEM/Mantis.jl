@@ -58,7 +58,18 @@ struct TensorProductGeometry{
 end
 
 # Get properties.
+"""
+	get_cart_num_elements(geometry::TensorProductGeometry)
+
+Returns a CartesianIndices iterator of all elements in the geometry.
+"""
 get_cart_num_elements(geometry::TensorProductGeometry) = geometry.cart_num_elements
+
+"""
+	get_lin_num_elements(geometry::TensorProductGeometry)
+
+Returns a LinearIndices iterator of all elements in the geometry.
+"""
 get_lin_num_elements(geometry::TensorProductGeometry) = geometry.lin_num_elements
 get_constituent_geometries(geometry::TensorProductGeometry) = geometry.geometries
 get_num_geometries(

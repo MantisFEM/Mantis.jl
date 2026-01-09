@@ -81,8 +81,20 @@ get_breakpoints_per_dim(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1
     geometry.breakpoints[patch_id][dim]
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]
+
+"""
+	get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+
+Returns a CartesianIndices iterator of all elements in the patch indicated by `patch_id`.
+"""
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.cart_num_elements[patch_id]
+
+"""
+	get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+
+Returns a LinearIndices iterator of all elements in the patch indicated by `patch_id`.
+"""
 get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.lin_num_elements[patch_id]
 

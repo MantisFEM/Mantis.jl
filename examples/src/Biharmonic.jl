@@ -105,7 +105,7 @@ B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, 
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰ = Forms.FormSpace(0, geometry, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, "ϕ")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a
@@ -182,7 +182,7 @@ num_elements = (16,)
 geometry = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
 B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
 
-Λ⁰ = Forms.FormSpace(0, geometry, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, "ϕ")
 
 f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
 
@@ -225,7 +225,7 @@ B_2D = FunctionSpaces.create_bspline_space(
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰_2D = Forms.FormSpace(0, geometry_2D, B_2D, "label")
+Λ⁰_2D = Forms.FormSpace(0, B_2D, "label")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a

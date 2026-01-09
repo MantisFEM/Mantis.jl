@@ -49,7 +49,7 @@ B = FunctionSpaces.create_bspline_space(
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with $0$-forms, so we define the form space as follows.
 
-Λ⁰ = Forms.FormSpace(0, geometry, B, "label")
+Λ⁰ = Forms.FormSpace(0, B, "label")
 
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
@@ -161,7 +161,7 @@ end
 # We don't need to change any of the previous code, so we can reuse it directly:
 
 #
-Λ⁰_3D = Forms.FormSpace(0, geometry_3D, FunctionSpaces.DirectSumSpace((B_3D,)), "label")
+Λ⁰_3D = Forms.FormSpace(0, FunctionSpaces.DirectSumSpace((B_3D,)), "label")
 
 f⁰_3D = Forms.AnalyticalFormField(0, forcing_function_3D, geometry_3D, "f⁰")
 

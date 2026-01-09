@@ -11,11 +11,11 @@ A geometry defined in terms of an `evaluable_function` over a given number of el
 manifold dimension.
 
 # Fields
-- `evaluable_function::F`: Function that, given an `element_id` and local coordinates `xi`, 
+- `evaluable_function::F`: Function that, given an `element_id` and local coordinates `xi`,
     returns values and derivatives in the same nested format as a finite element space
-    (see [`FunctionSpaces.evaluate`](@ref FunctionSpaces.evaluate)). In particular, the
-    output structure must be compatible with `FunctionSpaces.AbstractFESpace` so that
-    geometry evaluations and Jacobians can be computed element-wise.
+    (see [FunctionSpaces](@ref)). In particular, the output structure must be compatible
+    with `FunctionSpaces.AbstractFESpace` so that geometry evaluations and Jacobians can be
+    computed element-wise.
 - `num_elements::Int`: Total number of elements in the discrete geometry.
 
 # Type parameters
