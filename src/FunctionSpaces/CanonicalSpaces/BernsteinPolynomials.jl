@@ -2,7 +2,7 @@
 """
     Bernstein <: AbstractCanonicalSpace
 
-Concrete type for Bernstein polynomials.
+Concrete type for Bernstein polynomials; see [DeBoor1978](@cite).
 
 # Fields
 - `p::Int`: Degree of the Bernstein polynomial.

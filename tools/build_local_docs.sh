@@ -14,7 +14,7 @@ fi
 
 # Start a local server to view the html pages. We first try julia (requires LiveServer.jl) and then python.
 {
-    julia -e 'import Pkg; Pkg.activate("."); Pkg.instantiate(); using LiveServer; serve(dir="build");' 2>/dev/null
+    julia --project -e 'import Pkg; Pkg.activate("."); Pkg.instantiate(); using LiveServer; serve(dir="build");' 2>/dev/null
 } || {
 echo "[build_local_docs.sh]: LiveServer.jl is not installed. Trying python..."
 if command -v python; then

@@ -15,7 +15,7 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
 
         Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -60,11 +60,12 @@ DevelDocs = [
 ]
 
 Pages = [
-    "index.md",
+    "Home" => "index.md",
     "Manual" => Manual,
     "Examples" => Examples,
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
+    "references.md",
 ]
 
 # References are handled by DocumenterCitations so this should be set up.

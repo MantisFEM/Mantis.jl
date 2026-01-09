@@ -5,7 +5,7 @@
     )
 
 Compute the extraction coefficients of B-Spline basis functions in terms of canonical basis
-functions.
+functions; see [Borden2011](@cite) [Toshniwal2020](@cite) [Hiemstra2020](@cite).
 
 # Arguments
 - `knot_vector::KnotVector`: The knot vector defining the B-Spline basis.
@@ -19,11 +19,6 @@ functions.
 The extraction coefficients `E[el]` for element `el` contain the coefficients of the linear
 combination of reference Canonical polynomials determining the basis functions on that
 element.
-
-# References
-- Borden, M. J., Scott, M. A., Evans, J. A., & Hughes, T. J. R. (2011).
-  Isogeometric finite element data structures based on Bézier extraction of spline_spaces.
-  International Journal for Numerical Methods in Engineering, 87(1-5), 15-47.
 """
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::AbstractCanonicalSpace

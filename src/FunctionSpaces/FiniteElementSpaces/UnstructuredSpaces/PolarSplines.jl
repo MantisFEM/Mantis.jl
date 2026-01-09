@@ -184,7 +184,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
 
     Build a scalar polar spline space from the given tensor-product space and degenerate
     control points and the corresponding degenerate tensor-product space (the latter two
-    define the polar parametric domain).
+    define the polar parametric domain); see [Toshniwal2017](@cite).
 
     # Arguments
     - `patch_spaces::NTuple{1, TensorProductSpace{2, 1}}`: The tensor-product space defining
@@ -286,7 +286,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
 
     Build a vector polar spline space from the given tensor-product spaces and degenerate
     control points and the corresponding degenerate tensor-product space (the latter two
-    define the polar parametric domain).
+    define the polar parametric domain); see [Toshniwal2021](@cite).
 
     # Arguments
     - `patch_spaces::NTuple{2, TensorProductSpace{2, 1}}`: The tensor-product spaces defining
