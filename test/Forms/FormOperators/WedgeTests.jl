@@ -250,7 +250,7 @@ const box_size_2d = (1.0, 1.0)
 const num_elements_2d = (3, 4)
 const degrees_2d = (2, 3)
 const regularities_2d = (degrees_2d[1] - 1, degrees_2d[2] - 1)
-const crazy_c = 0.2
+const c = 0.2
 
 # Expression for analytical form fields
 function zero_form_expression(x::Matrix{Float64})
@@ -270,7 +270,7 @@ curv_complex_2d = Forms.create_curvilinear_tensor_product_bspline_de_rham_comple
     num_elements_2d,
     degrees_2d,
     regularities_2d;
-    crazy_c=crazy_c,
+    c=c,
 )
 
 # The canonical quadrature information.
