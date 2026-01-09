@@ -334,9 +334,9 @@ function create_curvilinear_tensor_product_bspline_de_rham_complex(
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::NTuple{manifold_dim, F},
     regularities::NTuple{manifold_dim, Int};
-    crazy_c::Float64=0.1,
+    c::Float64=0.1,
 ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
-    mapping = Geometry.create_curvilinear_mapping(starting_points, box_sizes, crazy_c)
+    mapping = Geometry.create_curvilinear_mapping(starting_points, box_sizes, c)
 
     return create_tensor_product_bspline_de_rham_complex(
         starting_points, box_sizes, num_elements, section_spaces, regularities, mapping
@@ -370,7 +370,7 @@ function create_curvilinear_tensor_product_bspline_de_rham_complex(
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
     regularities::NTuple{manifold_dim, Int};
-    crazy_c::Float64=0.1,
+    c::Float64=0.1,
 ) where {manifold_dim}
     return create_curvilinear_tensor_product_bspline_de_rham_complex(
         starting_points,
@@ -378,7 +378,7 @@ function create_curvilinear_tensor_product_bspline_de_rham_complex(
         num_elements,
         map(FunctionSpaces.Bernstein, degrees),
         regularities;
-        crazy_c=crazy_c,
+        c=c,
     )
 end
 

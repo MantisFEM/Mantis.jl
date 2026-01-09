@@ -92,7 +92,7 @@ function test_0form_hodge_laplacian(
                     )
                 else
                     X = Forms.create_curvilinear_tensor_product_bspline_de_rham_complex(
-                        origin, L, num_elements, section_spaces, regularities; crazy_c=0.1
+                        origin, L, num_elements, section_spaces, regularities; c=0.1
                     )
                 end
 

@@ -127,7 +127,7 @@ const num_elements_2d = (3, 4)
 const starting_point_3d = (0.0, 0.0, 0.0)
 const box_size_3d = (1.0, 1.0, 1.0)
 const num_elements_3d = (3, 4, 5)
-const crazy_c = 0.2
+const c = 0.2
 
 # Polynomial degrees.
 const degrees_2d = (2, 3)
@@ -167,7 +167,7 @@ end
 cart_complex_2d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, degrees_2d, regularities_2d
 )
-curv_mapping = Geometry.create_curvilinear_mapping(starting_point_2d, box_size_2d, crazy_c)
+curv_mapping = Geometry.create_curvilinear_mapping(starting_point_2d, box_size_2d, c)
 curv_complex_2d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d,
     box_size_2d,
@@ -210,7 +210,7 @@ end
 cart_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_3d, box_size_3d, num_elements_3d, degrees_3d, regularities_3d
 )
-curv_mapping = Geometry.create_curvilinear_mapping(starting_point_3d, box_size_3d, crazy_c)
+curv_mapping = Geometry.create_curvilinear_mapping(starting_point_3d, box_size_3d, c)
 curv_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_3d,
     box_size_3d,

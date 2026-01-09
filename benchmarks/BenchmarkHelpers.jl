@@ -51,28 +51,36 @@ function run_benchmark(
 
         return nothing
     elseif !save
-        input = ""
-        first = true
-        cases = ("y", "n", "c")
-        while !(input in cases)
-            if !first
-                println("Invalid input. Valid options are `y`, `n` or `c`.")
+        if isinteractive()
+            input = ""
+            first = true
+            cases = ("y", "n", "c")
+            while !(input in cases)
+                if !first
+                    println("Invalid input. Valid options are `y`, `n` or `c`.")
+                end
+                printstyled(
+                    "Warning: `save` is set to `false`. No benchmarks will be stored. " *
+                    "Do you wish to proceed? (y)es, (n)o, (c)hange save to `true`\n";
+                    color=:yellow,
+                )
+                input = readline()
+                first = false
             end
+
+            if input == "c"
+               save = true
+            elseif input == "n"
+                println("Quitting...")
+
+                return nothing
+            end
+        else
             printstyled(
-                "Warning: `save` is set to `false`. No benchmarks will be stored. " *
-                "Do you wish to proceed? (y)es, (n)o, (c)hange save to `true`\n";
+                "Warning: `save` is set to `false` in non-interactive mode. " *
+                "Proceeding without saving benchmarks.\n";
                 color=:yellow,
             )
-            input = readline()
-            first = false
-        end
-
-        if input == "c"
-            save = true
-        elseif input == "n"
-            println("Quitting...")
-
-            return nothing
         end
     end
 

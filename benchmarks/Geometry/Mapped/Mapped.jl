@@ -65,7 +65,7 @@ function geo_and_eval_points(::Val{1})
 end
 
 function geo_and_eval_points(::Val{2})
-    geo = Geometry.create_curvilinear_square((0.0, 0.0), (2.0, 2.0), (10, 10); crazy_c=0.2)
+    geo = Geometry.create_curvilinear_square((0.0, 0.0), (2.0, 2.0), (10, 10); c=0.2)
     eval_points = Points.CartesianPoints(
         ntuple(2) do m
             return LinRange(0.0, 1.0, 10)
