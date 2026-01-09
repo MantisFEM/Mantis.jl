@@ -39,6 +39,16 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
         NT <: Number,
         T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
     }
+        foreach(breakpoints) do patch_breakpoints
+            for k in 1:manifold_dim
+                if !isequal(patch_breakpoints[k], unique(patch_breakpoints[k]))
+                    throw(ArgumentError("Breakpoints should be unique."))
+                elseif !isequal(patch_breakpoints[k], sort(patch_breakpoints[k]))
+                    throw(ArgumentError("Breakpoints should be stricly increasing."))
+                end
+            end
+        end
+
         cart_num_elements = ntuple(Val(num_patches)) do i
             return CartesianIndices(
                 ntuple(dim -> length(breakpoints[i][dim]) - 1, manifold_dim)
