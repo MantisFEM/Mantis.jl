@@ -4,6 +4,7 @@
 
 A multi-component space that is the direct sum of `num_components` scalar function spaces.
 Consequently, their basis functions are evaluated independently and arranged in a
+using Base: COMPILETIME_PREFERENCES
 block-diagonal matrix. Each scalar function space contributes to a separate component of
 the multi-component space.
 
@@ -178,63 +179,17 @@ end
 function get_support(space::DirectSumSpace, basis_id::Int)
     # Find which component space the basis function belongs to.
     basis_offsets = get_dof_offsets(space)
-    component_id = findlast(c -> c < basis_id, basis_offsets)
+    component_id = -1
+    for c in Iterators.reverse(eachindex(basis_offsets))
+        if basis_offsets[c] < basis_id
+            component_id = c
+            break
+        end
+    end
+    if component_id == -1
+        throw(ArgumentError(LazyString("The given basis_id ", basis_id, " was not found.")))
+    end
     basis_id = basis_id - basis_offsets[component_id]
 
     return get_support(get_component_spaces(space)[component_id], basis_id)
 end
-
-# function evaluate(
-#     space::DirectSumSpace{manifold_dim, num_components, num_patches},
-#     element_id::Int,
-#     xi::Points.AbstractPoints{manifold_dim},
-#     nderivatives::Int=0,
-# ) where {manifold_dim, num_components, num_patches}
-#     basis_indices = get_basis_indices(space, element_id)
-
-#     # Pre-allocation, including padding (see below).
-#     num_points = Points.get_num_points(xi)
-#     evaluations = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
-#     for j in 0:nderivatives
-#         # number of derivatives of order j
-#         num_j_ders = binomial(manifold_dim + j - 1, manifold_dim - 1)
-#         evaluations[j + 1] = Vector{Vector{Matrix{Float64}}}(undef, num_j_ders)
-#         for der_idx in 1:num_j_ders
-#             evaluations[j + 1][der_idx] = [
-#                 zeros(num_points, length(basis_indices)) for _ in 1:num_components
-#             ]
-#         end
-#     end
-
-#     # Actually evaluate the basis functions. Since DirectSumSpace is a direct sum of
-#     # component spaces, we can evaluate each component space independently and then store
-#     # the results in the evaluations array. We do pad with zeros to ensure a consistent and
-#     # correct size of the evaluations array.
-#     local_offsets = zeros(Int, num_components+1)
-#     for component_idx in 1:num_components
-#         # Evaluation.
-#         component_eval, component_basis_idxs = evaluate(
-#             get_component_spaces(space)[component_idx],
-#             element_id,
-#             xi,
-#             nderivatives,
-#         )
-#         local_offsets[component_idx+1] = local_offsets[component_idx] +
-#             length(component_basis_idxs)
-
-#         for der_order in eachindex(evaluations)
-#             for der_idx in eachindex(evaluations[der_order])
-#                 # Padding + shift to the right position.
-#                 for i in eachindex(component_basis_idxs)
-#                     for point_idx in 1:num_points
-#                         evaluations[der_order][der_idx][component_idx][
-#                             point_idx, i + local_offsets[component_idx]
-#                         ] = component_eval[der_order][der_idx][1][point_idx,i]
-#                     end
-#                 end
-#             end
-#         end
-#     end
-
-#     return evaluations, basis_indices
-# end
