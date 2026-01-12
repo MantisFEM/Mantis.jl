@@ -16,7 +16,9 @@ function run_tests(geometry, file_name)
     reference_points, reference_cells = get_point_cell_data(
         reference_directory_tree, file_name * ".vtu"
     )
-    output_points, output_cells = get_point_cell_data(output_file_path * ".vtu")
+    output_points, output_cells = get_point_cell_data(
+		output_directory_tree, output_file_path * ".vtu"
+	)
     @test all(isapprox.(reference_points, output_points; atol=atol))
     @test all(isequal.(reference_cells, output_cells))
 
