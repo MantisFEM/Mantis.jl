@@ -6,7 +6,7 @@ layout: home
 hero:
   name: Mantis.jl
   text: 
-  tagline: Structure-preserving discretisations in Julia
+  tagline: Structure-preserving discretizations in Julia
   image:
     src: logo.png
     alt: Mantis.jl
