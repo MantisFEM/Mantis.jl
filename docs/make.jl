@@ -15,9 +15,9 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
 
-        Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
+        # Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
         Literate.markdown(
             path_to_example,
@@ -45,18 +45,23 @@ Tutorials = [
 DevelDocs = [
     joinpath("DevelDocs", "MainPageDevelDocs.md"),
     "Documents" => [joinpath("DevelDocs", "Documentation.md")],
-    "Modules" => [
-        joinpath("DevelDocs", "Modules", "Analysis.md"),
-        joinpath("DevelDocs", "Modules", "Assemblers.md"),
-        joinpath("DevelDocs", "Modules", "Forms.md"),
-        joinpath("DevelDocs", "Modules", "FunctionSpaces.md"),
-        joinpath("DevelDocs", "Modules", "GeneralHelpers.md"),
-        joinpath("DevelDocs", "Modules", "Geometry.md"),
-        joinpath("DevelDocs", "Modules", "Mesh.md"),
-        joinpath("DevelDocs", "Modules", "Plot.md"),
-        joinpath("DevelDocs", "Modules", "Points.md"),
-        joinpath("DevelDocs", "Modules", "Quadrature.md"),
-    ],
+    "Modules" =>
+        joinpath.(
+            "DevelDocs",
+            "Modules",
+            [
+                "Analysis.md",
+                "Assemblers.md",
+                "Forms.md",
+                "FunctionSpaces.md",
+                "GeneralHelpers.md",
+                "Geometry.md",
+                "Mesh.md",
+                "Plot.md",
+                "Points.md",
+                "Quadrature.md",
+            ],
+        ),
 ]
 
 Pages = [
@@ -85,7 +90,7 @@ makedocs(;
     pages=Pages,
     plugins=[bib],
     format=DocumenterVitepress.MarkdownVitepress(;
-        repo="github.com/MantisFEM/MantisDev.jl",
+        repo="github.com/MantisFEM/MantisDev.jl"
     ),
 )
 
