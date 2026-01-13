@@ -3,13 +3,13 @@
 ############################################################################################
 
 """
-    Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
-    AbstractForm{manifold_dim, form_rank, expression_rank, G}
+    Hodge{manifold_dim, form_rank, expression_rank, F} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Represents the hodge star of an `AbstractForm`.
 
 # Fields
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
+- `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
     which the hodge star is applied.
 - `label::String`: The hodge star label. This is a concatenation of `"★"` with the
     label of `form`.
@@ -21,15 +21,14 @@ Represents the hodge star of an `AbstractForm`.
 - `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
     with one single set of basis forms have rank 1, with two sets of basis forms have rank
     2. Higher ranks are not possible.
-- `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
-- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank,
-    G}`: The type of `form`.
+- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank,}`: The
+    type of `form`.
 
 # Inner Constructors
 - `Hodge(form::F)`: General constructor.
 """
-struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank, G}
+struct Hodge{manifold_dim, form_rank, expression_rank, F} <:
+       AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
     label::String
 
@@ -39,8 +38,7 @@ struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
         manifold_dim,
         form_rank,
         expression_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank},
     }
         if expression_rank > 1
             msg_1 = "Hodge-star only valid for expressions with expression rank < 2. "
@@ -49,7 +47,7 @@ struct Hodge{manifold_dim, form_rank, expression_rank, G, F} <:
         end
         hodge_rank = manifold_dim - form_rank
 
-        return new{manifold_dim, hodge_rank, expression_rank, G, F}(
+        return new{manifold_dim, hodge_rank, expression_rank, F}(
             form, "★(" * get_label(form) * ")"
         )
     end
@@ -148,10 +146,10 @@ end
 ############################################################################################
 
 function _evaluate_hodge(
-    form::AbstractForm{manifold_dim, form_rank, expression_rank, G},
+    form::AbstractForm{manifold_dim, form_rank, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, form_rank, expression_rank, G <: Geometry.AbstractGeometry}
+) where {manifold_dim, form_rank, expression_rank}
     throw(ArgumentError("Method not implement for type $(typeof(form))."))
 end
 
@@ -161,10 +159,10 @@ end
 
 # 0-forms (manifold_dim)
 function _evaluate_hodge(
-    form_expression::AbstractForm{manifold_dim, 0, expression_rank, G},
+    form_expression::AbstractForm{manifold_dim, 0, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, expression_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
+) where {manifold_dim, expression_rank}
     _, sqrt_g = Geometry.metric(get_geometry(form_expression), element_id, xi)
     form_eval, form_indices = evaluate(form_expression, element_id, xi)
     # We restrict the evaluation of hodge-star to expression of rank 1 and lower, therefore
@@ -182,10 +180,10 @@ end
 
 # n-forms (manifold_dim)
 function _evaluate_hodge(
-    form_expression::AbstractForm{manifold_dim, manifold_dim, expression_rank, G},
+    form_expression::AbstractForm{manifold_dim, manifold_dim, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, expression_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
+) where {manifold_dim, expression_rank}
     _, sqrt_g = Geometry.metric(get_geometry(form_expression), element_id, xi)
     form_eval, form_indices = evaluate(form_expression, element_id, xi)
     # Because we restrict ourselves to expression with rank 0 or 1, we can
@@ -203,10 +201,10 @@ end
 
 # 1-forms (2 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractForm{2, 1, expression_rank, G},
+    form_expression::AbstractForm{2, 1, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{2},
-) where {expression_rank, G <: Geometry.AbstractGeometry{2}}
+) where {expression_rank}
     inv_g, _, sqrt_g = Geometry.inv_metric(get_geometry(form_expression), element_id, xi)
     form_eval, form_indices = evaluate(form_expression, element_id, xi)
     # Because we restrict ourselves to expression with rank 0 or 1, we can
@@ -232,10 +230,10 @@ end
 
 # 1-forms (3 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractForm{3, 1, expression_rank, G},
+    form_expression::AbstractForm{3, 1, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{3},
-) where {expression_rank, G <: Geometry.AbstractGeometry{3}}
+) where {expression_rank}
     # Compute the metric terms
     inv_g, _, sqrt_g = Geometry.inv_metric(get_geometry(form_expression), element_id, xi)
     # Evaluate the form expression to which we wish to apply the Hodge-⋆
@@ -267,10 +265,10 @@ end
 
 # 2-forms (3 dimensions)
 function _evaluate_hodge(
-    form_expression::AbstractForm{3, 2, expression_rank, G},
+    form_expression::AbstractForm{3, 2, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{3},
-) where {expression_rank, G <: Geometry.AbstractGeometry{3}}
+) where {expression_rank}
     # The Hodge-⋆ of a 2-form in 3D is the inverse of the Hodge-⋆ of a 1-form in 3D
     # Therefore we can use the metric tensor instead of the inverse metric tensor
     # and use the same expression as for the Hodge-⋆ of 1-forms but now using the

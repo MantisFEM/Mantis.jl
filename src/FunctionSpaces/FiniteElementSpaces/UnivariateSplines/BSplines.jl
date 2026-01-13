@@ -1,8 +1,8 @@
 """
-    BSplineSpace{F, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
+    BSplineSpace{F, G, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
 
-Structure containing information about a univariate B-Spline function space defined on
-`patch_1d::Mesh.Patch1D`, with given `polynomial_degree` and `regularity` per breakpoint.
+Structure containing information about a univariate B-Spline function space defined on the
+`knot_vector::KnotVector`, with given `polynomial_degree` and `regularity` per breakpoint.
 Note that while the section spaces on each element are the same, they don't necessarily have
 to be polynomials; they are just named `polynomials` for convention.
 
@@ -12,113 +12,192 @@ to be polynomials; they are just named `polynomials` for convention.
 - `polynomials::F`: local section space F, named `polynomials` just for convention.
 - `dof_partition::Vector{Vector{Vector{Int}}}`: Indices of boundary degrees of freedom.
 """
-struct BSplineSpace{F, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
-    knot_vector::KnotVector
-    extraction_op::ExtractionOperator{1, TE, TI, TJ}
+struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
+    geometry::G
+    knot_vector::KnotVector{GP, TM}
     polynomials::F
-    dof_partition::Vector{Vector{Vector{Int}}}
+    extraction_op::ExtractionOperator{1, TE, TI, TJ}
+    dof_partition::D #Vector{Vector{Vector{Int}}}
 
     function BSplineSpace(
-        patch_1d::Mesh.Patch1D,
+        geometry::G,
+        parametric_geometry::GP,
         polynomials::F,
         regularity::Vector{Int},
         n_dofs_left::Int=1,
         n_dofs_right::Int=1,
-    ) where {F <: AbstractCanonicalSpace}
+    ) where {
+        image_dim,
+        F <: AbstractCanonicalSpace,
+        G <: Geometry.AbstractGeometry{1, image_dim, 1},
+        GP <: Geometry.CartesianGeometry{1, image_dim, 1},
+    }
         polynomial_degree = get_polynomial_degree(polynomials)
-
         if polynomial_degree < 0
-            throw(ArgumentError("""\
-                The polynomial degree must be greater than or equal to 0, but is \
-                $polynomial_degree.\
-                """))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The polynomial degree must be greater than or equal to 0, but is ",
+                        polynomial_degree,
+                        ".",
+                    ),
+                ),
+            )
         end
 
-        num_breakpoints = size(patch_1d) + 1
+        breakpoints = Geometry.get_breakpoints_per_dim(parametric_geometry)
+        num_breakpoints = length(breakpoints)
         if num_breakpoints != length(regularity)
-            throw(ArgumentError("""\
-                The number of regularity conditions should be equal to the number of \
-                breakpoints, but there are $(num_breakpoints) breakpoints and \
-                $(length(regularity)) regularity conditions.\
-                """))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The number of regularity conditions should be equal to the number",
+                        " of breakpoints, but there are ",
+                        num_breakpoints,
+                        " breakpoints and ",
+                        length(regularity),
+                        " regularity conditions.",
+                    ),
+                ),
+            )
         end
 
         for i in eachindex(regularity)
             if polynomial_degree <= regularity[i]
                 throw(
-                    ArgumentError("""\
-                  The polynomial degree must be greater than the regularity, but the \
-                  polynomial degree is $polynomial_degree and the regularity at index $i \
-                  is $(regularity[i]).\
-                  """)
+                    ArgumentError(
+                        LazyString(
+                            "The polynomial degree must be greater than the regularity, ",
+                            "but the polynomial degree is ",
+                            polynomial_degree,
+                            " and the regularity at index ",
+                            i,
+                            " is ",
+                            regularity[i],
+                            ".",
+                        ),
+                    ),
                 )
             end
-        end
 
-        for i in eachindex(regularity)
             if regularity[i] < -1
-                throw(ArgumentError("""\
-                    The minimum regularity is -1 (element-wise discontinuous), but the \
-                    regularity at index $i is $(regularity[i]).\
-                    """))
-            end
-        end
-
-        if F <: AbstractLagrangePolynomials
-            if maximum(regularity) > 0
                 throw(
-                    ArgumentError("""\
-                  The regularity conditions for Lagrange polynomials must be -1 \
-                  (discontinuous) or 0 (C^0 continuous). You have regularity conditions \
-                  $(regularity), which has maximum $(maximum(regularity)).\
-                  """)
+                    ArgumentError(
+                        LazyString(
+                            "The minimum regularity is -1 (element-wise discontinuous), ",
+                            "but the regularity at index ",
+                            i,
+                            " is ",
+                            regularity[i],
+                            ".",
+                        ),
+                    ),
+                )
+            end
+
+            if F <: AbstractLagrangePolynomials && regularity[i] > 0
+                throw(
+                    ArgumentError(
+                        LazyString(
+                            "The regularity conditions for Lagrange polynomials must be -1",
+                            "(discontinuous) or 0 (C^0 continuous), but you have ",
+                            "regularity condition ",
+                            regularity[i],
+                            " at index ",
+                            i,
+                            ".",
+                        ),
+                    ),
                 )
             end
         end
 
         knot_vector = create_knot_vector(
-            patch_1d, polynomial_degree, regularity, "regularity"
+            parametric_geometry, polynomial_degree, regularity, "regularity"
         )
         extraction_op = extract_bspline_to_section_space(knot_vector, polynomials)
         bspline_dim = get_num_basis(extraction_op)
 
-        dof_partition = Vector{Vector{Vector{Int}}}(undef, 1)
-        dof_partition[1] = Vector{Vector{Int}}(undef, 3)
-        # First, store the left dofs ...
-        dof_partition[1][1] = collect(1:n_dofs_left)
-        # ... then the interior dofs ...
-        dof_partition[1][2] = collect((n_dofs_left + 1):(bspline_dim - n_dofs_right))
-        # ... and then finally the right dofs.
-        dof_partition[1][3] = collect((bspline_dim - n_dofs_right + 1):bspline_dim)
-
-        return new{F, get_EIJ_types(extraction_op)...}(
-            knot_vector, extraction_op, polynomials, dof_partition
+        # A BSplineSpace is always single patch, so the outer most vector has no additional
+        # entries.
+        dof_partition = [[
+            1:n_dofs_left,  # Left dofs
+            (n_dofs_left + 1):(bspline_dim - n_dofs_right),  # Interior dofs
+            (bspline_dim - n_dofs_right + 1):bspline_dim,  # Right dofs
+        ]]
+        return new{
+            F,
+            G,
+            get_knot_vector_types(knot_vector)...,
+            get_EIJ_types(extraction_op)...,
+            typeof(dof_partition),
+        }(
+            geometry, knot_vector, polynomials, extraction_op, dof_partition
         )
     end
 end
 
-# Helper functions with classical choices for defaults.
+# Constructors with classical choices for defaults.
+# General constructor, given only 1 CartesianGeometry, which is used as both parametric and
+# physical geometry.
 function BSplineSpace(
-    patch_1d::Mesh.Patch1D, polynomial_degree::Int, regularity::Vector{Int}
-)
-    return BSplineSpace(patch_1d, Bernstein(polynomial_degree), regularity)
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Vector{Int},
+) where {image_dim}
+    return BSplineSpace(geometry, geometry, polynomials, regularity)
 end
 function BSplineSpace(
-    patch_1d::Mesh.Patch1D, polynomials::AbstractCanonicalSpace, regularity::Int
-)
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    mapping::Geometry.AbstractMapping{1, image_dim},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Vector{Int},
+) where {image_dim}
+    physical_geometry = Geometry.MappedGeometry(geometry, mapping)
+    return BSplineSpace(physical_geometry, geometry, polynomials, regularity)
+end
+# Given polynomial degree and regularity vector, assume the polynomial is Bernstein.
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomial_degree::Int,
+    regularity::Vector{Int},
+) where {image_dim}
+    return BSplineSpace(geometry, geometry, Bernstein(polynomial_degree), regularity)
+end
+# Given polynomial degree and regularity value, assume the polynomial is Bernstein and the
+# regularity is the same everywhere except at the endpoints (open knot vector).
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomial_degree::Int,
+    regularity::Int,
+) where {image_dim}
+    breakpoints = Geometry.get_breakpoints_per_dim(geometry)
+    num_breakpoints = length(breakpoints)
+    regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
+    return BSplineSpace(geometry, geometry, Bernstein(polynomial_degree), regularity)
+end
+
+# Given a polynomial and regularity vector, assume the polynomial is Bernstein.
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    polynomials::AbstractCanonicalSpace,
+    regularity::Int,
+) where {image_dim}
     # Open knot vector (-1 regularity at the endpoints), given internal regularity.
-    regularity = [-1; repeat([regularity], size(patch_1d) - 1); -1]
-    return BSplineSpace(patch_1d, polynomials, regularity)
+    breakpoints = Geometry.get_breakpoints_per_dim(geometry)
+    num_breakpoints = length(breakpoints)
+    regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
+    return BSplineSpace(geometry, geometry, polynomials, regularity)
 end
-function BSplineSpace(patch_1d::Mesh.Patch1D, polynomial_degree::Int, regularity::Int)
-    regularity = [-1; repeat([regularity], size(patch_1d) - 1); -1]
-    return BSplineSpace(patch_1d, Bernstein(polynomial_degree), regularity)
+
+function get_parametric_geometry(space::BSplineSpace)
+    return get_geometry(get_knot_vector(space))
 end
 
 """
     get_knot_vector(space::BSplineSpace)
 
-Returns the knot vector of the B-spline space `space`.
+Returns the knot vector object of the B-spline space `space`.
 
 # Arguments
 - `space::BSplineSpace`: The B-spline space.
@@ -153,17 +232,27 @@ function get_local_basis(
     component_id::Int=1,
 )
     # The output of this function must correspond to the general evaluate function, so the
-    # output must be a vector{vector{vector{Matrix{Float64}}}}. The output of the evaluate
-    # on polynomials is a vector{vector{Matrix{Float64}}}, so we need to add an extra layer
-    # of vectors to the output, corresponding to the component.
+    # output must be a vector{vector{vector{Matrix{eltype(xi)}}}}. The output of the
+    # evaluate on polynomials is a vector{vector{Matrix{eltype(xi)}}}, so we need to add an
+    # extra layer of vectors to the output, corresponding to the component.
     section_space_eval = evaluate(get_polynomials(space), xi, nderivatives)
-    ext_eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
-    for i in 1:(nderivatives + 1)
+    ext_eval = Vector{Vector{Vector{Matrix{eltype(xi)}}}}(undef, nderivatives + 1)
+    for i in eachindex(section_space_eval, ext_eval)
         # The section spaces, which are CanonicalSpaces, are always 1D, so one derivative
         # per derivative order.
-        ext_eval[i] = Vector{Vector{Matrix{Float64}}}(undef, 1)
+        ext_eval[i] = Vector{Vector{Matrix{eltype(xi)}}}(undef, 1)
         ext_eval[i][1] = [section_space_eval[i][1]]
     end
+    # npoints = Points.get_num_points(xi)
+    # p = get_polynomial_degree(space)
+    # ext_eval = Vector{Vector{Vector{Matrix{eltype(xi)}}}}(undef, nderivatives + 1)
+    # for j in 0:nderivatives
+    #     ext_eval[j + 1] = [[zeros(eltype(xi), npoints, p + 1)]]
+    # end
+
+    # ext_eval = [[[zeros(eltype(xi), npoints, p + 1)]] for j in 0:nderivatives]
+
+    # evaluate!(ext_eval, get_polynomials(space), xi)
 
     return ext_eval
 end
@@ -172,21 +261,6 @@ end
 # because the degree is the same for all elements for B-splines).
 function get_polynomial_degree(space::BSplineSpace, elem_id::Int=0)
     return get_polynomial_degree(get_polynomials(space))
-end
-
-"""
-    get_patch(space::BSplineSpace)
-
-Returns the patch of the univariate function space `space`.
-
-# Arguments
-- `space::BSplineSpace`: The B-Spline function space.
-
-# Returns
-- `::Mesh.Patch1D`: The patch of the B-Spline space.
-"""
-function get_patch(space::BSplineSpace)
-    return get_knot_vector(space).patch_1d
 end
 
 """
@@ -202,47 +276,7 @@ Returns the multiplicities of the knot vector associated with the univariate fun
 - `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
 """
 function get_multiplicity_vector(space::BSplineSpace)
-    return get_knot_vector(space).multiplicity
-end
-
-function get_num_elements(space::BSplineSpace)
-    return size(get_knot_vector(space).patch_1d)
-end
-
-"""
-    get_element_measure(space::BSplineSpace, element_id::Int)
-
-Returns the size of the element specified by `element_id`.
-
-# Arguments
-- `space::BSplineSpace`: The B-Spline function space.
-- `element_id::Int`: The id of the element.
-
-# Returns
-- `::Float64`: The size of the element.
-"""
-function get_element_measure(space::BSplineSpace, element_id::Int)
-    return get_element_measure(get_knot_vector(space), element_id)
-end
-
-function get_element_lengths(space::BSplineSpace, element_id::Int)
-    return get_element_measure(get_knot_vector(space), element_id)
-end
-
-"""
-    get_element_vertices(space::BSplineSpace, element_id::Int)
-
-Returns the vertices of the element specified by `element_id`.
-
-# Arguments
-- `space::BSplineSpace`: The B-Spline function space.
-- `element_id::Int`: The id of the element.
-
-# Returns
-- `::NTuple{1, Vector{Float64}`: The vertices of the element.
-"""
-function get_element_vertices(space::BSplineSpace, element_id::Int)
-    return Mesh.get_element_vertices(get_patch(space), element_id)
+    return get_multiplicity(get_knot_vector(space))
 end
 
 """
@@ -270,7 +304,7 @@ function get_local_knot_vector(space::BSplineSpace, basis_idx::Int)
     knot_vector = get_knot_vector(space)
     deg = get_polynomial_degree(space)
 
-    knot_cum_sum = cumsum(knot_vector.multiplicity)
+    knot_cum_sum = cumsum(get_multiplicity(knot_vector))
 
     first_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_idx)
     last_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_idx + deg + 1)
@@ -278,18 +312,20 @@ function get_local_knot_vector(space::BSplineSpace, basis_idx::Int)
     first_knot_mult = knot_cum_sum[first_breakpoint_idx] - basis_idx + 1
     last_knot_mult = basis_idx + deg + 1 - knot_cum_sum[last_breakpoint_idx - 1]
 
-    breakpoints = get_patch(space).breakpoints[first_breakpoint_idx:last_breakpoint_idx]
+    geometry = Geometry.CartesianGeometry(
+        get_breakpoints(space)[first_breakpoint_idx:last_breakpoint_idx]
+    )
     multiplicity = vcat(
         first_knot_mult,
-        get_multiplicity_vector(space)[(first_breakpoint_idx + 1):(last_breakpoint_idx - 1)],
+        get_multiplicity(knot_vector)[(first_breakpoint_idx + 1):(last_breakpoint_idx - 1)],
         last_knot_mult,
     )
 
-    return KnotVector(Mesh.Patch1D(breakpoints), deg, multiplicity)
+    return KnotVector(geometry, deg, multiplicity)
 end
 
 function get_max_local_dim(space::BSplineSpace)
-    return get_knot_vector(space).polynomial_degree + 1
+    return get_polynomial_degree(space) + 1
 end
 
 function get_greville_points(space::BSplineSpace)
@@ -353,5 +389,12 @@ function get_derivative_space(space::BSplineSpace)
         end
     end
 
-    return BSplineSpace(get_patch(space), dpolynomials, dregularity, n_left, n_right)
+    return BSplineSpace(
+        get_geometry(space),
+        get_parametric_geometry(space),
+        dpolynomials,
+        dregularity,
+        n_left,
+        n_right,
+    )
 end

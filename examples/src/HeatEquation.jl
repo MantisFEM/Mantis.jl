@@ -179,9 +179,9 @@
 # these functions can be used to represent any piecewise-linear polynomial function on the
 # mesh. (Each function is plotted in a different color.)
 
-import Mantis
-import DisplayAs
-using CairoMakie
+using Mantis
+using GLMakie
+using DisplayAs #hide
 
 ## The size of the domain where to solve our problem
 L = 1.0
@@ -199,12 +199,11 @@ n = N * (p + 1) - (k + 1) * (N - 1)
 
 ## Create the mesh and the function space
 breakpoints = LinRange(0.0, L, N+1)
-patch = Mantis.Mesh.Patch1D(collect(breakpoints))
-B = Mantis.FunctionSpaces.BSplineSpace(patch, p, k)
-line_geo = Mantis.Geometry.CartesianGeometry((breakpoints,))
+line_geo = Geometry.CartesianGeometry((breakpoints,))
+B = FunctionSpaces.BSplineSpace(line_geo, p, k)
 
 ## Create a Form Space.
-BF = Mantis.Forms.FormSpace(0, line_geo, B, "b")
+BF = Forms.FormSpace(0, B, "b")
 
 ## Plot the basis functions.
 n_plot_points_per_element = 25
@@ -216,11 +215,11 @@ ax = Axis(fig[1, 1],
     ylabel = "b_i(x)",
 )
 
-n_elements = Mantis.Geometry.get_num_elements(line_geo)
-xi = Mantis.Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Mantis.Forms.FormField(BF, " ")
+n_elements = Geometry.get_num_elements(line_geo)
+xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
+BFF = Forms.FormField(BF, " ")
 
-dim_V = Mantis.Forms.get_num_basis(BF)
+dim_V = Forms.get_num_basis(BF)
 colors = [:blue, :green, :red, :purple, :orange]
 for basis_idx in 1:dim_V
 
@@ -232,8 +231,8 @@ for basis_idx in 1:dim_V
     color_i = colors[basis_idx]
 
     for element_idx in 1:n_elements
-        form_eval, _ = Mantis.Forms.evaluate(BFF, element_idx, xi)
-        x = Mantis.Geometry.evaluate(Mantis.Forms.get_geometry(BF), element_idx, xi)
+        form_eval, _ = Forms.evaluate(BFF, element_idx, xi)
+        x = Geometry.evaluate(Forms.get_geometry(BF), element_idx, xi)
 
         lines!(ax, x[:], form_eval[1], color=color_i, label=L"\phi_{%$basis_idx}")
 
@@ -261,10 +260,10 @@ p = 2
 k = 1
 n = N * (p + 1) - (k + 1) * (N - 1)
 
-B = Mantis.FunctionSpaces.BSplineSpace(patch, p, k)
+B = FunctionSpaces.BSplineSpace(line_geo, p, k)
 
 ## Create a Form Space.
-BF = Mantis.Forms.FormSpace(0, line_geo, B, "b")
+BF = Forms.FormSpace(0, B, "b")
 
 fig = Figure()
 ax = Axis(fig[1, 1],
@@ -273,11 +272,11 @@ ax = Axis(fig[1, 1],
     ylabel = "b_i(x)",
 )
 
-n_elements = Mantis.Geometry.get_num_elements(line_geo)
-xi = Mantis.Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Mantis.Forms.FormField(BF, " ")
+n_elements = Geometry.get_num_elements(line_geo)
+xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
+BFF = Forms.FormField(BF, " ")
 
-dim_V = Mantis.Forms.get_num_basis(BF)
+dim_V = Forms.get_num_basis(BF)
 colors = [:blue, :green, :red, :purple, :orange, :black]
 for basis_idx in 1:dim_V
 
@@ -289,8 +288,8 @@ for basis_idx in 1:dim_V
     color_i = colors[basis_idx]
 
     for element_idx in 1:n_elements
-        form_eval, _ = Mantis.Forms.evaluate(BFF, element_idx, xi)
-        x = Mantis.Geometry.evaluate(Mantis.Forms.get_geometry(BF), element_idx, xi)
+        form_eval, _ = Forms.evaluate(BFF, element_idx, xi)
+        x = Geometry.evaluate(Forms.get_geometry(BF), element_idx, xi)
 
         lines!(ax, x[:], form_eval[1], color=color_i, label=L"\phi_{%$basis_idx}")
 

@@ -40,14 +40,36 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
     end
 end
 
-# Getters and setters.
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
+
+get_geometry_per_patch(geometry::UnstructuredGeometry) = geometry.geometry_per_patch
+
 function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
     return geometry.geometry_per_patch[patch_id]
 end
 
-# Evaluation (and related) methods.
-# All these methods first determine the patch on which the element resides, then call the
-# corresponding method on that patch's geometry.
+# Getters for numbers, sizes, shapes, lengths, etc.
+function get_element_lengths(geometry::UnstructuredGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_lengths(get_geometry(geometry, patch_id), local_element_id)
+end
+
+function get_element_measure(geometry::UnstructuredGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_measure(get_geometry(geometry, patch_id), local_element_id)
+end
+
+function get_element_vertices(geometry::UnstructuredGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return get_element_vertices(get_geometry(geometry, patch_id), local_element_id)
+end
+
+############################################################################################
+#                                        Evaluation                                        #
+############################################################################################
+
 function evaluate(
     geometry::UnstructuredGeometry{manifold_dim},
     element_id::Int,
@@ -73,9 +95,4 @@ function hessian(
 ) where {manifold_dim}
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     return hessian(get_geometry(geometry, patch_id), local_element_id, xi)
-end
-
-function get_element_lengths(geometry::UnstructuredGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_lengths(get_geometry(geometry, patch_id), local_element_id)
 end

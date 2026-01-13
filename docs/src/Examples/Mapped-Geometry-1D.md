@@ -1,5 +1,5 @@
 ```@meta
-EditURL = "../../../examples/src/1D-Mapped-Geometry.jl"
+EditURL = "../../../examples/src/Mapped-Geometry-1D.jl"
 ```
 
 # One-dimensional mapped geometry
@@ -59,13 +59,13 @@ with the second term in the middle expression being zero for a Cartesian geometr
 
 ### Implementation
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 using Mantis
 ````
 
 First we will set-up the original geometry.
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 starting_point = (1.0,)
 box_size = (3.0,)
 num_elements = (3,)
@@ -75,7 +75,7 @@ original_geo = Geometry.create_cartesian_box(starting_point, box_size, num_eleme
 For a quick sanity check, we can evaluate the endpoints of our 1D geometry. These should
 be equal to `starting_point` and `starting_point + box_size`, respectively.
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 fp, lp = starting_point[1], (starting_point[1] + box_size[1]) # First and last point.
 fe, le = 1, num_elements[1] # First and last element.
 @show Geometry.evaluate(original_geo, 1, Points.PointSet(([0.0],)))[1] == fp
@@ -86,7 +86,7 @@ We can take a look at the first and second derivatives, to see if they are what 
 To understand the output types of `jacobian` and `hessian` we refer the reader to
 [`Mantis.Geometry.jacobian`](@ref) and [`Mantis.Geometry.hessian`](@ref).
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 dφᵢ = box_size[1] / le
 @show Geometry.jacobian(original_geo, 1, Points.PointSet(([0.0],)))[1][1] == dφᵢ
 @show Geometry.jacobian(original_geo, 3, Points.PointSet(([1.0],)))[1][1] == dφᵢ
@@ -102,7 +102,7 @@ both the first and second derivatives. (The argument `(1, 1)` in the function ca
 means that both our original and mapped geometries can be represented in just 1
 dimension.)
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 d = 3
 ϕ_map(ξ̂) = ξ̂^d
 dϕ_map(ξ̂) = d * ξ̂^(d - 1)
@@ -114,7 +114,7 @@ d2ϕ_map(ξ̂) = d * (d - 1) * ξ̂^(d - 2)
 
 We can now put both pieces together and define our mapped geometry.
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 geo = Geometry.MappedGeometry(original_geo, ϕ)
 ````
 
@@ -122,7 +122,7 @@ We can repeat the sanity check we previously did, where we now expect that evalu
 endpoints gives us `ϕ(starting_point)` and `ϕ(starting_point + box_size)`, and the
 derivatives are as in [`Background`](@ref).
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 @show Geometry.evaluate(geo, 1, Points.PointSet(([0.0],)))[1] == ϕ_map(fp)
 @show Geometry.evaluate(geo, le, Points.PointSet(([1.0],)))[1] == ϕ_map(lp)
 @show Geometry.jacobian(geo, 1, Points.PointSet(([0.0],)))[1][1] == dϕ_map(fp) * dφᵢ
@@ -134,7 +134,7 @@ derivatives are as in [`Background`](@ref).
 Finally, we will take a look at both geometries to have a visual confirmation of our
 intiutions.
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 using GLMakie
 
 el_endpoints = Points.PointSet(([0.0, 1.0],))
@@ -143,7 +143,7 @@ zrs = zeros(2)
 
 Plot of the Cartesian geometry
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 fig = Figure()
 og_ax = Axis(
     fig[1, 1];
@@ -162,7 +162,7 @@ end
 
 Plot of the mapped geometry
 
-````@example 1D-Mapped-Geometry
+````@example Mapped-Geometry-1D
 xticks_mapped = [ϕ_map(p) for p in LinRange(fp, lp, le + 1)]
 mp_ax = Axis(
     fig[2, 1];

@@ -8,9 +8,9 @@ using Test
 
 # Test parameters
 breakpoints1 = [0.0, 0.5, 1.0]
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = [0.0, 0.8, 1.0]
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 
 #############################################################################################
 ### Univariate test 1
@@ -35,7 +35,7 @@ ts_GTB, _ = Mantis.FunctionSpaces.build_two_scale_operator(
 )
 
 breakpoints = vcat(breakpoints1, breakpoints2[2:end] .+ breakpoints1[end])
-patch = Mantis.Mesh.Patch1D(breakpoints)
+patch = Mantis.Geometry.CartesianGeometry(breakpoints)
 B = Mantis.FunctionSpaces.BSplineSpace(patch, deg1, [-1, deg1 - 1, 1, deg1 - 1, -1])
 ts, B_fine = Mantis.FunctionSpaces.build_two_scale_operator(B, nsub1)
 
@@ -110,8 +110,13 @@ n_p = num_elements_p * (deg_p + 1) - num_elements_p * (regularity_p + 1)
 n_r = num_elements_r * (deg_r + 1) - (num_elements_r - 1) * (regularity_r + 1)
 
 # build scalar polar spline space
+P_geom, geom_coeffs_polar = FunctionSpaces.create_polar_geometry_data(
+    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r);
+)
+geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
+geometry = FunctionSpaces.DiscreteGeometry(P_geom, geom_coeffs_polar)
 P_scalar_coarse = FunctionSpaces.create_scalar_polar_spline_space(
-    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r)
+    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r), geometry
 )
 geom_coeffs_coarse = P_scalar_coarse.degenerate_control_points
 size_tp_coarse = size(geom_coeffs_coarse)

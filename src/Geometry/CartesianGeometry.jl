@@ -25,10 +25,11 @@ are not required to have a matching grid.
         breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
     ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
 """
-struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
+struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
     breakpoints::T
     cart_num_elements::CI
+    lin_num_elements::LI
 
     function CartesianGeometry(
         breakpoints::T
@@ -38,14 +39,35 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
         NT <: Number,
         T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
     }
+        foreach(breakpoints) do patch_breakpoints
+            for k in 1:manifold_dim
+                if !isequal(patch_breakpoints[k], unique(patch_breakpoints[k]))
+                    throw(ArgumentError("Breakpoints should be unique."))
+                elseif !isequal(patch_breakpoints[k], sort(patch_breakpoints[k]))
+                    throw(ArgumentError("Breakpoints should be stricly increasing."))
+                end
+            end
+        end
+
         cart_num_elements = ntuple(Val(num_patches)) do i
             return CartesianIndices(
                 ntuple(dim -> length(breakpoints[i][dim]) - 1, manifold_dim)
             )
         end
 
-        return new{manifold_dim, manifold_dim, num_patches, T, typeof(cart_num_elements)}(
-            breakpoints, cart_num_elements
+        lin_num_elements = ntuple(
+            patch -> LinearIndices(cart_num_elements[patch]), Val(num_patches)
+        )
+
+        return new{
+            manifold_dim,
+            manifold_dim,
+            num_patches,
+            T,
+            typeof(cart_num_elements),
+            typeof(lin_num_elements),
+        }(
+            breakpoints, cart_num_elements, lin_num_elements
         )
     end
 
@@ -55,15 +77,36 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI} <:
     ) where {manifold_dim, NT <: Number}
         return CartesianGeometry((breakpoints,))
     end
+
+    # Convenience constructor for 1D, single patch geometries.
+    function CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}
+        return CartesianGeometry(((breakpoints,),))
+    end
 end
 
 # Get properties.
 get_breakpoints(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.breakpoints[patch_id]
+get_breakpoints_per_dim(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1) =
+    geometry.breakpoints[patch_id][dim]
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]
+
+"""
+	get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+
+Returns a CartesianIndices iterator of all elements in the patch indicated by `patch_id`.
+"""
 get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.cart_num_elements[patch_id]
+
+"""
+	get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+
+Returns a LinearIndices iterator of all elements in the patch indicated by `patch_id`.
+"""
+get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
+    geometry.lin_num_elements[patch_id]
 
 # Getters for consituents.
 function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int)
@@ -86,13 +129,13 @@ function get_geometry(geometry::CartesianGeometry, patch_id::Int)
     return CartesianGeometry((geometry.breakpoints[patch_id],))
 end
 
-function get_parametric_geometry(geometry::CartesianGeometry)
-    return geometry
-end
+# function get_parametric_geometry(geometry::CartesianGeometry)
+#     return geometry
+# end
 
-function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
-    return get_geometry(geometry, patch_id)
-end
+# function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
+#     return get_geometry(geometry, patch_id)
+# end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_num_elements(geometry::CartesianGeometry, patch_id::Int)

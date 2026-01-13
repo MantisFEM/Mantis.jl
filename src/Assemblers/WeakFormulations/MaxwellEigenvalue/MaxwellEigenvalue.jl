@@ -109,34 +109,34 @@ end
 
 """
     solve_maxwell_eig(
-        X⁰::Forms.AbstractFormSpace{2, 0, G},
-        X¹::Forms.AbstractFormSpace{2, 1, G},
+        X⁰::Forms.AbstractFormSpace{2, 0},
+        X¹::Forms.AbstractFormSpace{2, 1},
         dΩ::Quadrature.AbstractGlobalQuadratureRule{2},
         num_eig::Int;
         verbose::Bool=false,
-    ) where {G}
+    )
 
 Returns the first `num_eig` eigenvalues and 1-form eigenfunctions of the Maxwell eigenvalue
 problem.
 
 # Arguments
-- `X⁰::Forms.AbstractFormSpace{2, 0, G}`: The 0-form space to use as trial and test space.
-- `X¹::Forms.AbstractFormSpace{2, 1, G}`: The 1-form space to use as trial and test space.
+- `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to use as trial and test space.
+- `X¹::Forms.AbstractFormSpace{2, 1}`: The 1-form space to use as trial and test space.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the assembly.
 - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
 - `verbose::Bool=false`: Whether to print the nullspace offset.
 
 # Returns
 - `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
-- `u¹ₕ::Vector{Forms.FormField{2, 1, G}}`: The first `num_eig` eigenfunctions.
+- `u¹ₕ::Vector{Forms.FormField{2, 1}}`: The first `num_eig` eigenfunctions.
 """
 function solve_maxwell_eig(
-    X⁰::Forms.AbstractFormSpace{2, 0, G},
-    X¹::Forms.AbstractFormSpace{2, 1, G},
+    X⁰::Forms.AbstractFormSpace{2, 0},
+    X¹::Forms.AbstractFormSpace{2, 1},
     dΩ::Quadrature.AbstractGlobalQuadratureRule{2},
     num_eig::Int;
     verbose::Bool=false,
-) where {G}
+)
     weak_form_inputs = WeakFormInputs(X¹, X¹)
     lhs_expressions, rhs_expressions = maxwell_eigenvalue(weak_form_inputs, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
@@ -159,7 +159,7 @@ function solve_maxwell_eig(
     end
 
     ωₕ² = (ωₕ²[(nullspace_offset + 1):end])[1:num_eig]
-    u¹ₕ = Vector{Forms.FormField{2, 1, G}}(undef, num_eig)
+    u¹ₕ = Vector{Forms.FormField{2, 1}}(undef, num_eig)
     for eig_id in 1:num_eig
         subscript_str = join(Char(0x2080 + d) for d in reverse(digits(eig_id)))
         u¹ₕ[eig_id] = Forms.FormField(X¹, "uₕ" * subscript_str)
@@ -248,7 +248,7 @@ function solve_maxwell_eig(
         end
 
         complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
-        geo = Forms.get_geometry(complex...)
+		geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
             Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )

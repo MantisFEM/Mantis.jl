@@ -73,13 +73,6 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
                 regularities = tuple([0 for _ in 1:manifold_dim]...)
             end
 
-            # geometry
-            if mesh == "cartesian"
-                geometry = Geometry.create_cartesian_box(origin, L, num_elements)
-            else
-                geometry = Geometry.create_curvilinear_square(origin, L, num_elements)
-            end
-
             # section spaces
             if section_space == FunctionSpaces.GeneralizedTrigonometric
                 section_spaces = map(section_space, degree, (θ, θ), L ./ num_elements)
@@ -92,18 +85,25 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
                 dq⁰ = (2, 2)
             end
 
+            # complex
+            if mesh == "cartesian"
+                X = Forms.create_tensor_product_bspline_de_rham_complex(
+                    origin, L, num_elements, section_spaces, regularities
+                )
+            else
+                X = Forms.create_curvilinear_tensor_product_bspline_de_rham_complex(
+                    origin, L, num_elements, section_spaces, regularities
+                )
+            end
+
             # quadrature rule
             canonical_qrule = Quadrature.tensor_product_rule(
                 degree .+ dq⁰, Quadrature.gauss_legendre
             )
             # global quadrature rule
+            geometry = Forms.get_geometry(X[1])
             dΩ = Quadrature.StandardQuadrature(
                 canonical_qrule, Geometry.get_num_elements(geometry)
-            )
-
-            # create tensor-product B-spline complex
-            X = Forms.create_tensor_product_bspline_de_rham_complex(
-                origin, L, num_elements, section_spaces, regularities, geometry
             )
 
             for form_rank in 0:manifold_dim

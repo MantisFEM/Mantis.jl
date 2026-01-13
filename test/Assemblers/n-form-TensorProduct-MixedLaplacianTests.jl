@@ -111,13 +111,6 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
                 regularities = tuple([0 for _ in 1:manifold_dim]...)
             end
 
-            # geometry
-            if mesh == "cartesian"
-                geometry = Geometry.create_cartesian_box(origin, L, num_elements)
-            else
-                geometry = Geometry.create_curvilinear_square(origin, L, num_elements)
-            end
-
             # section spaces
             if section_space == FunctionSpaces.GeneralizedTrigonometric
                 section_spaces = map(section_space, degree, (θ, θ), L ./ num_elements)
@@ -136,16 +129,25 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             )
             dΩ = Quadrature.StandardQuadrature(canonical_qrule, prod(num_elements))
 
-            # create tensor-product B-spline complex
-            X = Forms.create_tensor_product_bspline_de_rham_complex(
-                origin, L, num_elements, section_spaces, regularities, geometry
-            )
+            # geometry
+            if mesh == "cartesian"
+                # create tensor-product B-spline complex
+                X = Forms.create_tensor_product_bspline_de_rham_complex(
+                    origin, L, num_elements, section_spaces, regularities
+                )
+            else
+                X = Forms.create_curvilinear_tensor_product_bspline_de_rham_complex(
+                    origin, L, num_elements, section_spaces, regularities; c=0.1
+                )
+            end
 
             # number of dofs
             n_dofs = Forms.get_num_basis(X[2]) + Forms.get_num_basis(X[3])
             if verbose
                 display("   n_dofs = $n_dofs")
             end
+
+            geometry = Forms.get_geometry(X[1])
             # exact solution for the problem
             ϕₑ, δϕₑ, fₑ = sinusoidal_solution(geometry)
 
@@ -157,6 +159,7 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             # display([n_dofs cond_num])
 
             ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-uh.txt")
+
             @test all(
                 isapprox.(uₕ.coefficients, ref_coeffs, atol=atol * 50, rtol=rtol * 50)
             )

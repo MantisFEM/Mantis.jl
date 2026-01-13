@@ -49,36 +49,34 @@ function _evaluate(ect_space::GeneralizedTrigonometric, xi::Float64, nderivative
     # scale the point to lie in the interval [0, l]
     xi = ect_space.l * xi
     if ect_space.t
-        for r = 0:nderivatives
-            k = min(r, ect_space.p-1)
+        for k = 0:nderivatives
             wxl = ect_space.w * xi
             E = [1.0; cumprod((1.0 ./ (1:ect_space.p-k)) * wxl)]
-            if mod(r, 4) == 0
+            if mod(k, 4) == 0
                 E[ect_space.p-k] = cos(wxl);
                 E[ect_space.p+1-k] = sin(wxl);
-            elseif mod(r, 4) == 1
+            elseif mod(k, 4) == 1
                 E[ect_space.p-k] = -sin(wxl);
                 E[ect_space.p+1-k] = cos(wxl);
-            elseif mod(r, 4) == 2
+            elseif mod(k, 4) == 2
                 E[ect_space.p-k] = -cos(wxl);
                 E[ect_space.p+1-k] = -sin(wxl);
-            elseif mod(r, 4) == 3
+            elseif mod(k, 4) == 3
                 E[ect_space.p-k] = sin(wxl);
                 E[ect_space.p+1-k] = -cos(wxl);
             end
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r+1] = (ect_space.w^r) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^r)
+            M[1, :, k+1] = (ect_space.w^k) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^k)
         end
     else
-        for r = 0:nderivatives
-            k = min(r, ect_space.p-1)
+        for k = 0:nderivatives
             ww = [1; cumprod(repeat([-ect_space.w * ect_space.w], ect_space.m))]
             Ef = [1.0; cumprod((1.0 ./ (1:ect_space.p-k+2*ect_space.m)) * xi)]
             E = Ef[1:ect_space.p+1-k]
             E[ect_space.p-k, :] = Ef[ect_space.p-k:2:end, :]' * ww
             E[ect_space.p-k+1, :] = Ef[ect_space.p-k+1:2:end, :]' * ww
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, r+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^r)
+            M[1, :, k+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^k)
         end
     end
 

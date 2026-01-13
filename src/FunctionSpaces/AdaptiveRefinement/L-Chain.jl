@@ -371,7 +371,7 @@ function get_contained_knot_vector(
     multiplicity = get_multiplicity_vector(fine_space)[breakpoint_idxs]
 
     return KnotVector(
-        Mesh.Patch1D(breakpoints), get_polynomial_degree(fine_space), multiplicity
+        Geometry.CartesianGeometry(breakpoints), get_polynomial_degree(fine_space), multiplicity
     )
 end
 

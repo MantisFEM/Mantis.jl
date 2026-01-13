@@ -29,11 +29,13 @@ regularity conditions. Periodic spaces are a special case of GTBSplines for
 - `ArgumentError`: If the minimal polynomial degree of any pair of adjacent spaces is less
     than the corresponding regularity condition.
 """
-struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_patches}
+struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
+       AbstractFESpace{1, 1, num_patches}
     patch_spaces::T
+    geometry::G
+    parametric_geometry::GP
     extraction_op::ExtractionOperator{1, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
-    num_elements_per_patch::NTuple{num_patches, Int}
     regularity::Vector{Int}
     num_dofs_left::Int
     num_dofs_right::Int
@@ -46,6 +48,13 @@ struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_p
     ) where {
         num_patches, S <: Union{BSplineSpace, RationalFESpace}, T <: NTuple{num_patches, S}
     }
+        # Create the multi-patch geometry from the geometries of the given spaces. Each of
+        # those geometries is restricted to have only one patch.
+        patch_geometries = map(get_geometry, patch_spaces)
+        geometry = Geometry.UnstructuredGeometry(patch_geometries) # General, but not ideal.
+        patch_parametric_geometries = map(get_parametric_geometry, patch_spaces)
+        parametric_geometry = Geometry.UnstructuredGeometry(patch_parametric_geometries)
+
         # Check if the number of regularity conditions matches the number of interfaces
         if length(regularity) != num_patches
             throw(ArgumentError("""\
@@ -79,9 +88,6 @@ struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_p
         # Create the extraction operator
         extraction_op = extract_gtbspline_to_bspline(patch_spaces, regularity)
         # number of element offsets per patch
-        num_elements_per_patch = ntuple(num_patches) do i
-            return get_num_elements(patch_spaces[i])
-        end
         num_elements_offset = cumsum([0; collect(get_num_elements.(patch_spaces))])
 
         function _get_boundary_dof_inds(patch_id::Int, right_bnd::Bool)
@@ -155,20 +161,23 @@ struct GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_p
             dof_partition[i][2] = unique(dof_partition[i][2])
         end
 
-        return new{num_patches, T, get_EIJ_types(extraction_op)...}(
+        return new{
+            num_patches,
+            T,
+            typeof(geometry),
+            typeof(parametric_geometry),
+            get_EIJ_types(extraction_op)...,
+        }(
             patch_spaces,
+            geometry,
+            parametric_geometry,
             extraction_op,
             dof_partition,
-            num_elements_per_patch,
             regularity,
             num_dofs_left,
-            num_dofs_right
+            num_dofs_right,
         )
     end
-end
-
-function get_num_elements_per_patch(space::GTBSplineSpace)
-    return space.num_elements_per_patch
 end
 
 function get_num_local_basis_per_patch(
@@ -177,12 +186,6 @@ function get_num_local_basis_per_patch(
     return ntuple(num_patches) do i
         return get_num_basis(get_patch_spaces(space)[i])
     end
-end
-
-function get_element_lengths(space::GTBSplineSpace, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
-
-    return get_element_lengths(get_patch_spaces(space)[patch_id], local_element_id)
 end
 
 function get_local_basis(
@@ -213,8 +216,8 @@ function get_derivative_space(space::GTBSplineSpace{num_patches}) where {num_pat
     return GTBSplineSpace(
         patch_spaces_der,
         regularity_der,
-        max(space.num_dofs_left-1, -1),
-        max(space.num_dofs_right-1, -1),
+        max(space.num_dofs_left - 1, -1),
+        max(space.num_dofs_right - 1, -1),
     )
 end
 

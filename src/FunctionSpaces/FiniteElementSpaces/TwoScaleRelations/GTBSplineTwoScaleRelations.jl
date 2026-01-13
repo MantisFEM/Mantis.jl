@@ -103,10 +103,10 @@ end
 function build_two_scale_operator(
     parent_space::GTBSplineSpace{num_patches, T}, num_subdivisions::Int
 ) where {num_patches, T}
+    child_space = subdivide_space(parent_space, num_subdivisions)
+
     return build_two_scale_operator(
-        parent_space,
-        subdivide_space(parent_space, num_subdivisions),
-        ntuple(i -> (num_subdivisions,), num_patches),
+        parent_space, child_space, ntuple(i -> (num_subdivisions,), num_patches)
     )
 end
 

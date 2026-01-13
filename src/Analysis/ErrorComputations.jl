@@ -15,9 +15,8 @@ function _compute_square_error_per_element(
     form_rank,
     expression_rank_1,
     expression_rank_2,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
     num_elements = Quadrature.get_num_base_elements(quad_rule)
@@ -63,11 +62,18 @@ function compute_error_per_element(
     form_rank,
     expression_rank_1,
     expression_rank_2,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
+    if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
+        @warn(
+            "Trying to compute the error between two forms " *
+                "whose geometries don't point to the same object in memory. " *
+                "The geometries might not be compatible."
+        )
+    end
+
     partial_result = _compute_square_error_per_element(
         computed_sol, exact_sol, quad_rule, norm
     )
@@ -91,11 +97,24 @@ function compute_error_total(
     form_rank,
     expression_rank_1,
     expression_rank_2,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1, G},
-    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2, G},
+    TF1 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_1},
+    TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
+    if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The two forms must have the same geometry. Instead they have ",
+                    Forms.get_geometry(computed_sol),
+                    " for the first form, and ",
+                    Forms.get_geometry(exact_sol),
+                    " for the second form.",
+                ),
+            ),
+        )
+    end
+
     partial_result = _compute_square_error_per_element(
         computed_sol, exact_sol, quad_rule, norm
     )

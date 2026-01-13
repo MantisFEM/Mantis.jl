@@ -15,10 +15,10 @@
 
 Create a 1D B-spline space based on the provided starting point, box size, number of
 elements, section space, and regularity. It constructs a uniform distribution of
-breakpoints and uses them to define a `Mesh.Patch1D` object. The function then creates a
-regularity vector, with the first and last entries set to -1 to ensure an open knot vector,
-and returns the corresponding `BSplineSpace`. Optional arguments include the number of
-degrees of freedom on the left and right boundaries.
+breakpoints and uses them to define a `Geometry.CartesianGeometry` object. The function
+then creates a regularity vector, with the first and last entries set to -1 to ensure an
+open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
+the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -60,15 +60,14 @@ function create_bspline_space(
         throw(ArgumentError("The argument 'box_size' must be greater than 0."))
     end
 
-    breakpoints = collect(
-        LinRange(starting_point, starting_point + box_size, num_elements + 1)
-    )
-    patch = Mesh.Patch1D(breakpoints)
-
+    breakpoints = LinRange(starting_point, starting_point + box_size, num_elements + 1)
+    geometry = Geometry.CartesianGeometry(breakpoints) # parametric & physical
     regularity_vector = fill(regularity, (num_elements + 1,))
     regularity_vector[1] = regularity_vector[end] = -1 # Open knot vector
 
-    return BSplineSpace(patch, section_space, regularity_vector, n_dofs_left, n_dofs_right)
+    return BSplineSpace(
+        geometry, geometry, section_space, regularity_vector, n_dofs_left, n_dofs_right
+    )
 end
 
 """
@@ -84,10 +83,10 @@ end
 
 Create a piecewise-polynomial 1D B-spline space based on the provided starting point, box
 size, number of elements, polynomial degree, and regularity. It constructs a uniform
-distribution of breakpoints and uses them to define a `Mesh.Patch1D` object. The function
-then creates a regularity vector, with the first and last entries set to -1 to ensure an
-open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
-the number of degrees of freedom on the left and right boundaries.
+distribution of breakpoints and uses them to define a `Geometry.CartesianGeometry` object.
+The function then creates a regularity vector, with the first and last entries set to -1 to
+ensure an open knot vector, and returns the corresponding `BSplineSpace`. Optional
+arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -135,10 +134,10 @@ end
 
 Create a 1D B-spline space based on the provided starting point, box size, number of
 elements, section space, and regularity. It constructs a uniform distribution of
-breakpoints and uses them to define a `Mesh.Patch1D` object. The function then creates a
-regularity vector, with the first and last entries set to -1 to ensure an open knot vector,
-and returns the corresponding `BSplineSpace`. Optional arguments include the number of
-degrees of freedom on the left and right boundaries.
+breakpoints and uses them to define a `Geometry.CartesianGeometry` object. The function
+then creates a regularity vector, with the first and last entries set to -1 to ensure an
+open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
+the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::NTuple{1, Float64}`: The coordinate of the starting point of the
@@ -199,10 +198,10 @@ end
 
 Create a piecewise-polynomial 1D B-spline space based on the provided starting point,
 box size, number of elements, polynomial degree, and regularity. It constructs a uniform
-distribution of breakpoints and uses them to define a `Mesh.Patch1D` object. The function
-then creates a regularity vector, with the first and last entries set to -1 to ensure an
-open knot vector, and returns the corresponding `BSplineSpace`. Optional arguments include
-the number of degrees of freedom on the left and right boundaries.
+distribution of breakpoints and uses them to define a `Geometry.CartesianGeometry` object.
+The function then creates a regularity vector, with the first and last entries set to -1 to
+ensure an open knot vector, and returns the corresponding `BSplineSpace`. Optional
+arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
 - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
@@ -267,22 +266,22 @@ function create_bspline_space(
     starting_points::NTuple{manifold_dim, Float64},
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
-    section_spaces::F,
+    section_spaces::NTuple{manifold_dim, AbstractCanonicalSpace},
     regularities::NTuple{manifold_dim, Int};
-    n_dofs_left::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
-    n_dofs_right::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
-) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
-    return TensorProductSpace(
-        create_dim_wise_bspline_spaces(
-            starting_points,
-            box_sizes,
-            num_elements,
-            section_spaces,
-            regularities,
-            n_dofs_left,
-            n_dofs_right,
-        ),
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+) where {manifold_dim}
+    spaces = create_dim_wise_bspline_spaces(
+        starting_points,
+        box_sizes,
+        num_elements,
+        section_spaces,
+        regularities;
+        n_dofs_left=n_dofs_left,
+        n_dofs_right=n_dofs_right,
     )
+
+    return TensorProductSpace(spaces, Geometry.CartesianGeometry)
 end
 
 """
@@ -317,8 +316,8 @@ function create_dim_wise_bspline_spaces(
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::F,
     regularities::NTuple{manifold_dim, Int},
-    n_dofs_left::NTuple{manifold_dim, Int},
-    n_dofs_right::NTuple{manifold_dim, Int},
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
     return ntuple(manifold_dim) do i
         create_bspline_space(
@@ -364,19 +363,27 @@ function create_bspline_space(
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
     regularities::NTuple{manifold_dim, Int};
-    n_dofs_left::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
-    n_dofs_right::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim}
+    breakpoints = map(
+        LinRange, starting_points, starting_points .+ box_sizes, num_elements .+ 1
+    )
+    geometry = Geometry.CartesianGeometry(breakpoints)
+    spaces = create_dim_wise_bspline_spaces(
+        starting_points,
+        box_sizes,
+        num_elements,
+        degrees,
+        regularities,
+        n_dofs_left,
+        n_dofs_right,
+    )
+
     return TensorProductSpace(
-        create_dim_wise_bspline_spaces(
-            starting_points,
-            box_sizes,
-            num_elements,
-            degrees,
-            regularities,
-            n_dofs_left,
-            n_dofs_right,
-        ),
+        spaces,
+        geometry,
+        geometry, # The parametric geometry is the same as the physical geometry here.
     )
 end
 
@@ -464,7 +471,8 @@ coefficients, and whether the scalars are constrained to zero at poles.
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -474,7 +482,8 @@ function create_scalar_polar_spline_space(
     return create_scalar_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -516,7 +525,8 @@ and whether the scalars are constrained to zero at the poles.
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -556,6 +566,7 @@ function create_scalar_polar_spline_space(
             (TensorProductSpace((GBθ, Br)),),
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
+            geometry,
             two_poles,
             zero_at_poles,
         )
@@ -564,6 +575,7 @@ function create_scalar_polar_spline_space(
             (TensorProductSpace((GBθ_g, Br_g)),),
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
+            geometry,
             two_poles,
             zero_at_poles,
         )
@@ -599,7 +611,8 @@ the geometry coefficients, and whether there are two poles.
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -608,7 +621,8 @@ function create_vector_polar_spline_space(
     return create_vector_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
-        regularities;
+        regularities,
+        geometry;
         geom_coeffs_tp=geom_coeffs_tp,
         R=R,
         two_poles=two_poles,
@@ -645,7 +659,8 @@ the geometry coefficients, and whether there are two poles.
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
-    regularities::NTuple{2, Int};
+    regularities::NTuple{2, Int},
+    geometry;
     geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
@@ -674,6 +689,7 @@ function create_vector_polar_spline_space(
         ),
         geom_coeffs_tp,
         TensorProductSpace((GBθ_g, Br_g)),
+        geometry,
         two_poles,
         false,
     )
@@ -815,76 +831,122 @@ function _build_standard_degenerate_control_points(n_p::Int, n_r::Int, R::Float6
     return degenerate_control_points, radii, theta
 end
 
-################################################################################
-# Masking for hierarchical spaces
-################################################################################
+# ################################################################################
+# # Masking for hierarchical spaces
+# ################################################################################
 
-function create_evaluation_mask_from_hierarchical_mesh(
-    hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T};
-    exclude_elements::Vector{Int}=Int[],
+# function create_evaluation_mask_from_hierarchical_mesh(
+#     hierarchical_space::FunctionSpaces.HierarchicalFiniteElementSpace{manifold_dim, S, T};
+#     exclude_elements::Vector{Int}=Int[],
+# ) where {
+#     manifold_dim,
+#     S <: FunctionSpaces.AbstractFESpace{manifold_dim, 1},
+#     T <: FunctionSpaces.AbstractTwoScaleOperator,
+# }
+#     # initialize trivial evaluation mask for first level space
+#     base_space = FunctionSpaces.get_space(hierarchical_space, 1)
+#     # number of elements in base mesh
+#     num_elements_base = FunctionSpaces.get_num_elements(base_space)
+#     # get element vertices for the base space
+#     base_element_vertices = [
+#         FunctionSpaces.get_element_vertices(base_space, i) for i in 1:num_elements_base
+#     ]
+
+#     # number of elements in evaluation mask (i.e., the active hierarchical mesh)
+#     num_elements = FunctionSpaces.get_num_elements(hierarchical_space)
+#     # get eval to base element index map
+#     element_idx_map = zeros(Int64, num_elements)
+#     # get element vertices for the eval mask
+#     eval_element_vertices = Vector{NTuple{manifold_dim, Vector{Float64}}}(
+#         undef, num_elements
+#     )
+#     for i in 1:num_elements
+#         element_level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
+#             hierarchical_space, i
+#         )
+#         eval_element_vertices[i] = FunctionSpaces.get_element_vertices(
+#             FunctionSpaces.get_space(hierarchical_space, element_level), element_level_id
+#         )
+#         element_idx_map[i] = FunctionSpaces.get_element_ancestor(
+#             hierarchical_space.two_scale_operators,
+#             element_level_id,
+#             element_level,
+#             element_level - 1,
+#         )
+#     end
+
+#     # allocate memory for translations and scalings
+#     translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+#     scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
+
+#     # create length scales (i.e., ratios of child and ancestor)
+#     for element_idx in 1:num_elements
+#         element_idx_base = element_idx_map[element_idx]
+#         base_el_verts = base_element_vertices[element_idx_base]
+#         eval_el_verts = eval_element_vertices[element_idx]
+
+#         length_scales =
+#             [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./ [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
+#         scalings[element_idx] = tuple(length_scales...)
+
+#         translations[element_idx] = tuple(
+#             [
+#                 (eval_el_verts[k][1] - base_el_verts[k][1]) /
+#                 (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim
+#             ]...,
+#         )
+#     end
+
+#     # create corresponding evaluation mask
+#     E = EvaluationMask.AffineEvaluationMask(
+#         num_elements, num_elements_base, element_idx_map, translations, scalings
+#     )
+#     # return trimmed mask
+#     return EvaluationMask.trim_evaluation_mask(E, exclude_elements)
+# end
+
+############################################################################################
+#                                     DiscreteGeometry                                     #
+############################################################################################
+
+function DiscreteGeometry(
+    space::S, coefficients::Matrix{T}
 ) where {
-    manifold_dim,
-    S <: FunctionSpaces.AbstractFESpace{manifold_dim, 1},
-    T <: FunctionSpaces.AbstractTwoScaleOperator,
+    manifold_dim, num_patches, S <: AbstractFESpace{manifold_dim, 1, num_patches}, T <: Real
 }
-    # initialize trivial evaluation mask for first level space
-    base_space = FunctionSpaces.get_space(hierarchical_space, 1)
-    # number of elements in base mesh
-    num_elements_base = FunctionSpaces.get_num_elements(base_space)
-    # get element vertices for the base space
-    base_element_vertices = [
-        FunctionSpaces.get_element_vertices(base_space, i) for i in 1:num_elements_base
-    ]
-
-    # number of elements in evaluation mask (i.e., the active hierarchical mesh)
-    num_elements = FunctionSpaces.get_num_elements(hierarchical_space)
-    # get eval to base element index map
-    element_idx_map = zeros(Int64, num_elements)
-    # get element vertices for the eval mask
-    eval_element_vertices = Vector{NTuple{manifold_dim, Vector{Float64}}}(
-        undef, num_elements
+    image_dim = size(coefficients, 2)
+    num_elements = get_num_elements(space)
+    num_elements_per_patch = get_num_elements_per_patch(space)
+    function evaluable_function(
+        element_id::Int, xi::Points.AbstractPoints{manifold_dim}, num_derivatives::Int=0
     )
-    for i in 1:num_elements
-        element_level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
-            hierarchical_space, i
-        )
-        eval_element_vertices[i] = FunctionSpaces.get_element_vertices(
-            FunctionSpaces.get_space(hierarchical_space, element_level), element_level_id
-        )
-        element_idx_map[i] = FunctionSpaces.get_element_ancestor(
-            hierarchical_space.two_scale_operators,
-            element_level_id,
-            element_level,
-            element_level - 1,
-        )
+        space_basis, basis_indices = evaluate(space, element_id, xi, num_derivatives)
+        eval = Vector{Vector{Matrix{Float64}}}(undef, num_derivatives + 1) # 1 component
+        num_points = Points.get_num_points(xi)
+        for i in eachindex(eval)
+            num_ders = length(space_basis[i])
+            eval[i] = Vector{Matrix{Float64}}(undef, num_ders)
+            for j in eachindex(eval[i])
+                eval[i][j] = Matrix{Float64}(undef, num_points, image_dim)
+                for l in 1:image_dim
+                    eval[i][j][:, l] = space_basis[i][j][1] * coefficients[basis_indices, l]
+                end
+            end
+        end
+
+        return eval
     end
 
-    # allocate memory for translations and scalings
-    translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
-    scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
-
-    # create length scales (i.e., ratios of child and ancestor)
-    for element_idx in 1:num_elements
-        element_idx_base = element_idx_map[element_idx]
-        base_el_verts = base_element_vertices[element_idx_base]
-        eval_el_verts = eval_element_vertices[element_idx]
-
-        length_scales =
-            [eval_el_verts[k][2] - eval_el_verts[k][1] for k in 1:manifold_dim] ./ [base_el_verts[k][2] - base_el_verts[k][1] for k in 1:manifold_dim]
-        scalings[element_idx] = tuple(length_scales...)
-
-        translations[element_idx] = tuple(
-            [
-                (eval_el_verts[k][1] - base_el_verts[k][1]) /
-                (base_el_verts[k][2] - base_el_verts[k][1]) for k in 1:manifold_dim
-            ]...,
-        )
+    function element_length_function(element_id::Int)
+        return Geometry.get_element_lengths(get_geometry(space), element_id)
     end
 
-    # create corresponding evaluation mask
-    E = EvaluationMask.AffineEvaluationMask(
-        num_elements, num_elements_base, element_idx_map, translations, scalings
+    return Geometry.DiscreteGeometry(
+        manifold_dim,
+        image_dim,
+        num_elements,
+        evaluable_function,
+        element_length_function,
+        num_elements_per_patch,
     )
-    # return trimmed mask
-    return EvaluationMask.trim_evaluation_mask(E, exclude_elements)
 end

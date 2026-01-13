@@ -168,6 +168,7 @@ end
 
 include("ParentChildRelations.jl")
 include("TwoScaleRelations.jl")
+include("GeometryTwoScaleRelations.jl")
 include("UnivariateTwoScaleRelations.jl")
 include("UnivariateBSplineTwoScaleRelations.jl")
 include("TensorProductTwoScaleRelations.jl")
