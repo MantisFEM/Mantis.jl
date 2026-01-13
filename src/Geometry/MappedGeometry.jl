@@ -245,15 +245,6 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
-# Getters for geometries.
-# function get_parametric_geometry(geometry::MappedGeometry)
-#     return get_parametric_geometry(get_base_geometry(geometry))
-# end
-
-# function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
-#     return get_parametric_geometry(get_base_geometry(geometry, patch_id))
-# end
-
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)

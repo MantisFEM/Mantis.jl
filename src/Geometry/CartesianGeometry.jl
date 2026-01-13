@@ -42,9 +42,31 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
         foreach(breakpoints) do patch_breakpoints
             for k in 1:manifold_dim
                 if !isequal(patch_breakpoints[k], unique(patch_breakpoints[k]))
-                    throw(ArgumentError("Breakpoints should be unique."))
+                    throw(
+                        ArgumentError(
+                            LazyString(
+                                "Breakpoints should be unique, but the breakpoints in ",
+                                "direction ",
+                                k,
+                                " are",
+                                patch_breakpoints[k],
+                                ".",
+                            ),
+                        ),
+                    )
                 elseif !isequal(patch_breakpoints[k], sort(patch_breakpoints[k]))
-                    throw(ArgumentError("Breakpoints should be stricly increasing."))
+                    throw(
+                        ArgumentError(
+                            LazyString(
+                                "Breakpoints should be stricly increasing, but the ",
+                                "breakpoints in direction ",
+                                k,
+                                " are",
+                                patch_breakpoints[k],
+                                ".",
+                            ),
+                        ),
+                    )
                 end
             end
         end
@@ -128,14 +150,6 @@ end
 function get_geometry(geometry::CartesianGeometry, patch_id::Int)
     return CartesianGeometry((geometry.breakpoints[patch_id],))
 end
-
-# function get_parametric_geometry(geometry::CartesianGeometry)
-#     return geometry
-# end
-
-# function get_parametric_geometry(geometry::CartesianGeometry, patch_id::Int)
-#     return get_geometry(geometry, patch_id)
-# end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_num_elements(geometry::CartesianGeometry, patch_id::Int)
