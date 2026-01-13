@@ -33,10 +33,10 @@ function spaces and domains; see [Giannelli2013](@cite).
 	hierarchical space, in hierarchical indexing.
 """
 mutable struct HierarchicalFiniteElementSpace{
-    manifold_dim, num_components, num_patches, S, T, G, GP
+    manifold_dim, num_components, num_patches, S, T
 } <: AbstractFESpace{manifold_dim, num_components, num_patches}
-    geometry::G
-    parametric_geometry::GP
+    geometry::Geometry.AbstractGeometry{manifold_dim}
+    parametric_geometry::Geometry.AbstractGeometry{manifold_dim}
     spaces::Vector{S}
     two_scale_operators::Vector{T}
     active_elements::HierarchicalActiveInfo
@@ -74,7 +74,9 @@ mutable struct HierarchicalFiniteElementSpace{
         domains::HierarchicalActiveInfo,
         num_subdivisions::NTuple{manifold_dim, Int},
         truncated::Bool=true,
-        simplified::Bool=false,
+        simplified::Bool=false;
+        mapping::Union{Nothing, Function}=nothing,
+        dmapping::Union{Nothing, Function}=nothing,
     ) where {
         manifold_dim,
         num_components,
@@ -104,12 +106,22 @@ mutable struct HierarchicalFiniteElementSpace{
             spaces, two_scale_operators, active_elements, active_basis, truncated
         )
         dof_partition = compute_dof_partition(spaces, active_basis, num_levels)
-        geometry = create_masked_geometry(spaces, two_scale_operators, active_elements)
-		G = typeof(geometry)
+        parametric_geometry = create_masked_geometry(
+            spaces, two_scale_operators, active_elements
+        )
+        if isnothing(mapping)
+            geometry = parametric_geometry
+        else
+            geometry = Geometry.MappedGeometry(
+                parametric_geometry,
+                Geometry.Mapping((manifold_dim, manifold_dim), mapping, dmapping),
+            )
+        end
+
         # Creates the structure
-        return new{manifold_dim, num_components, num_patches, S, T, G, G}(
+        return new{manifold_dim, num_components, num_patches, S, T}(
             geometry,
-            geometry,
+            parametric_geometry,
             spaces,
             two_scale_operators,
             active_elements,
@@ -123,72 +135,27 @@ mutable struct HierarchicalFiniteElementSpace{
             simplified,
             dof_partition,
         )
-	end
-
-    """
-    	HierarchicalFiniteElementSpace(
-    		spaces::Vector{S},
-    		two_scale_operators::Vector{T},
-    		domains_per_level::Vector{Vector{Int}},
-    		num_subdivisions::NTuple{manifold_dim, Int},
-    		truncated::Bool=true,
-    		simplified::Bool=false,
-    	) where {
-    		manifold_dim,
-    		num_components,
-    		num_patches,
-    		S <: AbstractFESpace{manifold_dim, num_components, num_patches},
-    		T <: AbstractTwoScaleOperator,
-    	}
-
-    Helper constructor for domains given in a per-level vector.
-    """
-    function HierarchicalFiniteElementSpace(
-        spaces::Vector{S},
-        two_scale_operators::Vector{T},
-        domains_per_level::Vector{Vector{Int}},
-        num_subdivisions::NTuple{manifold_dim, Int},
-        truncated::Bool=true,
-        simplified::Bool=false,
-    ) where {
-        manifold_dim,
-        num_components,
-        num_patches,
-        S <: AbstractFESpace{manifold_dim, num_components, num_patches},
-        T <: AbstractTwoScaleOperator,
-    }
-        domains = HierarchicalActiveInfo(domains_per_level)
-
-        return HierarchicalFiniteElementSpace(
-            spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
-        )
-    end
-
-    """
-    	HierarchicalFiniteElementSpace(
-    		space::S,
-    		num_subdivisions::NTuple{manifold_dim, Int},
-    		truncated::Bool=true,
-    		simplified::Bool=false,
-    	) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
-
-    Constructor for a Hierarchical space with no refinement
-    """
-    function HierarchicalFiniteElementSpace(
-        space::S,
-        num_subdivisions::NTuple{manifold_dim, Int},
-        truncated::Bool=true,
-        simplified::Bool=false,
-    ) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
-        TS, ref_space = build_two_scale_operator(space, num_subdivisions)
-        domains = [collect(1:get_num_elements(space)), Int[]]
-
-        return HierarchicalFiniteElementSpace(
-            [space, ref_space], [TS], domains, num_subdivisions, truncated, simplified
-        )
     end
 end
 
+"""
+	HierarchicalFiniteElementSpace(
+		spaces::Vector{S},
+		two_scale_operators::Vector{T},
+		domains_per_level::Vector{Vector{Int}},
+		num_subdivisions::NTuple{manifold_dim, Int},
+		truncated::Bool=true,
+		simplified::Bool=false,
+	) where {
+		manifold_dim,
+		num_components,
+		num_patches,
+		S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+		T <: AbstractTwoScaleOperator,
+	}
+
+Helper constructor for domains given in a per-level vector.
+"""
 function HierarchicalFiniteElementSpace(
     spaces::Vector{S},
     two_scale_operators::Vector{T},
@@ -207,6 +174,30 @@ function HierarchicalFiniteElementSpace(
 
     return HierarchicalFiniteElementSpace(
         spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
+    )
+end
+
+"""
+	HierarchicalFiniteElementSpace(
+		space::S,
+		num_subdivisions::NTuple{manifold_dim, Int},
+		truncated::Bool=true,
+		simplified::Bool=false,
+	) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
+
+Constructor for a Hierarchical space with no refinement
+"""
+function HierarchicalFiniteElementSpace(
+    space::S,
+    num_subdivisions::NTuple{manifold_dim, Int},
+    truncated::Bool=true,
+    simplified::Bool=false,
+) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
+    TS, ref_space = build_two_scale_operator(space, num_subdivisions)
+    domains = [collect(1:get_num_elements(space)), Int[]]
+
+    return HierarchicalFiniteElementSpace(
+        [space, ref_space], [TS], domains, num_subdivisions, truncated, simplified
     )
 end
 
@@ -979,6 +970,19 @@ function refine_mesh!(
         space, :active_elements, HierarchicalActiveInfo(get_level_ids(active_elements))
     )
     setfield!(space, :nested_domains, HierarchicalActiveInfo(get_level_ids(nested_domains)))
+    parametric_geometry = create_masked_geometry(
+        get_spaces(space), get_two_scale_operators(space), get_active_elements(space)
+    )
+    if typeof(get_geometry(space)) <: Geometry.MappedGeometry
+        geometry = Geometry.MappedGeometry(
+            parametric_geometry, Geometry.get_mapping(get_geometry(space))
+        )
+    else
+        geometry = parametric_geometry
+    end
+
+    setfield!(space, :geometry, geometry)
+    setfield!(space, :parametric_geometry, parametric_geometry)
 
     return space
 end

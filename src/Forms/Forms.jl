@@ -186,8 +186,8 @@ function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm.
     for i in 1:(length(all_forms) - 1)
         if !(get_geometry(all_forms[i]) == get_geometry(all_forms[i + 1]))
             msg1 = "Not all forms share a common geometry. "
-            msg2 = "The geometries of form number(i) and form number(i+1) differ."
-            throw(ArgumentError(msg1 * msg2))
+            msg2 = "The geometries of form number $(i) and form number $(i+1) differ."
+            @warn(msg1 * msg2)
         end
     end
 

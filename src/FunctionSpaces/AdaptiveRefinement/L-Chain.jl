@@ -367,11 +367,17 @@ function get_contained_knot_vector(
         breakpoint_idxs = minimum(element_idxs):(maximum(element_idxs) + 1)
     end
 
-    breakpoints = get_patch(fine_space).breakpoints[breakpoint_idxs]
+    breakpoints = Geometry.get_breakpoints_per_dim(get_geometry(fine_space), 1, 1)[breakpoint_idxs]
     multiplicity = get_multiplicity_vector(fine_space)[breakpoint_idxs]
+    if isa(breakpoints, Float64)
+        breakpoints = [breakpoints]
+        multiplicity = [multiplicity]
+    end
 
     return KnotVector(
-        Geometry.CartesianGeometry(breakpoints), get_polynomial_degree(fine_space), multiplicity
+        Geometry.CartesianGeometry(breakpoints),
+        get_polynomial_degree(fine_space),
+        multiplicity,
     )
 end
 

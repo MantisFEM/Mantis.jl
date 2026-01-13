@@ -530,7 +530,6 @@ function update_hierarchical_de_rham_complex(
     active_elements = FunctionSpaces.get_active_elements(H⁰)
     nested_domains = FunctionSpaces.get_nested_domains(H⁰)
     L = FunctionSpaces.get_num_levels(H⁰)
-    geo = Geometry.HierarchicalGeometry(H⁰)
     for form in complex[2:end],
         space in FunctionSpaces.get_component_spaces(get_fe_space(form))
 
@@ -538,6 +537,12 @@ function update_hierarchical_de_rham_complex(
             FunctionSpaces.add_level!(space)
         end
 
+        setfield!(space, :geometry, deepcopy(FunctionSpaces.get_geometry(H⁰)))
+        setfield!(
+            space,
+            :parametric_geometry,
+            deepcopy(FunctionSpaces.get_parametric_geometry(H⁰)),
+        )
         setfield!(space, :active_elements, deepcopy(active_elements))
         setfield!(space, :nested_domains, deepcopy(nested_domains))
         FunctionSpaces.update_basis!(space)
@@ -546,11 +551,10 @@ function update_hierarchical_de_rham_complex(
     new_complex = ntuple(num_forms) do k
         num_components = FunctionSpaces.get_num_components(get_fe_space(complex[k]))
         if num_components == 1
-            return FormSpace(k - 1, geo, get_fe_space(complex[k]), get_label(complex[k]))
+            return FormSpace(k - 1, get_fe_space(complex[k]), get_label(complex[k]))
         else
             return FormSpace(
                 k - 1,
-                geo,
                 FunctionSpaces.DirectSumSpace(
                     FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
                 ),

@@ -54,17 +54,4 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(hier_space)
     @test all(isapprox.(sum(h_eval[1][1][1], dims=2), 1.0, atol=1e-14))
 end
 
-# Geometry visualization
-
-
-# Generate the Plot
-
-# hier_space_geo = Mantis.Geometry.HierarchicalGeometry(hier_space)
-# sum_space = Mantis.FunctionSpaces.DirectSumSpace((hier_space,))
-# form_space = Mantis.Forms.FormSpace(0, hier_space_geo, sum_space, "a")
-# zero_form = Mantis.Forms.FormField(form_space, "α")
-#
-# output_filename = "thb-partition-of-unity"
-# Mantis.Plot.export_form_fields_to_vtk((zero_form,), ("test",), output_filename)
-
 end

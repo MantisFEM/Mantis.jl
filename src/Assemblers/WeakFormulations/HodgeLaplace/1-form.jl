@@ -118,7 +118,7 @@ function solve_one_form_hodge_laplacian(
     end
 
     # Exact solution on initial step
-    δu¹, u¹, f¹ = problem_data(1, Forms.get_geometry(complex...))
+    δu¹, u¹, f¹ = problem_data(1, Forms.get_geometry(complex[1]))
     δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ, bc_type)
     err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
     if VERBOSE
@@ -152,7 +152,7 @@ function solve_one_form_hodge_laplacian(
         end
 
         complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
-        geo = Forms.get_geometry(complex...)
+        geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
             Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )
