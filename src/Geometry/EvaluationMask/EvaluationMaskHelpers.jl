@@ -18,11 +18,11 @@ is a vector of element indices to exclude from the mesh.
 - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
-    eval_mask::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base},
+    eval_mask::AbstractEvaluationMask{manifold_dim},
     nsubd::Vector{NTuple{manifold_dim, Int}};
     elements_to_exclude::AbstractVector{Int}=Int[],
-) where {manifold_dim, num_elements, num_elements_base}
-
+) where {manifold_dim}
+    num_elements = get_num_elements(eval_mask)
     # number of new elements
     num_new_elements = sum(map(prod, nsubd))
 
@@ -72,10 +72,11 @@ argument is a vector of element indices to exclude from the mesh.
 - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
-    eval_mask::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base},
+    eval_mask::AbstractEvaluationMask{manifold_dim},
     nsubd::Vector{Int};
     elements_to_exclude::AbstractVector{Int}=Int[],
-) where {manifold_dim, num_elements, num_elements_base}
+) where {manifold_dim}
+    num_elements = get_num_elements(eval_mask)
     tones = ntuple(_ -> 1, manifold_dim)
     nsubd = [tones .* nsubd[i] for i in 1:num_elements]
 
@@ -100,10 +101,11 @@ argument is a vector of element indices to exclude from the mesh.
 - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
-    eval_mask::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base},
+    eval_mask::AbstractEvaluationMask{manifold_dim},
     nsubd::Int;
     elements_to_exclude::AbstractVector{Int}=Int[],
-) where {manifold_dim, num_elements, num_elements_base}
+) where {manifold_dim}
+    num_elements = get_num_elements(eval_mask)
     return subdivide_evaluation_mask(
         eval_mask, nsubd .* ones(Int, num_elements); elements_to_exclude=elements_to_exclude
     )

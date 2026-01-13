@@ -4,7 +4,7 @@
 
 """
     HierarchicalFiniteElementSpace{
-        manifold_dim, num_components, num_patches, S, T
+        manifold_dim, num_components, num_patches, S, T, G, GP
     } <: AbstractFESpace{manifold_dim, num_components, num_patches}
 
 A hierarchical space that is built from nested hierarchies of `manifold_dim`-variate
@@ -33,10 +33,10 @@ function spaces and domains; see [Giannelli2013](@cite).
 	hierarchical space, in hierarchical indexing.
 """
 mutable struct HierarchicalFiniteElementSpace{
-    manifold_dim, num_components, num_patches, S, T
+    manifold_dim, num_components, num_patches, S, T, G, GP
 } <: AbstractFESpace{manifold_dim, num_components, num_patches}
-    geometry::Geometry.AbstractGeometry{manifold_dim}
-    parametric_geometry::Geometry.AbstractGeometry{manifold_dim}
+    geometry::G
+    parametric_geometry::GP
     spaces::Vector{S}
     two_scale_operators::Vector{T}
     active_elements::HierarchicalActiveInfo
@@ -118,8 +118,10 @@ mutable struct HierarchicalFiniteElementSpace{
             )
         end
 
+        G = typeof(geometry)
+        GP = typeof(parametric_geometry)
         # Creates the structure
-        return new{manifold_dim, num_components, num_patches, S, T}(
+        return new{manifold_dim, num_components, num_patches, S, T, G, GP}(
             geometry,
             parametric_geometry,
             spaces,

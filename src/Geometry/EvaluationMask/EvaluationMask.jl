@@ -4,16 +4,15 @@
 # This is useful for example when evaluating a function on a finer mesh than the one used
 # for integration.
 # """
-# module EvaluationMask
 
 """
-    AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base}
+    AbstractEvaluationMask{manifold_dim}
 
 Supertype for all evaluation maskes. An evaluation mask describes how to map from a set of
 evaluation points on a manifold to a set of evaluation points on a base mesh. This is useful
 for example when evaluating a function on a finer mesh than the one used for integration.
 """
-abstract type AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base} end
+abstract type AbstractEvaluationMask{manifold_dim} end
 
 """
     get_manifold_dim(eval_mask::AbstractEvaluationMask)
@@ -26,9 +25,7 @@ Get the dimension of the manifold.
 # Returns
 - `manifold_dim::Int`: The dimension of the manifold.
 """
-function get_manifold_dim(
-    ::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base}
-) where {manifold_dim, num_elements, num_elements_base}
+function get_manifold_dim(::AbstractEvaluationMask{manifold_dim}) where {manifold_dim}
     return manifold_dim
 end
 
@@ -43,10 +40,8 @@ Get the number of elements in the evaluation mask.
 # Returns
 - `num_elements::Int`: The number of elements.
 """
-function get_num_elements(
-    ::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base}
-) where {manifold_dim, num_elements, num_elements_base}
-    return num_elements
+function get_num_elements(eval_mask::AbstractEvaluationMask)
+    return eval_mask.num_elements
 end
 
 """
@@ -60,10 +55,8 @@ Get the number of elements in the base mesh.
 # Returns
 - `num_elements_base::Int`: The number of elements in the base mesh.
 """
-function get_num_elements_base(
-    ::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base}
-) where {manifold_dim, num_elements, num_elements_base}
-    return num_elements_base
+function get_num_elements_base(eval_mask::AbstractEvaluationMask)
+    return eval_mask.num_elements_base
 end
 
 """
@@ -86,14 +79,12 @@ Evaluate the mapping from the evaluation mask to the base.
 - `scaling::NTuple{manifold_dim, Float64}`: The scaling of the element.
 """
 function transform_evaluation_points(
-    eval_mask::AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base},
+    eval_mask::AbstractEvaluationMask{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, num_elements, num_elements_base}
+) where {manifold_dim}
     return throw(MethodError(transform_evaluation_points, (eval_mask, element_id, xi)))
 end
 
 include("./AffineEvaluationMask.jl")
 include("./EvaluationMaskHelpers.jl")
-
-# end

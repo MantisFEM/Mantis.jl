@@ -24,10 +24,8 @@ struct MaskedGeometry{manifold_dim, image_dim, num_patches, G, M} <:
         manifold_dim,
         image_dim,
         num_patches,
-        num_elements,
-        num_elements_base,
         G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
-        M <: AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base},
+        M <: AbstractEvaluationMask{manifold_dim},
     }
         if get_num_elements(base_geometry) != get_num_elements_base(eval_mask)
             throw(

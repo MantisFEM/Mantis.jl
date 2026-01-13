@@ -19,9 +19,10 @@ The tuple (E, F) defines an evaluation mask.
 - `translations::Vector{T}`: The translations from base to evaluation elements.
 - `scalings::Vector{S}`: The scalings of evalution elements relative to the base elements.
 """
-struct AffineEvaluationMask{manifold_dim, num_elements, num_elements_base, M, T, S} <:
-       AbstractEvaluationMask{manifold_dim, num_elements, num_elements_base}
+struct AffineEvaluationMask{manifold_dim, M, T, S} <: AbstractEvaluationMask{manifold_dim}
     element_id_map::M
+    num_elements::Int
+    num_elements_base::Int
     translations::Vector{T}
     scalings::Vector{S}
     function AffineEvaluationMask(
@@ -58,8 +59,8 @@ struct AffineEvaluationMask{manifold_dim, num_elements, num_elements_base, M, T,
             )
         end
 
-        return new{manifold_dim, num_elements, num_elements_base, M, T, S}(
-            element_id_map, translations, scalings
+        return new{manifold_dim, M, T, S}(
+            element_id_map, num_elements, num_elements_base, translations, scalings
         )
     end
 end
