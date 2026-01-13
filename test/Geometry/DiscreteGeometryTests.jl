@@ -10,15 +10,13 @@ using Test
 # Refer to the following file for method and variable definitions.
 include("GeometryTestsHelpers.jl")
 
-function run_tests(geometry, file_name)
+function run_tests(geometry, file_name; degree=4)
     output_file_path = Mantis.GeneralHelpers.export_path(output_directory_tree, file_name)
-    Plot.export_geometry_to_vtk(geometry, file_name)
+    Plot.plot(geometry; vtk_filename=output_file_path, degree=degree)
     reference_points, reference_cells = get_point_cell_data(
         reference_directory_tree, file_name * ".vtu"
     )
-    output_points, output_cells = get_point_cell_data(
-		output_directory_tree, output_file_path * ".vtu"
-	)
+    output_points, output_cells = get_point_cell_data(output_file_path * ".vtu")
     @test all(isapprox.(reference_points, output_points; atol=atol))
     @test all(isequal.(reference_cells, output_cells))
 
@@ -92,7 +90,7 @@ geom_coeffs = [
 ]
 geom = Mantis.FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_lagrange_square_test"
-run_tests(geom, file_name)
+run_tests(geom, file_name; degree=1)
 
 ############################################################################################
 #                                          Spiral                                          #
