@@ -1,6 +1,5 @@
 module GeometryInferenceTests
 
-using Base: COMPILETIME_PREFERENCES
 import Pkg
 
 using Mantis
@@ -183,10 +182,10 @@ end
         end
 
     else
-        println("Skipped function spaces inference tests. JET was not loaded.")
+        @info "Skipped function spaces inference tests. JET was not loaded."
     end
 else
-    println("Skipped function spaces inference tests. Not on Julia 1.12.")
+    @info "Skipped function spaces inference tests. Not on Julia 1.12 or up."
 end
 
 end
