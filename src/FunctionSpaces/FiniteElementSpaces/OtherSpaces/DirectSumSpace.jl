@@ -92,14 +92,18 @@ end
 function get_basis_indices(space::DirectSumSpace, element_id::Int)
     basis_indices_per_component = ntuple(get_num_components(space)) do i
         return get_basis_indices(get_component_spaces(space)[i], element_id) .+
-               space.basis_offsets[i]
+               get_dof_offsets(space, i)
     end
 
-    return reduce(vcat, basis_indices_per_component)
+    return Base.typed_vcat(Int, basis_indices_per_component...)
 end
 
 function get_dof_offsets(space::DirectSumSpace)
     return space.basis_offsets
+end
+
+function get_dof_offsets(space::DirectSumSpace, component_id::Int)
+    return space.basis_offsets[component_id]
 end
 
 function get_max_local_dim(space::DirectSumSpace)

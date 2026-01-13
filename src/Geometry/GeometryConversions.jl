@@ -38,23 +38,3 @@ function merge_tuples(tup::NTuple{N, Any}, tups...) where {N}
     end
     return merge_tuples(merge_two_tuples(tup, first(tups)), Base.tail(tups)...)
 end
-
-# using Mantis
-# cart1 = Geometry.CartesianGeometry(LinRange(0.0, 1.0, 3))
-# cart2 = Geometry.CartesianGeometry([1.0, 2.0])
-# cart_12 = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), [1.0, 2.0]))
-# tp = Geometry.TensorProductGeometry((cart1, cart2))
-# result = convert(Geometry.CartesianGeometry, tp)
-
-# cartp2 = Geometry.CartesianGeometry((
-#     (LinRange(0.0, 1.0, 2), [1.0, 2.0]), (LinRange(0.0, 1.0, 2), [1.0, 2.0])
-# ))
-# cartp1 = Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 3),), (LinRange(0.0, 1.0, 4),)))
-# cartp3 = Geometry.CartesianGeometry((
-#     (LinRange(0.0, 1.0, 2), [1.0, 2.0], LinRange(0.0, 1.0, 3)),
-#     (LinRange(0.0, 1.0, 2), [1.0, 2.0], LinRange(0.0, 1.0, 3)),
-#     (LinRange(0.0, 1.0, 2), [1.0, 2.0], LinRange(0.0, 1.0, 4)),
-#     (LinRange(0.0, 1.0, 2), [1.0, 2.0], LinRange(0.0, 1.0, 4)),
-# ))
-# tp2 = Geometry.TensorProductGeometry((cartp2, cartp1))
-# result2 = convert(Geometry.CartesianGeometry, tp2)
