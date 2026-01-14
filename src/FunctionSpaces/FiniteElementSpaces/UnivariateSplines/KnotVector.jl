@@ -290,24 +290,20 @@ Compute the Greville points for the given knot vector.
 """
 function get_greville_points(knot_vector::KnotVector)
     p = knot_vector.polynomial_degree
-    n = sum(knot_vector.multiplicity) - p - 1
-    cm = cumsum(knot_vector.multiplicity)
-    greville_points = zeros(n)
-    breakpoints = get_breakpoints(knot_vector)
-    for i in eachindex(greville_points)
-        # Starting breakpoint index
-        id0 = findfirst(cm .>= i + 1)
-        id1 = findfirst(cm .>= i + p)
-        if id1 > id0
-            pt = breakpoints[id0] * (cm[id0] - i)
-            for j in (id0 + 1):(id1 - 1)
-                pt += breakpoints[j] * knot_vector.multiplicity[j]
-            end
-            pt += breakpoints[id1] * (i + p - cm[id1 - 1])
-        else
-            pt = breakpoints[id0] * p
+    num_knots = sum(get_multiplicity(knot_vector))
+    num_basis = num_knots - (p + 1)
+    greville_points = zeros(num_basis)
+    if p == 0
+        for i in eachindex(greville_points)
+            greville_points[i] =
+                (get_knot_value(knot_vector, i) + get_knot_value(knot_vector, i + 1)) / 2
         end
-        greville_points[i] = pt / p
+    else
+        for i in eachindex(greville_points)
+            greville_points[i] =
+                sum(get_knot_value(knot_vector, ii) for ii in (i + 1):(i + p)) / p
+        end
     end
+
     return (greville_points,)
 end
