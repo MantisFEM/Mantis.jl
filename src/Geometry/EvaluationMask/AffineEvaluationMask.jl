@@ -23,34 +23,38 @@ struct AffineEvaluationMask{manifold_dim, M, T, S} <: AbstractEvaluationMask{man
     element_id_map::M
     num_elements::Int
     num_elements_base::Int
-    translations::Vector{T}
-    scalings::Vector{S}
+    translations::T
+    scalings::S
+
     function AffineEvaluationMask(
+        manifold_dim::Int,
         num_elements::Int,
         num_elements_base::Int,
         element_id_map::M,
-        translations::Vector{T},
-        scalings::Vector{S},
-    ) where {
-        manifold_dim,
-        M <: AbstractVector{Int},
-        T <: NTuple{manifold_dim, Real},
-        S <: NTuple{manifold_dim, Real},
-    }
-        if length(translations) != num_elements
-            throw(
-                ArgumentError(
-                    "The number of translations must match the number of elements."
-                ),
-            )
-        end
+        translations::T,
+        scalings::S,
+    ) where {M <: Function, T <: Function, S <: Function}
+        return new{manifold_dim, M, T, S}(
+            element_id_map, num_elements, num_elements_base, translations, scalings
+        )
+    end
+end
 
-        if length(scalings) != num_elements
-            throw(
-                ArgumentError("The number of scalings must match the number of elements.")
-            )
-        end
-
+function AffineEvaluationMask(
+    num_elements::Int,
+    num_elements_base::Int,
+    element_id_map::M,
+    translations::T,
+    scalings::S,
+) where {
+    manifold_dim,
+    TT <: NTuple{manifold_dim, Real},
+    ST <: NTuple{manifold_dim, Real},
+    M <: Union{Function, AbstractVector{Int}},
+    T <: Union{Function, Vector{TT}},
+    S <: Union{Function, Vector{ST}},
+}
+    if !(M <: Function)
         if length(element_id_map) != num_elements
             throw(
                 ArgumentError(
@@ -59,10 +63,41 @@ struct AffineEvaluationMask{manifold_dim, M, T, S} <: AbstractEvaluationMask{man
             )
         end
 
-        return new{manifold_dim, M, T, S}(
-            element_id_map, num_elements, num_elements_base, translations, scalings
-        )
+        element_id_func(element_id::Int) = element_id_map[element_id]
+    else
+        element_id_func = element_id_map
     end
+
+    if !(T <: Function)
+        if length(translations) != num_elements
+            throw(
+                ArgumentError(
+                    "The number of translations must match the number of elements."
+                ),
+            )
+        end
+
+        translations_func(element_id::Int) = translations[element_id]
+    end
+
+    if !(S <: Function)
+        if length(scalings) != num_elements
+            throw(
+                ArgumentError("The number of scalings must match the number of elements.")
+            )
+        end
+
+        scalings_func(element_id::Int) = scalings[element_id]
+    end
+
+    return AffineEvaluationMask(
+        manifold_dim,
+        num_elements,
+        num_elements_base,
+        element_id_func,
+        translations_func,
+        scalings_func,
+    )
 end
 
 ############################################################################################
@@ -86,7 +121,7 @@ Get the base element index.
 - `element_id_base::Int`: The base element index.
 """
 function get_base_element(eval_mask::AffineEvaluationMask, element_id::Int)
-    return get_element_id_map(eval_mask)[element_id]
+    return get_element_id_map(eval_mask)(element_id)
 end
 
 """
@@ -102,7 +137,7 @@ Get the translation of the element.
 - `translation<:NTuple{manifold_dim, Real}`: The translation.
 """
 function get_translation(eval_mask::AffineEvaluationMask, element_id::Int)
-    return get_translations(eval_mask)[element_id]
+    return get_translations(eval_mask)(element_id)
 end
 
 """
@@ -134,7 +169,7 @@ Get the scaling of the element.
 - `scaling<:NTuple{manifold_dim, Real}`: The scaling.
 """
 function get_scaling(eval_mask::AffineEvaluationMask, element_id::Int)
-    return get_scalings(eval_mask)[element_id]
+    return get_scalings(eval_mask)(element_id)
 end
 
 ############################################################################################
@@ -209,27 +244,37 @@ Compose two evaluation maskes.
 the evaluation elements are nested inside the base elements of the second evaluation mask.
 """
 function compose_evaluation_masks(
-    eval_mask_1::AffineEvaluationMask{manifold_dim, num_elements, num_elements_base_1},
-    eval_mask_2::AffineEvaluationMask{
-        manifold_dim, num_elements_base_1, num_elements_base_2
-    },
-) where {manifold_dim, num_elements, num_elements_base_1, num_elements_base_2}
+    eval_mask_1::AffineEvaluationMask{manifold_dim},
+    eval_mask_2::AffineEvaluationMask{manifold_dim},
+) where {manifold_dim}
+    num_elements_1 = get_num_elements(eval_mask_1)
+    num_elements_base_1 = get_num_elements_base(eval_mask_1)
+    num_elements_2 = get_num_elements(eval_mask_2)
+    num_elements_base_2 = get_num_elements_base(eval_mask_2)
+    if num_elements_base_1 != num_elements_2
+        msg =
+            "The number of base elements in the first mask should match " *
+            "the total number of elements in the second mask. " *
+            "The given numbers were $(num_elements_base_1) and $(num_elements_2)."
+        throw(ArgumentError(msg))
+    end
+
     element_id_map = [
         get_base_element(eval_mask_2, get_base_element(eval_mask_1, i)) for
-        i in 1:num_elements
+        i in 1:num_elements_1
     ]
     scalings = [
         get_scaling(eval_mask_2, get_base_element(eval_mask_1, i)) .*
-        get_scaling(eval_mask_1, i) for i in 1:num_elements
+        get_scaling(eval_mask_1, i) for i in 1:num_elements_1
     ]
     translations = [
         get_translation(eval_mask_2, get_base_element(eval_mask_1, i)) .+
         get_scaling(eval_mask_2, get_base_element(eval_mask_1, i)) .*
-        get_translation(eval_mask_1, i) for i in 1:num_elements
+        get_translation(eval_mask_1, i) for i in 1:num_elements_1
     ]
 
     return AffineEvaluationMask(
-        num_elements, num_elements_base_2, element_id_map, translations, scalings
+        num_elements_1, num_elements_base_2, element_id_map, translations, scalings
     )
 end
 
@@ -246,14 +291,12 @@ Create a trivial evaluation mask.
 - `eval_mask::AffineEvaluationMask`: The trivial evaluation mask.
 """
 function trivial_evaluation_mask(manifold_dim::Int, num_elements::Int)
-    element_id_map = 1:num_elements
-    zero_tup = ntuple(_ -> 0, manifold_dim)
-    one_tup = ntuple(_ -> 1, manifold_dim)
-    translations = [zero_tup for _ in 1:num_elements]
-    scalings = [one_tup for _ in 1:num_elements]
+    element_id_map(element_id) = element_id
+    translations(_) = ntuple(_ -> 0, manifold_dim)
+    scalings(_) = ntuple(_ -> 1, manifold_dim)
 
     return AffineEvaluationMask(
-        num_elements, num_elements, element_id_map, translations, scalings
+        manifold_dim, num_elements, num_elements, element_id_map, translations, scalings
     )
 end
 
