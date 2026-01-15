@@ -209,6 +209,20 @@ function transform_evaluation_points(
     return element_id_base, xi_base, scaling
 end
 
+function transform_element_vertices(
+    eval_mask::AffineEvaluationMask{manifold_dim},
+    element_vertices_base::NTuple{manifold_dim, T},
+    element_id::Int,
+) where {manifold_dim, T <: AbstractVector}
+    translation = get_translation(eval_mask, element_id)
+    scaling = get_scaling(eval_mask, element_id)
+    element_vertices = ntuple(
+        dim -> element_vertices_base[dim] .* scaling[dim] .+ translation[dim], manifold_dim
+    )
+
+    return element_vertices
+end
+
 """
     get_element_ids(eval_mask::AffineEvaluationMask, element_id_base::Int)
 

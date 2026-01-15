@@ -86,5 +86,37 @@ function transform_evaluation_points(
     return throw(MethodError(transform_evaluation_points, (eval_mask, element_id, xi)))
 end
 
+"""
+	transform_element_vertices(
+	    eval_mask::AbstractEvaluationMask{manifold_dim},
+	    element_vertices_base::NTuple{T},
+	    element_id::Int,
+	) where {manifold_dim, T <: AbstractVector}
+
+Transforms the `element_vertices_base`, corresponding to the element vertices at the base
+element of `element_id`, according to the transformation of `eval_mask`.
+
+# Arguments
+- `eval_mask::AbstractEvaluationMask{manifold_dim}`: The evaluation mask.
+- `element_vertices_base::NTuple{T}`: The element vertices of the base geometry, evaluated
+	at the base element corresponding to `element_id`.
+- `element_id::Int`: The element of evaluation mask.
+
+# Returns
+- `element_vertices::NTuple{T}`: The transformed element vertices corresponding to
+	`element_id`.
+"""
+function transform_element_vertices(
+    eval_mask::AbstractEvaluationMask{manifold_dim},
+    element_vertices_base::NTuple{T},
+    element_id::Int,
+) where {manifold_dim, T <: AbstractVector}
+    return throw(
+        MethodError(
+            transform_element_vertices, (eval_mask, element_vertices_base, element_id)
+        ),
+    )
+end
+
 include("./AffineEvaluationMask.jl")
 include("./EvaluationMaskHelpers.jl")

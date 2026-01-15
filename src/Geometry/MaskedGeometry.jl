@@ -69,17 +69,13 @@ end
 function get_element_vertices(
     geometry::MaskedGeometry{manifold_dim}, element_id::Int
 ) where {manifold_dim}
-    element_id_base = get_base_element(get_evaluation_mask(geometry), element_id)
-    translation = get_translation(geometry, element_id)
-    scaling = get_scaling(geometry, element_id)
+    eval_mask = get_evaluation_mask(geometry)
+    element_id_base = get_base_element(eval_mask, element_id)
     element_vertices_base = get_element_vertices(
         get_base_geometry(geometry), element_id_base
     )
-    element_vertices = ntuple(
-        dim -> element_vertices_base[dim] .* scaling[dim] .+ translation[dim], manifold_dim
-    )
 
-    return element_vertices
+    return transform_element_vertices(eval_mask, element_vertices_base, element_id)
 end
 
 ############################################################################################
