@@ -7,11 +7,17 @@ assignees: ''
 
 ---
 
+
+**First checks**
+1. Make sure the bug is from the `Mantis` code and not other modifications.
+2. Check the open issues to see if someone else has already spotted the same bug.
+
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+1. A clear and concise description of what the bug is.
+2. Prints of the output you obtain.
 
 **To Reproduce**
 Steps to reproduce the behaviour:
