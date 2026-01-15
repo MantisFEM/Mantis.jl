@@ -300,28 +300,10 @@ function get_support(space::BSplineSpace, basis_id::Int)
     return collect(first_element:last_element)
 end
 
-function get_local_knot_vector(space::BSplineSpace, basis_idx::Int)
+function get_local_knot_vector(space::BSplineSpace, basis_id::Int)
     knot_vector = get_knot_vector(space)
-    deg = get_polynomial_degree(space)
 
-    knot_cum_sum = cumsum(get_multiplicity(knot_vector))
-
-    first_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_idx)
-    last_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_idx + deg + 1)
-
-    first_knot_mult = knot_cum_sum[first_breakpoint_idx] - basis_idx + 1
-    last_knot_mult = basis_idx + deg + 1 - knot_cum_sum[last_breakpoint_idx - 1]
-
-    geometry = Geometry.CartesianGeometry(
-        get_breakpoints(space)[first_breakpoint_idx:last_breakpoint_idx]
-    )
-    multiplicity = vcat(
-        first_knot_mult,
-        get_multiplicity(knot_vector)[(first_breakpoint_idx + 1):(last_breakpoint_idx - 1)],
-        last_knot_mult,
-    )
-
-    return KnotVector(geometry, deg, multiplicity)
+    return get_local_knot_vector(knot_vector, basis_id)
 end
 
 function get_max_local_dim(space::BSplineSpace)
@@ -330,6 +312,10 @@ end
 
 function get_greville_points(space::BSplineSpace)
     return get_greville_points(get_knot_vector(space))
+end
+
+function get_breakpoints(space::BSplineSpace)
+    return get_breakpoints(get_knot_vector(space))
 end
 
 function assemble_global_extraction_matrix(space::BSplineSpace)

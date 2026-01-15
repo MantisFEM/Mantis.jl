@@ -1,6 +1,3 @@
-# Specialisations for b-spline tensor product spaces. For the definition of b-spline spaces,
-# see the `BSplines.jl`-file in the `UnivariateSplines`-directory.
-
 """
     get_greville_points(space::TensorProductSpace{manifold_dim, T}) where {
         manifold_dim, num_spaces, T <: NTuple{num_spaces, BSplineSpace}
@@ -9,15 +6,15 @@
 Compute the Greville points for a `TensorProductSpace` composed of `BSplineSpace`s.
 
 # Arguments
-- `space::TensorProductSpace{manifold_dim, T}`: The tensor product space containing
-    `BSplineSpace`s.
+- `space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T}`:
+    The tensor product space containing `BSplineSpace`s.
 
 # Returns
 - `::NTuple{manifold_dim, Vector{Float64}}`: A tuple of vectors containing the Greville
     points for each dimension of the tensor product space.
 """
 function get_greville_points(
-    space::TensorProductSpace{manifold_dim, num_components, num_patches, T}
+    space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T}
 ) where {
     manifold_dim,
     num_components,
@@ -35,5 +32,5 @@ function get_greville_points(
         end
     end
 
-    return tuple(greville_points...)
+    return Tuple(greville_points)
 end

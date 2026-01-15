@@ -266,15 +266,22 @@ Returns the local knot vector necessary to characterize the B-spline identified 
 - `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
 """
 function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
-    local_idx =
-        get_breakpoint_index(knot_vector, basis_id):get_breakpoint_index(
-            knot_vector, basis_id + knot_vector.polynomial_degree + 1
-        )
+    deg = get_polynomial_degree(knot_vector)
+    knot_cum_sum = cumsum(get_multiplicity(knot_vector))
+    first_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_id)
+    last_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_id + deg + 1)
+    first_knot_mult = knot_cum_sum[first_breakpoint_idx] - basis_id + 1
+    last_knot_mult = basis_id + deg + 1 - knot_cum_sum[last_breakpoint_idx - 1]
+    geometry = Geometry.CartesianGeometry(
+        get_breakpoints(knot_vector)[first_breakpoint_idx:last_breakpoint_idx]
+    )
+    multiplicity = vcat(
+        first_knot_mult,
+        get_multiplicity(knot_vector)[(first_breakpoint_idx + 1):(last_breakpoint_idx - 1)],
+        last_knot_mult,
+    )
 
-    local_geometry = Geometry.CartesianGeometry(get_breakpoints(knot_vector)[local_idx])
-    local_multiplicity = knot_vector.multiplicity[local_idx]
-
-    return KnotVector(local_geometry, knot_vector.polynomial_degree, local_multiplicity)
+    return KnotVector(geometry, deg, multiplicity)
 end
 
 """
@@ -289,7 +296,7 @@ Compute the Greville points for the given knot vector.
 - `::Tuple{Vector{Float64}}`: Vector of Greville points.
 """
 function get_greville_points(knot_vector::KnotVector)
-    p = knot_vector.polynomial_degree
+    p = get_polynomial_degree(knot_vector)
     num_knots = sum(get_multiplicity(knot_vector))
     num_basis = num_knots - (p + 1)
     greville_points = zeros(num_basis)
