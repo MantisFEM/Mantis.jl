@@ -308,6 +308,13 @@ answers_TP_B1B1 = (
 basic_tests(TP_B1B1, answers_TP_B1B1, 1, 1)
 
 # General methods that should error
-@test_throws FieldError FunctionSpaces.get_extraction_operator(TP_B1_a)
+# Since v1.12, accessing a non-defined field will return a FieldError. In earlier versions
+# this was an ErrorException, so we have to account for that in (CI) testing.
+@static if Base.VERSION >= v"1.12"
+    const fielderror = FieldError
+else
+    const fielderror = ErrorException
+end
+@test_throws fielderror FunctionSpaces.get_extraction_operator(TP_B1_a)
 
 end
