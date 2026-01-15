@@ -225,7 +225,7 @@ B_2D = FunctionSpaces.create_bspline_space(
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰_2D = Forms.FormSpace(0, geometry_2D, B_2D, "label")
+Λ⁰_2D = Forms.FormSpace(0, geometry_2D, B_2D, "ϕ")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a
@@ -264,17 +264,160 @@ A_2D, b_2D = Assemblers.assemble(weak_form_2D, bc_2D)
 sol_2D = vec(A_2D \ b_2D)
 ϕ⁰_2D = Forms.build_form_field(Λ⁰_2D, sol_2D)
 
-# We can now plot the solution using the `plot` function. This will write the output to a
-# VTK file that can be visualized using a VTK viewer, such as Paraview.
-data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
-output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p_2D))D.vtu"
-output_file = joinpath(output_data_folder, output_filename_2D)
-Plot.plot(
-    ϕ⁰_2D;
-    vtk_filename=output_file,
-    n_subcells=1,
-    degree=maximum(p),
-    ascii=false,
-    compress=false,
+# Knowing the exact solutions, we can compute the ``L^2``-error.
+function exact_solution_2D(x::Matrix{Float64})
+    return [@. sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2])]
+end
+ϕ⁰_exact_2D = Forms.AnalyticalFormField(0, exact_solution_2D, geometry_2D, "ϕ_exact")
+
+canonical_qrule_2D_analysis = Quadrature.tensor_product_rule(
+    3 .* p_2D .+ 1, Quadrature.gauss_legendre
 )
+dΩ_2D_analysis = Quadrature.StandardQuadrature(
+    canonical_qrule_2D_analysis, Geometry.get_num_elements(geometry_2D)
+)
+
+println("L2 error: ", Analysis.L2_norm(ϕ⁰_2D - ϕ⁰_exact_2D, dΩ_2D_analysis))
+
+# We can also write the output to a VTK file that can be visualized using a VTK viewer, such
+# as Paraview. Note that we export both the computed and exact solutions.
+output_filename_2D = "Biharmonic-0form-Homogeneous-Cartesian-$(length(p_2D))D"
+Mantis.Plot.export_form_fields_to_vtk(
+    (ϕ⁰_2D, ϕ⁰_exact_2D),
+    output_filename_2D;
+    output_directory_tree=["examples", "data", "output", "Biharmonic"],
+)
+
+# ### The 2D case on a more complicated geometry.
+
+# If we want to use a different geometry instead, we create the new geometry and reuse all
+# other code.
+
+geometry_2D_curv = Geometry.create_curvilinear_square(
+    starting_point_2D, box_size_2D, num_elements_2D;
+)
+
+Λ⁰_2D_curv = Forms.FormSpace(0, geometry_2D_curv, B_2D, "ϕ")
+
+f⁰_2D_curv = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D_curv, "f⁰")
+
+dΩ_2D_curv = Quadrature.StandardQuadrature(
+    canonical_qrule_2D, Geometry.get_num_elements(geometry_2D_curv)
+)
+
+wfi_2D_curv = Assemblers.WeakFormInputs(Λ⁰_2D_curv, f⁰_2D_curv)
+
+bc_2D_curv = Forms.set_dirichlet_boundary_conditions(Λ⁰_2D_curv, 0.0)
+
+lhs_expressions_2D_curv, rhs_expressions_2D_curv = zero_form_biharmonic(
+    wfi_2D_curv, dΩ_2D_curv
+)
+weak_form_2D_curv = Assemblers.WeakForm(
+    lhs_expressions_2D_curv, rhs_expressions_2D_curv, wfi_2D_curv
+)
+A_2D_curv, b_2D_curv = Assemblers.assemble(weak_form_2D_curv, bc_2D_curv)
+sol_2D_curv = vec(A_2D_curv \ b_2D_curv)
+ϕ⁰_2D_curv = Forms.build_form_field(Λ⁰_2D_curv, sol_2D_curv)
+
+ϕ⁰_exact_2D_curv = Forms.AnalyticalFormField(
+    0, exact_solution_2D, geometry_2D_curv, "ϕ_exact_curv"
+)
+
+dΩ_2D_analysis_curv = Quadrature.StandardQuadrature(
+    canonical_qrule_2D_analysis, Geometry.get_num_elements(geometry_2D_curv)
+)
+
+println("L2 error: ", Analysis.L2_norm(ϕ⁰_2D_curv - ϕ⁰_exact_2D_curv, dΩ_2D_analysis_curv))
+
+output_filename_2D_curv = "Biharmonic-0form-Homogeneous-Curvilinear-$(length(p_2D))D"
+Mantis.Plot.export_form_fields_to_vtk(
+    (ϕ⁰_2D_curv, ϕ⁰_exact_2D_curv),
+    output_filename_2D_curv;
+    output_directory_tree=["examples", "data", "output", "Biharmonic"],
+)
+
+# ### Convergence studies for the 2D case.
+
+# One way to obtain some confirmation that these results are what we expect, we can compute
+# the error on finer and finer meshes. To start, we create a function that will create all
+# objects based on the geometry that we provide, and that will compute the error using the
+# given geometry.
+
+function compute_error_biharmonic(geometry, function_space)
+    Λ⁰_2D = Forms.FormSpace(0, geometry, function_space, "ϕ")
+
+    f⁰_2D = Forms.AnalyticalFormField(0, forcing_function_2D, geometry, "f⁰")
+
+    dΩ_2D = Quadrature.StandardQuadrature(
+        canonical_qrule_2D, Geometry.get_num_elements(geometry)
+    )
+
+    wfi_2D = Assemblers.WeakFormInputs(Λ⁰_2D, f⁰_2D)
+
+    bc_2D = Forms.set_dirichlet_boundary_conditions(Λ⁰_2D, 0.0)
+
+    lhs_expressions_2D, rhs_expressions_2D = zero_form_biharmonic(wfi_2D, dΩ_2D)
+    weak_form_2D = Assemblers.WeakForm(lhs_expressions_2D, rhs_expressions_2D, wfi_2D)
+    A_2D, b_2D = Assemblers.assemble(weak_form_2D, bc_2D)
+    sol_2D = vec(A_2D \ b_2D)
+    ϕ⁰_2D = Forms.build_form_field(Λ⁰_2D, sol_2D)
+
+    ϕ⁰_exact_2D = Forms.AnalyticalFormField(0, exact_solution_2D, geometry, "ϕ_exact")
+
+    dΩ_2D_analysis = Quadrature.StandardQuadrature(
+        canonical_qrule_2D_analysis, Geometry.get_num_elements(geometry)
+    )
+
+    return Analysis.L2_norm(ϕ⁰_2D - ϕ⁰_exact_2D, dΩ_2D_analysis)
+end
+
+# Then, we create a loop to build geometries with increasingly many elements and to compute
+# the biharmonic equation with them.
+num_elements_study = [(4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
+h = Vector{Float64}(undef, length(num_elements_study))
+errors_cartesian = Vector{Float64}(undef, length(num_elements_study))
+errors_curvilinear = Vector{Float64}(undef, length(num_elements_study))
+for i in eachindex(num_elements_study)
+    geo_cartesian = Geometry.create_cartesian_box(
+        starting_point_2D, box_size_2D, num_elements_study[i]
+    )
+    geo_curvilinear = Geometry.create_curvilinear_square(
+        starting_point_2D, box_size_2D, num_elements_study[i]
+    )
+    space = FunctionSpaces.create_bspline_space(
+        starting_point_2D, box_size_2D, num_elements_study[i], p_2D, k_2D
+    )
+
+    h[i] = box_size_2D[1] / num_elements_study[i][1]
+    errors_cartesian[i] = compute_error_biharmonic(geo_cartesian, space)
+    errors_curvilinear[i] = compute_error_biharmonic(geo_curvilinear, space)
+end
+
+# We can then plot the results using GLMakie
+
+using GLMakie
+fig2 = Figure(; size=(900, 600))
+ax2 = Axis(
+    fig2[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
+)
+
+scatterlines!(
+    ax2,
+    h,
+    errors_curvilinear;
+    label="Curvilinear",
+    color=:blue,
+    marker=:rect,
+    markersize=10,
+)
+C = errors_curvilinear[3] / (h[3]^4)
+lines!(ax2, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
+
+scatterlines!(
+    ax2, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
+)
+C2 = errors_cartesian[3] / (h[3]^4)
+lines!(ax2, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
+
+fig2[1, 2] = Legend(fig2, ax2)
+fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
