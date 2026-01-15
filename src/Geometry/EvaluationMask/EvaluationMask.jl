@@ -108,9 +108,9 @@ element of `element_id`, according to the transformation of `eval_mask`.
 """
 function transform_element_vertices(
     eval_mask::AbstractEvaluationMask{manifold_dim},
-    element_vertices_base::NTuple{manifold_dim, T},
+	element_vertices_base::NTuple{manifold_dim, NTuple{2, T}},
     element_id::Int,
-) where {manifold_dim, T <: AbstractVector}
+) where {manifold_dim, T <: Real}
     return throw(
         MethodError(
             transform_element_vertices, (eval_mask, element_vertices_base, element_id)

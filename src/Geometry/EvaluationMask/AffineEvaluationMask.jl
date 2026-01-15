@@ -211,9 +211,9 @@ end
 
 function transform_element_vertices(
     eval_mask::AffineEvaluationMask{manifold_dim},
-    element_vertices_base::NTuple{manifold_dim, T},
+    element_vertices_base::NTuple{manifold_dim, NTuple{2, T}},
     element_id::Int,
-) where {manifold_dim, T <: AbstractVector}
+) where {manifold_dim, T <: Real}
     translation = get_translation(eval_mask, element_id)
     scaling = get_scaling(eval_mask, element_id)
     element_vertices = ntuple(
