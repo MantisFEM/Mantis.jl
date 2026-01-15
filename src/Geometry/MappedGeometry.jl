@@ -3,7 +3,6 @@ abstract type AbstractMapping{manifold_dim, image_dim} end
 
 struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
        AbstractMapping{manifold_dim, image_dim}
-    dimensions::NTuple{2, Int}
     mapping::M
     dmapping::dM
     ddmapping::ddM
@@ -11,9 +10,7 @@ struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
     function Mapping(
         dimensions::NTuple{2, Int}, mapping::M, dmapping::dM, ddmapping::ddM=nothing
     ) where {M <: Function, dM <: Function, ddM <: Union{Nothing, Function}}
-        return new{dimensions[1], dimensions[2], M, dM, ddM}(
-            dimensions, mapping, dmapping, ddmapping
-        )
+        return new{dimensions[1], dimensions[2], M, dM, ddM}(mapping, dmapping, ddmapping)
     end
 
     function Mapping(
@@ -29,9 +26,7 @@ struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
         dM <: Function,
         ddM <: Union{Nothing, Function},
     }
-        return new{manifold_dim, image_dim, M, dM, ddM}(
-            dimensions, mapping, dmapping, ddmapping
-        )
+        return new{manifold_dim, image_dim, M, dM, ddM}(mapping, dmapping, ddmapping)
     end
 end
 
