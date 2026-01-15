@@ -593,9 +593,17 @@ function get_extraction_coefficients(
     # The permutations of the constituent spaces should be combined if we allow for more
     # than one component.
     extraction_per_space = get_constituent_extraction(space, element_id)
-    extraction_coeffs = kron(
-        (extraction_per_space[space][1] for space in num_spaces:-1:1)...
-    )
+    if num_spaces == 1
+        extraction_coeffs = extraction_per_space[1][1]
+    elseif all([
+        typeof(eps[1]) <: LinearAlgebra.UniformScaling for eps in extraction_per_space
+    ])
+        extraction_coeffs = LinearAlgebra.I
+    else
+        extraction_coeffs = kron(
+            (extraction_per_space[space_id][1] for space_id in num_spaces:-1:1)...
+        )
+    end
 
     return extraction_coeffs
 end
@@ -605,9 +613,13 @@ function get_extraction(
     element_id::Int,
     component_id::Int=1,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    extraction_coeffs = get_extraction_coefficients(space, element_id, component_id)
-
-    return extraction_coeffs, 1:size(extraction_coeffs, 2)
+    # We cannot call size on the extraction coefficients intead of get_basis_permutation
+    # because some extraction coefficients are LinearAlgebra.UniformScaling (the identity),
+    # for which size is not defined.
+    return (
+        get_extraction_coefficients(space, element_id, component_id),
+        get_basis_permutation(space, element_id, component_id),
+    )
 end
 
 function get_basis_permutation(

@@ -3,7 +3,7 @@ module GeometryInferenceTests
 import Pkg
 
 using Mantis
-
+using Memoization
 using Test
 
 # We need JET for the tests in this file, but JET does not always work for every julia
@@ -26,6 +26,16 @@ end
         # Single-patch, multi-element, 1D, Cartesian, degree 6 maximally smooth BSplines.
         geometry1multi = Geometry.CartesianGeometry((LinRange(-0.34, 1.56, 26),))
         B1multi = FunctionSpaces.BSplineSpace(geometry1multi, 6, 5)
+        # Single-patch, multi-element, 1D, Cartesian, different Section Spaces.
+        B1LL = FunctionSpaces.BSplineSpace(
+            geometry1, geometry1multi, FunctionSpaces.LobattoLegendre(1), fill(-1, 26)
+        )
+        B1GL = FunctionSpaces.BSplineSpace(
+            geometry1, geometry1multi, FunctionSpaces.GaussLegendre(1), fill(-1, 26)
+        )
+        B1ELL = FunctionSpaces.BSplineSpace(
+            geometry1, geometry1multi, FunctionSpaces.EdgeLobattoLegendre(1), fill(-1, 26)
+        )
 
         # Rational
         R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])
@@ -51,6 +61,9 @@ end
         const spaces = (
             B1,
             B1multi,
+            B1LL,
+            B1GL,
+            B1ELL,
             R1,
             TP_B1,
             TP_B1m,
@@ -72,7 +85,7 @@ end
 
         const element_id = 1
         const component_id = 1
-        const nderivatives = 2
+        const nderivatives = 1
         const basis_id = 4
 
         foreach(spaces) do space
@@ -82,7 +95,7 @@ end
             @test_opt FunctionSpaces.get_num_components(space)
             @test_opt FunctionSpaces.get_num_patches(space)
 
-            # Methods with have a general fallback.
+            # Methods which have a general fallback (can be an error fallback).
             @test_opt FunctionSpaces.get_component_spaces(space)
             @test_opt FunctionSpaces.get_extraction_operator(space)
             @test_opt FunctionSpaces.get_extraction(space, element_id, component_id)
@@ -131,28 +144,28 @@ end
                 @test_opt FunctionSpaces.get_constituent_element_lengths(space, element_id)
 
                 if FunctionSpaces.get_manifold_dim(space) == 1
-                    # @test_opt FunctionSpaces.get_constituent_local_basis(
-                    #     space, element_id, xi_1D, nderivatives
-                    # )
-                    # @test_opt FunctionSpaces.get_constituent_evaluations(
-                    #     space, element_id, xi_1D, nderivatives
-                    # )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+                        space, element_id, xi_1D, nderivatives
+                    )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+                        space, element_id, xi_1D, nderivatives
+                    )
                     @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_1D)
                 elseif FunctionSpaces.get_manifold_dim(space) == 2
-                    # @test_opt FunctionSpaces.get_constituent_local_basis(
-                    #     space, element_id, xi_2D, nderivatives
-                    # )
-                    # @test_opt FunctionSpaces.get_constituent_evaluations(
-                    #     space, element_id, xi_2D, nderivatives
-                    # )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+                        space, element_id, xi_2D, nderivatives
+                    )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+                        space, element_id, xi_2D, nderivatives
+                    )
                     @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_2D)
                 elseif FunctionSpaces.get_manifold_dim(space) == 3
-                    # @test_opt FunctionSpaces.get_constituent_local_basis(
-                    #     space, element_id, xi_3D, nderivatives
-                    # )
-                    # @test_opt FunctionSpaces.get_constituent_evaluations(
-                    #     space, element_id, xi_3D, nderivatives
-                    # )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+                        space, element_id, xi_3D, nderivatives
+                    )
+                    @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+                        space, element_id, xi_3D, nderivatives
+                    )
                     @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_3D)
                 end
 
@@ -164,21 +177,51 @@ end
                 println("No methods specific to ", typeof(space), ".")
             end
 
-            # if FunctionSpaces.get_manifold_dim(space) == 1
-            #     @test_opt FunctionSpaces.get_local_basis(
-            #         space, element_id, xi_1D, nderivatives
-            #     )
-            #     @test_opt FunctionSpaces.evaluate(space, element_id, xi_1D, nderivatives)
-            #     @test_opt FunctionSpaces.evaluate(
-            #         space,
-            #         element_id,
-            #         xi_1D,
-            #         nderivatives,
-            #         ones(FunctionSpaces.get_num_basis(space)),
-            #     )
-            # else
-            #     @warn "FunctionSpacesInference: This space was not tested: $(space)"
-            # end
+            if FunctionSpaces.get_manifold_dim(space) == 1
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_local_basis(
+                    space, element_id, xi_1D, nderivatives, component_id
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space, element_id, xi_1D, nderivatives
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space,
+                    element_id,
+                    xi_1D,
+                    nderivatives,
+                    ones(FunctionSpaces.get_num_basis(space)),
+                )
+            elseif FunctionSpaces.get_manifold_dim(space) == 2
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_local_basis(
+                    space, element_id, xi_2D, nderivatives, component_id
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space, element_id, xi_2D, nderivatives
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space,
+                    element_id,
+                    xi_2D,
+                    nderivatives,
+                    ones(FunctionSpaces.get_num_basis(space)),
+                )
+            elseif FunctionSpaces.get_manifold_dim(space) == 3
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_local_basis(
+                    space, element_id, xi_3D, nderivatives, component_id
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space, element_id, xi_3D, nderivatives
+                )
+                @test_opt ignored_modules = (Memoization,) FunctionSpaces.evaluate(
+                    space,
+                    element_id,
+                    xi_3D,
+                    nderivatives,
+                    ones(FunctionSpaces.get_num_basis(space)),
+                )
+            else
+                @warn "FunctionSpacesInference: This space was not tested: $(space)"
+            end
         end
 
     else

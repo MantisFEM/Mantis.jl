@@ -5,7 +5,7 @@ Tests for tensor-product spline spaces.
 """
 
 using Mantis
-
+using LinearAlgebra
 using Test
 
 ###
@@ -129,5 +129,185 @@ for el in 1:1:FunctionSpaces.get_num_elements(TP)
     # Partition of unity
     @test all(isapprox.(sum(TP_eval[1][1][1]; dims=2), 1.0))
 end
+
+# Constructor, property, and getters and setters tests -------------------------------------
+function basic_tests(space, answers, element_id=1, component_id=1)
+    @test FunctionSpaces.get_manifold_dim(space) == answers[1]
+    @test FunctionSpaces.get_num_components(space) == answers[2]
+    @test FunctionSpaces.get_num_patches(space) == answers[3]
+
+    @test all(FunctionSpaces.get_component_spaces(space) .== answers[4])
+    @test FunctionSpaces.get_extraction(space, element_id, component_id) == answers[5]
+    @test FunctionSpaces.get_extraction_coefficients(space, element_id, component_id) ==
+        answers[6]
+    @test FunctionSpaces.get_basis_indices(space, element_id) == answers[7]
+    @test FunctionSpaces.get_basis_permutation(space, element_id, component_id) ==
+        answers[8]
+    @test FunctionSpaces.get_num_basis(space) == answers[9]
+    @test FunctionSpaces.get_num_basis(space, element_id) == answers[10]
+    @test FunctionSpaces.get_dof_partition(space) == answers[11]
+    @test FunctionSpaces.get_max_local_dim(space) == answers[12]
+    @test FunctionSpaces.get_geometry(space) == answers[13]
+    @test FunctionSpaces.get_parametric_geometry(space) == answers[14]
+
+    return nothing
+end
+
+# Reduction test, single-patch, single element, 1D, Cartesian, degree 0 BSplines.
+geometry1 = Geometry.CartesianGeometry(([-1, 1],))
+B0 = FunctionSpaces.BSplineSpace(
+    geometry1, geometry1, FunctionSpaces.Bernstein(0), [-1, -1], 0, 0
+)
+TP_B0 = FunctionSpaces.TensorProductSpace((B0,))
+answers_0 = (
+    1,
+    1,
+    1,
+    (TP_B0,),
+    FunctionSpaces.get_extraction(B0, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B0, 1, 1),
+    [1],
+    1:1,
+    1,
+    1,
+    [[[], [1], []]],
+    1,
+    Geometry.TensorProductGeometry((geometry1,)),
+    Geometry.TensorProductGeometry((geometry1,)),
+)
+basic_tests(TP_B0, answers_0)
+
+# Reduction test, single-patch, single element, 1D, Cartesian, degree 1 BSplines.
+B1 = FunctionSpaces.BSplineSpace(
+    geometry1, geometry1, FunctionSpaces.Bernstein(1), [-1, -1], 1, 1
+)
+TP_B1_a = FunctionSpaces.TensorProductSpace((B1,))
+answers_1a = (
+    1,
+    1,
+    1,
+    (TP_B1_a,),
+    FunctionSpaces.get_extraction(B1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1, 1),
+    [1, 2],
+    1:2,
+    2,
+    2,
+    [[[1], [], [2]]],
+    2,
+    Geometry.TensorProductGeometry((geometry1,)),
+    Geometry.TensorProductGeometry((geometry1,)),
+)
+basic_tests(TP_B1_a, answers_1a)
+
+# Reduction test, single-patch, single element, 1D, TensorProduct, degree 1 BSplines.
+TP_B1_b = FunctionSpaces.TensorProductSpace((B1,), Geometry.CartesianGeometry)
+answers_1b = (
+    1,
+    1,
+    1,
+    (TP_B1_b,),
+    FunctionSpaces.get_extraction(B1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1, 1),
+    [1, 2],
+    1:2,
+    2,
+    2,
+    [[[1], [], [2]]],
+    2,
+    geometry1,
+    geometry1,
+)
+basic_tests(TP_B1_b, answers_1b)
+
+# Reduction test, single-patch, single element, 1D, Cartesian, degree 3 Lagrange.
+L3 = FunctionSpaces.BSplineSpace(
+    geometry1, geometry1, FunctionSpaces.LobattoLegendre(3), [-1, -1]
+)
+TP_L3 = FunctionSpaces.TensorProductSpace((L3,))
+answers_L3 = (
+    1,
+    1,
+    1,
+    (TP_L3,),
+    FunctionSpaces.get_extraction(L3, 1, 1),
+    LinearAlgebra.I,
+    [1, 2, 3, 4], # basis indices on element_id
+    1:4, # basis permutation on element_id
+    4, # total num basis
+    4, # num basis on element_id
+    [[[1], [2, 3], [4]]], # dof partition
+    4, # max local dim
+    Geometry.TensorProductGeometry((geometry1,)),
+    Geometry.TensorProductGeometry((geometry1,)),
+)
+basic_tests(TP_L3, answers_L3)
+
+# Single-patch, multi-element, 1D, TensorProduct, degree 4 BSplines.
+geometry2 = Geometry.CartesianGeometry(([-1, -0.9, -0.2, 0.1, 0.3, 0.85, 1],))
+Bmulti = FunctionSpaces.BSplineSpace(
+    geometry2, geometry2, FunctionSpaces.Bernstein(4), [-1, 3, 3, 3, 3, 2, -1], 1, 1
+)
+TP_Bmulti = FunctionSpaces.TensorProductSpace((Bmulti,))
+answers_TP_Bmulti = (
+    1,
+    1,
+    1,
+    (TP_Bmulti,),
+    FunctionSpaces.get_extraction(Bmulti, 3, 1),
+    FunctionSpaces.get_extraction_coefficients(Bmulti, 3, 1),
+    [3, 4, 5, 6, 7], # basis indices on element_id
+    1:5, # basis permutation on element_id
+    11, # total num basis
+    5, # num basis on element_id
+    [[[1], [2, 3, 4, 5, 6, 7, 8, 9, 10], [11]]], # dof partition
+    5, # max local dim
+    Geometry.TensorProductGeometry((geometry2,)),
+    Geometry.TensorProductGeometry((geometry2,)),
+)
+basic_tests(TP_Bmulti, answers_TP_Bmulti, 3, 1)
+
+# Reduction test, single-patch, single element, 2D, TensorProduct, degree 0 BSplines.
+TP_B0B0 = FunctionSpaces.TensorProductSpace((B0, B0))
+answers_TP_B0B0 = (
+    2,
+    1,
+    1,
+    (TP_B0B0,),
+    (LinearAlgebra.I, 1:1),
+    LinearAlgebra.I,
+    [1], # basis indices on element_id
+    1:1, # basis permutation on element_id
+    1, # total num basis
+    1, # num basis on element_id
+    [[[], [], [], [], [1], [], [], [], []]], # dof partition
+    1, # max local dim
+    Geometry.TensorProductGeometry((geometry1, geometry1)),
+    Geometry.TensorProductGeometry((geometry1, geometry1)),
+)
+basic_tests(TP_B0B0, answers_TP_B0B0, 1, 1)
+
+# Reduction test, single-patch, single element, 2D, TensorProduct, degree 1 BSplines.
+TP_B1B1 = FunctionSpaces.TensorProductSpace((B1, B1))
+answers_TP_B1B1 = (
+    2,
+    1,
+    1,
+    (TP_B1B1,),
+    (LinearAlgebra.I, 1:4),
+    LinearAlgebra.I,
+    [1, 2, 3, 4], # basis indices on element_id
+    1:4, # basis permutation on element_id
+    4, # total num basis
+    4, # num basis on element_id
+    [[[1], [], [2], [], [], [], [3], [], [4]]], # dof partition
+    4, # max local dim
+    Geometry.TensorProductGeometry((geometry1, geometry1)),
+    Geometry.TensorProductGeometry((geometry1, geometry1)),
+)
+basic_tests(TP_B1B1, answers_TP_B1B1, 1, 1)
+
+# General methods that should error
+@test_throws FieldError FunctionSpaces.get_extraction_operator(TP_B1_a)
 
 end

@@ -121,9 +121,9 @@ struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
         # A BSplineSpace is always single patch, so the outer most vector has no additional
         # entries.
         dof_partition = [[
-            1:n_dofs_left,  # Left dofs
-            (n_dofs_left + 1):(bspline_dim - n_dofs_right),  # Interior dofs
-            (bspline_dim - n_dofs_right + 1):bspline_dim,  # Right dofs
+            collect(1:n_dofs_left),  # Left dofs
+            collect((n_dofs_left + 1):(bspline_dim - n_dofs_right)),  # Interior dofs
+            collect((bspline_dim - n_dofs_right + 1):bspline_dim),  # Right dofs
         ]]
         return new{
             F,
