@@ -396,7 +396,7 @@ end
 # We can then plot the results using GLMakie
 
 using GLMakie
-fig2 = Figure(; size=(900, 600))
+fig2 = Figure()
 ax2 = Axis(
     fig2[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
 )
@@ -421,3 +421,6 @@ lines!(ax2, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
 
 fig2[1, 2] = Legend(fig2, ax2)
 fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
+
+# For this setup, we expect the error to decrease with a rate of ``p+1``, so 4. This is
+# indeed confirmed by looking at the plot.
