@@ -66,6 +66,22 @@ function get_element_measure(geometry::MaskedGeometry, element_id::Int)
     return volume_base
 end
 
+function get_element_vertices(
+    geometry::MaskedGeometry{manifold_dim}, element_id::Int
+) where {manifold_dim}
+    element_id_base = get_base_element(get_evaluation_mask(geometry), element_id)
+    translation = get_translation(geometry, element_id)
+    scaling = get_scaling(geometry, element_id)
+    element_vertices_base = get_element_vertices(
+        get_base_geometry(geometry), element_id_base
+    )
+    element_vertices = ntuple(
+        dim -> element_vertices_base[dim] .* scaling[dim] .+ translation[dim], manifold_dim
+    )
+
+    return element_vertices
+end
+
 ############################################################################################
 #                                        Evaluation                                        #
 ############################################################################################
