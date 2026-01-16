@@ -2,6 +2,7 @@ module MetricTests
 
 using Mantis
 using LinearAlgebra
+using StaticArrays
 
 include("GeometryTestsHelpers.jl")
 
@@ -354,6 +355,65 @@ for (k, IJ) in enumerate(CartesianIndices((3, 4)))
         @test all(isapprox.(g[p], gans_curv(u, v), rtol=1e-12))
         @test all(isapprox.(sqrt_g[p], sqrtgans_curv(u, v), rtol=1e-12))
         @test all(isapprox.(inv_g[p], invgans_curv(u, v), rtol=1e-12))
+    end
+end
+
+# Mapping applied to a mapping (non-zero base Hessian). The second mapping, in this case, is
+# the inverse of the first, so that the composistion in total should be the identity.
+geo_exp1(x) = SVector{2}(exp(x[1]) + exp(x[2]), x[2])
+dgeo_exp1(x) = SMatrix{2, 2}(exp(x[1]), 0.0, exp(x[2]), 1.0)
+ddgeo_exp1(x) = (SMatrix{2, 2}(exp(x[1]), 0.0, 0.0, exp(x[2])), zeros(SMatrix{2, 2}))
+mapping_exp1 = Mantis.Geometry.Mapping((2, 2), geo_exp1, dgeo_exp1, ddgeo_exp1)
+geom_cart_exp = Geometry.CartesianGeometry((0.0:1.0:1.0, 0.0:1.0:1.0))
+geometry_exp1 = Mantis.Geometry.MappedGeometry(geom_cart_exp, mapping_exp1)
+
+geo_exp2(x) = SVector{2}(log(x[1] - exp(x[2])), x[2])
+dgeo_exp2(x) =
+    SMatrix{2, 2}(1.0 / (x[1] - exp(x[2])), 0.0, -exp(x[2]) / (x[1] - exp(x[2])), 1.0)
+ddgeo_exp2(x) = (
+    SMatrix{2, 2}(
+        -1.0 / (x[1] - exp(x[2]))^2,
+        exp(x[2]) / (x[1] - exp(x[2]))^2,
+        exp(x[2]) / (x[1] - exp(x[2]))^2,
+        -x[1] * exp(x[2]) / (x[1] - exp(x[2]))^2,
+    ),
+    zeros(SMatrix{2, 2}),
+)
+mapping_exp2 = Mantis.Geometry.Mapping((2, 2), geo_exp2, dgeo_exp2, ddgeo_exp2)
+geometry_exp12 = Mantis.Geometry.MappedGeometry(geometry_exp1, mapping_exp2)
+
+Jans_exp12(u, v) = [1.0/1.0 0.0; 0.0 1.0/1.0]
+gans_exp12(u, v) = [1.0/1.0 0.0; 0.0 1.0/1.0]
+sqrtgans_exp12(u, v) = sqrt((1.0 / 1.0) * (1.0 / 1.0))
+ginvans_exp12(u, v) = [1.0 0.0; 0.0 1.0]
+Hans_exp12(u, v) = ([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0])
+dgduans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
+dgdvans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
+dginvgduans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
+dginvgdvans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
+
+xi_exp12 = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+for (k, IJ) in enumerate(CartesianIndices((1, 1)))
+    J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+        geometry_exp12, k, xi_exp12
+    )
+    uv = Geometry.evaluate(geometry_exp12, k, xi_exp12)
+    for p in eachindex(xi_exp12)
+        u, v = uv[p, :]
+        @test all(isapprox.(J[p], Jans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(g[p], gans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(sqrt_g[p], sqrtgans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(inv_g[p], ginvans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(Hs[p][1], Hans_exp12(u, v)[1], rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(Hs[p][2], Hans_exp12(u, v)[2], rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(dgdxs[1][p], dgduans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(isapprox.(dgdxs[2][p], dgdvans_exp12(u, v), rtol=1e-14, atol=1e-14))
+        @test all(
+            isapprox.(dinv_g_dxs[1][p], dginvgduans_exp12(u, v), rtol=1e-14, atol=1e-14)
+        )
+        @test all(
+            isapprox.(dinv_g_dxs[2][p], dginvgdvans_exp12(u, v), rtol=1e-14, atol=1e-14)
+        )
     end
 end
 

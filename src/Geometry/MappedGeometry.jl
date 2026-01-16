@@ -300,18 +300,18 @@ function hessian(
     base_geometry = get_base_geometry(geometry, patch_id)
     x = evaluate(base_geometry, local_element_id, xi)
     Jb = jacobian(base_geometry, local_element_id, xi)
-    Hbs = hessian(base_geometry, local_element_id, xi)
+    Hb = hessian(base_geometry, local_element_id, xi)
 
     Jm = jacobian(get_mapping(geometry, patch_id), x)
-    Hms = hessian(get_mapping(geometry, patch_id), x)
+    Hm = hessian(get_mapping(geometry, patch_id), x)
 
     return [
         ntuple(image_dim) do i
-            return transpose(Jb[p]) * Hms[p][i] * Jb[p] +
-                   SMatrix{manifold_dim, manifold_dim}(
-                sum(Jm[p][i, j] * Hbs[p][j][uv] for j in 1:manifold_dim) for
-                uv in eachindex(Hbs[p][1])
-            )
-        end for p in eachindex(Jb, Jm, Hms, Hbs)
+            Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
+            for j in 1:manifold_dim
+                Hp += Jm[p][i, j] * Hb[p][j]
+            end
+            return Hp
+        end for p in eachindex(Jb, Jm, Hm, Hb)
     ]
 end
