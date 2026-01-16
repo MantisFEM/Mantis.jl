@@ -1,7 +1,6 @@
 module GeneralHelpers
 
-export integer_sums,
-    get_derivative_idx, ordered_to_linear_index, linear_to_ordered_index, export_path
+export integer_sums, get_derivative_idx, export_path
 
 import Combinatorics
 
@@ -123,71 +122,6 @@ const get_derivative_idx = let
             _get_derivative_idx_no_cache(der_key)
         end
     end
-end
-
-####################################################
-# Ordered and linear index conversion helper functions
-####################################################
-
-"""
-    ordered_to_linear_index(ord_ind::Vector{Int}, max_ind::Vector{Int})
-
-Convert given ordered pair index to linear index.
-
-# Arguments
-- `ord_ind::Vector{Int}`: ordered index pair
-- `max_ind::Vector{Int}`: maximum index in each direction
-
-# Returns
-- `::Int`: computed linear index
-"""
-function ordered_to_linear_index(
-    ord_ind::Union{AbstractVector{Int}, NTuple{m, Int}},
-    max_ind::Union{AbstractVector{Int}, NTuple{m, Int}},
-) where {m}
-    if length(ord_ind) != length(max_ind)
-        throw(ArgumentError("The length of `ord_ind` and `max_ind` are not equal."))
-    end
-
-    max_ind = cumprod(max_ind)
-    lin_ind = ord_ind[1]
-    for i in 2:length(max_ind)
-        lin_ind += (ord_ind[i] - 1) * max_ind[i - 1]
-    end
-
-    return lin_ind
-end
-
-"""
-    linear_to_ordered_index(lin_ind::Int, max_ind::Vector{Int})
-
-Convert given linear index to ordered index pair.
-
-# Arguments
-- `lin_ind::Int`: computed linear index
-- `max_ind::Vector{Int}`: maximum index in each direction
-
-# Returns
-- `::Vector{Int}`: ordered index pair
-"""
-function linear_to_ordered_index(
-    lin_ind::Int, max_ind::Union{AbstractVector{Int}, NTuple{m, Int}}
-) where {m}
-    ord_ind = zeros(Int, length(max_ind))
-
-    ord_ind[1] = lin_ind - div((lin_ind - 1), max_ind[1]) * max_ind[1]
-    lin_ind = div((lin_ind - ord_ind[1]), max_ind[1])
-
-    for i in 2:length(max_ind)
-        ord_ind[i] = lin_ind - div(lin_ind, max_ind[i]) * max_ind[i] + 1
-        lin_ind = div((lin_ind - ord_ind[i] + 1), max_ind[i])
-    end
-
-    if lin_ind != 0
-        throw(ArgumentError("Ordered pair computation failed."))
-    end
-
-    return ord_ind
 end
 
 ####################################################

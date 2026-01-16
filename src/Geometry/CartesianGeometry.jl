@@ -146,11 +146,6 @@ function get_constituent_num_elements(geometry::CartesianGeometry)
     return (get_constituent_num_elements(geometry, i) for i in 1:get_num_patches(geometry))
 end
 
-# Getters for geometries.
-function get_geometry(geometry::CartesianGeometry, patch_id::Int)
-    return CartesianGeometry((geometry.breakpoints[patch_id],))
-end
-
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_num_elements(geometry::CartesianGeometry, patch_id::Int)
     return length(get_cart_num_elements(geometry, patch_id))
