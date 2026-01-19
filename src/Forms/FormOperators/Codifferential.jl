@@ -141,12 +141,13 @@ function _evaluate_codifferential(
     # Compute the codifferential.
     # α^1 = α¹ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
+    # Note that d/dx(1/sqrt(det(g))) = - (d/dx(sqrt(g)))/(sqrt(g)^2)
     idx_du = FunctionSpaces.get_derivative_idx([1])
     for i in axes(codiff_eval[1], 1)
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
             inv_sqrt_point .* (
-                .+view(fem_evals[1][1][1], i, :) .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
+                .+view(fem_evals[1][1][1], i, :) .* -dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # α¹ * ∂u sqrt(g)
                 .+
                 view(fem_evals[2][idx_du][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
@@ -184,13 +185,14 @@ function _evaluate_codifferential(
     # α^1 = α¹ du
     # α¹ = d(β⁰) = ∂ᵤ β⁰ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
+    # Note that d/dx(1/sqrt(det(g))) = - (d/dx(sqrt(g)))/(sqrt(g)^2)
     idx_du = FunctionSpaces.get_derivative_idx([1])
     idx_duu = FunctionSpaces.get_derivative_idx([2])
     for i in axes(codiff_eval[1], 1)
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
             inv_sqrt_point .* (
-                .+view(fem_evals[2][idx_du][1], i, :) .* dsqrt_g_du[i]  # α¹ * ∂u sqrt(g)
+                .+view(fem_evals[2][idx_du][1], i, :) .* -dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # α¹ * ∂u (1/sqrt(g))
                 .+
                 view(fem_evals[3][idx_duu][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
