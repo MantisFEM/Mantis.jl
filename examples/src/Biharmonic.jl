@@ -96,8 +96,8 @@ using DisplayAs #hide
 starting_point = (0.0,)
 box_size = (1.0,)
 num_elements = (2,)
-p = (2,)
-k = (1,)
+p = (3,)
+k = (2,)
 
 geometry = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
 B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
@@ -204,7 +204,103 @@ sol = vec(A \ b)
 fig = Mantis.Plot.plot_solution((ϕ⁰, ϕ_exact); title="Solution", ylabel=" ")
 fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
 
-# The above solution is indeed much closer (in the 'eyeball-norm') than before.
+# The above solution is indeed much closer (in the 'eyeball-norm') than before. We can make
+# this more precise by computing the error in the ``L^2``-norm and plotting how this error
+# decreases as we choose increasingly fine meshes. This is called a convergence study.
+
+# ### Convergence studies for the 1D case.
+
+# One way to obtain some confirmation that these results are what we expect, we can compute
+# the error on finer and finer meshes. To start, we create a function that will create all
+# objects based on the geometry that we provide, and that will compute the error using the
+# given geometry.
+canonical_qrule_analysis = Quadrature.tensor_product_rule(
+    3 .* p .+ 1, Quadrature.gauss_legendre
+)
+
+function compute_error_biharmonic(geometry, function_space)
+    Λ⁰ = Forms.FormSpace(0, geometry, function_space, "ϕ")
+
+    f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
+
+    dΩ = Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geometry))
+
+    wfi = Assemblers.WeakFormInputs(Λ⁰, f⁰)
+
+    bc = Forms.set_dirichlet_boundary_conditions(Λ⁰, 0.0)
+
+    lhs_expressions, rhs_expressions = zero_form_biharmonic(wfi, dΩ)
+    weak_form = Assemblers.WeakForm(lhs_expressions, rhs_expressions, wfi)
+    A, b = Assemblers.assemble(weak_form, bc)
+    sol = vec(A \ b)
+    ϕ⁰ = Forms.build_form_field(Λ⁰, sol)
+
+    ϕ⁰_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, "ϕ_exact")
+
+    dΩ_analysis = Quadrature.StandardQuadrature(
+        canonical_qrule_analysis, Geometry.get_num_elements(geometry)
+    )
+
+    return Analysis.L2_norm(ϕ⁰ - ϕ⁰_exact, dΩ_analysis)
+end
+
+# To study the effect of introducing a different spacing of the elements in the grid, we can
+# introduce a mapping. Here, we pick the mapping from the
+# [One-dimensional mapped geometry](@ref) example. Do note that this will lead to a nearly
+# singular system.
+const exponent = 3
+mapping(ξ̂) = ξ̂^exponent
+d_map(ξ̂) = exponent * ξ̂^(exponent - 1)
+d2_map(ξ̂) = exponent * (exponent - 1) * ξ̂^(exponent - 2)
+full_map = Geometry.Mapping(
+    (1, 1), ξ̂ -> mapping.(ξ̂[:, 1]), ξ̂ -> d_map.(ξ̂[:, 1]), ξ̂ -> d2_map.(ξ̂[:, 1])
+)
+
+# Then, we create a loop to build geometries with increasingly many elements and to compute
+# the biharmonic equation with them.
+num_elements_study = [(4,), (8,), (16,), (32,), (64,)]
+h = Vector{Float64}(undef, length(num_elements_study))
+errors_cartesian = Vector{Float64}(undef, length(num_elements_study))
+errors_mapped = Vector{Float64}(undef, length(num_elements_study))
+for i in eachindex(num_elements_study)
+    geo_cartesian = Geometry.create_cartesian_box(
+        starting_point, box_size, num_elements_study[i]
+    )
+    geo_mapped = Geometry.MappedGeometry(geo_cartesian, full_map)
+    space = FunctionSpaces.create_bspline_space(
+        starting_point, box_size, num_elements_study[i], p, k
+    )
+
+    h[i] = box_size[1] / num_elements_study[i][1]
+    errors_cartesian[i] = compute_error_biharmonic(geo_cartesian, space)
+    errors_mapped[i] = compute_error_biharmonic(geo_mapped, space)
+end
+
+# We can then plot the results using GLMakie
+
+using GLMakie
+fig2 = Figure()
+ax2 = Axis(
+    fig2[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
+)
+
+scatterlines!(
+    ax2, h, errors_mapped; label="Mapped", color=:blue, marker=:rect, markersize=10
+)
+C = errors_mapped[3] / (h[3]^4)
+lines!(ax2, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
+
+scatterlines!(
+    ax2, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
+)
+C2 = errors_cartesian[3] / (h[3]^4)
+lines!(ax2, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
+
+fig2[1, 2] = Legend(fig2, ax2)
+fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
+
+# For this setup, we expect the error to decrease with a rate of ``p+1``, so 4. This is
+# indeed confirmed by looking at the plot.
 
 # ### The 2D case
 
@@ -343,7 +439,7 @@ Mantis.Plot.export_form_fields_to_vtk(
 # objects based on the geometry that we provide, and that will compute the error using the
 # given geometry.
 
-function compute_error_biharmonic(geometry, function_space)
+function compute_error_biharmonic_2D(geometry, function_space)
     Λ⁰_2D = Forms.FormSpace(0, geometry, function_space, "ϕ")
 
     f⁰_2D = Forms.AnalyticalFormField(0, forcing_function_2D, geometry, "f⁰")
@@ -389,20 +485,19 @@ for i in eachindex(num_elements_study)
     )
 
     h[i] = box_size_2D[1] / num_elements_study[i][1]
-    errors_cartesian[i] = compute_error_biharmonic(geo_cartesian, space)
-    errors_curvilinear[i] = compute_error_biharmonic(geo_curvilinear, space)
+    errors_cartesian[i] = compute_error_biharmonic_2D(geo_cartesian, space)
+    errors_curvilinear[i] = compute_error_biharmonic_2D(geo_curvilinear, space)
 end
 
-# We can then plot the results using GLMakie
+# We can then plot the results using GLMakie again.
 
-using GLMakie
-fig2 = Figure()
-ax2 = Axis(
-    fig2[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
+fig3 = Figure()
+ax3 = Axis(
+    fig3[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
 )
 
 scatterlines!(
-    ax2,
+    ax3,
     h,
     errors_curvilinear;
     label="Curvilinear",
@@ -411,16 +506,16 @@ scatterlines!(
     markersize=10,
 )
 C = errors_curvilinear[3] / (h[3]^4)
-lines!(ax2, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
+lines!(ax3, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
 
 scatterlines!(
-    ax2, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
+    ax3, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
 )
 C2 = errors_cartesian[3] / (h[3]^4)
-lines!(ax2, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
+lines!(ax3, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
 
-fig2[1, 2] = Legend(fig2, ax2)
-fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
+fig3[1, 2] = Legend(fig3, ax3)
+fig3 = DisplayAs.Text(DisplayAs.PNG(fig3)) #hide
 
 # For this setup, we expect the error to decrease with a rate of ``p+1``, so 4. This is
 # indeed confirmed by looking at the plot.
