@@ -147,7 +147,7 @@ function _evaluate_codifferential(
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
             inv_sqrt_point .* (
-                .+view(fem_evals[1][1][1], i, :) .* -dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # α¹ * ∂u sqrt(g)
+                .-view(fem_evals[1][1][1], i, :) .* dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # - α¹ * (d/dx(sqrt(g)))/(sqrt(g)^2)
                 .+
                 view(fem_evals[2][idx_du][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
@@ -192,7 +192,7 @@ function _evaluate_codifferential(
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
             inv_sqrt_point .* (
-                .+view(fem_evals[2][idx_du][1], i, :) .* -dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # α¹ * ∂u (1/sqrt(g))
+                .-view(fem_evals[2][idx_du][1], i, :) .* dsqrt_g_du[i] ./ (sqrt_g[i] .^ 2)  # - α¹ * (d/dx(sqrt(g)))/(sqrt(g)^2)
                 .+
                 view(fem_evals[3][idx_duu][1], i, :) .* inv_sqrt_point  # ∂u α¹ * 1 / sqrt(g)
             )
