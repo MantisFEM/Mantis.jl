@@ -140,6 +140,7 @@ function get_metadata()
         "2b14f204f7c65a42a64568df8dc0179305ff91886e023977afef7561811ea920" => "JoeyDekker",
         "a04d9fd111db36fac6c5b3923517a6ad605493e46418c6187fee374fa9c37fad" => "DeepeshToshniwal",
         "4d5e2c0292fb7f3c7abc69908372c30adc6547fc8aa52ec4ac0d3ab9f0cc1a51" => "ArturPalha",
+        "4f68accaa2da84eab6a7186e247aa46a946e8009ffef65093578237fdc42b4f7" => "DeepeshToshniwal-Desktop",
         # Add more mappings here as needed
     )
 

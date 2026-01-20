@@ -1,0 +1,2 @@
+benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
+Geometry/TensorProduct/jacobian-2D,081cb17,2025-11-27,1.12.1,2026-01-20,1.583 μs,1.624 μs,193.435 ns,1.486 μs,0.000 ns,3.52 KiB,8
