@@ -11,13 +11,15 @@ const colours = Dict(
     "DiogoCabanas" => :blue,
     "ArturPalha" => :green,
     "DeepeshToshniwal" => :red,
+    "DeepeshToshniwal_Desktop" => :red,
 )
 
 const markers = Dict(
     "JoeyDekker" => :circle,
     "DiogoCabanas" => :cross,
     "ArturPalha" => :diamond,
-    "DeepeshToshniwal" => :star6,
+    "DeepeshToshniwal" => :star4,
+    "DeepeshToshniwal_Desktop" => :star5,
 )
 
 const units = Dict(
@@ -167,13 +169,21 @@ function add_all_series()
         colours["ArturPalha"],
         markers["ArturPalha"],
     )
-    return add_series(
+    add_series(
         ax,
         x_data_deepesh,
         y_data_deepesh,
         "DeepeshToshniwal",
         colours["DeepeshToshniwal"],
         markers["DeepeshToshniwal"],
+    )
+    return add_series(
+        ax,
+        x_data_deepesh_desktop,
+        y_data_deepesh_desktop,
+        "DeepeshToshniwal_Desktop",
+        colours["DeepeshToshniwal_Desktop"],
+        markers["DeepeshToshniwal_Desktop"],
     )
 end
 
@@ -231,6 +241,15 @@ x_data_deepesh = lift(all_dates) do dates
     idxs = findall(x -> x in all_dates_deepesh, dates)
     return Dates.value.(all_dates_diff[idxs])
 end
+x_data_deepesh_desktop = lift(all_dates) do dates
+    data = to_value(benchmark_data_ob)
+    name = to_value(benchmark_name_ob)
+    col = to_value(col_x)
+    all_dates_deepesh_desktop = data[("DeepeshToshniwal_Desktop", name)][!, col]
+    all_dates_diff = dates .- first(dates)
+    idxs = findall(x -> x in all_dates_deepesh_desktop, dates)
+    return Dates.value.(all_dates_diff[idxs])
+end
 
 y_data_joey = lift(all_dates, col_y) do dates, col
     data = to_value(benchmark_data_ob)
@@ -269,6 +288,18 @@ y_data_deepesh = lift(all_dates, col_y) do dates, col
     if eltype(plot_data) <: AbstractString || eltype(plot_data) <: InlineString
         return get_number_in_string.(
             data[("DeepeshToshniwal", name)][:, col], new_unit=units[col]
+        )
+    else
+        return plot_data
+    end
+end
+y_data_deepesh_desktop = lift(all_dates, col_y) do dates, col
+    data = to_value(benchmark_data_ob)
+    name = to_value(benchmark_name_ob)
+    plot_data = data[("DeepeshToshniwal_Desktop", name)][:, col]
+    if eltype(plot_data) <: AbstractString || eltype(plot_data) <: InlineString
+        return get_number_in_string.(
+            data[("DeepeshToshniwal_Desktop", name)][:, col], new_unit=units[col]
         )
     else
         return plot_data
