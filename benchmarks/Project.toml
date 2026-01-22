@@ -7,4 +7,4 @@ InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
 
 [sources]
-Mantis = {path = "/home/deepesh/Documents/research/code/julia/MantisDev.jl"}
+Mantis = {path = ".."}
