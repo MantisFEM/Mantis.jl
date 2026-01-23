@@ -17,16 +17,17 @@ end
     if any(x -> x.name == "JET", values(Pkg.dependencies()))
         # Test spaces
 
+        # Univariate ---
         # BSplines
         # Reduction test, single-patch, single element, 1D, Cartesian, degree 1 BSplines.
         geometry1 = Geometry.CartesianGeometry(([-1, 1],))
         B1 = FunctionSpaces.BSplineSpace(
             geometry1, geometry1, FunctionSpaces.Bernstein(1), [-1, -1], 1, 1
         )
-        # Single-patch, multi-element, 1D, Cartesian, degree 6 maximally smooth BSplines.
+        # Multi-element, Cartesian, degree 6 maximally smooth BSplines.
         geometry1multi = Geometry.CartesianGeometry((LinRange(-0.34, 1.56, 26),))
         B1multi = FunctionSpaces.BSplineSpace(geometry1multi, 6, 5)
-        # Single-patch, multi-element, 1D, Cartesian, different Section Spaces.
+        # Multi-element, Cartesian, different Section Spaces.
         B1LL = FunctionSpaces.BSplineSpace(
             geometry1, geometry1multi, FunctionSpaces.LobattoLegendre(1), fill(-1, 26)
         )
@@ -43,7 +44,9 @@ end
             B1multi, rand(FunctionSpaces.get_num_basis(B1multi))
         )
 
+        # Multi-variate and multi-component ---
         # TensorProduct
+        # Reduction test, single-space, single-patch, single element, 1D
         TP_B1 = FunctionSpaces.TensorProductSpace((B1,))
         TP_B1m = FunctionSpaces.TensorProductSpace((B1multi,))
         TP_B1mB1m = FunctionSpaces.TensorProductSpace((B1multi, B1multi))
@@ -54,8 +57,11 @@ end
         # DirectSumSpace
         # Reduction test, single-component, single-patch, single element, 1D.
         DS1 = FunctionSpaces.DirectSumSpace((B1,))
+        # 2-component, same space per component, 1D, multi-element, single-patch
         DS_B1mB1m = FunctionSpaces.DirectSumSpace((B1multi, B1multi))
+        # 2-component, same space per component, 2D, multi-element, single-patch
         DS_TP1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_B1mB1m))
+        # 3-component, two distinct spaces, 2D, multi-element, single-patch
         DS_TP1mTPR1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mB1m))
 
         const spaces = (

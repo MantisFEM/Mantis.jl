@@ -1,23 +1,31 @@
 """
-    BSplineSpace{F, G, TM, TE, TI, TJ} <: AbstractFESpace{1, 1, 1}
+    BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
 
-Structure containing information about a univariate B-Spline function space defined on the
-`knot_vector::KnotVector`, with given `polynomial_degree` and `regularity` per breakpoint.
+Univariate (general) B-Spline function space defined on a `knot_vector::KnotVector`, with
+given `polynomial_degree` and `regularity` per breakpoint.
+
 Note that while the section spaces on each element are the same, they don't necessarily have
 to be polynomials; they are just named `polynomials` for convention.
 
 # Fields
-- `knot_vector::KnotVector`: 1-dimensional knot vector.
+- `geometry::G`: Physical geometry to which the B-Spline space is mapped.
+- `knot_vector::KnotVector`: 1-dimensional knot vector defining the parametric geometry. See
+    [`KnotVector`](@ref) for more details.
 - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
-- `polynomials::F`: local section space F, named `polynomials` just for convention.
-- `dof_partition::Vector{Vector{Vector{Int}}}`: Indices of boundary degrees of freedom.
+- `polynomials::F`: local section space F, named `polynomials` just for convention. Can be
+    any [`AbstractCanonicalSpace`](@ref).
+- `dof_partition::D`: Partitioning of the degrees of freedom into boundary and interior
+    dofs. The type will be similar to Vector{Vector{Vector{Int}}}, where the outer Vector
+    will have length 1 (its for patches), the middle Vector will be of length 3 (1: left
+    boundary, 2 interior, 3 right boundary), and the inner Vector will contain the global
+    basis indices.
 """
 struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
     geometry::G
     knot_vector::KnotVector{GP, TM}
     polynomials::F
     extraction_op::ExtractionOperator{1, TE, TI, TJ}
-    dof_partition::D #Vector{Vector{Vector{Int}}}
+    dof_partition::D
 
     function BSplineSpace(
         geometry::G,
