@@ -33,7 +33,6 @@ DisplayAs = "0.1.6"
 GLMakie = "0.13.7"
 MeshCore = "1.3.5"
 PolynomialBases = "0.4.21"
-StaticArrays = "1.9.15"
 julia = "1.9"
 
 [extras]

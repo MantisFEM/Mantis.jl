@@ -1,2 +1,3 @@
 benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
 Forms/FormExpressions/FormSpaces/evaluate-0-form-1D,b4eee92,2025-11-18,1.12.1,2025-11-21,1.192 μs,1.264 μs,929.732 ns,1.052 μs,0.000 ns,2.16 KiB,46
+Forms/FormExpressions/FormSpaces/evaluate-0-form-1D,081cb17,2025-11-27,1.12.2,2025-12-02,1.062 μs,1.144 μs,816.553 ns,951.000 ns,0.000 ns,2.16 KiB,46

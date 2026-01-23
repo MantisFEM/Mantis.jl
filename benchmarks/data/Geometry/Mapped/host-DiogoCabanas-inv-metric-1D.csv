@@ -1,2 +1,3 @@
 benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
 Geometry/Mapped/inv-metric-1D,b4eee92,2025-11-18,1.12.1,2025-11-21,3.005 μs,3.157 μs,1.295 μs,2.846 μs,0.000 ns,5.53 KiB,178
+Geometry/Mapped/inv-metric-1D,081cb17,2025-11-27,1.12.2,2025-12-02,380.500 ns,431.072 ns,203.959 ns,320.000 ns,0.000 ns,1.94 KiB,34
