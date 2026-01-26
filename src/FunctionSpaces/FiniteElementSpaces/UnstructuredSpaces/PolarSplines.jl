@@ -157,7 +157,7 @@ end
 # PolarSplines
 ############################################################################################
 
-struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
+struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
        AbstractFESpace{2, num_components, 1}
     patch_spaces::T
     extraction_op::ExtractionOperator{num_components, TE, TI, TJ}
@@ -172,6 +172,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
     degenerate_control_points::Array{Float64, 3}
     degenerate_space::TD
     geometry::G
+    parametric_geometry::GP
 
     """
         PolarSplineSpace(
@@ -203,14 +204,13 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
         degenerate_control_points::Array{Float64, 3},
         degenerate_space::TensorProductSpace{2, 1},
         geometry::G,
+        parametric_geometry::GP,
         two_poles::Bool=false,
         zero_at_poles::Bool=false,
-    ) where {G <: Geometry.AbstractGeometry{2}}
-        # poloidal and radial spaces
-        space_p, space_r = get_constituent_spaces(patch_spaces[1])
+    ) where {G <: Geometry.AbstractGeometry{2}, GP <: Geometry.AbstractGeometry{2}}
         # number of basis functions for the poloidal and radial spaces
-        n_p = get_num_basis(space_p)
-        n_r = get_num_basis(space_r) + zero_at_poles
+        n_p, n_r = get_constituent_num_basis(patch_spaces[1])
+        zero_at_poles && (n_r += 1)
         if n_p != size(degenerate_control_points, 1)
             throw(
                 ArgumentError("The poloidal space does not match the input coefficients.")
@@ -233,6 +233,29 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             throw(
                 ArgumentError(
                     "The degenerate tensor-product space does not match the input coefficients.",
+                ),
+            )
+        end
+
+        if Geometry.get_num_elements(geometry) != get_num_elements(degenerate_space)
+            throw(
+                ArgumentError(
+                    "The geometry and degenerate space must have the same number of " *
+                    "elements. The provided inputs have " *
+                    "$(Geometry.get_num_elements(geometry)) and " *
+                    "$(get_num_elements(degenerate_space)), respectively.",
+                ),
+            )
+        end
+
+        if Geometry.get_num_elements(parametric_geometry) !=
+            get_num_elements(degenerate_space)
+            throw(
+                ArgumentError(
+                    "The parametric geometry and degenerate space must have the same " *
+                    "number of elements. The provided inputs have " *
+                    "$(Geometry.get_num_elements(parametric_geometry)) and " *
+                    "$(get_num_elements(degenerate_space)), respectively.",
                 ),
             )
         end
@@ -260,6 +283,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             typeof(degenerate_space),
             get_EIJ_types(extraction_op)...,
             G,
+            GP,
         }(
             patch_spaces,
             extraction_op,
@@ -272,6 +296,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             degenerate_control_points,
             degenerate_space,
             geometry,
+            parametric_geometry,
         )
     end
 
@@ -305,9 +330,10 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
         degenerate_control_points::Array{Float64, 3},
         degenerate_space::TensorProductSpace{2, 1},
         geometry::G,
+        parametric_geometry::GP,
         two_poles::Bool=false,
         ::Bool=false,
-    ) where {G <: Geometry.AbstractGeometry{2}}
+    ) where {G <: Geometry.AbstractGeometry{2}, GP <: Geometry.AbstractGeometry{2}}
         # poloidal and radial component spaces
         dspace_p, space_r = get_constituent_spaces(patch_spaces[1])
         space_p, dspace_r = get_constituent_spaces(patch_spaces[2])
@@ -352,6 +378,29 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             throw(ArgumentError("Input radial space and its derivative are incompatible."))
         end
 
+        if Geometry.get_num_elements(geometry) != get_num_elements(degenerate_space)
+            throw(
+                ArgumentError(
+                    "The geometry and degenerate space must have the same number of " *
+                    "elements. The provided inputs have " *
+                    "$(Geometry.get_num_elements(geometry)) and " *
+                    "$(get_num_elements(degenerate_space)), respectively.",
+                ),
+            )
+        end
+
+        if Geometry.get_num_elements(parametric_geometry) !=
+            get_num_elements(degenerate_space)
+            throw(
+                ArgumentError(
+                    "The parametric geometry and degenerate space must have the same " *
+                    "number of elements. The provided inputs have " *
+                    "$(Geometry.get_num_elements(parametric_geometry)) and " *
+                    "$(get_num_elements(degenerate_space)), respectively.",
+                ),
+            )
+        end
+
         # first, build extraction operator and control triangle
         E, control_triangle = extract_vector_polar_splines_to_tensorproduct(
             degenerate_control_points, n_r, two_poles
@@ -369,6 +418,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             typeof(degenerate_space),
             get_EIJ_types(extraction_op)...,
             G,
+            GP,
         }(
             patch_spaces,
             extraction_op,
@@ -381,8 +431,32 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G} <:
             degenerate_control_points,
             degenerate_space,
             geometry,
+            parametric_geometry,
         )
     end
+end
+
+function PolarSplineSpace(
+    patch_spaces::PS,
+    degenerate_control_points::Array{Float64, 3},
+    degenerate_space::TensorProductSpace{2, 1},
+    geometry::G,
+    two_poles::Bool=false,
+    zero_at_poles::Bool=false,
+) where {
+    num_components,
+    PS <: NTuple{num_components, TensorProductSpace{2, 1}},
+    G <: Geometry.AbstractGeometry{2},
+}
+    return PolarSplineSpace(
+        patch_spaces,
+        degenerate_control_points,
+        degenerate_space,
+        geometry,
+        geometry,
+        two_poles,
+        zero_at_poles,
+    )
 end
 
 function PolarSplineSpace(
@@ -392,9 +466,7 @@ function PolarSplineSpace(
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
 ) where {num_components, PS <: NTuple{num_components, TensorProductSpace{2, 1}}}
-    # This a throwaway geometry to properly initialize the PolarSplineSpace from which the
-    # intended geometry will be created.
-    geometry = get_geometry(patch_spaces[1])
+    geometry = DiscreteGeometry(degenerate_space, reshape(degenerate_control_points, :, 2))
 
     return PolarSplineSpace(
         patch_spaces,
@@ -755,27 +827,4 @@ end
 
 function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
-end
-
-# function get_geometry(space::PolarSplineSpace)
-#     E_geom = assemble_global_extraction_matrix(space)
-#     geom_coeffs_polar =
-#         (E_geom[1]' * E_geom[1]) \
-#         (E_geom[1]' * reshape(space.degenerate_control_points, :, 2))
-#
-#     return DiscreteGeometry(space, geom_coeffs_polar)
-# end
-
-# WARNING: This is a work-around while `get_geometry` is not implemented
-function get_num_elements(space::PolarSplineSpace)
-    return Geometry.get_num_elements(get_parametric_geometry(space))
-end
-
-# WARNING: This is a work-around while `get_geometry` is not implemented
-function get_num_elements_per_patch(space::PolarSplineSpace)
-    return Geometry.get_num_elements_per_patch(get_parametric_geometry(space))
-end
-
-function get_parametric_geometry(space::PolarSplineSpace)
-    return get_geometry(first(get_patch_spaces(space)))
 end

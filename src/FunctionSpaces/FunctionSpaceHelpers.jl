@@ -473,8 +473,7 @@ function create_scalar_polar_spline_space(
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int},
     geometry;
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
-    R::Float64=1.0,
+    geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
@@ -485,7 +484,6 @@ function create_scalar_polar_spline_space(
         regularities,
         geometry;
         geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
         two_poles=two_poles,
         zero_at_poles=zero_at_poles,
         box_sizes=box_sizes,
@@ -527,8 +525,7 @@ function create_scalar_polar_spline_space(
     section_spaces::F,
     regularities::NTuple{2, Int},
     geometry;
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
-    R::Float64=1.0,
+    geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
@@ -538,16 +535,6 @@ function create_scalar_polar_spline_space(
         (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
     )
     GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
-
-    if isnothing(geom_coeffs_tp)
-        if two_poles
-            error("Two-pole geometries require user-provided geometry coefficients.")
-        end
-        # number of control points for a degenerate tensor-product mapping
-        n_θ = get_num_basis(GBθ_g)
-        n_r = get_num_basis(Br_g)
-        geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
-    end
 
     if zero_at_poles
         # reduce degree and regularity by 1
@@ -613,8 +600,7 @@ function create_vector_polar_spline_space(
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int},
     geometry;
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
-    R::Float64=1.0,
+    geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 )
@@ -624,7 +610,6 @@ function create_vector_polar_spline_space(
         regularities,
         geometry;
         geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
         two_poles=two_poles,
         box_sizes=box_sizes,
     )
@@ -661,8 +646,7 @@ function create_vector_polar_spline_space(
     section_spaces::F,
     regularities::NTuple{2, Int},
     geometry;
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
-    R::Float64=1.0,
+    geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
@@ -671,16 +655,6 @@ function create_vector_polar_spline_space(
         (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
     )
     GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
-
-    if isnothing(geom_coeffs_tp)
-        if two_poles
-            error("Two-pole geometries require user-provided geometry coefficients.")
-        end
-        # number of control points for a degenerate tensor-product mapping
-        n_θ = get_num_basis(GBθ_g)
-        n_r = get_num_basis(Br_g)
-        geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
-    end
 
     return PolarSplineSpace(
         (
@@ -722,19 +696,11 @@ function create_polar_geometry_data(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
-    two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 )
     return create_polar_geometry_data(
-        num_elements,
-        Bernstein.(degrees),
-        regularities;
-        geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
-        two_poles=two_poles,
-        box_sizes=box_sizes,
+        num_elements, Bernstein.(degrees), regularities; R=R, box_sizes=box_sizes
     )
 end
 
@@ -742,9 +708,7 @@ function create_polar_geometry_data(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
-    two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     Bθ, Br = create_dim_wise_bspline_spaces(
@@ -752,29 +716,14 @@ function create_polar_geometry_data(
     )
     # impose periodicity
     GBθ = GTBSplineSpace((Bθ,), [regularities[1]])
-
     # number of control points for a degenerate tensor-product mapping
     n_θ = get_num_basis(GBθ)
     n_r = get_num_basis(Br)
+    tp_space = TensorProductSpace((GBθ, Br))
+    geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
+    geometry = DiscreteGeometry(tp_space, reshape(geom_coeffs_tp, :, 2))
 
-    if isnothing(geom_coeffs_tp)
-        geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
-    end
-
-    # Polar spline space and global extraction matrix for the geometry
-    P_geom = PolarSplineSpace(
-        (TensorProductSpace((GBθ, Br)),),
-        geom_coeffs_tp,
-        TensorProductSpace((GBθ, Br)),
-        two_poles,
-        false,
-    )
-    E_geom = assemble_global_extraction_matrix(P_geom)
-
-    # control points for the polar spline space
-    geom_coeffs_polar = (E_geom' * E_geom) \ (E_geom' * reshape(geom_coeffs_tp, :, 2))
-
-    return P_geom, geom_coeffs_polar
+    return geometry, geom_coeffs_tp
 end
 
 """
