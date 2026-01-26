@@ -646,34 +646,24 @@ function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int};
-    geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing,
     R::Float64=1.0,
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
-    refine::Bool=false,
+    # refine::Bool=false,
 ) where {F <: NTuple{2, FunctionSpaces.AbstractCanonicalSpace}}
     form_spaces = Vector{AbstractFormSpace}(undef, 3)
 
     ##############################
     # Geometry
     ##############################
-    P_geom, geom_coeffs_polar = FunctionSpaces.create_polar_geometry_data(
-        num_elements,
-        section_spaces,
-        regularities;
-        geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
-        two_poles=two_poles,
-        box_sizes=box_sizes,
+    geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+        num_elements, section_spaces, regularities; R=R, box_sizes=box_sizes
     )
-    if refine
-        P_geom, geom_coeffs_polar, num_elements = FunctionSpaces.refine_geometry_data(
-            P_geom, geom_coeffs_polar; two_poles=two_poles
-        )
-    end
-
-    geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
-    geometry = FunctionSpaces.DiscreteGeometry(P_geom, geom_coeffs_polar)
+    # if refine
+    #     P_geom, geom_coeffs_tp, num_elements = FunctionSpaces.refine_geometry_data(
+    #         P_geom, geom_coeffs_polar; two_poles=two_pole
+    #     )
+    # end
 
     ##############################
     # 0-Forms
@@ -684,7 +674,6 @@ function create_polar_spline_de_rham_complex(
         regularities,
         geometry;
         geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
         two_poles=two_poles,
         zero_at_poles=false,
         box_sizes=box_sizes,
@@ -700,7 +689,6 @@ function create_polar_spline_de_rham_complex(
         regularities,
         geometry;
         geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
         two_poles=two_poles,
         box_sizes=box_sizes,
     )
@@ -715,7 +703,6 @@ function create_polar_spline_de_rham_complex(
         regularities,
         geometry;
         geom_coeffs_tp=geom_coeffs_tp,
-        R=R,
         two_poles=two_poles,
         zero_at_poles=true,
         box_sizes=box_sizes,

@@ -110,15 +110,17 @@ n_p = num_elements_p * (deg_p + 1) - num_elements_p * (regularity_p + 1)
 n_r = num_elements_r * (deg_r + 1) - (num_elements_r - 1) * (regularity_r + 1)
 
 # build scalar polar spline space
-P_geom, geom_coeffs_polar = FunctionSpaces.create_polar_geometry_data(
-    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r);
+geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r)
 )
-geom_coeffs_tp = FunctionSpaces.get_degenerate_control_points(P_geom)
-geometry = FunctionSpaces.DiscreteGeometry(P_geom, geom_coeffs_polar)
 P_scalar_coarse = FunctionSpaces.create_scalar_polar_spline_space(
-    (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r), geometry
+    (num_elements_p, num_elements_r),
+    (deg_p, deg_r),
+    (regularity_p, regularity_r),
+    geometry;
+    geom_coeffs_tp,
 )
-geom_coeffs_coarse = P_scalar_coarse.degenerate_control_points
+geom_coeffs_coarse = FunctionSpaces.get_degenerate_control_points(P_scalar_coarse)
 size_tp_coarse = size(geom_coeffs_coarse)
 
 # refine degenerate control points
