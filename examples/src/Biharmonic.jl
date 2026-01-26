@@ -268,7 +268,7 @@ sol_2D = vec(A_2D \ b_2D)
 # VTK file that can be visualized using a VTK viewer, such as Paraview.
 data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
 output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename_2D = "Biharmonic-0form-Homogeneous-$(length(p_2D))D.vtu"
+output_filename_2D = "Biharmonic-0form-Homogeneous-2D.vtu"
 output_file = joinpath(output_data_folder, output_filename_2D)
 Plot.plot(
     ϕ⁰_2D;
