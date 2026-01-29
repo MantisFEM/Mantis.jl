@@ -48,11 +48,18 @@ end
         # TensorProduct
         # Reduction test, single-space, single-patch, single element, 1D
         TP_B1 = FunctionSpaces.TensorProductSpace((B1,))
+        # Single-space, single-patch, multi element, 1D
         TP_B1m = FunctionSpaces.TensorProductSpace((B1multi,))
+        # Two-space (one unique, Bspline), single-patch, multi element, 2D
         TP_B1mB1m = FunctionSpaces.TensorProductSpace((B1multi, B1multi))
+        # Three-space (one unique, Bspline), single-patch, multi element, 3D
         TP_B1mB1mB1m = FunctionSpaces.TensorProductSpace((B1multi, B1multi, B1multi))
+        # Two-space (one unique, Rational), single-patch, multi element, 2D
         TP_R1mR1m = FunctionSpaces.TensorProductSpace((R1m, R1m))
+        # Three-space (one unique, Rational), single-patch, multi element, 3D
         TP_R1mR1mR1m = FunctionSpaces.TensorProductSpace((R1m, R1m, R1m))
+        # Two-space (Bspline, Rational), single-patch, multi element, 2D
+        TP_B1mR1m = FunctionSpaces.TensorProductSpace((B1multi, R1m))
 
         # DirectSumSpace
         # Reduction test, single-component, single-patch, single element, 1D.
@@ -63,6 +70,10 @@ end
         DS_TP1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_B1mB1m))
         # 3-component, two distinct spaces, 2D, multi-element, single-patch
         DS_TP1mTPR1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mB1m))
+        # 3-component, three distinct spaces, 2D, multi-element, single-patch
+        DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((
+            TP_B1mB1m, TP_R1mR1m, TP_B1mR1m
+        ))
 
         const spaces = (
             B1,
@@ -77,10 +88,12 @@ end
             TP_B1mB1mB1m,
             TP_R1mR1m,
             TP_R1mR1mR1m,
+            TP_B1mR1m,
             DS1,
             DS_B1mB1m,
             DS_TP1mTP1m,
             DS_TP1mTPR1mTP1m,
+            DS_TPB1mTPR1mTPBR1m,
         )
 
         # Note that JET only uses the types of the inputs, so which numbers we pick
