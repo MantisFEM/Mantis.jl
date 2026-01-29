@@ -40,34 +40,39 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
         T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
     }
         foreach(breakpoints) do patch_breakpoints
-            for k in 1:manifold_dim
-                if !isequal(patch_breakpoints[k], unique(patch_breakpoints[k]))
-                    throw(
-                        ArgumentError(
-                            LazyString(
-                                "Breakpoints should be unique, but the breakpoints in ",
-                                "direction ",
-                                k,
-                                " are",
-                                patch_breakpoints[k],
-                                ".",
-                            ),
+            unique_breakpoints = map(unique, patch_breakpoints)
+            are_unique = map(isequal, patch_breakpoints, unique_breakpoints)
+            if !all(are_unique)
+                index = findfirst(x -> x == false, are_unique)
+                throw(
+                    ArgumentError(
+                        LazyString(
+                            "Breakpoints should be unique, but the breakpoints in ",
+                            "direction ",
+                            index,
+                            " are ",
+                            patch_breakpoints[index],
+                            ".",
                         ),
-                    )
-                elseif !isequal(patch_breakpoints[k], sort(patch_breakpoints[k]))
-                    throw(
-                        ArgumentError(
-                            LazyString(
-                                "Breakpoints should be stricly increasing, but the ",
-                                "breakpoints in direction ",
-                                k,
-                                " are",
-                                patch_breakpoints[k],
-                                ".",
-                            ),
+                    ),
+                )
+            end
+            sorted_breakpoints = map(sort, patch_breakpoints)
+            are_sorted = map(isequal, patch_breakpoints, sorted_breakpoints)
+            if !all(are_sorted)
+                index = findfirst(x -> x == false, are_sorted)
+                throw(
+                    ArgumentError(
+                        LazyString(
+                            "Breakpoints should be stricly increasing, but the ",
+                            "breakpoints in direction ",
+                            index,
+                            " are ",
+                            patch_breakpoints[index],
+                            ".",
                         ),
-                    )
-                end
+                    ),
+                )
             end
         end
 
