@@ -61,9 +61,9 @@ DevelDocs = [
 
 Support = [
     "Getting help" => joinpath("Support", "GettingHelp.md"),
-    "Submitting a bug report" => joinpath("Support", "GettingHelp.md"),
-    "Contributing" => joinpath("Support", "GettingHelp.md"),
-    "Requesting a new feature" => joinpath("Support", "GettingHelp.md"),
+    "Submitting a bug report" => joinpath("Support", "SubmitBugReport.md"),
+    "Contributing" => joinpath("Support", "Contributing.md"),
+    "Requesting a new feature" => joinpath("Support", "FeatureRequest.md"),
 ]
 
 Pages = [
