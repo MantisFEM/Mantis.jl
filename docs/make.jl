@@ -59,12 +59,20 @@ DevelDocs = [
     ],
 ]
 
+Support = [
+    "Getting help" => joinpath("Support", "GettingHelp.md"),
+    "Submitting a bug report" => joinpath("Support", "GettingHelp.md"),
+    "Contributing" => joinpath("Support", "GettingHelp.md"),
+    "Requesting a new feature" => joinpath("Support", "GettingHelp.md"),
+]
+
 Pages = [
     "Home" => "index.md",
     "Manual" => Manual,
     "Examples" => Examples,
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
+    "Support(ing)" => Support,
     "references.md",
 ]
 
