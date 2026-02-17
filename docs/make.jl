@@ -15,7 +15,7 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
 
         Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -66,6 +66,12 @@ Support = [
     "Requesting a new feature" => joinpath("Support", "FeatureRequest.md"),
 ]
 
+ReleaseHistory = [
+    "v0.1 Acanthops Brunneri" => joinpath(
+		"ReleaseHistory", "v0-Acanthops", "v0.1-Brunneri.md"
+	)
+]
+
 Pages = [
     "Home" => "index.md",
     "Manual" => Manual,
@@ -73,6 +79,7 @@ Pages = [
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
     "Support(ing)" => Support,
+    "Release History" => ReleaseHistory,
     "references.md",
 ]
 
