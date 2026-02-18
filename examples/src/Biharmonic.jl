@@ -219,7 +219,7 @@ canonical_qrule_analysis = Quadrature.tensor_product_rule(
 )
 
 function compute_error_biharmonic(geometry, function_space)
-    Λ⁰ = Forms.FormSpace(0, geometry, function_space, "ϕ")
+    Λ⁰ = Forms.FormSpace(0, function_space, "ϕ")
 
     f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
 
@@ -368,7 +368,6 @@ end
 
 canonical_qrule_2D_analysis = Quadrature.tensor_product_rule(
     3 .* p_2D .+ 1, Quadrature.gauss_legendre
->>>>>>> pub-main
 )
 dΩ_2D_analysis = Quadrature.StandardQuadrature(
     canonical_qrule_2D_analysis, Geometry.get_num_elements(geometry_2D)
@@ -394,7 +393,7 @@ geometry_2D_curv = Geometry.create_curvilinear_square(
     starting_point_2D, box_size_2D, num_elements_2D;
 )
 
-Λ⁰_2D_curv = Forms.FormSpace(0, geometry_2D_curv, B_2D, "ϕ")
+Λ⁰_2D_curv = Forms.FormSpace(0, B_2D, "ϕ")
 
 f⁰_2D_curv = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D_curv, "f⁰")
 
@@ -441,7 +440,7 @@ Mantis.Plot.export_form_fields_to_vtk(
 # given geometry.
 
 function compute_error_biharmonic_2D(geometry, function_space)
-    Λ⁰_2D = Forms.FormSpace(0, geometry, function_space, "ϕ")
+    Λ⁰_2D = Forms.FormSpace(0, function_space, "ϕ")
 
     f⁰_2D = Forms.AnalyticalFormField(0, forcing_function_2D, geometry, "f⁰")
 
