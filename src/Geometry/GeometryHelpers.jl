@@ -58,8 +58,25 @@ function create_curvilinear_mapping(
             1.0 + pi * c * sinpi(x1_new) * cospi(x2_new),
         )
     end
+
+    function ddmapping(x::AbstractVector)
+        x1_new =
+            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
+        x2_new =
+            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
+        return (
+            [
+                -(2.0 / box_sizes[1])*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new)
+                (2.0/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2 * box_sizes[1] / (box_sizes[2]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
+            ],
+            [
+                -(2 * box_sizes[2] / (box_sizes[1]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new)
+                (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2.0 / box_sizes[2])*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
+            ],
+        )
+    end
     dimension = (2, 2)
-    curved_mapping = Mapping(dimension, mapping, dmapping)
+    curved_mapping = Mapping(dimension, mapping, dmapping, ddmapping)
 
     return curved_mapping
 end
@@ -137,44 +154,7 @@ function create_curvilinear_square(
     unit_square = create_cartesian_box(starting_points, box_sizes, num_elements)
 
     # build curved mapping
-    function mapping(x::AbstractVector)
-        x1_new =
-            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
-        x2_new =
-            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
-        return [
-            x[1] + ((box_sizes[1]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
-            x[2] + ((box_sizes[2]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
-        ]
-    end
-    function dmapping(x::AbstractVector)
-        x1_new =
-            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
-        x2_new =
-            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
-        return [
-            1.0+pi * c * cospi(x1_new) * sinpi(x2_new) (box_sizes[1]/box_sizes[2])*pi*c*sinpi(x1_new)*cospi(x2_new)
-            (box_sizes[2]/box_sizes[1])*pi*c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * c * sinpi(x1_new) * cospi(x2_new)
-        ]
-    end
-    function ddmapping(x::AbstractVector)
-        x1_new =
-            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
-        x2_new =
-            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
-        return (
-            [
-                -(2.0 / box_sizes[1])*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new)
-                (2.0/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2 * box_sizes[1] / (box_sizes[2]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
-            ],
-            [
-                -(2 * box_sizes[2] / (box_sizes[1]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new)
-                (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2.0 / box_sizes[2])*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
-            ],
-        )
-    end
-    dimension = (2, 2)
-    curved_mapping = Mapping(dimension, mapping, dmapping, ddmapping)
+    curved_mapping = create_curvilinear_mapping(starting_points, box_sizes, c)
 
     return MappedGeometry(unit_square, curved_mapping)
 end

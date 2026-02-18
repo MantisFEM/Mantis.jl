@@ -2,25 +2,29 @@
 
 # The biharmonic problem is a typical example of a higher-order PDE problem. It can appear
 # in, for example, elasticity and fluid flow problems. In this example, we will briefly
-# review what the biharmonic problem looks like, and we will implement it using Mantis.jl.
+# review what the biharmonic problem looks like, and we will implement it using `Mantis.jl`.
 
 # ## Formulation
 
 # ### The 1D case.
 
-# In 1D, ignoring form notation, the biharmonic problem is defined as:
+# In 1D the biharmonic problem is defined as:
 # ```math
 # \begin{alignat*}{2}
 #     &\frac{\partial^4 \phi(x)}{\partial x^4} = - f(x)  \quad &&\text{for}\ x \in [0, L] \;, \\
 #     &\phi(0) = \phi(L) = 0 \;, \\
-#     &-\frac{\partial \phi}{\partial x}(0) = \frac{\partial \phi}{\partial x}(L) = 0 \;,
+#     &\frac{\partial^2 \phi}{\partial x^2}(0) = \frac{\partial \phi}{\partial x}(L) = 0 \;,
 # \end{alignat*}
 # ```
-# where we have chosen the domain to be ``[0, L]`` with ``L`` some length.
+# where we are looking for a function ``\phi(x)`` whose fourth derivative equals negative
+# ``f(x)``, the forcing function. We have chosen the domain to be ``[0, L]`` with ``L``
+# some length. Note that there are now two boundary conditions, since this is a higher
+# order equation. In this example, we'll use homogeneous boundary conditions on the value
+# and second derivatives.
 # The weak formulation is then as follows.
 # ```math
 # \begin{gather*}
-# \text{Given}\ f \in L^2 ([0, L]),\ \text{find}\ \phi \in H^2_{h,0}([0, L])\
+# \text{Given}\ f \in L^2 ([0, L]),\ \text{find}\ \psi \in H^2_{h,0}([0, L])\
 # \text{such that} \\
 # \int_0^L \frac{\partial^2 \phi}{\partial x^2} \frac{\partial^2 \phi}{\partial x^2} dx =
 # \int_{\Omega} \psi f dx \quad  \forall \ \psi \in H^2_{h,0}([0, L]) \;.
@@ -29,16 +33,16 @@
 
 # ### The differential form case in nD.
 
-# Since Mantis.jl is designed to deal with differential form, we prefer to work with the
+# Since `Mantis.jl` is designed to deal with differential forms, we prefer to work with the
 # differential form formulation of the biharmonic problem. The 1D example above is the 1D
-# version of the ``0``-form biharmonic problem with homogeneous Dirichlet and Neumann
-# boundary conditions. The ``0``-form biharmonic problem in ``n``-dimensions on domain
+# version of the ``0``-form biharmonic problem with homogeneous boundary conditions on the
+# value and laplacian. The ``0``-form biharmonic problem in ``n``-dimensions on domain
 # ``\Omega \subset \mathbb{R}^n`` with boundary ``\partial \Omega`` is
 # ```math
 # \begin{alignat*}{2}
 #     &\Delta^2 \phi^0 = - f^0  \quad &&\text{on}\ \Omega \;, \\
 #     &tr(\phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;, \\
-#     &tr(\star \mathrm{d} \phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;.
+#     &tr(\Delta \phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;.
 # \end{alignat*}
 # ```
 # The weak formulation is then as follows.
@@ -52,12 +56,13 @@
 # ```
 
 # ### What is actually computed?
-# In most finite element codes, and Mantis.jl is no exception, the integrals in the above
-# weak formulations are not directly computed on the given domain. Instead, they are
+# In many finite element codes, and this is also true for `Mantis.jl`, the integrals in the
+# above weak formulations are not directly computed on the given domain. Instead, they are
 # pulled-back (mapped) to a reference domain.
 #
 # For higher-order operators, such as the biharmonic operator, this usually causes
 # derivatives of the (inverse) metric to appear. The Laplacian in 1D, for example, becomes
+# (assuming we have a smooth enough mapping ``\Phi: \xi \to x``)
 # ```math
 # \begin{equation}
 # \Delta \phi^0 = \frac{1}{\sqrt{det(g)}} \left( \frac{\partial }{\partial \xi} \left (
@@ -65,7 +70,8 @@
 # \frac{1}{\sqrt{det(g)}} \frac{\partial^2 \phi}{\partial \xi^2} \right )\;,
 # \end{equation}
 # ```
-# while in 2D, it becomes
+# while in 2D, it becomes (assuming we have a smooth enough mapping ``\Phi: (\xi, \eta) \to
+# (x, y)``)
 # ```math
 # \begin{equation}
 # \Delta \phi^0 = \frac{\partial^2 \phi^0}{\partial \xi^2} g^{1,1} +
@@ -77,8 +83,14 @@
 # (\frac{\partial \phi^0}{\partial \xi} g^{2,1} + \frac{\partial \phi^0}{\partial \eta} g^{2,2}) \frac{\partial}{\partial \eta}(\sqrt{det(g)}) \right) \;.
 # \end{equation}
 # ```
-# As you can see, the expression for the Laplacian becomes rather involved. That is why
-# Mantis.jl allows you to compute these terms using automatic differentiation.
+# These expressions are for the Laplacian applied to ``0``-forms, in which case
+# ```math
+# \Delta = \delta \mathrm{d} = \star \mathrm{d} \star \mathrm{d} \;,
+# ```
+# with ``\delta`` the codifferential.
+#
+# These expressions tend to become rather complex. Fortunately, the user does not have to
+# implement such transformations. `Mantis.jl` can handle this automatically.
 
 # ## Implementation
 
@@ -208,7 +220,7 @@ fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
 # this more precise by computing the error in the ``L^2``-norm and plotting how this error
 # decreases as we choose increasingly fine meshes. This is called a convergence study.
 
-# ### Convergence studies for the 1D case.
+# #### Convergence studies for the 1D case.
 
 # One way to obtain some confirmation that these results are what we expect, we can compute
 # the error on finer and finer meshes. To start, we create a function that will create all
@@ -267,13 +279,15 @@ for i in eachindex(num_elements_study)
         starting_point, box_size, num_elements_study[i]
     )
     geo_mapped = Geometry.MappedGeometry(geo_cartesian, full_map)
-    space = FunctionSpaces.create_bspline_space(
+
+    space_cartesian = FunctionSpaces.create_bspline_space(
         starting_point, box_size, num_elements_study[i], p, k
     )
+    space_curvilinear = FunctionSpaces.BSplineSpace(geo_cartesian, full_map, p[1], k[1])
 
     h[i] = box_size[1] / num_elements_study[i][1]
-    errors_cartesian[i] = compute_error_biharmonic(geo_cartesian, space)
-    errors_mapped[i] = compute_error_biharmonic(geo_mapped, space)
+    errors_cartesian[i] = compute_error_biharmonic(geo_cartesian, space_cartesian)
+    errors_mapped[i] = compute_error_biharmonic(geo_mapped, space_curvilinear)
 end
 
 # We can then plot the results using GLMakie
@@ -281,20 +295,20 @@ end
 using GLMakie
 fig2 = Figure()
 ax2 = Axis(
-    fig2[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
+    fig2[1, 1]; xlabel=L"h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
 )
 
 scatterlines!(
     ax2, h, errors_mapped; label="Mapped", color=:blue, marker=:rect, markersize=10
 )
 C = errors_mapped[3] / (h[3]^4)
-lines!(ax2, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
+lines!(ax2, h, C .* (h .^ 4); label=L"O(h^4)", linestyle=:dot, color=:black)
 
 scatterlines!(
     ax2, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
 )
 C2 = errors_cartesian[3] / (h[3]^4)
-lines!(ax2, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
+lines!(ax2, h, C2 .* (h .^ 4); label=L"O(h^4)", linestyle=:dash, color=:black)
 
 fig2[1, 2] = Legend(fig2, ax2)
 fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
@@ -384,16 +398,18 @@ Mantis.Plot.export_form_fields_to_vtk(
     output_directory_tree=["examples", "data", "output", "Biharmonic"],
 )
 
-# ### The 2D case on a more complicated geometry.
+# #### The 2D case on a more complicated geometry.
 
-# If we want to use a different geometry instead, we create the new geometry and reuse all
-# other code.
+# If we want to use a different geometry instead, we create a space on the new geometry and
+# reuse all other code.
 
-geometry_2D_curv = Geometry.create_curvilinear_square(
-    starting_point_2D, box_size_2D, num_elements_2D;
+mapping_2D_curv = Geometry.create_curvilinear_mapping(starting_point_2D, box_size_2D)
+geometry_2D_curv = Geometry.MappedGeometry(geometry_2D, mapping_2D_curv)
+B_2D_curv = FunctionSpaces.TensorProductSpace(
+    FunctionSpaces.get_constituent_spaces(B_2D), Geometry.CartesianGeometry, mapping_2D_curv
 )
 
-Λ⁰_2D_curv = Forms.FormSpace(0, B_2D, "ϕ")
+Λ⁰_2D_curv = Forms.FormSpace(0, B_2D_curv, "ϕ")
 
 f⁰_2D_curv = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D_curv, "f⁰")
 
@@ -432,7 +448,7 @@ Mantis.Plot.export_form_fields_to_vtk(
     output_directory_tree=["examples", "data", "output", "Biharmonic"],
 )
 
-# ### Convergence studies for the 2D case.
+# #### Convergence studies for the 2D case.
 
 # One way to obtain some confirmation that these results are what we expect, we can compute
 # the error on finer and finer meshes. To start, we create a function that will create all
@@ -469,50 +485,63 @@ end
 
 # Then, we create a loop to build geometries with increasingly many elements and to compute
 # the biharmonic equation with them.
-num_elements_study = [(4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
-h = Vector{Float64}(undef, length(num_elements_study))
-errors_cartesian = Vector{Float64}(undef, length(num_elements_study))
-errors_curvilinear = Vector{Float64}(undef, length(num_elements_study))
-for i in eachindex(num_elements_study)
+num_elements_study_2D = [(4, 4), (8, 8), (16, 16), (32, 32), (64, 64)]
+h_2D = Vector{Float64}(undef, length(num_elements_study_2D))
+errors_cartesian_2D = Vector{Float64}(undef, length(num_elements_study_2D))
+errors_curvilinear_2D = Vector{Float64}(undef, length(num_elements_study_2D))
+for i in eachindex(num_elements_study_2D)
     geo_cartesian = Geometry.create_cartesian_box(
-        starting_point_2D, box_size_2D, num_elements_study[i]
+        starting_point_2D, box_size_2D, num_elements_study_2D[i]
     )
-    geo_curvilinear = Geometry.create_curvilinear_square(
-        starting_point_2D, box_size_2D, num_elements_study[i]
+    curved_mapping = Geometry.create_curvilinear_mapping(starting_point_2D, box_size_2D)
+    geo_curvilinear = Geometry.MappedGeometry(geo_cartesian, curved_mapping)
+
+    space_cartesian = FunctionSpaces.create_bspline_space(
+        starting_point_2D, box_size_2D, num_elements_study_2D[i], p_2D, k_2D
     )
-    space = FunctionSpaces.create_bspline_space(
-        starting_point_2D, box_size_2D, num_elements_study[i], p_2D, k_2D
+    space_curvilinear = FunctionSpaces.TensorProductSpace(
+        FunctionSpaces.get_constituent_spaces(space_cartesian),
+        Geometry.CartesianGeometry,
+        curved_mapping,
     )
 
-    h[i] = box_size_2D[1] / num_elements_study[i][1]
-    errors_cartesian[i] = compute_error_biharmonic_2D(geo_cartesian, space)
-    errors_curvilinear[i] = compute_error_biharmonic_2D(geo_curvilinear, space)
+    h_2D[i] = box_size_2D[1] / num_elements_study_2D[i][1]
+    errors_cartesian_2D[i] = compute_error_biharmonic_2D(geo_cartesian, space_cartesian)
+    errors_curvilinear_2D[i] = compute_error_biharmonic_2D(
+        geo_curvilinear, space_curvilinear
+    )
 end
 
 # We can then plot the results using GLMakie again.
 
 fig3 = Figure()
 ax3 = Axis(
-    fig3[1, 1]; xlabel="h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
+    fig3[1, 1]; xlabel=L"h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
 )
 
 scatterlines!(
     ax3,
-    h,
-    errors_curvilinear;
+    h_2D,
+    errors_curvilinear_2D;
     label="Curvilinear",
     color=:blue,
     marker=:rect,
     markersize=10,
 )
-C = errors_curvilinear[3] / (h[3]^4)
-lines!(ax3, h, C .* (h .^ 4); label="O(h^4)", linestyle=:dot, color=:black)
+C = errors_curvilinear_2D[3] / (h[3]^4)
+lines!(ax3, h_2D, C .* (h_2D .^ 4); label=L"O(h^4)", linestyle=:dot, color=:black)
 
 scatterlines!(
-    ax3, h, errors_cartesian; label="Cartesian", color=:red, marker=:circle, markersize=10
+    ax3,
+    h_2D,
+    errors_cartesian_2D;
+    label="Cartesian",
+    color=:red,
+    marker=:circle,
+    markersize=10,
 )
-C2 = errors_cartesian[3] / (h[3]^4)
-lines!(ax3, h, C2 .* (h .^ 4); label="O(h^4)", linestyle=:dash, color=:black)
+C2 = errors_cartesian_2D[3] / (h[3]^4)
+lines!(ax3, h_2D, C2 .* (h_2D .^ 4); label=L"O(h^4)", linestyle=:dash, color=:black)
 
 fig3[1, 2] = Legend(fig3, ax3)
 fig3 = DisplayAs.Text(DisplayAs.PNG(fig3)) #hide

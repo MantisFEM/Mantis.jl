@@ -184,6 +184,20 @@ function BSplineSpace(
     regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
     return BSplineSpace(geometry, geometry, Bernstein(polynomial_degree), regularity)
 end
+function BSplineSpace(
+    geometry::Geometry.CartesianGeometry{1, image_dim, 1},
+    mapping::Geometry.AbstractMapping{1, image_dim},
+    polynomial_degree::Int,
+    regularity::Int,
+) where {image_dim}
+    physical_geometry = Geometry.MappedGeometry(geometry, mapping)
+    breakpoints = Geometry.get_breakpoints_per_dim(geometry)
+    num_breakpoints = length(breakpoints)
+    regularity = [-1; repeat([regularity], num_breakpoints - 2); -1]
+    return BSplineSpace(
+        physical_geometry, geometry, Bernstein(polynomial_degree), regularity
+    )
+end
 
 # Given a polynomial and regularity vector, assume the polynomial is Bernstein.
 function BSplineSpace(
