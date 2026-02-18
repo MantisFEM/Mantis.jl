@@ -1,0 +1,39 @@
+
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Mantis.jl a Structure-Preserving Finite Element Library
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Diogo
+    family-names: C. Cabanas
+    email: d.costacabanas@tudelft.nl
+    affiliation: Delft University of Technology
+  - given-names: Joey
+    family-names: Dekker
+    email: j.dekker-2@tudelft.nl
+    affiliation: Delft University of Technology
+  - given-names: Artur
+    family-names: Palha
+    email: a.palha@tudelft.nl
+    affiliation: Delft University of Technology
+  - given-names: Deepesh
+    family-names: Toshniwal
+    email: d.toshniwal@tudelft.nl
+    affiliation: Delft University of Technology
+repository-code: 'https://github.com/MantisFEM/Mantis.jl'
+abstract: >-
+  Mantis.jl is a package for high-order structure-preserving finite element methods. This package is designed around structure-preserving/mimetic methods. It has extensive support for basis functions; 'standard' mimetic finite elements and multi-patch splines.
+keywords:
+  - FEM
+  - FEEC
+  - IGA
+  - Structure Preserving
+  - Mimetic Discretizations
+  - Adaptive Mesh Refinement
+doi: 10.5281/zenodo.17495870
+license: MIT
