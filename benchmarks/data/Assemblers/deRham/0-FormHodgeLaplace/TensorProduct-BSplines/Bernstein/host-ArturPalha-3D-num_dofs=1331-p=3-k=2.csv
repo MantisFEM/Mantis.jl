@@ -1,2 +1,3 @@
 benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
 Assemblers/deRham/0-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/3D-num_dofs=1331-p=3-k=2,b4eee92,2025-11-18,1.10.7,2025-11-27,1.030 s,1.015 s,63.346 ms,937.570 ms,47.411 ms,1.64 GiB,1119280
+Assemblers/deRham/0-FormHodgeLaplace/TensorProduct-BSplines/Bernstein/3D-num_dofs=1331-p=3-k=2,081cb17,2025-11-27,1.10.7,2026-01-22,949.199 ms,927.953 ms,66.270 ms,852.282 ms,38.283 ms,1.62 GiB,227888
