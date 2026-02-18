@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms/FormOperators/Hodge/evaluate-2-form-3D,081cb17,2025-11-27,1.12.1,2026-01-20,4.439 ms,4.772 ms,480.629 μs,4.302 ms,0.000 ns,6.78 MiB,350

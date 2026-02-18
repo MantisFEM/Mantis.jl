@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms\FormOperators\Integral\evaluate-3D,b4eee92,2025-11-18,1.12.1,2025-11-18,6.700 μs,9.167 μs,7.070 μs,4.300 μs,0.000 ns,32.56 KiB,116
-Forms\FormOperators\Integral\evaluate-3D,081cb17,2025-11-27,1.12.2,2025-11-28,6.650 μs,8.879 μs,6.805 μs,4.100 μs,0.000 ns,32.09 KiB,103

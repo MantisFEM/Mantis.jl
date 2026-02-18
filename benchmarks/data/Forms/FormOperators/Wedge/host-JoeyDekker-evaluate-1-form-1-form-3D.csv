@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms\FormOperators\Wedge\evaluate-1-form-1-form-3D,b4eee92,2025-11-18,1.12.1,2025-11-18,4.293 ms,4.174 ms,904.790 μs,2.841 ms,0.000 ns,14.41 MiB,721
-Forms\FormOperators\Wedge\evaluate-1-form-1-form-3D,081cb17,2025-11-27,1.12.2,2025-11-28,4.212 ms,3.992 ms,987.256 μs,2.916 ms,0.000 ns,14.41 MiB,687

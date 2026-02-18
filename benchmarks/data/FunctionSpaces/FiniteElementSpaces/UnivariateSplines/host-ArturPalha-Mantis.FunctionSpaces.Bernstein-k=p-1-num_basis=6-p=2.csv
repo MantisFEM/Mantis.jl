@@ -1,5 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.Bernstein-k=p-1-num_basis=6-p=2,2625f63,2025-09-22,1.10.7,2025-10-30,375.000 ns,480.248 ns,665.010 ns,333.000 ns,0.000 ns,864 bytes,5
-FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.Bernstein-k=p-1-num_basis=6-p=2,18c880f,2025-10-30,1.10.7,2025-11-06,500.000 ns,551.578 ns,696.073 ns,458.000 ns,0.000 ns,1.19 KiB,9
-FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.Bernstein-k=p-1-num_basis=6-p=2,b4eee92,2025-11-18,1.10.7,2025-11-27,459.000 ns,516.928 ns,498.251 ns,416.000 ns,0.000 ns,1.19 KiB,9
-FunctionSpaces/FiniteElementSpaces/UnivariateSplines/Mantis.FunctionSpaces.Bernstein-k=p-1-num_basis=6-p=2,081cb17,2025-11-27,1.10.7,2026-01-22,417.000 ns,455.802 ns,494.998 ns,375.000 ns,0.000 ns,1.19 KiB,9

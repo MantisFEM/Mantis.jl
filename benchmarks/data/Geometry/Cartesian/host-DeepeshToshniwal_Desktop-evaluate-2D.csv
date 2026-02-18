@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Geometry/Cartesian/evaluate-2D,081cb17,2025-11-27,1.12.1,2026-01-20,896.000 ns,930.500 ns,69.166 ns,881.000 ns,0.000 ns,1.64 KiB,2

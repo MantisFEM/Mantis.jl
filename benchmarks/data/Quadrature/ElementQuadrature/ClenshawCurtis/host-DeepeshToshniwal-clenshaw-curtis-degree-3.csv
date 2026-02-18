@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Quadrature/ElementQuadrature/ClenshawCurtis/clenshaw-curtis-degree-3,b4eee92,2025-11-18,1.10.6,2025-11-18,2.250 μs,2.368 μs,2.276 μs,2.041 μs,0.000 ns,2.02 KiB,22

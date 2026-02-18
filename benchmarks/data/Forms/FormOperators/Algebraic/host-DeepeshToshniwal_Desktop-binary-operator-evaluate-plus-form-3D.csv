@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms/FormOperators/Algebraic/binary-operator-evaluate-plus-form-3D,081cb17,2025-11-27,1.12.1,2026-01-20,13.549 μs,14.122 μs,3.867 μs,12.662 μs,0.000 ns,64.19 KiB,206

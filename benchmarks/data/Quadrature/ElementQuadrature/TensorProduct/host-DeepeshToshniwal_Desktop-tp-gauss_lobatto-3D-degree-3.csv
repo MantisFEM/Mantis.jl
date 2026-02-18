@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Quadrature/ElementQuadrature/TensorProduct/tp-gauss_lobatto-3D-degree-3,081cb17,2025-11-27,1.12.1,2026-01-20,2.325 μs,2.353 μs,198.746 ns,2.225 μs,0.000 ns,3.31 KiB,66

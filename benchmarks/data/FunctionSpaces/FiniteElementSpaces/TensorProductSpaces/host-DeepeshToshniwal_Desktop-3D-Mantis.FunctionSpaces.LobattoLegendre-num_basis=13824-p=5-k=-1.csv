@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-FunctionSpaces/FiniteElementSpaces/TensorProductSpaces/3D-Mantis.FunctionSpaces.LobattoLegendre-num_basis=13824-p=5-k=-1,081cb17,2025-11-27,1.12.1,2026-01-20,6.380 ms,8.334 ms,24.395 ms,1.711 ms,0.000 ns,51.68 MiB,97

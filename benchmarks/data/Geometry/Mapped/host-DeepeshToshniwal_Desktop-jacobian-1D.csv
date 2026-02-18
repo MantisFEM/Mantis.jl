@@ -1,2 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Geometry/Mapped/jacobian-1D,081cb17,2025-11-27,1.12.1,2026-01-20,339.000 ns,367.892 ns,103.399 ns,320.000 ns,0.000 ns,1.52 KiB,28

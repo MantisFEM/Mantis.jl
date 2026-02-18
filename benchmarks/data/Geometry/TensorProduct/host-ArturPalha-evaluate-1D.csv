@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Geometry/TensorProduct/evaluate-1D,b4eee92,2025-11-18,1.10.7,2025-11-27,1.042 μs,1.063 μs,387.884 ns,958.000 ns,0.000 ns,1.41 KiB,70
-Geometry/TensorProduct/evaluate-1D,081cb17,2025-11-27,1.10.7,2026-01-22,166.500 ns,162.008 ns,107.634 ns,125.000 ns,0.000 ns,288 bytes,2

@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Geometry\Cartesian\evaluate-3D,b4eee92,2025-11-18,1.12.1,2025-11-18,207.750 μs,238.655 μs,230.317 μs,190.200 μs,0.000 ns,305.15 KiB,18009
-Geometry\Cartesian\evaluate-3D,081cb17,2025-11-27,1.12.2,2025-11-28,12.500 μs,12.123 μs,2.478 μs,7.300 μs,0.000 ns,23.52 KiB,3

@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Quadrature/ElementQuadrature/TensorProduct/tp-gauss_legendre-2D-degree-3,b4eee92,2025-11-18,1.10.7,2025-11-27,333.000 ns,334.929 ns,283.408 ns,250.000 ns,0.000 ns,992 bytes,13
-Quadrature/ElementQuadrature/TensorProduct/tp-gauss_legendre-2D-degree-3,081cb17,2025-11-27,1.10.7,2026-01-22,292.000 ns,318.529 ns,110.319 ns,250.000 ns,0.000 ns,992 bytes,13

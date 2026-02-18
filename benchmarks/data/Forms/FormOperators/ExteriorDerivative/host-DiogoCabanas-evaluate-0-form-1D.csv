@@ -1,3 +1,0 @@
-benchmark,commit_hash,commit_date,julia_version,date,med_time,mea_time,std_time,min_time,min_gc,min_memory,min_allocs
-Forms/FormOperators/ExteriorDerivative/evaluate-0-form-1D,b4eee92,2025-11-18,1.12.1,2025-11-21,1.873 μs,1.974 μs,994.501 ns,1.573 μs,0.000 ns,4.25 KiB,83
-Forms/FormOperators/ExteriorDerivative/evaluate-0-form-1D,081cb17,2025-11-27,1.12.2,2025-11-28,1.793 μs,1.880 μs,996.071 ns,1.483 μs,0.000 ns,4.25 KiB,83
