@@ -9,7 +9,7 @@ Concrete implementation of a function space for differential forms.
 
 # Fields
 - `fem_space::F`: The finite element space(s) used for the form components
-- `label::String`: Label for the form space
+- `label::AbstractString`: Label for the form space
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold
@@ -17,16 +17,17 @@ Concrete implementation of a function space for differential forms.
 - `F`: Type of the finite element space
 
 # Inner Constructors
-- `FormSpace(form_rank::Int,fem_space::F, label::String)`: Constructor for differential
+- `FormSpace(form_rank::Int,fem_space::F, label::AbstractString)`: Constructor for differential
     form spaces.
 """
-struct FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, form_rank}
+struct FormSpace{manifold_dim, form_rank, F, L} <:
+       AbstractFormSpace{manifold_dim, form_rank}
     fem_space::F
-    label::String
+    label::L
 
     """
         FormSpace(
-            form_rank::Int, fem_space::F, label::String
+            form_rank::Int, fem_space::F, label::AbstractString
         ) where {
             manifold_dim,
             num_components,
@@ -39,13 +40,13 @@ struct FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, 
     # Arguments
     - `form_rank::Int`: Differential form rank.
     - `fem_space::F`: The function space used to represent the form.
-    - `label::String`: The label of the form space.
+    - `label::AbstractString`: The label of the form space.
 
     # Returns
     - `FormSpace{manifold_dim, form_rank, F}`: The FormSpace.
     """
     function FormSpace(
-        form_rank::Int, fem_space::F, label::String
+        form_rank::Int, fem_space::F, label::AbstractString
     ) where {
         manifold_dim,
         num_components,
@@ -70,7 +71,7 @@ struct FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, 
             )
         end
 
-        return new{manifold_dim, form_rank, F}(fem_space, label)
+        return new{manifold_dim, form_rank, F, typeof(label)}(fem_space, label)
     end
 end
 ############################################################################################

@@ -147,7 +147,7 @@ Returns the label of the form expression.
 - `form::AbstractForm`: The form expression.
 
 # Returns
-- `String`: The label of the form expression.
+- `AbstractString`: The label of the form expression.
 """
 get_label(form::AbstractForm) = form.label
 

@@ -11,7 +11,7 @@ Represents the exterior derivative of an `AbstractForm`.
 # Fields
 - `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
     which the exterior derivative is applied.
-- `label::String`: The exterior derivative label. This is a concatenation of `"d"` with the
+- `label::AbstractString`: The exterior derivative label. This is a concatenation of `"d"` with the
     label of `form`.
 
 # Type parameters
@@ -27,10 +27,10 @@ Represents the exterior derivative of an `AbstractForm`.
 # Inner Constructors
 - `ExteriorDerivative(form::F)`: General constructor.
 """
-struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, F} <:
+struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, F, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
-    label::String
+    label::L
 
     function ExteriorDerivative(
         form::F
@@ -47,8 +47,10 @@ struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, F} <:
                 """))
         end
 
-        return new{manifold_dim, form_rank + 1, expression_rank, F}(
-            form, "d(" * get_label(form) * ")"
+        label = "d(" * get_label(form) * ")"
+
+        return new{manifold_dim, form_rank + 1, expression_rank, F, typeof(label)}(
+            form, label
         )
     end
 end

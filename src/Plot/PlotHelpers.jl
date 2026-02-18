@@ -87,9 +87,11 @@ function export_form_fields_to_vtk(
     output_directory_tree::Vector{String}=["examples", "data", "output"],
 )
     for form in form_sols
-        label = form.label
-        println("Writing form '$label' to file ...")
-        output_file = export_path(output_directory_tree, "$filename-$label")
+        label = Forms.get_label(form)
+        sanitised_label = replace(label, "\$" => "")
+        sanitised_label = replace(sanitised_label, "\\" => "")
+        println("Writing form '$sanitised_label' to file ...")
+        output_file = export_path(output_directory_tree, "$filename-$sanitised_label")
         plot(
             form;
             vtk_filename=output_file,
@@ -104,7 +106,11 @@ function export_form_fields_to_vtk(
 end
 
 function plot_solution(
-    fields::T, num_plot_points_per_element=25; title="Solution", xlabel="x", ylabel="phi(x)"
+    fields::T,
+    num_plot_points_per_element=25;
+    title="Solution",
+    xlabel="x",
+    ylabel=L"\phi(x)",
 ) where {n_fields, T <: NTuple{n_fields, Forms.AbstractFormField{1}}}
     fig = Figure()
     ax = Axis(fig[1, 1]; title=title, xlabel=xlabel, ylabel=ylabel)

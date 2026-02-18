@@ -106,6 +106,7 @@
 # be at least 1.
 
 using Mantis
+using GLMakie # Used for plotting later on. It also allows the use of L"".
 using DisplayAs #hide
 
 starting_point = (0.0,)
@@ -120,7 +121,7 @@ B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, 
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰ = Forms.FormSpace(0, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, L"\phi_h")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a
@@ -130,7 +131,7 @@ B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, 
 function forcing_function(x::Matrix{Float64})
     return [@. 16.0 * pi^4 * sin(2.0 * pi * x[:, 1])]
 end
-f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
+f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, L"f^0")
 
 # The quadrature rule is defined as a tensor product rule of the degree of the B-spline
 # space plus one. In this case, we define the quadrature rule as a Gauss-Legendre rule.
@@ -182,7 +183,7 @@ sol = vec(A \ b)
 function exact_solution(x::Matrix{Float64})
     return [@. sin(2.0 * pi * x[:, 1])]
 end
-ϕ_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, "\\phi_{exact}")
+ϕ_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, L"\phi_{exact}")
 
 fig = Mantis.Plot.plot_solution((ϕ⁰, ϕ_exact); title="Solution", ylabel=" ")
 fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
@@ -197,9 +198,9 @@ num_elements = (16,)
 geometry = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
 B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
 
-Λ⁰ = Forms.FormSpace(0, B, "ϕ")
+Λ⁰ = Forms.FormSpace(0, B, L"\phi_h")
 
-f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
+f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, L"f^0")
 
 canonical_qrule = Quadrature.tensor_product_rule(p .+ 1, Quadrature.gauss_legendre)
 dΩ = Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geometry))
@@ -214,10 +215,11 @@ A, b = Assemblers.assemble(weak_form, bc)
 sol = vec(A \ b)
 ϕ⁰ = Forms.build_form_field(Λ⁰, sol)
 
-ϕ_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, "\\phi_{exact}")
+ϕ_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, L"\phi_{exact}")
 
 fig = Mantis.Plot.plot_solution((ϕ⁰, ϕ_exact); title="Solution", ylabel=" ")
-fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
+display(fig)
+# fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
 
 # The above solution is indeed much closer (in the 'eyeball-norm') than before. We can make
 # this more precise by computing the error in the ``L^2``-norm and plotting how this error
@@ -234,9 +236,9 @@ canonical_qrule_analysis = Quadrature.tensor_product_rule(
 )
 
 function compute_error_biharmonic(geometry, function_space)
-    Λ⁰ = Forms.FormSpace(0, function_space, "ϕ")
+    Λ⁰ = Forms.FormSpace(0, function_space, L"\phi_h")
 
-    f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
+    f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, L"f^0")
 
     dΩ = Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geometry))
 
@@ -250,7 +252,7 @@ function compute_error_biharmonic(geometry, function_space)
     sol = vec(A \ b)
     ϕ⁰ = Forms.build_form_field(Λ⁰, sol)
 
-    ϕ⁰_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, "ϕ_exact")
+    ϕ⁰_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, L"\phi_{exact}")
 
     dΩ_analysis = Quadrature.StandardQuadrature(
         canonical_qrule_analysis, Geometry.get_num_elements(geometry)
@@ -295,7 +297,6 @@ end
 
 # We can then plot the results using GLMakie
 
-using GLMakie
 fig2 = Figure()
 ax2 = Axis(
     fig2[1, 1]; xlabel=L"h", ylabel=L"||ϕ_h - ϕ_{exact}||_{L^2}", xscale=log10, yscale=log10
@@ -338,7 +339,7 @@ B_2D = FunctionSpaces.create_bspline_space(
 # Mantis works with forms, so we need to define the form space. In this case, we are
 # working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰_2D = Forms.FormSpace(0, B_2D, "ϕ")
+Λ⁰_2D = Forms.FormSpace(0, B_2D, L"\phi_h")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a
@@ -348,7 +349,7 @@ B_2D = FunctionSpaces.create_bspline_space(
 function forcing_function_2D(x::Matrix{Float64})
     return [@. 64.0 * pi^4 * sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2])]
 end
-f⁰_2D = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D, "f⁰")
+f⁰_2D = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D, L"f^0")
 
 # The quadrature rule is defined as a tensor product rule of the degree of the B-spline
 # space plus one. In this case, we define the quadrature rule as a Gauss-Legendre rule.
@@ -381,7 +382,7 @@ sol_2D = vec(A_2D \ b_2D)
 function exact_solution_2D(x::Matrix{Float64})
     return [@. sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2])]
 end
-ϕ⁰_exact_2D = Forms.AnalyticalFormField(0, exact_solution_2D, geometry_2D, "ϕ_exact")
+ϕ⁰_exact_2D = Forms.AnalyticalFormField(0, exact_solution_2D, geometry_2D, L"\phi_{exact}")
 
 canonical_qrule_2D_analysis = Quadrature.tensor_product_rule(
     3 .* p_2D .+ 1, Quadrature.gauss_legendre
@@ -412,9 +413,9 @@ B_2D_curv = FunctionSpaces.TensorProductSpace(
     FunctionSpaces.get_constituent_spaces(B_2D), Geometry.CartesianGeometry, mapping_2D_curv
 )
 
-Λ⁰_2D_curv = Forms.FormSpace(0, B_2D_curv, "ϕ")
+Λ⁰_2D_curv = Forms.FormSpace(0, B_2D_curv, L"\phi_h")
 
-f⁰_2D_curv = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D_curv, "f⁰")
+f⁰_2D_curv = Forms.AnalyticalFormField(0, forcing_function_2D, geometry_2D_curv, L"f^0")
 
 dΩ_2D_curv = Quadrature.StandardQuadrature(
     canonical_qrule_2D, Geometry.get_num_elements(geometry_2D_curv)
@@ -435,7 +436,7 @@ sol_2D_curv = vec(A_2D_curv \ b_2D_curv)
 ϕ⁰_2D_curv = Forms.build_form_field(Λ⁰_2D_curv, sol_2D_curv)
 
 ϕ⁰_exact_2D_curv = Forms.AnalyticalFormField(
-    0, exact_solution_2D, geometry_2D_curv, "ϕ_exact_curv"
+    0, exact_solution_2D, geometry_2D_curv, L"\phi_{exact, curv}"
 )
 
 dΩ_2D_analysis_curv = Quadrature.StandardQuadrature(

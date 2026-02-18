@@ -11,7 +11,7 @@ Represents the hodge star of an `AbstractForm`.
 # Fields
 - `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
     which the hodge star is applied.
-- `label::String`: The hodge star label. This is a concatenation of `"★"` with the
+- `label::AbstractString`: The hodge star label. This is a concatenation of `"★"` with the
     label of `form`.
 
 # Type parameters
@@ -27,10 +27,10 @@ Represents the hodge star of an `AbstractForm`.
 # Inner Constructors
 - `Hodge(form::F)`: General constructor.
 """
-struct Hodge{manifold_dim, form_rank, expression_rank, F} <:
+struct Hodge{manifold_dim, form_rank, expression_rank, F, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
-    label::String
+    label::L
 
     function Hodge(
         form::F
@@ -47,9 +47,9 @@ struct Hodge{manifold_dim, form_rank, expression_rank, F} <:
         end
         hodge_rank = manifold_dim - form_rank
 
-        return new{manifold_dim, hodge_rank, expression_rank, F}(
-            form, "★(" * get_label(form) * ")"
-        )
+        label = "★(" * get_label(form) * ")"
+
+        return new{manifold_dim, hodge_rank, expression_rank, F, typeof(label)}(form, label)
     end
 end
 

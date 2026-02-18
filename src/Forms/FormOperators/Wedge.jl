@@ -13,7 +13,7 @@ Represents the wedge between two differential forms.
     first form.
 - `form_2 <: AbstractForm{manifold_dim, form_rank_2, expression_rank_2, G}`: The
     second form.
-- `label :: String`: A label for the wedge.
+- `label :: AbstractString`: A label for the wedge.
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold.
@@ -27,11 +27,11 @@ Represents the wedge between two differential forms.
 # Inner Constructors
 - `Wedge(form_1::F1, form_2::F2)`: General constructor.
 """
-struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2} <:
+struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
     form_1::F1
     form_2::F2
-    label::String
+    label::L
 
     function Wedge(
         form_1::F1, form_2::F2
@@ -69,7 +69,9 @@ struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2} <:
 
         label = "(" * get_label(form_1) * "∧" * get_label(form_2) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2}(form_1, form_2, label)
+        return new{manifold_dim, form_rank, expression_rank, F1, F2, typeof(label)}(
+            form_1, form_2, label
+        )
     end
 end
 

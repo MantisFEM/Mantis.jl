@@ -124,7 +124,7 @@ of a differential form expression.
 # Fields
 - `form::F`: The differential form expression to which the transformation is applied.
 - `transformation::T`: The transformation function to apply to the form.
-- `label::String`: The label to associate with the resulting transformed form.
+- `label::AbstractString`: The label to associate with the resulting transformed form.
 
 # Type parameters
 - `manifold_dim::Int`: The dimension of the manifold where the form is defined.
@@ -142,14 +142,14 @@ differential form expression .
 - `Base.:*(factor::Number, form::AbstractForm)`: Alias for the
     multiplication of a differential form expression with a constant factor.
 """
-struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T} <:
+struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
     transformation::T
-    label::String
+    label::L
 
     function UnaryFormTransformation(
-        form::F, transformation::T, label::String
+        form::F, transformation::T, label::AbstractString
     ) where {
         manifold_dim,
         form_rank,
@@ -159,7 +159,7 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T} <
     }
         label = "(" * label * get_label(form) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, F, T}(
+        return new{manifold_dim, form_rank, expression_rank, F, T, typeof(label)}(
             form, transformation, label
         )
     end
@@ -184,7 +184,7 @@ acting on two differential form expressions.
 - `form_1::F1`: The first differential form expression.
 - `form_2::F2`: The second differential form expression.
 - `transformation::T`: The transformation to apply to the differential forms.
-- `label::String`: The label to associate to the resulting differential form.
+- `label::AbstractString`: The label to associate to the resulting differential form.
 
 # Type parameters
 - `manifold_dim::Int`: The dimension of the manifold where the form expressions are defined.
@@ -195,20 +195,20 @@ acting on two differential form expressions.
 - `T <: Function`: The type of the algebraic transformation.
 
 # Inner constructors
-- `BinaryFormTransformation(form_1::F1, form_2::F2, transformation::T, label::String)`: General
+- `BinaryFormTransformation(form_1::F1, form_2::F2, transformation::T, label::AbstractString)`: General
   constructor.
 - `Base.:+(form_1::F1, form_2::F2)`: Alias for the sum of two differential form expressions.
 - `Base.:-(form_1::F1, form_2::F2)`: Alias for the difference of two differential form expressions.
 """
-struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T} <:
+struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
     form_1::F1
     form_2::F2
     transformation::T
-    label::String
+    label::L
 
     function BinaryFormTransformation(
-        form_1::F1, form_2::F2, transformation::T, label::String
+        form_1::F1, form_2::F2, transformation::T, label::AbstractString
     ) where {
         manifold_dim,
         form_rank,
@@ -239,7 +239,7 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
 
         label = "(" * get_label(form_1) * label * get_label(form_2) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2, T}(
+        return new{manifold_dim, form_rank, expression_rank, F1, F2, T, typeof(label)}(
             form_1, form_2, transformation, label
         )
     end

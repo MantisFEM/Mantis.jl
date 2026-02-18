@@ -10,7 +10,7 @@ Represents a differential form field.
 # Fields
 - `form_space::FS`: The form space associated with this field.
 - `coefficients::Vector{Float64}`: Coefficients of the form field.
-- `label::String`: Label for the form field.
+- `label::AbstractString`: Label for the form field.
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold.
@@ -18,18 +18,19 @@ Represents a differential form field.
 - `FS`: Type of the form space.
 
 # Inner Constructors
-- `FormField(form_space::FS, coefficients::Vector{Int}, label::String)`: General constructor
-    for form fields.
-- `FormField(form_space::FS, label::String)`: Constructor with zero coefficients.
+- `FormField(form_space::FS, coefficients::Vector{Int}, label::AbstractString)`: General
+    constructor for form fields.
+- `FormField(form_space::FS, label::AbstractString)`: Constructor with zero coefficients.
 """
-struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim, form_rank}
+struct FormField{manifold_dim, form_rank, FS, L} <:
+       AbstractFormField{manifold_dim, form_rank}
     form_space::FS
     coefficients::Vector{Float64}
-    label::String
+    label::L
 
     """
         FormField(
-            form_space::FS, coefficients::Vector{Float64}, label::String
+            form_space::FS, coefficients::Vector{Float64}, label::AbstractString
         ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
 
     Construct a FormField with zero coefficients.
@@ -43,7 +44,7 @@ struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim,
     - `FormField`: A new FormField instance.
     """
     function FormField(
-        form_space::FS, coefficients::Vector{Float64}, label::String
+        form_space::FS, coefficients::Vector{Float64}, label::AbstractString
     ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
         if length(coefficients) != get_num_basis(form_space)
             throw(ArgumentError("""\
@@ -52,7 +53,9 @@ struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim,
                       """))
         end
 
-        return new{manifold_dim, form_rank, FS}(form_space, coefficients, label)
+        return new{manifold_dim, form_rank, FS, typeof(label)}(
+            form_space, coefficients, label
+        )
     end
 
     """
@@ -67,7 +70,7 @@ struct FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim,
     # Returns
     - `FormField`: A new FormField instance with zero coefficients.
     """
-    function FormField(form_space::FS, label::String) where {FS}
+    function FormField(form_space::FS, label::AbstractString) where {FS}
         coefficients = zeros(get_num_basis(form_space))
 
         return FormField(form_space, coefficients, label)
@@ -83,7 +86,7 @@ Represents an analytical differential form field.
 # Fields
 - `geometry::G`: The geometry associated with this field.
 - `expression::E`: The expression defining the form field.
-- `label::String`: Label for the form field.
+- `label::AbstractString`: Label for the form field.
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold.
@@ -92,19 +95,19 @@ Represents an analytical differential form field.
 - `E`: Type of the expression.
 
 # Inner Constructors
-- `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::String)`: General
-    constructor for analytical form fields.
+- `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::AbstractString)`:
+    General constructor for analytical form fields.
 
 """
-struct AnalyticalFormField{manifold_dim, form_rank, G, E} <:
+struct AnalyticalFormField{manifold_dim, form_rank, G, E, L} <:
        AbstractFormField{manifold_dim, form_rank}
     geometry::G
     expression::E
-    label::String
+    label::L
 
     """
         AnalyticalFormField(
-            form_rank::Int, expression::E, geometry::G, label::String
+            form_rank::Int, expression::E, geometry::G, label::AbstractString
         ) where {
             manifold_dim, E <: Function, G <: Geometry.AbstractGeometry{manifold_dim}
         }
@@ -115,15 +118,17 @@ struct AnalyticalFormField{manifold_dim, form_rank, G, E} <:
     - `form_rank::Int`: The rank of the form field.
     - `expression::E`: The expression defining the form field.
     - `geometry::G`: The geometry associated with this field.
-    - `label::String`: The label for the form field.
+    - `label::AbstractString`: The label for the form field.
 
     # Returns
     - `AnalyticalFormField`: The new analytical form field.
     """
     function AnalyticalFormField(
-        form_rank::Int, expression::E, geometry::G, label::String
+        form_rank::Int, expression::E, geometry::G, label::AbstractString
     ) where {manifold_dim, E <: Function, G <: Geometry.AbstractGeometry{manifold_dim}}
-        return new{manifold_dim, form_rank, G, E}(geometry, expression, label)
+        return new{manifold_dim, form_rank, G, E, typeof(label)}(
+            geometry, expression, label
+        )
     end
 end
 
