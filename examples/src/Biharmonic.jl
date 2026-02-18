@@ -13,7 +13,7 @@
 # \begin{alignat*}{2}
 #     &\frac{\partial^4 \phi(x)}{\partial x^4} = - f(x)  \quad &&\text{for}\ x \in [0, L] \;, \\
 #     &\phi(0) = \phi(L) = 0 \;, \\
-#     &\frac{\partial^2 \phi}{\partial x^2}(0) = \frac{\partial \phi}{\partial x}(L) = 0 \;,
+#     &\frac{\partial^2 \phi}{\partial x^2}(0) = \frac{\partial^2 \phi}{\partial x^2}(L) = 0 \;,
 # \end{alignat*}
 # ```
 # where we are looking for a function ``\phi(x)`` whose fourth derivative equals negative
@@ -26,10 +26,13 @@
 # \begin{gather*}
 # \text{Given}\ f \in L^2 ([0, L]),\ \text{find}\ \psi \in H^2_{h,0}([0, L])\
 # \text{such that} \\
-# \int_0^L \frac{\partial^2 \phi}{\partial x^2} \frac{\partial^2 \phi}{\partial x^2} dx =
+# \int_0^L \frac{\partial^2 \psi}{\partial x^2} \frac{\partial^2 \phi}{\partial x^2} dx =
 # \int_{\Omega} \psi f dx \quad  \forall \ \psi \in H^2_{h,0}([0, L]) \;.
 # \end{gather*}
 # ```
+# For this problem, the homogeneous dirichlet boundary condition is an essential boundary
+# condition, while the homogeneous boundary condition on the laplacian is a natural
+# boundary condition which is already included in the above weak formulation.
 
 # ### The differential form case in nD.
 
@@ -71,7 +74,7 @@
 # \end{equation}
 # ```
 # while in 2D, it becomes (assuming we have a smooth enough mapping ``\Phi: (\xi, \eta) \to
-# (x, y)``)
+# (x, y)``
 # ```math
 # \begin{equation}
 # \Delta \phi^0 = \frac{\partial^2 \phi^0}{\partial \xi^2} g^{1,1} +
