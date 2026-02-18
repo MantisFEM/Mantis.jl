@@ -20,16 +20,16 @@ and child finite element spaces.
 - `child_to_parent_basis::Vector{Vector{Int}}`: A vector of vectors containing the
     parent basis function IDs for each child basis function.
 """
-struct TwoScaleOperator{manifold_dim, num_components, num_patches, S, R} <:
+struct TwoScaleOperator{manifold_dim, num_components, num_patches, PS, CS, R} <:
        AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
-    parent_space::S
-    child_space::S
+    parent_space::PS
+    child_space::CS
     global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}
     parent_child_relations::R
 
     function TwoScaleOperator(
-        parent_space::S,
-        child_space::S,
+        parent_space::PS,
+        child_space::CS,
         global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int},
         parent_to_child_elements::PCE,
         child_to_parent_elements::CPE,
@@ -37,7 +37,8 @@ struct TwoScaleOperator{manifold_dim, num_components, num_patches, S, R} <:
         manifold_dim,
         num_components,
         num_patches,
-        S <: AbstractFESpace{manifold_dim, num_components, num_patches},
+        PS <: AbstractFESpace{manifold_dim, num_components, num_patches},
+        CS <: AbstractFESpace{manifold_dim, num_components, num_patches},
         PCE,
         CPE,
     }
@@ -66,7 +67,7 @@ struct TwoScaleOperator{manifold_dim, num_components, num_patches, S, R} <:
         )
         R = typeof(parent_child_relations)
 
-        return new{manifold_dim, num_components, num_patches, S, R}(
+        return new{manifold_dim, num_components, num_patches, PS, CS, R}(
             parent_space, child_space, global_subdiv_matrix, parent_child_relations
         )
     end

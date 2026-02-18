@@ -31,6 +31,83 @@ function create_cartesian_box(
     return CartesianGeometry(breakpoints)
 end
 
+function create_curvilinear_mapping(
+    starting_points::NTuple{2, Float64}, box_sizes::NTuple{2, Float64}, c::Float64=0.1
+)
+    # build curved mapping
+    function mapping(x::AbstractVector)
+        x1_new =
+            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
+        x2_new =
+            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
+        return [
+            x[1] + ((box_sizes[1]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
+            x[2] + ((box_sizes[2]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
+        ]
+    end
+
+    function dmapping(x::AbstractVector)
+        x1_new =
+            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
+        x2_new =
+            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
+        return SMatrix{2, 2}( # Note: SMatrix creates the matrix per column.
+            1.0 + pi * c * cospi(x1_new) * sinpi(x2_new),
+            (box_sizes[2] / box_sizes[1]) * pi * c * cospi(x1_new) * sinpi(x2_new),
+            (box_sizes[1] / box_sizes[2]) * pi * c * sinpi(x1_new) * cospi(x2_new),
+            1.0 + pi * c * sinpi(x1_new) * cospi(x2_new),
+        )
+    end
+    dimension = (2, 2)
+    curved_mapping = Mapping(dimension, mapping, dmapping)
+
+    return curved_mapping
+end
+
+function create_curvilinear_mapping(
+    starting_points::NTuple{3, Float64}, box_sizes::NTuple{3, Float64}, c::Float64=0.1
+)
+    # build curved mapping
+    function mapping(x::AbstractVector)
+        x1_new =
+            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
+        x2_new =
+            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
+        return [
+            x[1] + ((box_sizes[1]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
+            x[2] + ((box_sizes[2]) / 2.0) * c * sinpi(x1_new) * sinpi(x2_new),
+            x[3],
+        ]
+    end
+    function dmapping(x::AbstractVector)
+        x1_new =
+            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
+        x2_new =
+            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
+        return [
+            [
+                1.0 + pi * c * cospi(x1_new) * sinpi(x2_new)
+                (box_sizes[1] / box_sizes[2]) * pi * c * sinpi(x1_new) * cospi(x2_new)
+                0.0
+            ]
+            [
+                (box_sizes[2] / box_sizes[1]) * pi * c * cospi(x1_new) * sinpi(x2_new)
+                1.0 + pi * c * sinpi(x1_new) * cospi(x2_new)
+                0.0
+            ]
+            [
+                0.0
+                0.0
+                1.0
+            ]
+        ]
+    end
+    dimension = (3, 3)
+    curved_mapping = Mapping(dimension, mapping, dmapping)
+
+    return curved_mapping
+end
+
 """
     create_curvilinear_square(
         starting_points::NTuple{2, Float64},
@@ -45,7 +122,7 @@ becomes singular with `c` = 0.3.
 
 # Arguments
   - `num_elements::NTuple{2,Int}`: The number of elements in each direction.
-  - `c::Float64 = 0.2`: The `c` parameter.
+  - `c::Float64 = 0.1`: The `c` parameter.
 
 # Output
   - `geometry::MappedGeometry{2, 2, 1}`: The curvilinear square geometry.
@@ -54,34 +131,11 @@ function create_curvilinear_square(
     starting_points::NTuple{2, Float64},
     box_sizes::NTuple{2, Float64},
     num_elements::NTuple{2, Int};
-    crazy_c::Float64=0.1,
+    c::Float64=0.1,
 )
     # build underlying Cartesian geometry
     unit_square = create_cartesian_box(starting_points, box_sizes, num_elements)
-
-    # build curved mapping
-    function mapping(x::AbstractVector)
-        x1_new =
-            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
-        x2_new =
-            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
-        return [
-            x[1] + ((box_sizes[1]) / 2.0) * crazy_c * sinpi(x1_new) * sinpi(x2_new),
-            x[2] + ((box_sizes[2]) / 2.0) * crazy_c * sinpi(x1_new) * sinpi(x2_new),
-        ]
-    end
-    function dmapping(x::AbstractVector)
-        x1_new =
-            (2.0 / (box_sizes[1])) * x[1] - 2.0 * starting_points[1] / (box_sizes[1]) - 1.0
-        x2_new =
-            (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
-        return [
-            1.0+pi * crazy_c * cospi(x1_new) * sinpi(x2_new) (box_sizes[1]/box_sizes[2])*pi*crazy_c*sinpi(x1_new)*cospi(x2_new)
-            (box_sizes[2]/box_sizes[1])*pi*crazy_c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * crazy_c * sinpi(x1_new) * cospi(x2_new)
-        ]
-    end
-    dimension = (2, 2)
-    curved_mapping = Mapping(dimension, mapping, dmapping)
+    curved_mapping = create_curvilinear_mapping(starting_points, box_sizes, c)
 
     return MappedGeometry(unit_square, curved_mapping)
 end
@@ -116,12 +170,4 @@ function affine_map(
     end
 
     return mapped_xi
-end
-
-############################################################################################
-#                                      Other methods                                       #
-############################################################################################
-
-function vec_tuple_to_matrix(vec_tup)
-    return hcat(vec_tup...)
 end

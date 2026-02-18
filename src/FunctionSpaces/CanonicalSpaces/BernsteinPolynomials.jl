@@ -38,63 +38,60 @@ at `ξ` for ``\\xi \\in [0.0, 1.0]``.
 Memoization.@memoize function evaluate(
     polynomials::Bernstein, xi::Points.AbstractPoints{1}, nderivatives::Int=0
 )
-    # store the values and derivatives here
-    neval = length(xi)
+    neval = Points.get_num_points(xi)
+    p = get_polynomial_degree(polynomials)
 
     # allocate space for derivatives
     # - ders[j+1][1] contains the matrix of evaluations of the j-th derivative
-    ders = Vector{Vector{Matrix{Float64}}}(undef, nderivatives + 1)
+    ders = Vector{Vector{Matrix{eltype(xi)}}}(undef, nderivatives + 1)
     for j in 0:nderivatives
-        ders[j + 1] = Vector{Matrix{Float64}}(undef, 1)
-        ders[j + 1][1] = zeros(Float64, neval, polynomials.p + 1)
+        ders[j + 1] = Vector{Matrix{eltype(xi)}}(undef, 1)
+        ders[j + 1][1] = zeros(eltype(xi), neval, p + 1)
     end
     # loop over the evaluation points and evaluate all derivatives at each point
-    for i in eachindex(xi)
-        tmp = _evaluate(polynomials, xi[i][1], nderivatives)
-        for cart_ind in CartesianIndices(size(tmp))
-            (basis, j) = Tuple(cart_ind)
-            ders[j][1][i, basis] = tmp[basis, j]
+    @inbounds for derivative in 0:nderivatives
+        for basis in 0:p
+            for point in eachindex(xi)
+                ders[derivative + 1][1][point, basis + 1] = _dbpoly(
+                    p, basis, derivative, xi[point][1]
+                )
+            end
         end
     end
 
     return ders
 end
 
-"""
-    _evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)
+# function evaluate!(
+#     out::Vector{Vector{Vector{Matrix{T}}}},
+#     polynomials::Bernstein,
+#     xi::Points.AbstractPoints{1},
+# ) where {T <: Number}
+#     p = get_polynomial_degree(polynomials)
 
-Compute derivatives up to order `nderivatives` for all Bernstein polynomials of degree `p`
-at ``\\xi`` for ``\\xi \\in [0.0, 1.0]``.
+#     # loop over the evaluation points and evaluate all derivatives at each point
+#     for derivative in eachindex(out) # from 1 to nderivatives + 1
+#         for basis in 0:p
+#             for point in eachindex(xi)
+#                 out[derivative][1][1][point, basis + 1] = _dbpoly(
+#                     p, basis, derivative - 1, xi[point][1]
+#                 )
+#             end
+#         end
+#     end
 
-Computes the values of the Bernstein polynomial and its derivative. This function is called
-by all other implementations of the Bernstein polynomial.
+#     return out
+# end
 
-# Arguments
-- `polynomial::Bernstein`: Bernstein polynomial
-- `xi::Float64`: evaluation point ``\\in [0.0, 1.0]``.
-- `nderivatives::Int64`: maximum order of derivatives to be computed (nderivatives
-    ``\\leq p``).
-"""
-function _evaluate(polynomial::Bernstein, xi::Float64, nderivatives::Int64)
-    # degree
-    p = get_polynomial_degree(polynomial)
-    # store the values and derivatives here
-    ders = zeros(Float64, p + 1, nderivatives + 1)
-    for k in 0:nderivatives
-        for i in 0:p
-            ders[i + 1, k + 1] = _dbpoly(p, i, k, xi)
-        end
-    end
-    return ders
-end
-function _bpoly(p::Int, i::Int, xi::Float64)
+function _bpoly(p::Int, i::Int, xi::T) where {T <: Number}
     if i < 0 || i > p
         return 0.0
     else
-        return binomial(p, i) * xi^i * (1 - xi)^(p-i)
+        return binomial(p, i) * xi^i * (1 - xi)^(p - i)
     end
 end
-function _dbpoly(p::Int, i::Int, k::Int, xi::Float64)
+
+function _dbpoly(p::Int, i::Int, k::Int, xi::T) where {T <: Number}
     if k == 0
         return _bpoly(p, i, xi)
     elseif k > p
@@ -102,7 +99,7 @@ function _dbpoly(p::Int, i::Int, k::Int, xi::Float64)
     else
         val = 0.0
         for r in max(0, i + k - p):min(i, k)
-            val += (-1)^(r+k) * binomial(k, r) * _bpoly(p-k, i-r, xi)
+            val += (-1)^(r + k) * binomial(k, r) * _bpoly(p - k, i - r, xi)
         end
         return val * prod((p - k + 1):p)
     end

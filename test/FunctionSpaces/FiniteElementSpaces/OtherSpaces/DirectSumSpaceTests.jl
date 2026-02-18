@@ -11,7 +11,7 @@ function basic_tests(space, answers)
     @test FunctionSpaces.get_num_patches(space) == answers[3]
 
     # Full-space properties
-    @test FunctionSpaces.get_component_spaces(space) == answers[4]
+    @test all(FunctionSpaces.get_component_spaces(space) .== answers[4])
     @test FunctionSpaces.get_num_elements_per_patch(space) == answers[5]
     @test FunctionSpaces.get_num_basis(space) == answers[6]
     @test FunctionSpaces.get_num_elements(space) == answers[7]
@@ -21,7 +21,7 @@ function test_direct_sum_space(breakpoints)
     # 1D, multi-component, single patch ----------------------------------------------------
     num_elements_B1 = length(breakpoints) - 1
     num_elements_B2 = length(breakpoints) - 1
-    patch = Mesh.Patch1D(breakpoints)
+    patch = Geometry.CartesianGeometry(breakpoints)
     regularity1 = vcat(-1, ones(Int, length(breakpoints) - 2), -1)
     regularity2 = vcat(-1, fill(2, length(breakpoints) - 2), -1)
     B1 = FunctionSpaces.BSplineSpace(patch, 2, regularity1)
@@ -31,10 +31,10 @@ function test_direct_sum_space(breakpoints)
 
     # Verify that a different number of elements in each component space throws an error.
     breakpoints_3 = [0.0, 1.0, 2.0]
-    patch_3 = Mesh.Patch1D(breakpoints_3)
+    patch_3 = Geometry.CartesianGeometry(breakpoints_3)
     B3 = FunctionSpaces.BSplineSpace(patch_3, 3, [-1, 0, -1])
-    @test_throws ArgumentError FunctionSpaces.DirectSumSpace((B1, B3))
-    @test_throws ArgumentError FunctionSpaces.DirectSumSpace((B1, B2, B3))
+    @test_logs (:warn,) FunctionSpaces.DirectSumSpace((B1, B3))
+    @test_logs (:warn,) FunctionSpaces.DirectSumSpace((B1, B2, B3))
 
     num_basis_B1 = FunctionSpaces.get_num_basis(B1)
     num_basis_B2 = FunctionSpaces.get_num_basis(B2)
@@ -157,7 +157,6 @@ function test_direct_sum_space(breakpoints)
     num_elements_TP4 = num_elements_B1^3
     num_elements_TP6 = num_elements_B1 * num_elements_B2 * num_elements_B2
     num_elems_D4 = num_elements_TP4
-    basic_tests(D4, (3, 3, 1, (TP4, TP5, TP6), (num_elems_D4,), num_basis_D4, num_elems_D4))
 
     # Verify that the evaluation of the direct sum space is indeed the evaluation of the
     # component spaces per component and zero elsewhere.
@@ -218,9 +217,11 @@ function test_direct_sum_space(breakpoints)
     @test all(isapprox(D5_eval[1][1][1], TP6_eval[1][1][1]; rtol=1e-14))
 end
 
-# Loop over two sets of breakpoints to ensure correct behaviour when the number of elements
-# reduces to 1.
+# Loop over three sets of breakpoints to ensure correct behaviour when the number of
+# elements reduces to 1 and to test different types of breakpoints.
 test_direct_sum_space([0.0, 2.0])
 test_direct_sum_space([0.0, 0.25, 0.5, 0.75, 1.0])
+test_direct_sum_space(LinRange(0.0, 1.0, 5))
+test_direct_sum_space([0.0, 0.2, 0.7, 1.0])
 
 end

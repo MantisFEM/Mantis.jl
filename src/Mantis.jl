@@ -6,8 +6,8 @@ module Mantis
 include("GeneralHelpers/GeneralHelpers.jl")  # Creates Module GeneralHelpers
 include("Mesh/Mesh.jl")  # Creates Module Mesh
 include("Points/Points.jl")  # Creates Module Mesh
-include("FunctionSpaces/FunctionSpaces.jl")  # Creates Module FunctionSpaces
 include("Geometry/Geometry.jl")  # Creates Module Geometry
+include("FunctionSpaces/FunctionSpaces.jl")  # Creates Module FunctionSpaces
 include("Quadrature/Quadrature.jl")  # Creates Module Quadrature
 include("Forms/Forms.jl")  # Creates Module Forms
 include("Analysis/Analysis.jl")  # Creates Module Analysis

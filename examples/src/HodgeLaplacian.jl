@@ -2,7 +2,7 @@
 
 # ## Introduction
 
-# In this example, ww solve the Hodge-Laplacian for $0$-forms with Dirichlet boundary
+# In this example, ww solve the Hodge-Laplacian for ``0``-forms with Dirichlet boundary
 # conditions. The
 # ``0``-form Hodge-Laplacian on a domain ``\Omega`` with boundary ``\partial \Omega`` is
 # ```math
@@ -32,25 +32,16 @@ using Mantis
 starting_point = (0.0, 0.0)
 box_size = (1.0, 1.0)
 num_elements = (4, 4)
-geometry = Geometry.create_cartesian_box(
-    starting_point, box_size, num_elements
-)
+geometry = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
 
 p = (3, 3)
 k = (2, 2)
-B = FunctionSpaces.create_bspline_space(
-    starting_point,
-    box_size,
-    num_elements,
-    p,
-    k,
-)
+B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
 
 # Mantis works with forms, so we need to define the form space. In this case, we are
-# working with $0$-forms, so we define the form space as follows.
+# working with ``0``-forms, so we define the form space as follows.
 
-Λ⁰ = Forms.FormSpace(0, geometry, B, "label")
-
+Λ⁰ = Forms.FormSpace(0, B, "label")
 
 # We define the weak form inputs. The weak form inputs contain the trial and test spaces,
 # the forcing function, and the quadrature rule. We define the forcing function as a
@@ -58,7 +49,7 @@ B = FunctionSpaces.create_bspline_space(
 # ``f^0 = 8 \pi^2 \sin(2 \pi x) \sin(2 \pi y)``.
 
 function forcing_function(x::Matrix{Float64})
-    return [@. 8.0 * pi^2 * sin(2.0 * pi * x[:,1]) * sin(2.0 * pi * x[:,2])]
+    return [@. 8.0 * pi^2 * sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2])]
 end
 f⁰ = Forms.AnalyticalFormField(0, forcing_function, geometry, "f⁰")
 
@@ -71,7 +62,6 @@ dΩ = Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(g
 # the trial and test spaces, and the forcing function. The trial and test spaces are the
 # same in this case, which is the default.
 wfi = Assemblers.WeakFormInputs(Λ⁰, f⁰)
-
 
 # We define the weak form for the Hodge-Laplacian. The weak form is defined as a function
 # that takes the weak form inputs and the quadrature rule as arguments.
@@ -105,23 +95,21 @@ A, b = Assemblers.assemble(weak_form, bc)
 sol = vec(A \ b)
 ϕ⁰ = Forms.build_form_field(Λ⁰, sol)
 
-
 # We can now plot the solution using the `plot` function. This will write the output to a
 # VTK file that can be visualized using a VTK viewer, such as Paraview.
 
 data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
 output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename = "HodgeLaplacian-0form-Dirichlet-$(length(p))D.vtu"
+output_filename = "HodgeLaplacian-0form-Dirichlet-2D.vtu"
 output_file = joinpath(output_data_folder, output_filename)
 Plot.plot(
     ϕ⁰;
-    vtk_filename = output_file,
-    n_subcells = 1,
-    degree = maximum(p),
-    ascii = false,
-    compress = false
+    vtk_filename=output_file,
+    n_subcells=1,
+    degree=maximum(p),
+    ascii=false,
+    compress=false,
 )
-
 
 # ## Extensions
 
@@ -136,37 +124,35 @@ Plot.plot(
 starting_point_3D = (0.0, 0.0, 0.0)
 box_size_3D = (1.0, 1.0, 1.0)
 num_elements_3D = (4, 4, 4)
-geometry_3D = Geometry.create_cartesian_box(
-    starting_point_3D, box_size_3D, num_elements_3D
-)
+geometry_3D = Geometry.create_cartesian_box(starting_point_3D, box_size_3D, num_elements_3D)
 
 p_3D = (3, 3, 3)
 k_3D = (2, 2, 2)
 B_3D = FunctionSpaces.create_bspline_space(
-    starting_point_3D,
-    box_size_3D,
-    num_elements_3D,
-    p_3D,
-    k_3D,
+    starting_point_3D, box_size_3D, num_elements_3D, p_3D, k_3D
 )
 
 function forcing_function_3D(x::Matrix{Float64})
     return [
-        @. 12.0 * pi^2 * sin(2.0 * pi * x[:,1]) * sin(2.0 * pi * x[:,2]) *
-        sin(2.0 * pi * x[:,3])
+        @. 12.0 *
+            pi^2 *
+            sin(2.0 * pi * x[:, 1]) *
+            sin(2.0 * pi * x[:, 2]) *
+            sin(2.0 * pi * x[:, 3])
     ]
 end
-
 
 # We don't need to change any of the previous code, so we can reuse it directly:
 
 #
-Λ⁰_3D = Forms.FormSpace(0, geometry_3D, FunctionSpaces.DirectSumSpace((B_3D,)), "label")
+Λ⁰_3D = Forms.FormSpace(0, FunctionSpaces.DirectSumSpace((B_3D,)), "label")
 
 f⁰_3D = Forms.AnalyticalFormField(0, forcing_function_3D, geometry_3D, "f⁰")
 
 canonical_qrule_3D = Quadrature.tensor_product_rule(p_3D .+ 1, Quadrature.gauss_legendre)
-dΩ_3D = Quadrature.StandardQuadrature(canonical_qrule_3D, Geometry.get_num_elements(geometry_3D))
+dΩ_3D = Quadrature.StandardQuadrature(
+    canonical_qrule_3D, Geometry.get_num_elements(geometry_3D)
+)
 
 wfi_3D = Assemblers.WeakFormInputs(Λ⁰_3D, f⁰_3D)
 
@@ -178,13 +164,13 @@ A_3D, b_3D = Assemblers.assemble(weak_form_3D, bc_3D)
 sol_3D = vec(A_3D \ b_3D)
 ϕ⁰_3D = Forms.build_form_field(Λ⁰_3D, sol_3D)
 
-output_filename_3D = "HodgeLaplacian-0form-Dirichlet-$(length(p_3D))D.vtu"
+output_filename_3D = "HodgeLaplacian-0form-Dirichlet-3D.vtu"
 output_file_3D = joinpath(output_data_folder, output_filename_3D)
 Plot.plot(
     ϕ⁰_3D;
-    vtk_filename = output_file_3D,
-    n_subcells = 1,
-    degree = maximum(p_3D),
-    ascii = false,
-    compress = false
+    vtk_filename=output_file_3D,
+    n_subcells=1,
+    degree=maximum(p_3D),
+    ascii=false,
+    compress=false,
 )

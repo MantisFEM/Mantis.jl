@@ -8,8 +8,8 @@ end
 @testset "MappedGeometry" begin
     include("MappedGeometryTests.jl")
 end
-@testset "FEGeometry" begin
-    include("FEGeometryTests.jl")
+@testset "DiscreteGeometry" begin
+    include("DiscreteGeometryTests.jl")
 end
 @testset "TensorProductGeometry" begin
     include("TensorProductGeometryTests.jl")
@@ -22,6 +22,9 @@ end
 end
 @testset "ErrorBehaviour" begin
     include("GeometryErrorsTests.jl")
+end
+@testset "EvaluationMask" verbose=true begin
+    include("EvaluationMask/runtests.jl")
 end
 @testset "Inference" begin
     include("GeometryInferenceTests.jl")

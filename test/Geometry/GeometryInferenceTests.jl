@@ -226,6 +226,11 @@ end
             [0.0, 1.0],
         ))
 
+        # Test the helper functions that create a geometry.
+        @test_opt Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (3, 4))
+        @test_opt Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (3, 4); c=0.2)
+        @test_opt Geometry.create_curvilinear_mapping((0.0, 0.0, 0.0), (1.0, 1.0, 1.0), 0.2)
+
         foreach(geos) do geo
             # Note that JET only uses the types of the inputs, so which numbers we pick
             # here is irrelevant.

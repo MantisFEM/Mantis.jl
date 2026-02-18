@@ -23,120 +23,7 @@ function get_component_spaces(
     return (space,)
 end
 
-"""
-    get_num_elements_per_patch(space::AbstractFESpace)
-
-Get the number of elements per patch in the multi-patch finite element space. Assumes that
-all component spaces have the same number of patches and elements (per patch).
-
-# Arguments
-- `space::AbstractFESpace`: The multi-patch space.
-
-# Returns
-- `::NTuple{num_patches, Int}`: The number of elements per patch.
-
-# Exceptions
-- Error "'get_num_elements_per_patch' not implemented": This error is thrown if no
-    'get_num_elements_per_patch' method is defined for a single-component space (which can
-    be a component of a multi-component space).
-"""
-function get_num_elements_per_patch(
-    space::AbstractFESpace{manifold_dim, num_components, num_patches}
-) where {manifold_dim, num_components, num_patches}
-    return get_num_elements_per_patch(get_component_spaces(space)[1])
-end
-
-function get_num_elements_per_patch(
-    space::AbstractFESpace{manifold_dim, 1, num_patches}
-) where {manifold_dim, num_patches}
-    return error("'get_num_elements_per_patch' not implemented for $(typeof(space))")
-end
-
-function get_num_elements_per_patch(
-    space::AbstractFESpace{manifold_dim, 1, 1}
-) where {manifold_dim}
-    return (get_num_elements(space),)
-end
-
-"""
-    get_patch_id(space::AbstractFESpace, element_id::Int)
-
-Get the ID of the patch to which the specified global element belongs.
-
-# Arguments
-- `space::AbstractFESpace`: The multi-patch space.
-- `element_id::Int`: The global element ID.
-
-# Returns
-- `::Int`: ID of the patch to which the element belongs.
-"""
-function get_patch_id(space::AbstractFESpace, element_id::Int)
-    cumulative_elements = cumsum(get_num_elements_per_patch(space))
-    for ci in eachindex(cumulative_elements)
-        if element_id <= cumulative_elements[ci]
-            return ci
-        end
-    end
-    throw(
-        ArgumentError(
-            "Element ID $(element_id) exceeds the total number of elements in the space."
-        ),
-    )
-end
-
-function get_patch_id(
-    space::AbstractFESpace{manifold_dim, num_components, 1}, element_id::Int
-) where {manifold_dim, num_components}
-    return 1
-end
-
-"""
-    get_patch_and_local_element_id(space::AbstractFESpace, element_id::Int)
-
-Get the constituent patch ID and local element ID for the specified global element ID.
-
-# Arguments
-- `space::AbstractFESpace`: The multi-patch space.
-- `element_id::Int`: The global element ID.
-
-# Returns
-- `patch_id::Int`: The patch ID
-- `local_element_id::Int`: The local element ID.
-"""
-function get_patch_and_local_element_id(space::AbstractFESpace, element_id::Int)
-    patch_id = get_patch_id(space, element_id)
-
-    elements_per_patch = get_num_elements_per_patch(space)
-    local_element_id = element_id
-    for i in eachindex(elements_per_patch)
-        if i < patch_id
-            local_element_id -= elements_per_patch[i]
-        else
-            break
-        end
-    end
-
-    return patch_id, local_element_id
-end
-
-"""
-    get_global_element_id(space::AbstractFESpace, patch_id::Int, local_element_id::Int)
-
-Get the global element ID for the specified constituent patch ID and local element ID.
-
-# Arguments
-- `space::AbstractFESpace`: A (multi-)patch space.
-- `patch_id::Int`: The constituent patch ID.
-- `local_element_id::Int`: The local element ID.
-
-# Returns
-- `::Int`: The global element ID.
-"""
-function get_global_element_id(space::AbstractFESpace, patch_id::Int, local_element_id::Int)
-    return sum(get_num_elements_per_patch(space)[begin:(patch_id - 1)]; init=0) +
-           local_element_id
-end
-
+# Extractions, basis indices, num basis, etc.
 """
     get_extraction_operator(space::AbstractFESpace)
 
@@ -364,10 +251,41 @@ function get_max_local_dim(
     return error("'get_max_local_dim' not implemented for $(typeof(space))")
 end
 
+# Functions related to the underlying geometry.
+"""
+    get_geometry(space::AbstractFESpace)
+
+Get the geometry underlying the given `space`.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+
+# Returns
+- `::AbstractGeometry`: The underlying geometry.
+"""
+function get_geometry(space::AbstractFESpace)
+    return space.geometry
+end
+
+"""
+    get_parametric_geometry(space::AbstractFESpace)
+
+Get the parametric geometry underlying the given `space`.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+
+# Returns
+- `::AbstractGeometry`: The underlying parametric geometry.
+"""
+function get_parametric_geometry(space::AbstractFESpace)
+    return space.parametric_geometry
+end
+
 """
     get_num_elements(space::AbstractFESpace)
 
-Returns the total number of elements on which the `space` is build.
+Returns the total number of elements of the geometry on which the `space` is build.
 
 # Arguments
 - `space::AbstractFESpace`: A finite element space.
@@ -376,30 +294,131 @@ Returns the total number of elements on which the `space` is build.
 - `::Int`: The number of elements.
 """
 function get_num_elements(space::AbstractFESpace)
-    return get_num_elements(get_extraction_operator(space))
+    return Geometry.get_num_elements(get_geometry(space))
 end
 
-# Getting the element lengths or measure should be handled by the underlying geometry. With
-# the upcoming rewrite and reordering of geometry and function spaces, this should make more
-# sense.
-# """
-#     get_element_lengths(space::AbstractFESpace, element_id::Int)
+"""
+    get_num_elements_per_patch(space::AbstractFESpace)
 
-# Returns the size of the element specified by `element_id`.
+Get the number of elements per patch of the underlying geometry.
 
-# # Arguments
-# - `space::AbstractFESpace`: The finite element space.
-# - `element_id::Int`: The global id of the element.
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
 
-# # Returns
-# - `::Float64`: The size of the element.
-# """
-# function get_element_lengths(space::AbstractFESpace, element_id::Int)
-#     patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
+# Returns
+- `::NTuple{num_patches, Int}`: The number of elements per patch.
+"""
+function get_num_elements_per_patch(space::AbstractFESpace)
+    return Geometry.get_num_elements_per_patch(get_geometry(space))
+end
 
-#     return get_element_lengths(get_patch_space(space, patch_id), local_element_id)
-# end
+"""
+    get_patch_id(space::AbstractFESpace, element_id::Int)
 
+Get the ID of the patch of the underlying geometry to which the specified global element
+belongs.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+- `element_id::Int`: The global element ID.
+
+# Returns
+- `::Int`: ID of the patch to which the element belongs.
+"""
+function get_patch_id(space::AbstractFESpace, element_id::Int)
+    return Geometry.get_patch_id(get_geometry(space), element_id)
+end
+
+"""
+    get_patch_and_local_element_id(space::AbstractFESpace, element_id::Int)
+
+Get the constituent patch ID and local element ID of the underlying geometry for the
+specified global element ID.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+- `element_id::Int`: The global element ID.
+
+# Returns
+- `patch_id::Int`: The patch ID
+- `local_element_id::Int`: The local element ID.
+"""
+function get_patch_and_local_element_id(space::AbstractFESpace, element_id::Int)
+    return Geometry.get_patch_and_local_element_id(get_geometry(space), element_id)
+end
+
+"""
+    get_global_element_id(space::AbstractFESpace, patch_id::Int, local_element_id::Int)
+
+Get the global element ID of the underlying geometry for the specified constituent patch ID
+and local element ID.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+- `patch_id::Int`: The constituent patch ID.
+- `local_element_id::Int`: The local element ID.
+
+# Returns
+- `::Int`: The global element ID.
+"""
+function get_global_element_id(space::AbstractFESpace, patch_id::Int, local_element_id::Int)
+    return Geometry.get_global_element_id(get_geometry(space), patch_id, local_element_id)
+end
+
+"""
+    get_element_measure(space::AbstractFESpace, element_id::Int)
+
+Computes the measure of the element given by `element_id` of the geometry on which the
+`space` is build.
+
+# Arguments
+- 'space::AbstractFESpace': A finite element space.
+- 'element_id::Int': Index of the element being considered.
+
+# Returns
+- '<:Number': The measure of the element.
+"""
+function get_element_measure(space::AbstractFESpace, element_id::Int)
+    return Geometry.get_element_measure(get_geometry(space), element_id)
+end
+
+"""
+    get_element_lengths(space::AbstractFESpace, element_id::Int)
+
+Computes the length, in each manifold dimension, of the element given by `element_id` of
+the geometry on which the `space` is build.
+
+# Arguments
+- 'space::AbstractFESpace': A finite element space.
+- 'element_id::Int': Index of the element being considered.
+
+# Returns
+- '<:NTuple{manifold_dim, Number}': The element's lengths.
+"""
+function get_element_lengths(space::AbstractFESpace, element_id::Int)
+    return Geometry.get_element_lengths(get_geometry(space), element_id)
+end
+
+"""
+    get_element_vertices(space::AbstractFESpace, element_id::Int)
+
+Computes the vertices, in each manifold dimension, of the element given by `element_id` of
+the geometry on which the `space` is build.
+
+# Arguments
+- 'space::AbstractFESpace': A finite element space.
+- 'element_id::Int': Index of the element being considered.
+
+# Returns
+- '<:NTuple{manifold_dim, NTuple{2, Number}}': The element's vertices per manifold dim. For
+    example, for the unit cube [0.0, 1.0]^3 this will be:
+    ((0.0, 1.0), (0.0, 1.0), (0.0, 1.0)).
+"""
+function get_element_vertices(space::AbstractFESpace, element_id::Int)
+    return Geometry.get_element_vertices(get_geometry(space), element_id)
+end
+
+# Evaluations and local bases.
 """
     get_local_basis(
         space::AbstractFESpace{manifold_dim, num_components, num_patches},
@@ -732,3 +751,4 @@ include("UnstructuredSpaces/PolarSplines.jl")
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
 include("Hierarchical/Hierarchical.jl")
+

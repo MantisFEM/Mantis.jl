@@ -12,7 +12,7 @@ include(joinpath(mantis_dir, "examples", "HelperFunctions.jl"))
 
 function run_problem(manifold_dim::Int, num_components::Int, p::Int, k::Int)
     breakpoints = collect(LinRange(0.0, 1.0, 5))
-    patch = Mesh.Patch1D(breakpoints)
+    patch = Geometry.CartesianGeometry(breakpoints)
     regularity = fill(k, 5)
     regularity[1] = regularity[end] = -1
     Bpk = FunctionSpaces.BSplineSpace(patch, FunctionSpaces.Bernstein(p), regularity)

@@ -8,8 +8,8 @@ module Geometry
 using LinearAlgebra
 using StaticArrays
 
-import ..FunctionSpaces
 import ..Points
+import ..GeneralHelpers
 
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
@@ -530,14 +530,16 @@ function hessian(
     throw(MethodError(hessian, (geometry, element_id, xi)))
 end
 
-# core functionality
-include("./CartesianGeometry.jl")
-include("./FEGeometry.jl")
-include("./MappedGeometry.jl")
-include("./TensorProductGeometry.jl")
-include("./HierarchicalGeometry.jl")
-include("./UnstructuredGeometry.jl")
-include("./Metric.jl")
+include("CartesianGeometry.jl")
+include("DiscreteGeometry.jl")
+include("MappedGeometry.jl")
+include("TensorProductGeometry.jl")
+include("EvaluationMask/EvaluationMask.jl")
+include("MaskedGeometry.jl")
+include("UnstructuredGeometry.jl")
+include("Metric.jl")
+
+include("./GeometryConversions.jl")
 
 # helper functions for convenience
 include("./GeometryHelpers.jl")

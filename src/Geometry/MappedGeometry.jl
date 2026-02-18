@@ -3,7 +3,6 @@ abstract type AbstractMapping{manifold_dim, image_dim} end
 
 struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
        AbstractMapping{manifold_dim, image_dim}
-    dimensions::NTuple{2, Int}
     mapping::M
     dmapping::dM
     ddmapping::ddM
@@ -11,9 +10,7 @@ struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
     function Mapping(
         dimensions::NTuple{2, Int}, mapping::M, dmapping::dM, ddmapping::ddM=nothing
     ) where {M <: Function, dM <: Function, ddM <: Union{Nothing, Function}}
-        return new{dimensions[1], dimensions[2], M, dM, ddM}(
-            dimensions, mapping, dmapping, ddmapping
-        )
+        return new{dimensions[1], dimensions[2], M, dM, ddM}(mapping, dmapping, ddmapping)
     end
 
     function Mapping(
@@ -29,43 +26,39 @@ struct Mapping{manifold_dim, image_dim, M, dM, ddM} <:
         dM <: Function,
         ddM <: Union{Nothing, Function},
     }
-        return new{manifold_dim, image_dim, M, dM, ddM}(
-            dimensions, mapping, dmapping, ddmapping
-        )
+        return new{manifold_dim, image_dim, M, dM, ddM}(mapping, dmapping, ddmapping)
     end
 end
 
 """
-    get_manifold_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
+    get_manifold_dim(mapping::Mapping{manifold_dim, image_dim})
 
 Returns the dimension of the domain manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the domain manifold.
 """
 function get_manifold_dim(
-    ::Mapping{manifold_dim, image_dim, M, dM}
-) where {manifold_dim, image_dim, M, dM}
+    ::Mapping{manifold_dim, image_dim}
+) where {manifold_dim, image_dim}
     return manifold_dim
 end
 
 """
-    get_image_dim(mapping::Mapping{manifold_dim, image_dim, M, dM})
+    get_image_dim(mapping::Mapping{manifold_dim, image_dim})
 
 Returns the dimension of the image manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim, M, dM}`: The mapping structure.
+- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
 - `::Int`: The dimension of the image manifold.
 """
-function get_image_dim(
-    ::Mapping{manifold_dim, image_dim, M, dM}
-) where {manifold_dim, image_dim, M, dM}
+function get_image_dim(::Mapping{manifold_dim, image_dim}) where {manifold_dim, image_dim}
     return image_dim
 end
 
@@ -252,35 +245,20 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
-# Getters for geometries.
-function get_parametric_geometry(geometry::MappedGeometry)
-    return get_parametric_geometry(get_base_geometry(geometry))
-end
-
-function get_parametric_geometry(geometry::MappedGeometry, patch_id::Int)
-    return get_parametric_geometry(get_base_geometry(geometry, patch_id))
-end
-
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_lengths(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_lengths(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 function get_element_measure(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_measure(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_measure(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 function get_element_vertices(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_vertices(
-        get_parametric_geometry(geometry, patch_id), local_element_id
-    )
+    return get_element_vertices(get_base_geometry(geometry, patch_id), local_element_id)
 end
 
 # Evaluations and derivatives.
@@ -322,18 +300,18 @@ function hessian(
     base_geometry = get_base_geometry(geometry, patch_id)
     x = evaluate(base_geometry, local_element_id, xi)
     Jb = jacobian(base_geometry, local_element_id, xi)
-    Hbs = hessian(base_geometry, local_element_id, xi)
+    Hb = hessian(base_geometry, local_element_id, xi)
 
     Jm = jacobian(get_mapping(geometry, patch_id), x)
-    Hms = hessian(get_mapping(geometry, patch_id), x)
+    Hm = hessian(get_mapping(geometry, patch_id), x)
 
     return [
         ntuple(image_dim) do i
-            return transpose(Jb[p]) * Hms[p][i] * Jb[p] +
-                   SMatrix{manifold_dim, manifold_dim}(
-                sum(Jm[p][i, j] * Hbs[p][j][uv] for j in 1:manifold_dim) for
-                uv in eachindex(Hbs[p][1])
-            )
-        end for p in eachindex(Jb, Jm, Hms, Hbs)
+            Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
+            for j in 1:manifold_dim
+                Hp += Jm[p][i, j] * Hb[p][j]
+            end
+            return Hp
+        end for p in eachindex(Jb, Jm, Hm, Hb)
     ]
 end

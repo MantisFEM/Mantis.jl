@@ -10,9 +10,10 @@ import SparseArrays
 
 using Test
 
-struct MultiPatchC0Space{num_patches, T, TE, TI, TJ} <:
+struct MultiPatchC0Space{num_patches, T, G, TE, TI, TJ} <:
        FunctionSpaces.AbstractFESpace{2, 1, num_patches}
     function_spaces::T
+    geometry::G
     extraction_op::FunctionSpaces.ExtractionOperator{1, TE, TI, TJ}
     dof_partition::Vector{Vector{Vector{Int}}}
 end
@@ -50,6 +51,9 @@ function create_multi_patch_c0_space(
         )
     end
     elems_per_patch_offset = vcat(0, cumsum(elems_per_patch[1:(end - 1)]))
+
+    constituent_geometries = map(FunctionSpaces.get_geometry, function_spaces)
+    geometry = Geometry.UnstructuredGeometry(constituent_geometries)
 
     # Create the dof partition, accounting for shared dofs.
     global_dof = 1
@@ -195,8 +199,10 @@ function create_multi_patch_c0_space(
         extraction_coefficients, basis_indices, num_elements, global_dof
     )
 
-    return MultiPatchC0Space{num_patches, T, FunctionSpaces.get_EIJ_types(E)...}(
-        function_spaces, E, dof_partition
+    return MultiPatchC0Space{
+        num_patches, T, typeof(geometry), FunctionSpaces.get_EIJ_types(E)...
+    }(
+        function_spaces, geometry, E, dof_partition
     )
 end
 
@@ -314,8 +320,12 @@ struct MCMP{T, TE, TI, TJ} <: FunctionSpaces.AbstractFESpace{2, 2, 2}
     end
 end
 
-breakpoints = collect(LinRange(0.0, 1.0, 5))
-patch = Mesh.Patch1D(breakpoints)
+function FunctionSpaces.get_geometry(space::MCMP)
+    return FunctionSpaces.get_geometry(first(FunctionSpaces.get_component_spaces(space)))
+end
+
+breakpoints = LinRange(0.0, 1.0, 5)
+patch = Geometry.CartesianGeometry(breakpoints)
 p = (3, 2)
 B1 = FunctionSpaces.BSplineSpace(patch, p[1], [-1, 2, 2, 2, -1])
 B2 = FunctionSpaces.BSplineSpace(patch, p[2], [-1, 1, 1, 1, -1])
@@ -336,7 +346,7 @@ function basic_tests(space, answers)
     @test FunctionSpaces.get_num_patches(space) == answers[3]
 
     # Full-space properties
-    @test FunctionSpaces.get_component_spaces(space) == answers[4]
+    @test all(FunctionSpaces.get_component_spaces(space) .== answers[4])
     @test FunctionSpaces.get_num_elements_per_patch(space) == answers[5]
     @test FunctionSpaces.get_num_basis(space) == answers[6]
     @test FunctionSpaces.get_num_elements(space) == answers[7]

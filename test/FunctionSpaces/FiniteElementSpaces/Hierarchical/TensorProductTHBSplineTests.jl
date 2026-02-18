@@ -8,9 +8,9 @@ using Test
 ne1 = 5
 ne2 = 5
 breakpoints1 = collect(range(0,1,ne1+1))
-patch1 = Mantis.Mesh.Patch1D(breakpoints1)
+patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
 breakpoints2 = collect(range(0,1,ne2+1))
-patch2 = Mantis.Mesh.Patch1D(breakpoints2)
+patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 deg1 = 2
 deg2 = 2
 nsubs = (3, 3)
@@ -53,18 +53,5 @@ for el in 1:1:Mantis.FunctionSpaces.get_num_elements(hier_space)
     # Partition of unity
     @test all(isapprox.(sum(h_eval[1][1][1], dims=2), 1.0, atol=1e-14))
 end
-
-# Geometry visualization
-
-
-# Generate the Plot
-
-# hier_space_geo = Mantis.Geometry.HierarchicalGeometry(hier_space)
-# sum_space = Mantis.FunctionSpaces.DirectSumSpace((hier_space,))
-# form_space = Mantis.Forms.FormSpace(0, hier_space_geo, sum_space, "a")
-# zero_form = Mantis.Forms.FormField(form_space, "α")
-#
-# output_filename = "thb-partition-of-unity"
-# Mantis.Plot.export_form_fields_to_vtk((zero_form,), ("test",), output_filename)
 
 end
