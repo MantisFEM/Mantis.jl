@@ -14,7 +14,7 @@ you can use the following step-by-step guide.
 
 To create the docs, follow these steps:
 - Navigate to the `docs/` directory. If you open a terminal in the 
-  `Mantis.jl` repo, this is a simple matter of executing 
+  `Mantis` repo, this is a simple matter of executing 
   ```
   cd docs
   ```
@@ -30,7 +30,7 @@ To create the docs, follow these steps:
   generated here. *Make sure that you save all changes before running 
   this command or you won't see the changes!* Should this step fail, see 
   the next step.
-- If the dependencies of `Mantis.jl` changed, the build may fail when 
+- If the dependencies of `Mantis` changed, the build may fail when 
   building in the `docs/`-folder. This is because the `docs/`-folder 
   defines its own julia environment, since the documentation may have 
   different dependencies than Mantis itself. To update the environment, 

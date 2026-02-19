@@ -2,7 +2,7 @@
 
 # The biharmonic problem is a typical example of a higher-order PDE problem. It can appear
 # in, for example, elasticity and fluid flow problems. In this example, we will briefly
-# review what the biharmonic problem looks like, and we will implement it using `Mantis.jl`.
+# review what the biharmonic problem looks like, and we will implement it using `Mantis`.
 
 # ## Formulation
 
@@ -36,7 +36,7 @@
 
 # ### The differential form case in nD.
 
-# Since `Mantis.jl` is designed to deal with differential forms, we prefer to work with the
+# Since `Mantis` is designed to deal with differential forms, we prefer to work with the
 # differential form formulation of the biharmonic problem. The 1D example above is the 1D
 # version of the ``0``-form biharmonic problem with homogeneous boundary conditions on the
 # value and laplacian. The ``0``-form biharmonic problem in ``n``-dimensions on domain
@@ -59,7 +59,7 @@
 # ```
 
 # ### What is actually computed?
-# In many finite element codes, and this is also true for `Mantis.jl`, the integrals in the
+# In many finite element codes, and this is also true for `Mantis`, the integrals in the
 # above weak formulations are not directly computed on the given domain. Instead, they are
 # pulled-back (mapped) to a reference domain.
 #
@@ -93,7 +93,7 @@
 # with ``\delta`` the codifferential.
 #
 # These expressions tend to become rather complex. Fortunately, the user does not have to
-# implement such transformations. `Mantis.jl` can handle this automatically.
+# implement such transformations. `Mantis` can handle this automatically.
 
 # ## Implementation
 
