@@ -5,6 +5,7 @@ authors = ["Diogo Costa Cabanas <d.costacabanas@tudelft.nl>", "Joey Dekker <j.de
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
@@ -31,6 +32,7 @@ ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
+CSV = "0.10.16"
 DisplayAs = "0.1.6"
 LaTeXStrings = "1.4.0"
 Makie = "0.24.8"
