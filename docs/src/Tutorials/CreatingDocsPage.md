@@ -13,7 +13,7 @@ the special boxes and whatnots.
     depending on the type of Admonition.
 
 !!! compat "Requires at least Julia 1.10"
-    Mantis was build assuming at least Julia 1.10.
+    `Mantis` was build assuming at least Julia 1.10.
 
 !!! warning "This above may be wrong"
     I did not check that, but it may be useful to include such things.
