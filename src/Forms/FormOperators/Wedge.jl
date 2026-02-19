@@ -67,10 +67,14 @@ struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
             )
         end
 
-        label = "(" * get_label(form_1) * "∧" * get_label(form_2) * ")"
+        new_label_type = promote_type(typeof(get_label(form_1)), typeof(get_label(form_2)))
+        new_label = convert(
+            new_label_type,
+            "(" * get_label(form_1) * LaTeXStrings.L"\wedge" * get_label(form_2) * ")",
+        )
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2, typeof(label)}(
-            form_1, form_2, label
+        return new{manifold_dim, form_rank, expression_rank, F1, F2, typeof(new_label)}(
+            form_1, form_2, new_label
         )
     end
 end

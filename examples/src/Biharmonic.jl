@@ -218,8 +218,7 @@ sol = vec(A \ b)
 ϕ_exact = Forms.AnalyticalFormField(0, exact_solution, geometry, L"\phi_{exact}")
 
 fig = Mantis.Plot.plot_solution((ϕ⁰, ϕ_exact); title="Solution", ylabel=" ")
-display(fig)
-# fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
+fig = DisplayAs.Text(DisplayAs.PNG(fig)) #hide
 
 # The above solution is indeed much closer (in the 'eyeball-norm') than before. We can make
 # this more precise by computing the error in the ``L^2``-norm and plotting how this error

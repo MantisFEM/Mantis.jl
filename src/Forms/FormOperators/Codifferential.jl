@@ -55,10 +55,13 @@ struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
             )
         end
 
-        label = "d*(" * get_label(form) * ")"
+        old_label = get_label(form)
+        new_label = convert(
+            typeof(old_label), LaTeXStrings.L"\delta" * "(" * old_label * ")"
+        )
 
-        return new{manifold_dim, form_rank - 1, expression_rank, F, typeof(label)}(
-            form, label
+        return new{manifold_dim, form_rank - 1, expression_rank, F, typeof(new_label)}(
+            form, new_label
         )
     end
 end

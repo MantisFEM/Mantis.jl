@@ -237,10 +237,12 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
             )
         end
 
-        label = "(" * get_label(form_1) * label * get_label(form_2) * ")"
+        new_label = convert(
+            typeof(label), "(" * get_label(form_1) * label * get_label(form_2) * ")"
+        )
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2, T, typeof(label)}(
-            form_1, form_2, transformation, label
+        return new{manifold_dim, form_rank, expression_rank, F1, F2, T, typeof(new_label)}(
+            form_1, form_2, transformation, new_label
         )
     end
 

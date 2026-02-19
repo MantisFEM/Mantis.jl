@@ -47,9 +47,14 @@ struct Hodge{manifold_dim, form_rank, expression_rank, F, L} <:
         end
         hodge_rank = manifold_dim - form_rank
 
-        label = "★(" * get_label(form) * ")"
+        old_label = get_label(form)
+        new_label = convert(
+            typeof(old_label), LaTeXStrings.L"\star" * "(" * old_label * ")"
+        )
 
-        return new{manifold_dim, hodge_rank, expression_rank, F, typeof(label)}(form, label)
+        return new{manifold_dim, hodge_rank, expression_rank, F, typeof(new_label)}(
+            form, new_label
+        )
     end
 end
 
