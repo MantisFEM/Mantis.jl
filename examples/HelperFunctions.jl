@@ -316,3 +316,29 @@ function circular_data(rank::Int, geo::Mantis.Geometry.AbstractGeometry)
 
     return δu, u, f
 end
+
+############################################################################################
+#                                       Convenience                                        #
+############################################################################################
+
+function get_elements_in_box(
+    geometry::Geometry.AbstractGeometry{2},
+    first_element::NTuple{2, Int},
+    last_element::NTuple{2, Int},
+)
+    lin_num_elements = Geometry.get_lin_num_elements(geometry)
+    elements_in_box = Vector{Int}(
+        undef,
+        (last_element[1] - first_element[1] + 1) * (last_element[2] - first_element[2] + 1),
+    )
+	count = 1
+    for y_element in first_element[2]:last_element[2]
+        for x_element in first_element[1]:last_element[1]
+			element = (x_element, y_element)
+			elements_in_box[count] = lin_num_elements[element...]
+			count += 1
+        end
+    end
+
+    return elements_in_box
+end
