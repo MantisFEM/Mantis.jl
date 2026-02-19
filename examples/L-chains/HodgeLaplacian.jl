@@ -1,10 +1,9 @@
 """
-	LChainExample
+	HodgeLaplacian
 
-This example was used in the `Numerical Results` section of [Cabanas2025](@cite).
+This example was used in the sub-section `7.1 Vector Laplace problem` of [Cabanas2025](@cite).
 """
-module LChainExample
-
+module HodgeLaplacian
 
 using Mantis
 

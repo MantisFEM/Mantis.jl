@@ -1,4 +1,9 @@
-module HierarchicalBsplines
+"""
+	MaxwellEigenvalue
+
+This example was used in the sub-section `7.2 Maxwell eigenvalue problem` of [Cabanas2025](@cite).
+"""
+module MaxwellEigenvalue
 
 using Mantis
 
