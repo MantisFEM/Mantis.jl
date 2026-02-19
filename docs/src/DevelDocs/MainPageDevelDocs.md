@@ -7,4 +7,4 @@ on parts of the code that are not designed for public access.
     You are now in the developer documentations. This also contain
     documents on parts of the code that are not designed for public access,
     and that may change without warning. For the public documentation, see the
-    [Mantis.jl Documentation](@ref)
+    [Home page](@ref).
