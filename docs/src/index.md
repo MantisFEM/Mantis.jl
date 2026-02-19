@@ -38,7 +38,7 @@ piecewise-polynomial spaces, non-polynomial spaces (e.g., trigonometric, exponen
 Tchebycheffian B-splines), and adaptively-refinable spaces (e.g., hierarchical B-splines).
 
 `Mantis` is free, open-source, and available under the
-([EUPL licence](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE)).
+[EUPL licence](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE).
 
 The `Mantis` package was created by
 - Diogo C. Cabanas,
