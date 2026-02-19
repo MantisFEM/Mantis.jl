@@ -10,6 +10,8 @@ using ..FunctionSpaces
 using ..Geometry
 using ..Quadrature
 
+import Combinatorics
+import LaTeXStrings
 import LinearAlgebra
 import SparseArrays
 import Subscripts
@@ -24,7 +26,7 @@ include("FormsExports.jl")
 ############################################################################################
 
 """
-    AbstractForm{manifold_dim, form_rank, G}
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Supertype for all form expressions representing differential forms.
 
@@ -34,31 +36,24 @@ Supertype for all form expressions representing differential forms.
 - `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
     with one single set of basis forms have rank 1, with two sets of basis forms have rank
     2. Higher ranks are not possible.
-- `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
 """
-abstract type AbstractForm{manifold_dim, form_rank, expression_rank, G} end
+abstract type AbstractForm{manifold_dim, form_rank, expression_rank} end
 
 """
-    AbstractFormField{manifold_dim, form_rank, G} = AbstractForm{
-        manifold_dim, form_rank, 0, G
+    AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
 
 Alias for `AbstractForm`s with expression rank 0, that is, a form without a basis. See
 [`AbstractForm`](@ref) for more details.
 """
-const AbstractFormField{manifold_dim, form_rank, G} = AbstractForm{
-    manifold_dim, form_rank, 0, G
-}
+const AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
 
 """
-    AbstractFormField{manifold_dim, form_rank, G} = AbstractForm{
-        manifold_dim, form_rank, 0, G
+    AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
 
 Alias for `AbstractForm`s with expression rank 1, that is, a form with a basis. See
 [`AbstractForm`](@ref) for more details.
 """
-const AbstractFormSpace{manifold_dim, form_rank, G} = AbstractForm{
-    manifold_dim, form_rank, 1, G
-}
+const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
 
 """
     AbstractRealValuedOperator{manifold_dim}
@@ -95,8 +90,8 @@ end
 
 """
     get_form_rank(
-        ::AbstractForm{manifold_dim, form_rank, expression_rank, G}
-    ) where {manifold_dim, form_rank, expression_rank, G}
+        ::AbstractForm{manifold_dim, form_rank, expression_rank}
+    ) where {manifold_dim, form_rank, expression_rank}
 
 Returns the form rank of the given form.
 
@@ -107,15 +102,15 @@ Returns the form rank of the given form.
 - `::Int`: The form rank of the form.
 """
 function get_form_rank(
-    ::AbstractForm{manifold_dim, form_rank, expression_rank, G}
-) where {manifold_dim, form_rank, expression_rank, G}
+    ::AbstractForm{manifold_dim, form_rank, expression_rank}
+) where {manifold_dim, form_rank, expression_rank}
     return form_rank
 end
 
 """
     get_expression_rank(
-        ::AbstractForm{manifold_dim, form_rank, expression_rank, G}
-    ) where {manifold_dim, form_rank, expression_rank, G}
+        ::AbstractForm{manifold_dim, form_rank, expression_rank}
+    ) where {manifold_dim, form_rank, expression_rank}
 
 Returns the `expression_rank` of the given form.
 
@@ -126,8 +121,8 @@ Returns the `expression_rank` of the given form.
 - `::Int`: The expression rank of the form.
 """
 function get_expression_rank(
-    ::AbstractForm{manifold_dim, form_rank, expression_rank, G}
-) where {manifold_dim, form_rank, expression_rank, G}
+    ::AbstractForm{manifold_dim, form_rank, expression_rank}
+) where {manifold_dim, form_rank, expression_rank}
     return expression_rank
 end
 
@@ -153,22 +148,22 @@ Returns the label of the form expression.
 - `form::AbstractForm`: The form expression.
 
 # Returns
-- `String`: The label of the form expression.
+- `AbstractString`: The label of the form expression.
 """
 get_label(form::AbstractForm) = form.label
 
 """
-    get_geometry(form_expression::AbstractForm)
+    get_geometry(form::AbstractForm)
 
 Returns the geometry of the given form expression.
 
 # Arguments
-- `form_expression::AbstractForm`: The form expression.
+- `form::AbstractForm`: The form expression.
 
 # Returns
 - `<:Geometry.AbstractGeometry`: The geometry of the form expression.
 """
-get_geometry(form_expression::AbstractForm) = form_expression.geometry
+get_geometry(form::AbstractForm) = FunctionSpaces.get_geometry(get_fe_space(form))
 
 """
     get_geometry(
@@ -192,8 +187,8 @@ function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm.
     for i in 1:(length(all_forms) - 1)
         if !(get_geometry(all_forms[i]) == get_geometry(all_forms[i + 1]))
             msg1 = "Not all forms share a common geometry. "
-            msg2 = "The geometries of form number(i) and form number(i+1) differ."
-            throw(ArgumentError(msg1 * msg2))
+            msg2 = "The geometries of form number $(i) and form number $(i+1) differ."
+            @warn(msg1 * msg2)
         end
     end
 
@@ -242,34 +237,25 @@ function get_num_elements(form::AbstractForm)
 end
 
 """
-    get_estimated_nnz_per_elem(
-        form::AbstractForm{manifold_dim, form_rank, expression_rank}
-    ) where {manifold_dim, form_rank, expression_rank}
+    get_estimated_nnz_per_elem(form::AbstractForm)
 
 Returns the estimated number of non-zero entries per element for the given form expression.
 
 # Arguments
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank}`:
-    The form expression.
+- `form::AbstractForm`: The form expression.
 
 # Returns
 - `::Int`: The estimated number of non-zero entries per element.
 """
-function get_estimated_nnz_per_elem(
-    form::AbstractForm{manifold_dim, form_rank, expression_rank}
-) where {manifold_dim, form_rank, expression_rank}
+function get_estimated_nnz_per_elem(form::AbstractForm)
     return prod(get_estimated_nnz_per_elem.(get_forms(form)))
 end
 
-function get_estimated_nnz_per_elem(
-    ::AbstractForm{manifold_dim, form_rank, 0}
-) where {manifold_dim, form_rank}
+function get_estimated_nnz_per_elem(::AbstractFormField)
     return 1
 end
 
-function get_estimated_nnz_per_elem(
-    form::AbstractForm{manifold_dim, form_rank, 1}
-) where {manifold_dim, form_rank}
+function get_estimated_nnz_per_elem(form::AbstractFormSpace)
     return get_max_local_dim(get_form(form))
 end
 
@@ -281,6 +267,7 @@ necessarily a tight upper bound.
 
 # Arguments
 - `form_space::AbstractFormSpace`: The form space.
+
 # Returns
 - `::Int`: The element-local upper bound.
 """
@@ -289,17 +276,19 @@ function get_max_local_dim(form_space::AbstractFormSpace)
 end
 
 """
-    get_fe_space(form::FS) where {FS <: AbstractFormSpace}
+    get_fe_space(form::FS) where {FS <: AbstractForm}
 
-Returns the finite element space associated with the given form space.
+Returns the finite element space associated with the given form. Note that this function
+recurses untill it finds a form (usually a `FormSpace`) which has an underlying finite
+element space.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+- `form_space::AbstractForm`: The form space.
 
 # Returns
 - `<:FunctionSpaces.AbstractFESpace`: The finite element space.
 """
-function get_fe_space(form::FS) where {FS <: AbstractFormSpace}
+function get_fe_space(form::FS) where {FS <: AbstractForm}
     if hasfield(FS, :fem_space)
         return form.fem_space
     end

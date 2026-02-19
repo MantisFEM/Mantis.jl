@@ -138,11 +138,10 @@ end
 function sinusoidal_data(
     form_rank::Int, geometry::Mantis.Geometry.AbstractGeometry, ω::Number=2 * pi
 )
-
     function my_sol(x::Matrix{Float64})
         # [u] = [sin(ωx¹)sin(ωx²)...sin(ωxⁿ)]
         y = @. sin(ω * x)
-        return [vec(prod(y, dims=2))]
+        return [vec(prod(y; dims=2))]
     end
 
     function grad_my_sol(x::Matrix{Float64})
@@ -150,8 +149,8 @@ function sinusoidal_data(
         y = sin.(ω .* x)
         z = ω .* cos.(ω .* x)
         w = Vector{Vector{Float64}}(undef, size(x, 2))
-        for i ∈ 1:size(x,2)
-            w[i] = z[:,i] .* prod(y[:,setdiff(1:size(x,2), i)], dims=2)[:,1]
+        for i in 1:size(x, 2)
+            w[i] = z[:, i] .* prod(y[:, setdiff(1:size(x, 2), i)]; dims=2)[:, 1]
         end
         return w
     end
@@ -159,16 +158,16 @@ function sinusoidal_data(
     function flux_my_sol(x::Matrix{Float64})
         # [u₁, u₂, ...] = ⋆[ω*cos(ωx¹)sin(ωx²)...sin(ωxⁿ), ω*sin(ωx¹)cos(ωx²)...sin(ωxⁿ), ...]
         w = grad_my_sol(x)
-        if size(x,2) == 1
+        if size(x, 2) == 1
             # (a) -> (a)
             return [w[1]]
 
-        elseif size(x,2) == 2
+        elseif size(x, 2) == 2
             # (a, b) -> (-b, a)
             w = [-w[2], w[1]]
             return w
 
-        elseif size(x,2) == 3
+        elseif size(x, 2) == 3
             # (a, b, c) -> (a, b, c)
             return [w[1], w[2], w[3]]
 
@@ -179,7 +178,7 @@ function sinusoidal_data(
 
     function laplace_my_sol(x::Matrix{Float64})
         # [-(u₁₁+u₂₂+...uₙₙ)] = [2ω²*sin(ωx¹)sin(ωx²)...sin(ωxⁿ)]
-        y = prod(sin.(ω * x), dims=2)
+        y = prod(sin.(ω * x); dims=2)
         y = @. 2 * ω * ω * y
         return [vec(y)]
     end
@@ -187,19 +186,19 @@ function sinusoidal_data(
     function vec_sol(x::Matrix{Float64})
         # [u¹,u²,…,uⁿ] = [sin(ωx¹), sin(ωx²),…,sin(ωxⁿ)]
 
-        return [sin.(ω*x[:,i]) for i ∈ 1:size(x,2)]
+        return [sin.(ω * x[:, i]) for i in 1:size(x, 2)]
     end
 
     function minus_div_sol(x::Matrix{Float64})
         # [-(u¹₁+u²₂+…+uⁿₙ)] = [-ω(cos(ωx¹)+cos(ωx²)+cos(ωxⁿ))]
 
-        return [-ω.*sum(cos, ω.*x, dims=2)]
+        return [-ω .* sum(cos, ω .* x; dims=2)]
     end
 
     function vec_laplace_sol(x::Matrix{Float64})
         # [-Δu¹,-Δu²,…,-Δuⁿ] = [ω²sin(ωx¹),ω²sin(ωx²),…,ω²sin(ωxⁿ)]
 
-        return [@. ω^2*sin(ω*x[:,i]) for i ∈ 1:size(x,2)]
+        return [@. ω^2 * sin(ω * x[:, i]) for i in 1:size(x, 2)]
     end
 
     if form_rank == 0
@@ -220,4 +219,100 @@ function sinusoidal_data(
     else
         throw(ArgumentError("Form rank not supported."))
     end
+end
+
+function circular_data(rank::Int, geo::Mantis.Geometry.AbstractGeometry)
+    if rank != 1
+        throw(ArgumentError("This problem data is only defined for 1-forms."))
+    end
+
+    u(x, y) =
+        sin(π * x) * sin(π * y) * tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))
+
+    dudx(x, y) =
+        200 *
+        sin(π * y) *
+        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
+        (x - 1 / 2) *
+        sin(π * x) +
+        π * sin(π * y) * tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) * cos(π * x)
+    dudy(x, y) =
+        200 *
+        sin(π * x) *
+        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
+        (y - 1 / 2) *
+        sin(π * y) +
+        π * sin(π * x) * tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) * cos(π * y)
+    d2udx2(x, y) =
+        -80000 *
+        sin(π * y) *
+        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
+        tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) *
+        (x - 1 / 2)^2 *
+        sin(π * x) -
+        π^2 *
+        sin(π * y) *
+        tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) *
+        sin(π * x) +
+        200 *
+        sin(π * y) *
+        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
+        sin(π * x) +
+        400 *
+        π *
+        sin(π * y) *
+        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
+        (x - 1 / 2) *
+        cos(π * x)
+    d2udy2(x, y) =
+        -80000 *
+        sin(π * x) *
+        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
+        tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) *
+        (y - 1 / 2)^2 *
+        sin(π * y) -
+        π^2 *
+        sin(π * x) *
+        tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) *
+        sin(π * y) +
+        200 *
+        sin(π * x) *
+        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
+        sin(π * y) +
+        400 *
+        π *
+        sin(π * x) *
+        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
+        (y - 1 / 2) *
+        cos(π * y)
+
+    function u_function(x)
+        u₁ = @. sinpi(x[:, 1]) *
+            sinpi(x[:, 2]) *
+            tanh(100 * ((x[:, 1] - 0.5)^2 + (x[:, 2] - 0.5)^2 - 0.3^2))
+
+        u₂ = @. sinpi(x[:, 1]) *
+            sinpi(x[:, 2]) *
+            tanh(100 * ((x[:, 1] - 0.5)^2 + (x[:, 2] - 0.5)^2 - 0.3^2))
+
+        return [u₁, u₂]
+    end
+
+    function δu_function(x)
+        return [@. -(dudx(x[:, 1], x[:, 2]) + dudy(x[:, 1], x[:, 2]))]
+    end
+
+    function f_function(x)
+        # f = [-Δu₁, -Δu₂]
+        return [
+            -(d2udx2.(x[:, 1], x[:, 2]) + d2udy2.(x[:, 1], x[:, 2])),
+            -(d2udx2.(x[:, 1], x[:, 2]) + d2udy2.(x[:, 1], x[:, 2])),
+        ]
+    end
+
+    δu = Forms.AnalyticalFormField(0, δu_function, geo, "δu")
+    u = Mantis.Forms.AnalyticalFormField(1, u_function, geo, "u")
+    f = Mantis.Forms.AnalyticalFormField(1, f_function, geo, "f")
+
+    return δu, u, f
 end

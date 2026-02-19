@@ -4,10 +4,6 @@ using Mantis
 
 using Test
 
-const Patch1D = Mesh.Patch1D
-const KnotVector = FunctionSpaces.KnotVector
-const BSplineSpace = FunctionSpaces.BSplineSpace
-
 # Piece-wise degree of the basis functions on which the tests are performed.
 degrees_for_test = 0:5#20
 subdivisions_to_test = 2:8
@@ -22,8 +18,8 @@ for p in degrees_for_test
     nel = p + 2
     parent_regularity = fill(p - 1, nel + 1)
     parent_regularity[1] = parent_regularity[end] = -1
-    parent_bspline = BSplineSpace(
-        Patch1D(collect(range(0, 1, nel + 1))), p, parent_regularity
+    parent_bspline = FunctionSpaces.BSplineSpace(
+        Geometry.CartesianGeometry(LinRange(0.0, 1.0, nel + 1)), p, parent_regularity
     )
 
     parent_coeffs =

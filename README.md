@@ -9,14 +9,23 @@
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/JuliaDiff/BlueStyle)
 
 ## Introduction
-Welcome to `Mantis.jl`, a Julia package for high-order structure-preserving finite element methods.
 
-This package is designed based on the Finite Element Exterior Calculus (FEEC) framework which provides a rigorous foundation for designing structure-preserving discretizations for PDEs, e.g., those arising in electromagnetism, fluid flows, and elasticity. Such discretizations require finite element spaces which discretize the Hilbert complexes associated to the PDEs, such as the de Rham complex for Maxwell's equations.
+Welcome to the documentation for `Mantis`, a Julia package for high-order
+structure-preserving finite element methods.
 
-`Mantis.jl` provides users with a flexible environment where they can implement FEEC using the natural language of Exterior Calculus, allowing them to discretize PDEs using spaces of arbitrary regularities. Some examples of supported finite element spaces are piecewise-polynomial spaces, non-polynomial spaces (e.g., trigonometric, exponential, Tchebycheffian B-splines), and adaptively-refinable spaces (e.g., hierarchical B-splines).
+This package is designed based on the Finite Element Exterior Calculus (FEEC) framework,
+which provides a rigorous foundation for designing structure-preserving discretisations for
+PDEs, e.g., those arising in electromagnetism, fluid flows, and elasticity. Such
+discretisations require finite element spaces which discretize the Hilbert complexes
+associated to the PDEs, such as the de Rham complex for Maxwell's equations. `Mantis`
+provides users with a flexible environment where they can implement FEEC using the natural
+language of Exterior Calculus, allowing them to discretize PDEs using spaces of arbitrary
+regularities. Some examples of supported finite element spaces are piecewise-polynomial
+spaces, non-polynomial spaces (e.g., trigonometric, exponential, Tchebycheffian B-splines),
+and adaptively-refinable spaces (e.g., hierarchical B-splines).
 
-`Mantis.jl` is free and open-source
-([EUPL v1.2 license](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE)).
+`Mantis` is free, open-source, and available under the
+([EUPL licence](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE)).
 
 
 ## Authors

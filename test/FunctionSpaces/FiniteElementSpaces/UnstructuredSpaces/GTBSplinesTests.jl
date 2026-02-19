@@ -6,12 +6,12 @@ using Test
 
 deg1 = 3
 breakpoints = [0.0, 0.5, 1.0]
-patch1 = Mesh.Patch1D(breakpoints)
+patch1 = Geometry.CartesianGeometry(breakpoints)
 B1_univariate_bs = FunctionSpaces.BSplineSpace(patch1, deg1, [-1, 1, -1])
 
 breakpoints2 = [0.0, 0.5, 0.6, 1.0]
 deg2 = 4
-patch2 = Mesh.Patch1D(breakpoints2)
+patch2 = Geometry.CartesianGeometry(breakpoints2)
 B2_univariate_bs = FunctionSpaces.BSplineSpace(patch2, deg2, [-1, 1, 3, -1])
 
 GB = FunctionSpaces.GTBSplineSpace((B1_univariate_bs, B2_univariate_bs), [1, -1])
@@ -33,7 +33,7 @@ deg = 2
 Wt = pi / 2
 b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Mesh.Patch1D(breakpoints)
+patch = Geometry.CartesianGeometry(breakpoints)
 B = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 GB = FunctionSpaces.GTBSplineSpace((B,), ones(Int, 1))
 nel = FunctionSpaces.get_num_elements(GB)

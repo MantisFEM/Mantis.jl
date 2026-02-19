@@ -5,7 +5,7 @@ will be done by `Julia` and/or `Python`.
 
 For convenience, there is a bash script in the tools folder, 
 `build_local_docs.sh`, that automates the process. Make sure to run the
-script starting in the main Mantis folder. Use
+script starting in the main `Mantis` folder. Use
 ```
 bash tools/build_local_docs.sh
 ```
@@ -14,7 +14,7 @@ you can use the following step-by-step guide.
 
 To create the docs, follow these steps:
 - Navigate to the `docs/` directory. If you open a terminal in the 
-  `Mantis.jl` repo, this is a simple matter of executing 
+  `Mantis` repo, this is a simple matter of executing 
   ```
   cd docs
   ```
@@ -30,10 +30,10 @@ To create the docs, follow these steps:
   generated here. *Make sure that you save all changes before running 
   this command or you won't see the changes!* Should this step fail, see 
   the next step.
-- If the dependencies of `Mantis.jl` changed, the build may fail when 
+- If the dependencies of `Mantis` changed, the build may fail when 
   building in the `docs/`-folder. This is because the `docs/`-folder 
   defines its own julia environment, since the documentation may have 
-  different dependencies than Mantis itself. To update the environment, 
+  different dependencies than `Mantis` itself. To update the environment, 
   open a terminal in the `docs/`-directory and type `julia` to open 
   julia. Enter the package manager by typing `]` and activate the 
   current environment by typing `activate .`. The environment is shown 
@@ -41,7 +41,7 @@ To create the docs, follow these steps:
   and execute this command. **Note that `../../Mantis.jl` refers to the 
   folder name. If you did not call this Mantis.jl, make sure to use to 
   correct name.** The environment will be updated so that the latest 
-  version of Mantis is available with its updated structure. Then you 
+  version of `Mantis` is available with its updated structure. Then you 
   may also have to run `instantiate` to make sure the `docs\`-environment 
   is updated. You can now redo the previous step.
 - Then you need to create a (local) webserver to view the HTML docs, for 
@@ -65,13 +65,13 @@ To create the docs, follow these steps:
   with the options `Open in Browser` and `Preview in Editor`. Click the 
   `Open in Browser`-option to see the html pages. You (may) have to click 
   the `build/`-link when the browser opens. 
-- Enjoy the Mantis docs! 
+- Enjoy the `Mantis` docs! 
 - In my case, this will result in VScode giving me the message: `Your 
   application running on port 8000 is available. See all forwarded ports`
   with the options `Open in Browser` and `Preview in Editor`. Click the 
   `Open in Browser`-option to see the html pages. You have to click the 
   `build/`-link when the browser opens. 
-- Enjoy the Mantis docs!
+- Enjoy the `Mantis` docs!
 - When done, you can kill the local webserver by using `Ctrl+C`.
 
 [^NoteOnGITtingBuildFolder]:

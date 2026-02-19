@@ -23,20 +23,23 @@ element.
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::AbstractCanonicalSpace
 )
-    error("The extraction to $(typeof(canonical_space)) spaces has not been implemented.")
+    return error(
+        "The extraction to $(typeof(canonical_space)) spaces has not been implemented."
+    )
 end
 
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::AbstractLagrangePolynomials
 )
-    # Number of elements in the knot vector
-    nel = size(knot_vector.patch_1d)
+    nel = get_num_elements(knot_vector)
+    p = get_polynomial_degree(knot_vector)
+    multiplicity = get_multiplicity(knot_vector)
 
     # Ensure that regularities at all breakpoints are either 0 or -1
     for el in 1:(nel - 1)
         # Get multiplicity of the knot at the end of the current element
-        mult = knot_vector.multiplicity[el + 1]
-        if mult < knot_vector.polynomial_degree
+        mult = multiplicity[el + 1]
+        if mult < p
             throw(
                 ArgumentError(
                     "The Lagrange extraction is only implemented for regularities 0 and -1."
@@ -50,14 +53,10 @@ function extract_bspline_to_section_space(
 
     # Compute indices of supported basis functions on each element
     basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(
-        1:knot_vector.polynomial_degree + 1,
-        (1:knot_vector.polynomial_degree + 1,),
-    )
+    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
     for el in 2:nel
         basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el-1]) .+ knot_vector.multiplicity[el],
-            (1:knot_vector.polynomial_degree + 1,),
+            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
         )
     end
 
@@ -69,14 +68,15 @@ end
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::AbstractEdgePolynomials
 )
-    # Number of elements in the knot vector
-    nel = size(knot_vector.patch_1d)
+    nel = get_num_elements(knot_vector)
+    p = get_polynomial_degree(knot_vector)
+    multiplicity = get_multiplicity(knot_vector)
 
     # Ensure that regularities at all breakpoints are either 0 or -1
     for el in 1:(nel - 1)
         # Get multiplicity of the knot at the end of the current element
-        mult = knot_vector.multiplicity[el + 1]
-        if mult < knot_vector.polynomial_degree+1
+        mult = multiplicity[el + 1]
+        if mult < p + 1
             throw(
                 ArgumentError(
                     "The Edge-polynomial extraction is only implemented for regularity -1."
@@ -90,14 +90,10 @@ function extract_bspline_to_section_space(
 
     # Compute indices of supported basis functions on each element
     basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(
-        1:knot_vector.polynomial_degree + 1,
-        (1:knot_vector.polynomial_degree + 1,),
-    )
+    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
     for el in 2:nel
         basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el-1]) .+ knot_vector.multiplicity[el],
-            (1:knot_vector.polynomial_degree + 1,),
+            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
         )
     end
 
@@ -106,20 +102,16 @@ function extract_bspline_to_section_space(
     )
 end
 
-
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::Bernstein
 )
-    # Number of elements in the knot vector
-    nel = size(knot_vector.patch_1d)
-
-    p = knot_vector.polynomial_degree
-    breakpoints = knot_vector.patch_1d.breakpoints
-    num_knots = sum(knot_vector.multiplicity)
-
+    nel = get_num_elements(knot_vector)
+    p = get_polynomial_degree(knot_vector)
+    breakpoints = get_breakpoints(knot_vector)
+    num_knots = sum(get_multiplicity(knot_vector))
 
     # Initialize extraction matrices for each element
-    E = [(Matrix{Float64}(LinearAlgebra.I, p+1, p+1),) for _ in 1:nel]
+    E = [(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1),) for _ in 1:nel]
 
     # Array to store knot insertion coefficients
     alphas = zeros(max(p - 1, 0))
@@ -149,7 +141,7 @@ function extract_bspline_to_section_space(
             # Calculate numerator for alpha coefficients
             numer = breakpoints[b_id_end] - breakpoints[b_id_start]
             # Compute alpha coefficients
-            for j in p:-1:(mult+1)
+            for j in p:-1:(mult + 1)
                 b_id_j = convert_knot_to_breakpoint_idx(knot_vector, k_id_start + j)
                 alphas[j - mult] = numer / (breakpoints[b_id_j] - breakpoints[b_id_start])
             end
@@ -157,16 +149,19 @@ function extract_bspline_to_section_space(
             # Update extraction coefficients
             for j in 1:r
                 s = mult + j
-                for k in (p+1):-1:(s + 1)
+                for k in (p + 1):-1:(s + 1)
                     alpha = alphas[k - s]
-                    E[el_id][1][k, :] .= (@view E[el_id][1][k, :]) .* alpha .+
+                    E[el_id][1][k, :] .=
+                        (@view E[el_id][1][k, :]) .* alpha .+
                         (@view E[el_id][1][k - 1, :]) .* (1.0 - alpha)
                 end
 
                 # Save coefficients for the next element
                 save = r - j + 1
                 if k_id_end < num_knots && el_id < nel
-                    E[el_id + 1][1][save, save:(save + j)] .= (@view E[el_id][1][p + 1, (p - j + 1):(p + 1)])
+                    E[el_id + 1][1][save, save:(save + j)] .= (@view E[el_id][1][
+                        p + 1, (p - j + 1):(p + 1)
+                    ])
                 end
             end
         end
@@ -179,11 +174,11 @@ function extract_bspline_to_section_space(
 
     # Compute indices of supported basis functions on each element
     basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(1:p + 1, (1:p + 1,),)
+    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
     for el in 2:nel
         basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el-1]) .+ knot_vector.multiplicity[el],
-            (1:p + 1,),
+            get_basis_indices(basis_indices[el - 1]) .+ get_multiplicity(knot_vector)[el],
+            (1:(p + 1),),
         )
     end
 
@@ -195,10 +190,9 @@ end
 function extract_bspline_to_section_space(
     knot_vector::KnotVector, canonical_space::AbstractECTSpaces
 )
-    # Polynomial degree of the B-Spline basis
-    p = knot_vector.polynomial_degree
-    # Number of elements in the knot vector
-    nel = size(knot_vector.patch_1d)
+    nel = get_num_elements(knot_vector)
+    p = get_polynomial_degree(knot_vector)
+    multiplicity = get_multiplicity(knot_vector)
 
     # Construct cumulative sum of all element-wise canonical space dimensions
     canonical_dims = cumsum([0, repeat([p + 1], nel, 1)...])
@@ -215,7 +209,7 @@ function extract_bspline_to_section_space(
     # Loop over all internal breakpoints and update extraction by imposing smoothness
     for el in 1:(nel - 1)
         # Get regularity at this breakpoint
-        mult = knot_vector.multiplicity[el + 1]
+        mult = multiplicity[el + 1]
         r = p - mult
 
         # Construct smoothness constraint matrix contributions from the left and right of
@@ -257,9 +251,8 @@ function extract_bspline_to_section_space(
     basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
     for el in 2:nel
         basis_indices[el] = Indices(
-        get_basis_indices(basis_indices[el-1]) .+ knot_vector.multiplicity[el],
-        (1:(p + 1),),
-    )
+            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
+        )
     end
 
     # Convert global extraction matrix to element local extractions
@@ -268,9 +261,8 @@ function extract_bspline_to_section_space(
     for el in 1:nel
         cols_el = (canonical_dims[el] + 1):canonical_dims[el + 1]
         # Matrix of coefficients
-        extraction_coefficients[el] = Matrix(
-            H[get_basis_indices(basis_indices[el]), cols_el]
-        )'
+        extraction_coefficients[el] =
+            Matrix(H[get_basis_indices(basis_indices[el]), cols_el])'
     end
 
     Etup = [(extraction_coefficients[el],) for el in eachindex(extraction_coefficients)]
@@ -412,9 +404,11 @@ function extract_gtbspline_to_bspline(
             unique_eij = unique(eij[1])
             basis_indices[count + 1] = Indices(unique_eij, (1:length(unique_eij),))
             # Matrix of coefficients
-            extraction_coefficients[count + 1] = (Matrix(
-                H[get_basis_indices(basis_indices[count+1]), cols_ij .+ spl_dims[i]]
-            )',)
+            extraction_coefficients[count + 1] = (
+                Matrix(
+                    H[get_basis_indices(basis_indices[count + 1]), cols_ij .+ spl_dims[i]]
+                )',
+            )
             count += 1
         end
     end

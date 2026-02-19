@@ -3,40 +3,35 @@
 ############################################################################################
 
 """
-    FormSpace{manifold_dim, form_rank, G, F} <:
-    AbstractFormSpace{manifold_dim, form_rank, G}
+    FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, form_rank}
 
 Concrete implementation of a function space for differential forms.
 
 # Fields
-- `geometry::G`: The geometry of the manifold
 - `fem_space::F`: The finite element space(s) used for the form components
-- `label::String`: Label for the form space
+- `label::AbstractString`: Label for the form space
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold
 - `form_rank`: Rank of the differential form
-- `G`: Type of the geometry
 - `F`: Type of the finite element space
 
 # Inner Constructors
-- `FormSpace(form_rank::Int, geometry::G, fem_space::F, label::String)`: General
-    constructor for differential form spaces.
+- `FormSpace(form_rank::Int,fem_space::F, label::AbstractString)`: Constructor for differential
+    form spaces.
 """
-struct FormSpace{manifold_dim, form_rank, G, F} <:
-       AbstractFormSpace{manifold_dim, form_rank, G}
-    geometry::G
+struct FormSpace{manifold_dim, form_rank, F, L} <:
+       AbstractFormSpace{manifold_dim, form_rank}
     fem_space::F
-    label::String
+    label::L
 
     """
         FormSpace(
-            form_rank::Int, geometry::G, fem_space::F, label::String
+            form_rank::Int, fem_space::F, label::AbstractString
         ) where {
             manifold_dim,
             num_components,
             num_patches,
-            G <: Geometry.AbstractGeometry{manifold_dim},
             F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_components, num_patches},
         }
 
@@ -44,20 +39,18 @@ struct FormSpace{manifold_dim, form_rank, G, F} <:
 
     # Arguments
     - `form_rank::Int`: Differential form rank.
-    - `geometry::G`: The geometry where the form is defined.
     - `fem_space::F`: The function space used to represent the form.
-    - `label::String`: The label of the form space.
+    - `label::AbstractString`: The label of the form space.
 
     # Returns
-    - `FormSpace{manifold_dim, form_rank, G, F}`: The FormSpace structure.
+    - `FormSpace{manifold_dim, form_rank, F}`: The FormSpace.
     """
     function FormSpace(
-        form_rank::Int, geometry::G, fem_space::F, label::String
+        form_rank::Int, fem_space::F, label::AbstractString
     ) where {
         manifold_dim,
         num_components,
         num_patches,
-        G <: Geometry.AbstractGeometry{manifold_dim},
         F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_components, num_patches},
     }
         if (form_rank ∈ Set([0, manifold_dim])) && (num_components > 1)
@@ -78,7 +71,7 @@ struct FormSpace{manifold_dim, form_rank, G, F} <:
             )
         end
 
-        return new{manifold_dim, form_rank, G, F}(geometry, fem_space, label)
+        return new{manifold_dim, form_rank, F, typeof(label)}(fem_space, label)
     end
 end
 ############################################################################################
@@ -95,10 +88,10 @@ get_estimated_nnz_per_elem(form_space::FormSpace) = get_max_local_dim(form_space
 
 """
     evaluate(
-        form_space::FormSpace{manifold_dim, form_rank, G},
+        form_space::FormSpace{manifold_dim, form_rank},
         element_idx::Int,
         xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, form_rank, G}
+    ) where {manifold_dim, form_rank}
 
 Evaluate the basis functions of a differential form space at given canonical points `xi`
 mapped to the parametric element given by `element_idx`.
@@ -116,10 +109,10 @@ mapped to the parametric element given by `element_idx`.
     canonical coordinates of the element.
 """
 function evaluate(
-    form_space::FormSpace{manifold_dim, form_rank, G},
+    form_space::FormSpace{manifold_dim, form_rank},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, form_rank, G}
+) where {manifold_dim, form_rank}
     # The form space is made up of components
     # e.g,
     #   0-forms: single component
@@ -140,16 +133,16 @@ end
 
 """
     _evaluate_form_in_canonical_coordinates(
-        form_space::FormSpace{manifold_dim, form_rank, G},
+        form_space::FormSpace{manifold_dim, form_rank},
         element_idx::Int,
         xi::Points.AbstractPoints{manifold_dim},
         nderivatives::Int,
-    ) where {manifold_dim, form_rank, G}
+    ) where {manifold_dim, form_rank}
 
 Evaluate the form basis functions and their arbitrary derivatives in canonical coordinates.
 
 # Arguments
-- `form_space::FormSpace{manifold_dim, form_rank, G}`: The form space.
+- `form_space::FormSpace{manifold_dim, form_rank}`: The form space.
 - `element_idx::Int`: Index of the element where the evaluation is performed.
 - `xi::Points.AbstractPoints{manifold_dim}`: Canonical points for evaluation.
 
@@ -160,11 +153,11 @@ Evaluate the form basis functions and their arbitrary derivatives in canonical c
     element.
 """
 function _evaluate_form_in_canonical_coordinates(
-    form_space::FormSpace{manifold_dim, form_rank, G},
+    form_space::FormSpace{manifold_dim, form_rank},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-) where {manifold_dim, form_rank, G}
+) where {manifold_dim, form_rank}
     # Evaluate the form spaces on parametric domain ...
     local_form_basis, form_basis_indices = FunctionSpaces.evaluate(
         get_fe_space(form_space), element_idx, xi, nderivatives

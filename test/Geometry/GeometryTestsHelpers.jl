@@ -11,7 +11,7 @@ output_directory_tree = ["test", "data", "output", "Geometry"]
 function get_point_cell_data(directory_tree::Vector{String}, file_name::String)
     # Read the cell data from the reference file
     file_path = Mantis.GeneralHelpers.export_path(directory_tree, file_name)
-    vtk_file = ReadVTK.VTKFile(ReadVTK.get_example_file(file_path))
+    vtk_file = ReadVTK.VTKFile(file_path)
 
     point_data = ReadVTK.get_data(ReadVTK.get_data_section(vtk_file, "Points")["Points"])
     cell_data = ReadVTK.get_data(

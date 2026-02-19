@@ -31,6 +31,8 @@ struct CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
     end
 end
 
+Base.eltype(::CartesianPoints{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
+
 """
     get_cart_num_points(points::CartesianPoints)
 

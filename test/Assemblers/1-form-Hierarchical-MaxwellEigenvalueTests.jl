@@ -12,7 +12,7 @@ include("../../examples/HelperFunctions.jl")
 ############################################################################################
 # Mesh
 const starting_point = (0.0, 0.0)
-const box_size = (fpi, fpi) # This size is so that the eigenvalues are unique.
+const box_size = (fpi, fpi)
 num_elements = (2, 2) .^ 3 # Initial mesh size.
 
 # B-spline parameters
@@ -20,8 +20,8 @@ p = (2, 2) # Polynomial degrees.
 k = p .- 1 # Regularities. (Maximally smooth B-splines.)
 
 # Hierarchical parameters.
-truncate = false # true = THB, false = HB
-simplified = true
+truncate = true
+simplified = false
 num_steps = 3 # Number of refinement steps.
 num_sub = (2, 2) # Number of subdivisions per dimension per step.
 dorfler_parameter = 0.2
@@ -71,12 +71,12 @@ function run_problems(
         scale_factors;
         verbose=verbose,
     )
-    geom = Forms.get_geometry(compt_eigfuncs[1])
+    geo = Forms.get_geometry(compt_eigfuncs...)
     dΩₑ = Quadrature.StandardQuadrature(
-        Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geom)
+        Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geo)
     )
     exact_eigvals, exact_eigfuncs = Assemblers.get_analytical_maxwell_eig(
-        num_eig, geom, scale_factors
+        num_eig, geo, scale_factors
     )
     eigval_errors = compt_eigvals - exact_eigvals
     eigfunc_errors =

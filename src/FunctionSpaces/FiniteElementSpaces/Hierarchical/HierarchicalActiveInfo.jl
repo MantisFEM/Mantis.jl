@@ -13,12 +13,12 @@ that of an object in level l.
     i.e. 'level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))'. First entry is always 0 for
     ease of use.
 """
-struct HierarchicalActiveInfo
+mutable struct HierarchicalActiveInfo
     level_ids::Vector{Vector{Int}}
     level_cum_num_ids::Vector{Int}
 
     function HierarchicalActiveInfo(level_ids::Vector{Vector{Int}})
-        level_cum_num_ids = [0; cumsum(length.(level_ids))]
+		level_cum_num_ids = [0; cumsum(map(length, level_ids))]
 
         return new(level_ids, level_cum_num_ids)
     end
@@ -77,7 +77,13 @@ function convert_to_level_id(active_info::HierarchicalActiveInfo, hier_id::Int)
 end
 
 function convert_to_level_and_level_id(active_info::HierarchicalActiveInfo, hier_id::Int)
-    return get_level(active_info, hier_id), convert_to_level_id(active_info, hier_id)
+	level = get_level(active_info, hier_id)
+	level_id = get_level_ids(active_info, level)[hier_id - get_level_cum_num_ids(
+        active_info, level - 1
+    )]
+	
+
+    return level, level_id
 end
 
 function convert_to_level_ids(active_info::HierarchicalActiveInfo)
@@ -95,7 +101,7 @@ function convert_to_level_ids(active_info::HierarchicalActiveInfo)
 end
 
 function convert_to_hier_id(active_info::HierarchicalActiveInfo, level::Int, level_id::Int)
-    level_id_count = findfirst(x -> x == level_id, get_level_ids(active_info, level))
+    level_id_count = findfirst(id -> id == level_id, get_level_ids(active_info, level))
 
     return level_id_count + get_level_cum_num_ids(active_info, level - 1)
 end

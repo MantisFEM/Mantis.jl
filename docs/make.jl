@@ -45,18 +45,23 @@ Tutorials = [
 DevelDocs = [
     joinpath("DevelDocs", "MainPageDevelDocs.md"),
     "Documents" => [joinpath("DevelDocs", "Documentation.md")],
-    "Modules" => [
-        joinpath("DevelDocs", "Modules", "Analysis.md"),
-        joinpath("DevelDocs", "Modules", "Assemblers.md"),
-        joinpath("DevelDocs", "Modules", "Forms.md"),
-        joinpath("DevelDocs", "Modules", "FunctionSpaces.md"),
-        joinpath("DevelDocs", "Modules", "GeneralHelpers.md"),
-        joinpath("DevelDocs", "Modules", "Geometry.md"),
-        joinpath("DevelDocs", "Modules", "Mesh.md"),
-        joinpath("DevelDocs", "Modules", "Plot.md"),
-        joinpath("DevelDocs", "Modules", "Points.md"),
-        joinpath("DevelDocs", "Modules", "Quadrature.md"),
-    ],
+    "Modules" =>
+        joinpath.(
+            "DevelDocs",
+            "Modules",
+            [
+                "Analysis.md",
+                "Assemblers.md",
+                "Forms.md",
+                "FunctionSpaces.md",
+                "GeneralHelpers.md",
+                "Geometry.md",
+                "Mesh.md",
+                "Plot.md",
+                "Points.md",
+                "Quadrature.md",
+            ],
+        ),
 ]
 
 Pages = [

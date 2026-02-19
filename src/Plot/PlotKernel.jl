@@ -181,7 +181,7 @@ function _plot(
 end
 
 function _plot(
-    form::Forms.AbstractForm{manifold_dim, form_rank, 0, G},
+    form::Forms.AbstractForm{manifold_dim, form_rank, 0},
     offset::Union{Nothing, Function}=nothing;
     vtk_filename::String="default",
     n_subcells::Int=1,
@@ -189,7 +189,7 @@ function _plot(
     ascii=false,
     compress=true,
     subcell_wireframe=true,
-) where {manifold_dim, form_rank, G <: Geometry.AbstractGeometry{manifold_dim}}
+) where {manifold_dim, form_rank}
     # This function generates points per plotted nD cell, so connectivity is lost, this is what requires less information
     # from the mesh. Each computational element is sampled at n_subsamples (minimum is 2 per direction). These subsamples
     # create a structured grid, each cell of this refined grid is plotted.

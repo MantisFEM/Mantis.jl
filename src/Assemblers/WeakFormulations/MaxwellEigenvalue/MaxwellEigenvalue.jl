@@ -109,34 +109,34 @@ end
 
 """
     solve_maxwell_eig(
-        X⁰::Forms.AbstractFormSpace{2, 0, G},
-        X¹::Forms.AbstractFormSpace{2, 1, G},
+        X⁰::Forms.AbstractFormSpace{2, 0},
+        X¹::Forms.AbstractFormSpace{2, 1},
         dΩ::Quadrature.AbstractGlobalQuadratureRule{2},
         num_eig::Int;
         verbose::Bool=false,
-    ) where {G}
+    )
 
 Returns the first `num_eig` eigenvalues and 1-form eigenfunctions of the Maxwell eigenvalue
 problem.
 
 # Arguments
-- `X⁰::Forms.AbstractFormSpace{2, 0, G}`: The 0-form space to use as trial and test space.
-- `X¹::Forms.AbstractFormSpace{2, 1, G}`: The 1-form space to use as trial and test space.
+- `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to use as trial and test space.
+- `X¹::Forms.AbstractFormSpace{2, 1}`: The 1-form space to use as trial and test space.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the assembly.
 - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
 - `verbose::Bool=false`: Whether to print the nullspace offset.
 
 # Returns
 - `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
-- `u¹ₕ::Vector{Forms.FormField{2, 1, G}}`: The first `num_eig` eigenfunctions.
+- `u¹ₕ::Vector{Forms.FormField{2, 1}}`: The first `num_eig` eigenfunctions.
 """
 function solve_maxwell_eig(
-    X⁰::Forms.AbstractFormSpace{2, 0, G},
-    X¹::Forms.AbstractFormSpace{2, 1, G},
+    X⁰::Forms.AbstractFormSpace{2, 0},
+    X¹::Forms.AbstractFormSpace{2, 1},
     dΩ::Quadrature.AbstractGlobalQuadratureRule{2},
     num_eig::Int;
     verbose::Bool=false,
-) where {G}
+)
     weak_form_inputs = WeakFormInputs(X¹, X¹)
     lhs_expressions, rhs_expressions = maxwell_eigenvalue(weak_form_inputs, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
@@ -159,7 +159,7 @@ function solve_maxwell_eig(
     end
 
     ωₕ² = (ωₕ²[(nullspace_offset + 1):end])[1:num_eig]
-    u¹ₕ = Vector{Forms.FormField{2, 1, G}}(undef, num_eig)
+    u¹ₕ = Vector{Forms.FormField{2, 1}}(undef, num_eig)
     for eig_id in 1:num_eig
         subscript_str = join(Char(0x2080 + d) for d in reverse(digits(eig_id)))
         u¹ₕ[eig_id] = Forms.FormField(X¹, "uₕ" * subscript_str)
@@ -221,6 +221,7 @@ function solve_maxwell_eig(
         println("Solving the problem on initial step...")
     end
 
+    # Exact solution on initial step
     ω², u¹ = get_analytical_maxwell_eig(
         num_eig, Forms.get_geometry(complex[1]), scale_factors
     )
@@ -233,42 +234,30 @@ function solve_maxwell_eig(
             println("Solving the problem on step $step...")
         end
 
-        X⁰ = FunctionSpaces.get_component_spaces(complex[1].fem_space)[1]
-        L = FunctionSpaces.get_num_levels(X⁰)
-        new_operator, new_space = FunctionSpaces.build_two_scale_operator(
-            FunctionSpaces.get_space(X⁰, L), FunctionSpaces.get_num_subdivisions(X⁰)
-        )
+        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
         )
-        # Get domains to be refined in current step
         marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            X⁰, dorfler_marking
+            H⁰, dorfler_marking
         )
         if Lchains
-            FunctionSpaces.add_Lchains_supports!(
-                marked_elements_per_level, X⁰, new_operator
-            )
+            FunctionSpaces.update_space_with_lchains!(H⁰, marked_elements_per_level)
+        else
+            FunctionSpaces.update_space!(H⁰, marked_elements_per_level)
         end
 
-        refinement_domains = FunctionSpaces.get_refinement_domains(
-            X⁰, marked_elements_per_level, new_operator
-        )
-        complex = Forms.update_hierarchical_de_rham_complex(
-            complex, refinement_domains, new_operator, new_space
-        )
-        geom = Forms.get_geometry(complex...)
+        complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
+		geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )
         dΩₑ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geo)
         )
-        ω², u¹ = get_analytical_maxwell_eig(
-            num_eig, Forms.get_geometry(complex[1]), scale_factors
-        )
+        # Update exact solution
+        ω², u¹ = get_analytical_maxwell_eig(num_eig, geo, scale_factors)
         ω²ₕ, u¹ₕ = solve_maxwell_eig(complex[1], complex[2], dΩₐ, num_eig; verbose)
-
         err_per_element = Analysis._compute_square_error_per_element(
             u¹ₕ[eigenfunction], u¹[eigenfunction], dΩₑ
         )

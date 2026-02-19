@@ -230,6 +230,9 @@ end
 @test all_hess_MP100
 
 # Test errors:
+# Incorrect breakpoints
+@test_throws ArgumentError Geometry.CartesianGeometry([0.0, 1.0, 1.0]) # non-unique
+@test_throws ArgumentError Geometry.CartesianGeometry([0.0, 1.0, -1.0]) # decreasing
 # Element_id is too high
 @test_throws ArgumentError Geometry.get_patch_id(geometryLR, 9)
 @test_throws ArgumentError Geometry.get_patch_id(geometryMP100, 5051)

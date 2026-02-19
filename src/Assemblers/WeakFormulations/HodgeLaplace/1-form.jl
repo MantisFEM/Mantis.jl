@@ -55,11 +55,19 @@ Returns the solution of the weak form of the 1-form Hodge Laplacian.
 - `δu¹ₕ::Forms.FormField`: The 0-form solution of the weak-formulation.
 - `u¹ₕ::Forms.FormField`: The 1-form solution of the weak-formulation.
 """
-function solve_one_form_hodge_laplacian(X⁰, X¹, f¹, dΩ)
+function solve_one_form_hodge_laplacian(X⁰, X¹, f¹, dΩ, bc_type="")
     weak_form_inputs = Assemblers.WeakFormInputs((X⁰, X¹), (f¹,))
     lhs_expressions, rhs_expressions = one_form_hodge_laplacian(weak_form_inputs, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
-    A, b = Assemblers.assemble(weak_form)
+    if isempty(bc_type)
+        A, b = Assemblers.assemble(weak_form)
+    elseif bc_type == "dirichlet"
+        offset = Forms.get_num_basis(X⁰)
+        trace_ids = Forms.trace_basis_idxs(X¹)
+        bc = Dict{Int, Float64}(i + offset => 0.0 for i in trace_ids)
+        A, b = Assemblers.assemble(weak_form, bc)
+    end
+
     sol = vec(A \ b)
     δu¹ₕ, u¹ₕ = Forms.build_form_fields((X⁰, X¹), sol; labels=("δu¹ₕ", "u¹ₕ"))
 
@@ -94,62 +102,79 @@ Returns the solution of the weak form of the 1-form Hodge Laplacian from an adap
 """
 function solve_one_form_hodge_laplacian(
     complex::C,
-    forcing_function::Function,
+    problem_data::Function,
     dΩₐ::Quadrature.StandardQuadrature{manifold_dim},
     num_steps::Int,
     dorfler_parameter::Float64,
     dΩₑ::Quadrature.StandardQuadrature{manifold_dim},
-    Lchains::Bool;
-    verbose::Bool=false,
+    Lchains::Bool,
+    bc_type="";
+    VERBOSE::Bool=false,
+    EXPORT::Bool=false,
+    Plot::Module,
 ) where {manifold_dim, num_forms, C <: NTuple{num_forms, Forms.AbstractFormSpace}}
-    if verbose
+    if VERBOSE
         println("Solving the problem on initial step...")
     end
 
     # Exact solution on initial step
-    δu¹, u¹, f¹ = forcing_function(1, Forms.get_geometry(complex)...)
-    δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ)
-    err_per_element = Analysis.compute_error_per_element(δu¹ₕ, δu¹, dΩₑ)
+    δu¹, u¹, f¹ = problem_data(1, Forms.get_geometry(complex[1]))
+    δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ, bc_type)
+    err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
+    if VERBOSE
+        error_δu = Analysis.L2_norm(δu¹ - δu¹ₕ, dΩₑ)
+        error_u = Analysis.L2_norm(u¹ - u¹ₕ, dΩₑ)
+        @show error_δu, error_u
+    end
+
+    if EXPORT
+        Plot.export_form_fields_to_vtk(
+            (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-0"
+        )
+    end
+
     for step in 1:num_steps
-        if verbose
+        if VERBOSE
             println("Solving the problem on step $step...")
         end
 
-        X⁰ = FunctionSpaces.get_component_spaces(complex[1].fem_space)[1]
-        L = FunctionSpaces.get_num_levels(X⁰)
-        new_operator, new_space = FunctionSpaces.build_two_scale_operator(
-            FunctionSpaces.get_space(X⁰, L), FunctionSpaces.get_num_subdivisions(X⁰)
-        )
+        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
         )
-        # Get domains to be refined in current step
         marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            X⁰, dorfler_marking
+            H⁰, dorfler_marking
         )
         if Lchains
-            FunctionSpaces.add_Lchains_supports!(
-                marked_elements_per_level, X⁰, new_operator
-            )
+            FunctionSpaces.update_space_with_lchains!(H⁰, marked_elements_per_level)
+        else
+            FunctionSpaces.update_space!(H⁰, marked_elements_per_level)
         end
-        refinement_domains = FunctionSpaces.get_refinement_domains(
-            X⁰, marked_elements_per_level, new_operator
-        )
-        complex = Forms.update_hierarchical_de_rham_complex(
-            complex, refinement_domains, new_operator, new_space
-        )
-        geom = Forms.get_geometry(complex...)
+
+        complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
+        geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )
         dΩₑ = Quadrature.StandardQuadrature(
-            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geom)
+            Quadrature.get_canonical_quadrature_rule(dΩₑ), Geometry.get_num_elements(geo)
         )
         # Update exact solution
-        δu¹, u¹, f¹ = forcing_function(1, geom)
+        δu¹, u¹, f¹ = problem_data(1, geo)
         # Solve problem on current step
-        δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ)
-        err_per_element = Analysis.compute_error_per_element(δu¹ₕ, δu¹, dΩₑ)
+        δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ, bc_type)
+        err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
+        if VERBOSE
+            error_δu = Analysis.L2_norm(δu¹ - δu¹ₕ, dΩₑ)
+            error_u = Analysis.L2_norm(u¹ - u¹ₕ, dΩₑ)
+            @show error_δu, error_u
+        end
+
+        if EXPORT
+            Plot.export_form_fields_to_vtk(
+                (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-$(step)"
+            )
+        end
     end
 
     return δu¹ₕ, u¹ₕ

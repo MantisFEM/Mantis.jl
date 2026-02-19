@@ -3,15 +3,15 @@
 ############################################################################################
 
 """
-    CoDifferential{manifold_dim, form_rank, expression_rank, G, F} <:
-    AbstractForm{manifold_dim, form_rank, expression_rank, G}
+    CoDifferential{manifold_dim, form_rank, expression_rank, F} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Represents the codifferential of an `AbstractForm`.
 
 # Fields
 - `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
     which the codifferential is applied.
-- `label::String`: The codifferential label. This is a concatenation of `"d*"` with the
+- `label::AbstractString`: The codifferential label. This is a concatenation of `"d*"` with the
     label of `form`.
 
 # Type parameters
@@ -28,10 +28,10 @@ Represents the codifferential of an `AbstractForm`.
 # Inner Constructors
 - `CoDifferential(form::F)`: General constructor.
 """
-struct CoDifferential{manifold_dim, form_rank, expression_rank, G, F} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank, G}
+struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
+       AbstractForm{manifold_dim, form_rank, expression_rank}
     form::F
-    label::String
+    label::L
 
     function CoDifferential(
         form::F
@@ -39,8 +39,7 @@ struct CoDifferential{manifold_dim, form_rank, expression_rank, G, F} <:
         manifold_dim,
         form_rank,
         expression_rank,
-        G <: Geometry.AbstractGeometry{manifold_dim},
-        F <: AbstractForm{manifold_dim, form_rank, expression_rank, G},
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank},
     }
         if form_rank == 0
             throw(ArgumentError("""\
@@ -56,8 +55,13 @@ struct CoDifferential{manifold_dim, form_rank, expression_rank, G, F} <:
             )
         end
 
-        return new{manifold_dim, form_rank - 1, expression_rank, G, F}(
-            form, "d*(" * get_label(form) * ")"
+        old_label = get_label(form)
+        new_label = convert(
+            typeof(old_label), LaTeXStrings.L"\delta" * "(" * old_label * ")"
+        )
+
+        return new{manifold_dim, form_rank - 1, expression_rank, F, typeof(new_label)}(
+            form, new_label
         )
     end
 end
@@ -88,15 +92,10 @@ end
 ############################################################################################
 
 function _evaluate_codifferential(
-    form::FormField{manifold_dim, form_rank, G, FS},
+    form::FormField{manifold_dim, form_rank, FS},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {
-    manifold_dim,
-    form_rank,
-    G <: Geometry.AbstractGeometry{manifold_dim},
-    FS <: AbstractFormSpace{manifold_dim, form_rank, G},
-}
+) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
     d_form_basis_eval, form_basis_indices = _evaluate_codifferential(
         form.form_space, element_id, xi
     )
@@ -120,8 +119,8 @@ end
 
 # 1D 1-forms.
 function _evaluate_codifferential(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{1}
-) where {G <: Geometry.AbstractGeometry{1}, FS <: FormSpace{1, 1, G}}
+    form_space::FormSpace{1, 1}, element_id::Int, xi::Points.AbstractPoints{1}
+)
     # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
     fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
@@ -159,11 +158,7 @@ end
 # 1D 1-forms where the 1-form is the exterior derivative of a 0-form (Laplacian).
 function _evaluate_codifferential(
     form_space::F, element_id::Int, xi::Points.AbstractPoints{1}
-) where {
-    G <: Geometry.AbstractGeometry{1},
-    FS <: FormSpace{1, 0, G},
-    F <: ExteriorDerivative{1, 1, 1, G, FS},
-}
+) where {FS <: FormSpace{1, 0}, F <: ExteriorDerivative{1, 1, 1, FS}}
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, we do not have to scale the derivatives.
     fem_evals, form_basis_indices = FunctionSpaces.evaluate(
@@ -203,8 +198,8 @@ end
 
 # 2D 1-forms.
 function _evaluate_codifferential(
-    form_space::FS, element_id::Int, xi::Points.AbstractPoints{2}
-) where {G <: Geometry.AbstractGeometry{2}, FS <: FormSpace{2, 1, G}}
+    form_space::FormSpace{2, 1}, element_id::Int, xi::Points.AbstractPoints{2}
+)
     # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
     fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
@@ -254,11 +249,7 @@ end
 # This is equivalent to the Laplacian of 0-forms.
 function _evaluate_codifferential(
     form_space::F, element_id::Int, xi::Points.AbstractPoints{2}
-) where {
-    G <: Geometry.AbstractGeometry{2},
-    FS <: FormSpace{2, 0, G},
-    F <: ExteriorDerivative{2, 1, 1, G, FS},
-}
+) where {FS <: FormSpace{2, 0}, F <: ExteriorDerivative{2, 1, 1, FS}}
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, the basis functions we do not have to
     # scale the derivatives.

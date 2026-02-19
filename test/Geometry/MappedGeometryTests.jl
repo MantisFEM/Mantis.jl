@@ -290,6 +290,13 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     @test hesstest
 end
 
+# Curvilinear mapping
+geometrycurv = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (4, 4))
+answers_geometrycurv = (
+    1, 16, 2, 2, (16,), 16, (0.25, 0.25), 0.0625, (1, 14), 14, ((0.0, 0.25), (0.0, 0.25))
+)
+basic_tests(geometrycurv, answers_geometrycurv)
+
 # Non-matching number of patches
 @test_throws ArgumentError Geometry.MappedGeometry(
     Geometry.CartesianGeometry((

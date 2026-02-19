@@ -46,7 +46,7 @@ nθ_elements = 4
 Wt = 2.0 * pi / nθ_elements
 b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 breakpoints = collect(LinRange(0.0, nθ_elements, nθ_elements + 1))
-patch = Mesh.Patch1D(breakpoints)
+patch = Geometry.CartesianGeometry(breakpoints)
 B = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
 GB = FunctionSpaces.GTBSplineSpace((B,), [1])
 
@@ -58,7 +58,7 @@ geom_coeffs_circle = [
     -1.0 +1.0
     -1.0 -1.0
 ]
-cylinder_circle_geometry = Geometry.FEGeometry(GB, geom_coeffs_circle)
+cylinder_circle_geometry = FunctionSpaces.DiscreteGeometry(GB, geom_coeffs_circle)
 dx_cylinder_line = 0.1
 nz_elements = 10
 cylinder_line_geometry = Geometry.create_cartesian_box((0.0,), (1.0,), (nz_elements,))

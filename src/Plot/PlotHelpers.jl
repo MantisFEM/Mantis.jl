@@ -87,9 +87,11 @@ function export_form_fields_to_vtk(
     output_directory_tree::Vector{String}=["examples", "data", "output"],
 )
     for form in form_sols
-        label = form.label
-        println("Writing form '$label' to file ...")
-        output_file = export_path(output_directory_tree, "$filename-$label")
+        label = Forms.get_label(form)
+        sanitised_label = replace(label, "\$" => "")
+        sanitised_label = replace(sanitised_label, "\\" => "")
+        println("Writing form '$sanitised_label' to file ...")
+        output_file = export_path(output_directory_tree, "$filename-$sanitised_label")
         plot(
             form;
             vtk_filename=output_file,
@@ -103,76 +105,12 @@ function export_form_fields_to_vtk(
     return nothing
 end
 
-"""
-    visualize_tensor_product_controlnet(control_points::Array{Float64}, manifold_dim::Int, range_dim::Int, periodic::Vector{Bool}, filename::String; output_directory_tree::Vector{String} = ["examples", "data", "output"])
-
-Given a tensor-product control net, create a `manifold_dim`-linear geometry and use it to visualize the control net connectivity.
-
-# Arguments
-- `control_points::Array{Float64, projective_dim}`: The control points of the tensor product control net arranged in a `projective_dim=manifold_dim+1`-dimensional array.
-- `manifold_dim::Int`: The dimension of the manifold.
-- `range_dim::Int`: The dimension of the range.
-- `periodic::Vector{Bool}`: A vector of booleans indicating whether the manifold is periodic.
-- `filename::String`: The name of the output file.
-- `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
-"""
-function visualize_tensor_product_controlnet(
-    control_points::Array{Float64, projective_dim},
-    manifold_dim::Int,
-    range_dim::Int,
-    periodic::Vector{Bool},
-    filename::String;
-    output_directory_tree::Vector{String}=["examples", "data", "output"],
-) where {projective_dim}
-    if projective_dim != manifold_dim + 1
-        throw(
-            ArgumentError(
-                "The control points must be structured into a `manifold_dim+1`-dimensional array.",
-            ),
-        )
-    end
-    if length(periodic) != manifold_dim
-        throw(
-            ArgumentError(
-                "The periodicity vector must have length equal to the manifold dimension."
-            ),
-        )
-    end
-
-    # create bilinear geometry
-    B = [
-        FunctionSpaces.BSplineSpace(
-            Mesh.Patch1D(
-                collect(LinRange(0.0, 1.0, size(control_points, i) + periodic[i]))
-            ),
-            1,
-            0,
-        ) for i in 1:manifold_dim
-    ]
-
-    # impose periodicity if required
-    for i in 1:manifold_dim
-        if periodic[i]
-            B[i] = FunctionSpaces.GTBSplineSpace((B[i],), [0])
-        end
-    end
-
-    # create n-linear tensor product space
-    TP = FunctionSpaces.TensorProductSpace(B...)
-
-    # create geometry
-    geo = Geometry.FEGeometry(TP, reshape(control_points, :, range_dim))
-
-    # export to vtk
-    visualize_geometry(
-        geo, filename; n_subcells=1, degree=1, output_directory_tree=output_directory_tree
-    )
-
-    return nothing
-end
-
 function plot_solution(
-    fields::T, num_plot_points_per_element=25; title="Solution", xlabel="x", ylabel="phi(x)"
+    fields::T,
+    num_plot_points_per_element=25;
+    title="Solution",
+    xlabel="x",
+    ylabel=L"\phi(x)",
 ) where {n_fields, T <: NTuple{n_fields, Forms.AbstractFormField{1}}}
     fig = Figure()
     ax = Axis(fig[1, 1]; title=title, xlabel=xlabel, ylabel=ylabel)

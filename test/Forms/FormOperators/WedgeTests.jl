@@ -248,16 +248,9 @@ end
 const starting_point_2d = (0.0, 0.0)
 const box_size_2d = (1.0, 1.0)
 const num_elements_2d = (3, 4)
-const starting_point_3d = (0.0, 0.0, 0.0)
-const box_size_3d = (1.0, 1.0, 1.0)
-const num_elements_3d = (3, 4, 5)
-const crazy_c = 0.2
-
-# Polynomial degrees.
 const degrees_2d = (2, 3)
 const regularities_2d = (degrees_2d[1] - 1, degrees_2d[2] - 1)
-const degrees_3d = (2, 3, 1)
-const regularities_3d = (degrees_3d[1] - 1, degrees_3d[2] - 1, degrees_3d[3] - 1)
+const c = 0.2
 
 # Expression for analytical form fields
 function zero_form_expression(x::Matrix{Float64})
@@ -265,7 +258,7 @@ function zero_form_expression(x::Matrix{Float64})
 end
 
 ############################################################################################
-##                                       2D TESTS                                         ##
+#                                            2D                                            #
 ############################################################################################
 # Setup the complex
 cart_complex_2d = Forms.create_tensor_product_bspline_de_rham_complex(
@@ -277,7 +270,7 @@ curv_complex_2d = Forms.create_curvilinear_tensor_product_bspline_de_rham_comple
     num_elements_2d,
     degrees_2d,
     regularities_2d;
-    crazy_c=crazy_c,
+    c=c,
 )
 
 # The canonical quadrature information.
@@ -289,36 +282,58 @@ dΩ₂ = Quadrature.StandardQuadrature(
 )
 
 # Test the different geometries.
-for complex in (cart_complex_2d, curv_complex_2d)
-    test_inner_prod_equality(complex, dΩ₂)
-    test_combinations_2d(complex, dΩ₂)
+#
+@testset "2D" verbose = true begin
+    @testset "CartesianGeometry" begin
+        test_inner_prod_equality(cart_complex_2d, dΩ₂)
+        test_combinations_2d(cart_complex_2d, dΩ₂)
+    end
+
+    @testset "MappedGeometry" begin
+        test_inner_prod_equality(curv_complex_2d, dΩ₂)
+        test_combinations_2d(curv_complex_2d, dΩ₂)
+    end
 end
 
 ############################################################################################
-##                                       3D TESTS                                         ##
+#                                            3D                                            #
 ############################################################################################
+#
+# Polynomial degrees.
+const starting_point_3d = (0.0, 0.0, 0.0)
+const box_size_3d = (1.0, 1.0, 1.0)
+const num_elements_3d = (3, 4, 5)
+const degrees_3d = (2, 3, 1)
+const regularities_3d = (degrees_3d[1] - 1, degrees_3d[2] - 1, degrees_3d[3] - 1)
+
 # Setup the complex
 cart_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_3d, box_size_3d, num_elements_3d, degrees_3d, regularities_3d
 )
 
 # Crazy mesh geometry.
-breakpoints3 = collect(
-    LinRange(
-        starting_point_3d[3], starting_point_3d[3] + box_size_3d[3], num_elements_3d[3] + 1
-    ),
+breakpoints3 = LinRange(
+    starting_point_3d[3], starting_point_3d[3] + box_size_3d[3], num_elements_3d[3] + 1
 )
 line_geo_3 = Geometry.CartesianGeometry((breakpoints3,))
 curv_geom_3d = Geometry.TensorProductGeometry((
-    Forms.get_geometry(cart_complex_2d...), line_geo_3
+    Forms.get_geometry(curv_complex_2d[1]), line_geo_3
 ))
-curv_complex_3d = Forms.create_tensor_product_bspline_de_rham_complex(
-    starting_point_3d,
-    box_size_3d,
-    num_elements_3d,
-    map(FunctionSpaces.Bernstein, degrees_3d),
-    regularities_3d,
-    curv_geom_3d,
+curv_geom_3d_parametric = Geometry.TensorProductGeometry((
+    Forms.get_geometry(cart_complex_2d[1]), line_geo_3
+))
+bsp_3 = FunctionSpaces.get_constituent_spaces(Forms.get_fe_space(cart_complex_3d[1]))[3]
+tp_space_curv_3d = FunctionSpaces.TensorProductSpace((
+    Forms.get_fe_space(curv_complex_2d[1]), bsp_3
+))
+tp_space_curv_3d_ds = FunctionSpaces.DirectSumSpace((
+    tp_space_curv_3d, tp_space_curv_3d, tp_space_curv_3d
+))
+curv_complex_3d = (
+    Forms.FormSpace(0, tp_space_curv_3d, "w⁰"),
+    Forms.FormSpace(1, tp_space_curv_3d_ds, "w¹"),
+    Forms.FormSpace(2, tp_space_curv_3d_ds, "w²"),
+    Forms.FormSpace(3, tp_space_curv_3d, "w³"),
 )
 
 # The quadrature information.
@@ -330,9 +345,16 @@ dΩ₃ = Quadrature.StandardQuadrature(
 )
 
 # Test the different geometries.
-for complex in (cart_complex_3d, curv_complex_3d)
-    test_inner_prod_equality(complex, dΩ₃)
-    test_combinations_3d(complex, dΩ₃)
+@testset "3D" verbose = true begin
+    @testset "CartesianGeometry" begin
+        test_inner_prod_equality(cart_complex_3d, dΩ₃)
+        test_combinations_3d(cart_complex_3d, dΩ₃)
+    end
+
+    @testset "MappedGeometry" begin
+        test_inner_prod_equality(curv_complex_3d, dΩ₃)
+        test_combinations_3d(curv_complex_3d, dΩ₃)
+    end
 end
 
 end

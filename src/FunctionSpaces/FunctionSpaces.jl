@@ -12,7 +12,7 @@ import PolynomialBases
 import SparseArrays
 import ToeplitzMatrices
 
-using ..Mesh
+using ..Geometry
 using ..Points
 using ..GeneralHelpers
 

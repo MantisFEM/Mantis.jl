@@ -3,7 +3,7 @@
 ############################################################################################
 
 """
-    Sharp{manifold_dim, G, F}
+    Sharp{manifold_dim, F}
 
 Represents the sharp operator, which converts a differential 1-form into a vector field.
 
@@ -12,18 +12,15 @@ Represents the sharp operator, which converts a differential 1-form into a vecto
 
 # Type Parameters
 - `manifold_dim`: The dimension of the manifold.
-- `G`: The geometry type associated with the manifold.
 - `F`: The type of the differential 1-form.
 
 # Inner Constructors
 - `Sharp(form::F)`: General constructor.
 """
-struct Sharp{manifold_dim, G, F}
+struct Sharp{manifold_dim, F}
     form::F
 
-    function Sharp(
-        form::F
-    ) where {manifold_dim, G, F <: AbstractForm{manifold_dim, 1, 0, G}}
+    function Sharp(form::F) where {manifold_dim, F <: AbstractForm{manifold_dim, 1, 0}}
         if manifold_dim < 2
             throw(
                 ArgumentError(
@@ -33,7 +30,7 @@ struct Sharp{manifold_dim, G, F}
             )
         end
 
-        return new{manifold_dim, G, F}(form)
+        return new{manifold_dim, F}(form)
     end
 end
 
@@ -63,7 +60,7 @@ Returns the form to which the sharp is applied.
 get_form(sharp::Sharp) = sharp.form
 
 """
-    get_form_space_tree(wedge::Wedge)
+    get_form_space_tree(wedge::Sharp)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp
 operator, e.g., for `♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all

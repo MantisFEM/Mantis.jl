@@ -12,7 +12,7 @@ nlevels = 3
 subdiv = 2
 
 brk = collect(LinRange(0, 1, nq))
-patch = Mesh.Patch1D(brk)
+patch = Geometry.CartesianGeometry(brk)
 regularity = fill(p - 1, nq)
 regularity[1] = regularity[nq] = -1
 bspline1 = FunctionSpaces.BSplineSpace(patch, p, regularity)
@@ -33,7 +33,6 @@ refined_domains = FunctionSpaces.HierarchicalActiveInfo([
 hier_space = FunctionSpaces.HierarchicalFiniteElementSpace(
     bsplines, two_scale_operators, refined_domains, (subdiv,)
 )
-nothing
 
 # test if active elements are correct
 @test FunctionSpaces.get_level_element_ids(hier_space, 1) == [1, 6]
@@ -58,13 +57,10 @@ for element_id in 1:1:FunctionSpaces.get_num_elements(hier_space)
     level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
         hier_space, element_id
     )
-
-    borders = Mesh.get_element(hier_space.spaces[level].knot_vector.patch_1d, element_id)
+	borders = FunctionSpaces.get_element_vertices(hier_space, element_id)[1]
     x = borders[1] .+ Points.get_constituent_points(xi)[1] .* (borders[2] - borders[1])
-
     idx = ((element_id - 1) * nxi + 1):(element_id * nxi)
     xs[idx] = x
-
     h_eval, h_inds = FunctionSpaces.evaluate(hier_space, element_id, xi, 0)
 
     A[idx, h_inds] = h_eval[1][1][1]

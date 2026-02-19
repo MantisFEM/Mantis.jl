@@ -16,14 +16,12 @@ nqrule = max(degree_2d...) + 1
 qrule = Quadrature.tensor_product_rule((nqrule, nqrule), Quadrature.gauss_legendre)
 dΩ = Quadrature.StandardQuadrature(qrule, prod(num_elements_2d))
 xi = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.1, 0.2, 0.86]))
-# Create the geometry
-G = Geometry.create_cartesian_box(starting_point_2d, box_size_2d, num_elements_2d)
 # Create the B-spline de Rham complex
 W0, W1, W2 = Forms.create_tensor_product_bspline_de_rham_complex(
-    starting_point_2d, box_size_2d, num_elements_2d, section_spacesW, regularity_2d, G
+    starting_point_2d, box_size_2d, num_elements_2d, section_spacesW, regularity_2d
 )
 X0, X1, X2 = Forms.create_tensor_product_bspline_de_rham_complex(
-    starting_point_2d, box_size_2d, num_elements_2d, section_spacesX, regularity_2d, G
+    starting_point_2d, box_size_2d, num_elements_2d, section_spacesX, regularity_2d
 )
 # Create FormFields for testing
 w0_c = 1.0
@@ -71,7 +69,7 @@ end
     int0_val = w0_c * x0_c
     int1_val = 2.0 * w1_c * x1_c
     int2_val = w2_c * x2_c
-    # Error barriers: incompatible spaces 
+    # Error barriers: incompatible spaces
     @test_throws ArgumentError int3 + int4
     # Addition
     @test isapprox(Forms.evaluate(int0 + int1, 1)[1][1], int0_val + int1_val)
