@@ -58,7 +58,7 @@ FunctionSpaces.update_space!(Forms.get_fe_space(𝔅_b[1]), [marked_elements, In
 ℌ_b = Forms.update_hierarchical_de_rham_complex(𝔅_b, Forms.get_fe_space(𝔅_b[1]))
 
 # Number of eigenvalues to compute
-num_eig = 50
+num_eig = 54
 # Scaling form maxwell eigenfunctions.
 scale_factors = ntuple(2) do k
     return pi / (box_size[k] - starting_point[k])
@@ -123,20 +123,23 @@ function export_vtk_data(uₕ, figure=String)
     return nothing
 end
 
-function export_csv_data(ωₕ², uₕ, figure::String; offset=0, last_eig=1)
+function export_csv_data(ωₕ²_a, uₕ_a, ωₕ²_b, uₕ_b; offset=0, last_eig=1)
     eig_ids = 1:(last_eig - offset)
-    filename = "maxwell-eigenvalue-figure8$(figure)"
-    filename = joinpath("examples", "L-chains", filename)
-    geometry = Forms.get_geometry(uₕ[1])
+    filename = joinpath("examples", "L-chains", "maxwell-eigenvalue.csv")
+    geometry = Forms.get_geometry(uₕ_b[1]) # Irrelevant for the eigenvalues
     ω² = Assemblers.get_analytical_maxwell_eig(num_eig, geometry, scale_factors)[1]
-    computed_vals = ωₕ²[(1 + offset):(last_eig)]
-    error = abs.(ω²[1:(last_eig - offset)] .- computed_vals)
-    exact_df = DataFrames.DataFrame(; id=eig_ids, eigenvalue=ω²[1:(last_eig - offset)])
-    approximate_df = DataFrames.DataFrame(;
-        id=eig_ids, eigenvalue=computed_vals, error=error
+    computed_vals_a = ωₕ²_a[(1 + offset):(last_eig)]
+    computed_vals_b = ωₕ²_b[eig_ids]
+    error_a = abs.(ω²[eig_ids] .- computed_vals_a)
+    error_b = abs.(ω²[eig_ids] .- computed_vals_b)
+    df = DataFrames.DataFrame(;
+        eigenvalue=ω²[eig_ids],
+        computed_a=computed_vals_a,
+        computed_b=computed_vals_b,
+        error_a=error_a,
+        error_b,
     )
-    CSV.write(filename * "-exact.csv", exact_df)
-    CSV.write(filename * "-approximate.csv", approximate_df)
+    CSV.write(filename, df)
 
     return nothing
 end
@@ -157,11 +160,10 @@ if export_vtk
 end
 
 if export_csv
-    println("\nExporting vtk data from Figure 8. a)\n")
+    print("\nExporting eigenvalue data to csv...")
     offset = 4 # number of spurious harmonics in Figure 8. a)
-    export_csv_data(ωₕ²_a, uₕ_a, "a"; offset=offset, last_eig=num_eig)
-    println("\nExporting vtk data from Figure 8. b)\n")
-    export_csv_data(ωₕ²_b, uₕ_b, "b"; offset=0, last_eig=num_eig - offset)
+    export_csv_data(ωₕ²_a, uₕ_a, ωₕ²_b, uₕ_b; offset=offset, last_eig=num_eig)
+    print(" Done!\n")
 end
 
 end
