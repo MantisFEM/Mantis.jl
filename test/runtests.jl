@@ -6,8 +6,8 @@ using Test
 @testset verbose=true "GeneralHelpers" begin
     include("GeneralHelpers/runtests.jl")
 end
-@testset verbose=true "Mesh" begin
-    include("Mesh/runtests.jl")
+@testset verbose=true "Topology" begin
+    include("Topology/runtests.jl")
 end
 @testset verbose=true "TensorProducts" begin
     include("TensorProducts/runtests.jl")

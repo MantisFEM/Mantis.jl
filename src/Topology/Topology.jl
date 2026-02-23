@@ -1,3 +1,5 @@
+module Topology
+
 import MeshCore
 
 const DEBUG = false  # set false for production
@@ -1031,17 +1033,13 @@ end
 
 Returns a matrix of vertex neighbor information for all vertices of all patches.
 """
-function compute_vertex_neighbours(
-    mesh_topology::MT
-) where {
-    manifold_dim,
-    incidence_relations_dim,
-    MT <: MeshTopology{manifold_dim, incidence_relations_dim},
-}
+function compute_vertex_neighbours(mesh_topology::MeshTopology)
+    manifold_dim = get_manifold_dim(mesh_topology)
+
     # Preallocate memory for the neighbours information
     n_local_vertices = get_local_size(mesh_topology, 1)  # number of faces per patch
     n_total_patches = size(mesh_topology, manifold_dim + 1)
-    vertex_neighbours = Array{Matrix{Int}}(undef, n_total_patches, n_local_vertices)
+    vertex_neighbours = Matrix{Matrix{Int}}(undef, n_total_patches, n_local_vertices)
 
     @debug println("--------------------------------------------")
 
@@ -1055,4 +1053,6 @@ function compute_vertex_neighbours(
     end
     @debug println("--------------------------------------------")
     return vertex_neighbours
+end
+
 end

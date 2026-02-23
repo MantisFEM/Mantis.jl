@@ -12,6 +12,7 @@ import ..Points
 import ..GeneralHelpers
 import ..Hierarchy
 using ..TensorProducts
+import ..Topology
 
 """
     AbstractGeometry{manifold_dim, image_dim, num_patches}
