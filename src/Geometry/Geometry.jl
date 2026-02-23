@@ -10,6 +10,7 @@ using StaticArrays
 
 import ..Points
 import ..GeneralHelpers
+import ..Topology
 
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
