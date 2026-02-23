@@ -120,3 +120,81 @@ end
 
 # Only usable if GLMakie is also loaded.
 function plot_solution end
+function plot_solution(
+    fields::T,
+    num_plot_points_per_element=25;
+    title="Solution",
+    xlabel="x",
+    ylabel=L"\phi(x)",
+) where {n_fields, T <: NTuple{n_fields, Forms.AbstractFormField{1}}}
+    fig = Figure()
+    ax = Axis(fig[1, 1]; title=title, xlabel=xlabel, ylabel=ylabel)
+
+    geometry = Forms.get_geometry(fields[1])
+
+    n_elements = Geometry.get_num_elements(geometry)
+    xi = Points.CartesianPoints((LinRange(0.0, 1.0, num_plot_points_per_element),))
+
+    colors = [:blue, :green, :red, :purple, :orange, :black, :pink, :brown]
+    for field_id in eachindex(fields)
+        field = fields[field_id]
+        color_i = colors[field_id]
+        for element_idx in 1:n_elements
+            form_eval, _ = Forms.evaluate(field, element_idx, xi)
+            x = Geometry.evaluate(geometry, element_idx, xi)
+
+            lines!(ax, x[:], form_eval[1]; color=color_i, label=field.label)
+        end
+    end
+    fig[1, 2] = Legend(fig, ax; marge=true, unique=true)
+
+    return fig
+end
+
+function plot_topology(geometry)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+
+    topology = Geometry.get_topology(geometry)
+    manifold_dim = Topology.get_manifold_dim(topology)
+
+    if manifold_dim > 2
+        error("not implemented")
+    end
+
+    # First plot all element lines per patch.
+    xi_element = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2)))
+    for element_id in 1:Geometry.get_num_elements(geometry)
+        element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
+        element_vertices_points = [
+            GLMakie.Point2f(element_vertices[i, :]...) for i in axes(element_vertices, 1)
+        ]
+        GLMakie.linesegments!(element_vertices_points; color=:black)
+        GLMakie.linesegments!(
+            [
+                element_vertices_points[1],
+                element_vertices_points[3],
+                element_vertices_points[2],
+                element_vertices_points[4],
+            ];
+            color=:black,
+        )
+    end
+
+    # Then plot the vertices (with label) on top of this.
+    num_vertices = size(topology, 1)
+
+    # Get coordinates for each vertex
+    coords = Geometry.get_vertex_coordinates(geometry)
+    coordsPoints = [GLMakie.Point2f(coords[i]...) for i in eachindex(coords)]
+
+    GLMakie.scatter!(coordsPoints; marker=:circle, markersize=8, color=:orange)
+    GLMakie.text!(
+        coordsPoints;
+        text="Vertex " .* string.(1:num_vertices),
+        align=(:center, :bottom),
+        color=:black,
+    )
+
+    return fig
+end
