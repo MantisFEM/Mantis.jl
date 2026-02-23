@@ -135,3 +135,51 @@ function plot_solution(
 
     return fig
 end
+
+function plot_topology(geometry)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+
+    topology = Geometry.get_topology(geometry)
+    manifold_dim = Topology.get_manifold_dim(topology)
+
+    if manifold_dim > 2
+        error("not implemented")
+    end
+
+    # First plot all element lines per patch.
+    xi_element = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2)))
+    for element_id in 1:Geometry.get_num_elements(geometry)
+        element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
+        element_vertices_points = [
+            GLMakie.Point2f(element_vertices[i, :]...) for i in axes(element_vertices, 1)
+        ]
+        GLMakie.linesegments!(element_vertices_points; color=:black)
+        GLMakie.linesegments!(
+            [
+                element_vertices_points[1],
+                element_vertices_points[3],
+                element_vertices_points[2],
+                element_vertices_points[4],
+            ];
+            color=:black,
+        )
+    end
+
+    # Then plot the vertices (with label) on top of this.
+    num_vertices = size(topology, 1)
+
+    # Get coordinates for each vertex
+    coords = Geometry.get_vertex_coordinates(geometry)
+    coordsPoints = [GLMakie.Point2f(coords[i]...) for i in eachindex(coords)]
+
+    GLMakie.scatter!(coordsPoints; marker=:circle, markersize=8, color=:orange)
+    GLMakie.text!(
+        coordsPoints;
+        text="Vertex " .* string.(1:num_vertices),
+        align=(:center, :bottom),
+        color=:black,
+    )
+
+    return fig
+end
