@@ -34,4 +34,5 @@ The `Mantis` package was created by
 - Joey Dekker,
 - Artur Palha,
 - Deepesh Toshniwal,
+  
 from TU Delft's Institute of Applied Mathematics (DIAM).
