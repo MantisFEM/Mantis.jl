@@ -4,8 +4,8 @@ module Mantis
 #                                         Includes                                         #
 ############################################################################################
 include("GeneralHelpers/GeneralHelpers.jl")  # Creates Module GeneralHelpers
-include("Mesh/Mesh.jl")  # Creates Module Mesh
-include("Points/Points.jl")  # Creates Module Mesh
+include("Topology/Topology.jl")  # Creates Module Topology
+include("Points/Points.jl")  # Creates Module Points
 include("Geometry/Geometry.jl")  # Creates Module Geometry
 include("FunctionSpaces/FunctionSpaces.jl")  # Creates Module FunctionSpaces
 include("Quadrature/Quadrature.jl")  # Creates Module Quadrature
@@ -17,7 +17,8 @@ include("Plot/Plot.jl")  # Creates Module Plot
 ############################################################################################
 #                                         Exports                                          #
 ############################################################################################
-export Mesh, Points, Quadrature, FunctionSpaces, Geometry, Forms, Analysis, Assemblers, Plot
+export Topology,
+    Points, Quadrature, FunctionSpaces, Geometry, Forms, Analysis, Assemblers, Plot
 include("../exports/Exports.jl")
 
 end
