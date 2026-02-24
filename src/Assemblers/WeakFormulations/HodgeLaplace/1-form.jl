@@ -129,7 +129,7 @@ function solve_one_form_hodge_laplacian(
 
     if EXPORT
         Plot.export_form_fields_to_vtk(
-            (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-0"
+            (δu¹, δu¹ₕ, u¹, u¹ₕ, u¹ - u¹ₕ), "Example-L-chains-$(Lchains)-step-0"
         )
     end
 
@@ -172,7 +172,7 @@ function solve_one_form_hodge_laplacian(
 
         if EXPORT
             Plot.export_form_fields_to_vtk(
-                (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-$(step)"
+                (δu¹, δu¹ₕ, u¹, u¹ₕ, u¹ - u¹ₕ), "Example-L-chains-$(Lchains)-step-$(step)"
             )
         end
     end

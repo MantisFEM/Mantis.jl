@@ -221,92 +221,80 @@ function sinusoidal_data(
     end
 end
 
-function circular_data(rank::Int, geo::Mantis.Geometry.AbstractGeometry)
+function circular_data(rank::Int, geo::Mantis.Geometry.AbstractGeometry; a=100, b=9 / 100)
     if rank != 1
         throw(ArgumentError("This problem data is only defined for 1-forms."))
     end
 
-    u(x, y) =
-        sin(π * x) * sin(π * y) * tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))
+    ϕ(x, y) = (x * (1 - x) * y * (1 - y))^2
 
-    dudx(x, y) =
-        200 *
-        sin(π * y) *
-        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
-        (x - 1 / 2) *
-        sin(π * x) +
-        π * sin(π * y) * tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) * cos(π * x)
-    dudy(x, y) =
-        200 *
-        sin(π * x) *
-        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
-        (y - 1 / 2) *
-        sin(π * y) +
-        π * sin(π * x) * tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) * cos(π * y)
-    d2udx2(x, y) =
-        -80000 *
-        sin(π * y) *
-        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
-        tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) *
-        (x - 1 / 2)^2 *
-        sin(π * x) -
-        π^2 *
-        sin(π * y) *
-        tanh(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100)) *
-        sin(π * x) +
-        200 *
-        sin(π * y) *
-        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
-        sin(π * x) +
-        400 *
-        π *
-        sin(π * y) *
-        sech(100 * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - 9 / 100))^2 *
-        (x - 1 / 2) *
-        cos(π * x)
-    d2udy2(x, y) =
-        -80000 *
-        sin(π * x) *
-        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
-        tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) *
-        (y - 1 / 2)^2 *
-        sin(π * y) -
-        π^2 *
-        sin(π * x) *
-        tanh(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100)) *
-        sin(π * y) +
-        200 *
-        sin(π * x) *
-        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
-        sin(π * y) +
-        400 *
-        π *
-        sin(π * x) *
-        sech(100 * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - 9 / 100))^2 *
-        (y - 1 / 2) *
-        cos(π * y)
+    ∇ϕ₁(x, y) = 2 * (y - 1)^2 * y^2 * (x - 1) * x * (2 * x - 1)
+    d∇ϕ₁dx(x, y) = 2 * (y - 1)^2 * y^2 * (6 * x^2 - 6 * x + 1)
+    d∇ϕ₁²dx₂(x, y) = 2 * (y - 1)^2 * y^2 * (12 * x - 6)
+    d∇ϕ₁dy(x, y) = 4 * (x - 1) * x * (2 * x - 1) * (y - 1) * y * (2 * y - 1)
+    d∇ϕ₁²dy₂(x, y) = 4 * (x - 1) * x * (2 * x - 1) * (6 * y^2 - 6 * y + 1)
+
+    ∇ϕ₂(x, y) = 2 * (x - 1)^2 * x^2 * (y - 1) * y * (2 * y - 1)
+    d∇ϕ₂dx(x, y) = 4 * (y - 1) * y * (2 * y - 1) * (x - 1) * x * (2 * x - 1)
+    d∇ϕ₂²dx₂(x, y) = 4 * (y - 1) * y * (2 * y - 1) * (6 * x^2 - 6 * x + 1)
+    d∇ϕ₂dy(x, y) = 2 * (x - 1)^2 * x^2 * (6 * y^2 - 6 * y + 1)
+    d∇ϕ₂²dy₂(x, y) = 2 * (x - 1)^2 * x^2 * (12 * y - 6)
+
+    φ(x, y) = tanh(a * ((x - 0.5)^2 + (y - 0.5)^2 - b))
+    dφdx(x, y) = a * sech(a * ((x - 1 / 2)^2 + (y - 1 / 2)^2 - b))^2 * (2 * x - 1)
+    dφ²dx₂(x, y) =
+        -2 *
+        a *
+        sech((a * (2 * x^2 - 2 * x + 2 * (y - 1) * y - 2 * b + 1)) / 2)^2 *
+        (
+            a *
+            (2 * x - 1)^2 *
+            tanh((a * (2 * x^2 - 2 * x + 2 * (y - 1) * y - 2 * b + 1)) / 2) - 1
+        )
+    dφdy(x, y) = a * sech(a * ((y - 1 / 2)^2 + (x - 1 / 2)^2 - b))^2 * (2 * y - 1)
+    dφ²dy₂(x, y) =
+        -2 *
+        a *
+        sech((a * (2 * y^2 - 2 * y + 2 * (x - 1) * x - 2 * b + 1)) / 2)^2 *
+        (
+            a *
+            (2 * y - 1)^2 *
+            tanh((a * (2 * y^2 - 2 * y + 2 * (x - 1) * x - 2 * b + 1)) / 2) - 1
+        )
+
+    # u = [∇ϕ₁φ, ∇ϕ₁φ]
+    u₁(x, y) = ∇ϕ₁(x, y) * φ(x, y)
+    u₂(x, y) = ∇ϕ₂(x, y) * φ(x, y)
+
+    du₁dx(x, y) = d∇ϕ₁dx(x, y) * φ(x, y) + ∇ϕ₁(x, y) * dφdx(x, y)
+    du₁²dx₂(x, y) =
+        d∇ϕ₁²dx₂(x, y) * φ(x, y) + 2 * d∇ϕ₁dx(x, y) * dφdx(x, y) + ∇ϕ₁(x, y) * dφ²dx₂(x, y)
+    du₁dy(x, y) = d∇ϕ₁dy(x, y) * φ(x, y) + ∇ϕ₁(x, y) * dφdy(x, y)
+    du₁²dy₂(x, y) =
+        d∇ϕ₁²dy₂(x, y) * φ(x, y) + 2 * d∇ϕ₁dy(x, y) * dφdy(x, y) + ∇ϕ₁(x, y) * dφ²dy₂(x, y)
+
+    du₂dx(x, y) = d∇ϕ₂dx(x, y) * φ(x, y) + ∇ϕ₂(x, y) * dφdx(x, y)
+    du₂²dx₂(x, y) =
+        d∇ϕ₂²dx₂(x, y) * φ(x, y) + 2 * d∇ϕ₂dx(x, y) * dφdx(x, y) + ∇ϕ₂(x, y) * dφ²dx₂(x, y)
+
+    du₂dy(x, y) = d∇ϕ₂dy(x, y) * φ(x, y) + ∇ϕ₂(x, y) * dφdy(x, y)
+    du₂²dy₂(x, y) =
+        d∇ϕ₂²dy₂(x, y) * φ(x, y) + 2 * d∇ϕ₂dy(x, y) * dφdy(x, y) + ∇ϕ₂(x, y) * dφ²dy₂(x, y)
 
     function u_function(x)
-        u₁ = @. sinpi(x[:, 1]) *
-            sinpi(x[:, 2]) *
-            tanh(100 * ((x[:, 1] - 0.5)^2 + (x[:, 2] - 0.5)^2 - 0.3^2))
-
-        u₂ = @. sinpi(x[:, 1]) *
-            sinpi(x[:, 2]) *
-            tanh(100 * ((x[:, 1] - 0.5)^2 + (x[:, 2] - 0.5)^2 - 0.3^2))
-
-        return [u₁, u₂]
+        return [u₁.(x[:, 1], x[:, 2]), u₂.(x[:, 1], x[:, 2])]
     end
 
+    # δu = -div u
     function δu_function(x)
-        return [@. -(dudx(x[:, 1], x[:, 2]) + dudy(x[:, 1], x[:, 2]))]
+        return [@. -(du₁dx(x[:, 1], x[:, 2]) + du₂dy(x[:, 1], x[:, 2]))]
     end
 
+    # f = [-Δu₁, -Δu₂]
     function f_function(x)
-        # f = [-Δu₁, -Δu₂]
         return [
-            -(d2udx2.(x[:, 1], x[:, 2]) + d2udy2.(x[:, 1], x[:, 2])),
-            -(d2udx2.(x[:, 1], x[:, 2]) + d2udy2.(x[:, 1], x[:, 2])),
+            -(du₁²dx₂.(x[:, 1], x[:, 2]) + du₁²dy₂.(x[:, 1], x[:, 2])),
+            -(du₂²dx₂.(x[:, 1], x[:, 2]) + du₂²dy₂.(x[:, 1], x[:, 2])),
         ]
     end
 
@@ -331,7 +319,7 @@ function get_elements_in_box(
         undef,
         (last_element[1] - first_element[1] + 1) * (last_element[2] - first_element[2] + 1),
     )
-	count = 1
+    count = 1
     for y_element in first_element[2]:last_element[2]
         for x_element in first_element[1]:last_element[1]
 			element = (x_element, y_element)
