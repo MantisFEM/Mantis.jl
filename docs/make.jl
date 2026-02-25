@@ -67,8 +67,13 @@ Support = [
 ]
 
 ReleaseHistory = [
-    "v0.1 Acanthops Brunneri" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.1-Brunneri.md"
+    "v0.1 Acanthops Brunneri" => joinpath.(
+		"ReleaseHistory", "v0-Acanthops",
+		[
+    		"v0.1-brunneri.md",
+    		"v0.2-centralis.md",
+    		"v0.3-erosa.md",
+		]
 	)
 ]
 
