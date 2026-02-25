@@ -94,7 +94,7 @@ makedocs(;
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
     target="build", # this is where Vitepress stores its output
-    devbranch="main",
+    devbranch="dev",
     branch="gh-pages",
     push_preview=true,
 )
