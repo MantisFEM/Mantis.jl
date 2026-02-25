@@ -1,7 +1,7 @@
 # Submitting a bug report
 Unfortunately, bugs are unavoidable in software that is being actively developed. 
 So, should you run into a bug, please let us know! You can submit an issue on our 
-[Github issue page](https://github.com/MantisFEM/Mantis.jl/issues). Please use the 
+[GitHub issue page](https://github.com/MantisFEM/Mantis.jl/issues). Please use the 
 'bug report'-template to help us keep it structured and have a look at the 
 [dedicated issue on submitting a bug report](https://github.com/MantisFEM/Mantis.jl/issues/289).
 

@@ -2,9 +2,9 @@
 
 We always welcome suggestions for how `Mantis` can be improved.
 Therefore, if you have some new functionality that you would like to see implemented in
-`Mantis`, please submit an issue on our [Github issue
+`Mantis`, please submit an issue on our [GitHub issue
 page](https://github.com/MantisFEM/Mantis.jl/issues).
-When creating the issue, you should use the 'feature request' template, which can you also
+When creating the issue, you should use the 'feature request' template, which you can also
 find described in [dedicated issue on requesting a new
 feature](https://github.com/MantisFEM/Mantis.jl/issues/307). This helps us keep things
 organised.

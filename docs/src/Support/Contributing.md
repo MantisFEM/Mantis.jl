@@ -11,7 +11,7 @@ guide completely and carefully**.
 ## First steps
 
 The first thing you should do is double-check that whatever you are proposing does not
-already exist is not already an issue or pull-request.
+already exist and is not already an issue or pull-request.
 If an issue does exist but no associated pull-request to address it, then, when you get to
 the point of creating your pull-request, please link back to the relevant issue.
 If a pull-request also exists, you can just add your contribution directly to it.
@@ -105,7 +105,7 @@ straight to the part that concerns your contribution.
    separate them into different commits: `fix: add missing variable 1`, `fix: correct
    parameter type 2`, for example.
 2. If you are correcting a bug, that means the tests were incomplete and did not cover the
-   case were that bug occurs. As such, consider accompanying your `fix:` commit with a
+   case where that bug occurs. As such, consider accompanying your `fix:` commit with a
    `test:` commit that would have prevented that bug from going unnoticed.
 
 #### Performance
@@ -146,7 +146,7 @@ straight to the part that concerns your contribution.
    things.
 2. The main purpose of documentation is to improve the reader's understanding of something.
    Write in whatever way you feel that best achieves this purpose. However, it's generally
-   advisable to concise and stick to simple language.
+   advisable to be concise and stick to simple language.
 3. If possible, please include an example of what you are documenting. This is often very
    helpful for the reader to fully grasp what you are explaining. For instance, consider the
    difference between
