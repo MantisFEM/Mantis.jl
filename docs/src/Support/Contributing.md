@@ -95,8 +95,8 @@ straight to the part that concerns your contribution.
    tests that validate it. These should be small unit tests that confirm your assumptions on
    what the code you wrote does. They will also help other people have confidence that your
    code serves its intended purpose, including the reviewers. Unlike in the previous point,
-   test should be written in separate `test:` commits, as these are not essential to
-   understand your feature, but for the unrelated aspect of validating it.
+   tests should be written in separate `test:` commits, as these are not essential to
+   understand your feature. Instead, they serve the separate goal of validating it.
 
 #### Bug fix
 
