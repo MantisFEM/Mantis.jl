@@ -151,12 +151,15 @@ function plot_solution(
     return fig
 end
 
-function plot_topology(geometry)
+function plot_topology(geometry; edge_color=:darkolivegreen3, vertex_color=:orange)
     fig = GLMakie.Figure()
     ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     topology = Geometry.get_topology(geometry)
     manifold_dim = Topology.get_manifold_dim(topology)
+    image_dim = Geometry.get_image_dim(geometry)
+
+    TPoint = GLMakie.Point{image_dim, Float32}
 
     if manifold_dim > 2
         error("not implemented")
@@ -181,20 +184,72 @@ function plot_topology(geometry)
         )
     end
 
-    # Then plot the vertices (with label) on top of this.
-    num_vertices = size(topology, 1)
-
-    # Get coordinates for each vertex
-    coords = Geometry.get_vertex_coordinates(geometry)
-    coordsPoints = [GLMakie.Point2f(coords[i]...) for i in eachindex(coords)]
-
-    GLMakie.scatter!(coordsPoints; marker=:circle, markersize=8, color=:orange)
-    GLMakie.text!(
-        coordsPoints;
-        text="Vertex " .* string.(1:num_vertices),
-        align=(:center, :bottom),
-        color=:black,
+    # Then plot the edges (with label).
+    edge_alignment = (
+        (:left, :center), (:right, :center), (:center, :bottom), (:center, :top)
     )
+    edge_coordinates = Geometry.get_edge_coordinates(TPoint, geometry)
+    for edge_id in 1:size(topology, 2)
+        for patch_id in topology[2, manifold_dim + 1][edge_id]
+            # Go through all patches so that we know the global and local ids.
+            local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+
+            starting_coordinate, final_coordinate = edge_coordinates[edge_id]
+            GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
+            edge_midpoint = (
+                (starting_coordinate[1] + final_coordinate[1]) / 2,
+                (starting_coordinate[2] + final_coordinate[2]) / 2,
+            )
+
+            GLMakie.text!(
+                edge_midpoint;
+                text="($patch_id, $local_edge_id)",
+                align=edge_alignment[local_edge_id],
+                color=edge_color,
+            )
+
+            if patch_id == topology[2, manifold_dim + 1][edge_id][1]
+                # Also add the global edge number
+                GLMakie.text!(
+                    edge_midpoint;
+                    text="Edge $edge_id",
+                    align=(:center, :center),
+                    color=edge_color,
+                    offset=(0, 20),
+                )
+            end
+        end
+    end
+
+    # Then plot the vertices (with global and local label) on top of this to make them more
+    # visible.
+    alignment = ((:left, :bottom), (:right, :bottom), (:right, :top), (:left, :top))
+    vertex_coordinates = Geometry.get_vertex_coordinates(TPoint, geometry)
+    for vertex_id in eachindex(vertex_coordinates)
+        for patch_id in topology[1, manifold_dim + 1][vertex_id]
+            # Go through all patches so that we know the global and local ids.
+            local_vertex_id = Topology.get_local_id(topology, patch_id, vertex_id, 1)
+
+            coordinate = vertex_coordinates[vertex_id]
+            GLMakie.scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)
+            GLMakie.text!(
+                coordinate;
+                text="($patch_id, $local_vertex_id)",
+                align=alignment[local_vertex_id],
+                color=vertex_color,
+            )
+            if patch_id == topology[1, manifold_dim + 1][vertex_id][1]
+                # Also add the global vertex number
+                GLMakie.text!(
+                    coordinate;
+                    text="Vertex $vertex_id",
+                    align=(:center, :center),
+                    color=vertex_color,
+                    offset=(0, 20),
+                )
+            end
+        end
+    end
 
     return fig
 end
