@@ -151,57 +151,135 @@ get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
 function get_vertex_coordinate(
     geometry::CartesianGeometry, patch_id::Int, local_vertex_id::Int
 )
+    return get_vertex_coordinate(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)},
+        geometry,
+        patch_id,
+        local_vertex_id,
+    )
+end
+function get_vertex_coordinate(
+    ::Type{VT}, geometry::CartesianGeometry, patch_id::Int, local_vertex_id::Int
+) where {VT}
     image_dim = get_image_dim(geometry)
-    NT = get_number_type(geometry)
-    coords = zeros(NT, image_dim)
-    for dim in 1:image_dim
+    coord = ntuple(image_dim) do dim
         position = Topology.id2position(image_dim, 0, local_vertex_id)
         if position[dim] == -1
-            coords[dim] = get_breakpoint(geometry, patch_id, dim, 1)
+            point_id = 1
         else # position[dim] == 1
             cart_num_elements = get_cart_num_elements(geometry, patch_id)
-            last_point = Tuple(last(cart_num_elements))[dim] + 1
-            coords[dim] = get_breakpoint(geometry, patch_id, dim, last_point)
+            point_id = Tuple(last(cart_num_elements))[dim] + 1
         end
+        return get_breakpoint(geometry, patch_id, dim, point_id)
     end
-    return coords
+    return convert(VT, coord)
 end
 
 function get_vertex_coordinates(geometry::CartesianGeometry, patch_id::Int)
+    return get_vertex_coordinates(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)}, geometry, patch_id
+    )
+end
+function get_vertex_coordinates(
+    ::Type{VT}, geometry::CartesianGeometry, patch_id::Int
+) where {VT}
     num_local_vertices = Topology.get_local_size(get_topology(geometry), 1)
 
-    NT = get_number_type(geometry)
-    vertex_coordinates = Vector{Vector{NT}}(undef, num_local_vertices)
-    for local_vertex_id in eachindex(vertex_coordinates)
-        vertex_coordinates[local_vertex_id] = get_vertex_coordinate(
-            geometry, patch_id, local_vertex_id
-        )
+    return ntuple(num_local_vertices) do local_vertex_id
+        return get_vertex_coordinate(VT, geometry, patch_id, local_vertex_id)
     end
-
-    return vertex_coordinates
 end
 
 function get_vertex_coordinates(geometry::CartesianGeometry)
+    return get_vertex_coordinates(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)}, geometry
+    )
+end
+function get_vertex_coordinates(::Type{VT}, geometry::CartesianGeometry) where {VT}
     topology = get_topology(geometry)
     num_vertices = size(topology, 1)
 
     manifold_dim = get_manifold_dim(geometry)
-    NT = get_number_type(geometry)
-    vertex_coordinates = Vector{Vector{NT}}(undef, num_vertices)
-    for vertex_id in eachindex(vertex_coordinates)
-        # Get a patch_id of a patch on which this geometry is supported. A patch is a
+    return [
+        get_vertex_coordinate(
+            VT,
+            geometry,
+            topology[1, manifold_dim + 1][vertex_id][1], # The patch_id of a support patch.
+            findfirst(
+                isequal(vertex_id),
+                topology[manifold_dim + 1, 1][topology[1, manifold_dim + 1][vertex_id][1]],
+            ),
+        ) for vertex_id in 1:num_vertices
+    ]
+end
+
+function get_edge_coordinates(
+    geometry::CartesianGeometry, patch_id::Int, local_edge_id::Int
+)
+    return get_edge_coordinates(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)},
+        geometry,
+        patch_id,
+        local_edge_id,
+    )
+end
+function get_edge_coordinates(
+    ::Type{VT}, geometry::CartesianGeometry, patch_id::Int, local_edge_id::Int
+) where {VT}
+    topology = get_topology(geometry)
+    global_edge_id = Topology.get_global_id(topology, patch_id, local_edge_id, 2)
+    global_vertices = topology[2, 1][global_edge_id]
+    starting_vertex_coordinate = get_vertex_coordinate(
+        VT,
+        geometry,
+        patch_id,
+        Topology.get_local_id(topology, patch_id, global_vertices[1], 1),
+    )
+    final_vertex_coordinate = get_vertex_coordinate(
+        VT,
+        geometry,
+        patch_id,
+        Topology.get_local_id(topology, patch_id, global_vertices[2], 1),
+    )
+    return starting_vertex_coordinate, final_vertex_coordinate
+end
+
+function get_edge_coordinates(geometry::CartesianGeometry, patch_id::Int)
+    return get_edge_coordinates(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)}, geometry, patch_id
+    )
+end
+function get_edge_coordinates(
+    ::Type{VT}, geometry::CartesianGeometry, patch_id::Int
+) where {VT}
+    num_local_edges = Topology.get_local_size(get_topology(geometry), 2)
+
+    return ntuple(num_local_edges) do local_edge_id
+        return get_edge_coordinates(VT, geometry, patch_id, local_edge_id)
+    end
+end
+
+function get_edge_coordinates(geometry::CartesianGeometry)
+    return get_edge_coordinates(
+        NTuple{get_image_dim(geometry), get_number_type(geometry)}, geometry
+    )
+end
+function get_edge_coordinates(::Type{VT}, geometry::CartesianGeometry) where {VT}
+    topology = get_topology(geometry)
+    num_edges = size(topology, 2)
+
+    manifold_dim = get_manifold_dim(geometry)
+    edge_coordinates = Vector{NTuple{2, VT}}(undef, num_edges)
+    for edge_id in eachindex(edge_coordinates)
+        # Get a patch_id of a patch on which this edge is supported. A patch is a
         # (manifold_dim+1)-dimensional geometric object. We can simply take the first patch
-        # in this list, because the coordinate of the vertex will not change.
-        patch_id = topology[1, manifold_dim + 1][vertex_id][1]
-        local_vertex_id = findfirst(
-            isequal(vertex_id), topology[manifold_dim + 1, 1][patch_id]
-        )
-        vertex_coordinates[vertex_id] = get_vertex_coordinate(
-            geometry, patch_id, local_vertex_id
-        )
+        # in this list, because the coordinate of the edge will not change.
+        patch_id = topology[2, manifold_dim + 1][edge_id][1]
+        local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+        edge_coordinates[edge_id] = get_edge_coordinates(geometry, patch_id, local_edge_id)
     end
 
-    return vertex_coordinates
+    return edge_coordinates
 end
 
 # Getters for consituents.

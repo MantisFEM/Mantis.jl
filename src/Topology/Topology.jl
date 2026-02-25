@@ -1055,4 +1055,17 @@ function compute_vertex_neighbours(mesh_topology::MeshTopology)
     return vertex_neighbours
 end
 
+function get_global_id(topology, patch_id, local_object_id, object_dim)
+    return abs(
+        topology[get_manifold_dim(topology) + 1, object_dim][patch_id][local_object_id]
+    )
+end
+
+function get_local_id(topology, patch_id, global_object_id, object_dim)
+    return findfirst(
+        x -> abs(x) == global_object_id,
+        topology[get_manifold_dim(topology) + 1, object_dim][patch_id],
+    )
+end
+
 end
