@@ -136,43 +136,126 @@ function plot_solution(
     return fig
 end
 
-function plot_topology(geometry; edge_color=:darkolivegreen3, vertex_color=:orange)
+# 2D
+function plot_topology(
+    geometry::Geometry.AbstractGeometry{manifold_dim, 2};
+    edge_color=:darkolivegreen3,
+    vertex_color=:orange,
+    draw_elements=false,
+) where {manifold_dim}
     fig = GLMakie.Figure()
     ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
+    vertex_alignment = ((:left, :bottom), (:right, :bottom), (:right, :top), (:left, :top))
+    edge_alignment = (
+        (:left, :center), (:right, :center), (:center, :bottom), (:center, :top)
+    )
+
+    fig = _plot_topology!(
+        fig,
+        ax,
+        geometry,
+        vertex_alignment,
+        edge_alignment;
+        edge_color=edge_color,
+        vertex_color=vertex_color,
+        draw_elements=draw_elements,
+    )
+
+    return fig
+end
+
+# 3D
+function plot_topology(
+    geometry::Geometry.AbstractGeometry{manifold_dim, 3};
+    edge_color=:darkolivegreen3,
+    vertex_color=:orange,
+    draw_elements=false,
+) where {manifold_dim}
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis3(fig[1, 1]; viewmode=:fit)
+
+    vertex_alignment = (
+        (:left, :bottom),
+        (:right, :bottom),
+        (:right, :top),
+        (:left, :top),
+        (:left, :bottom),
+        (:right, :bottom),
+        (:right, :top),
+        (:left, :top),
+    )
+    edge_alignment = (
+        (:left, :center),
+        (:right, :center),
+        (:center, :bottom),
+        (:center, :top),
+        (:left, :center),
+        (:right, :center),
+        (:center, :bottom),
+        (:center, :top),
+        (:left, :center),
+        (:right, :center),
+        (:center, :bottom),
+        (:center, :top),
+    )
+
+    fig = _plot_topology!(
+        fig,
+        ax,
+        geometry,
+        vertex_alignment,
+        edge_alignment;
+        edge_color=edge_color,
+        vertex_color=vertex_color,
+        draw_elements=draw_elements,
+    )
+
+    return fig
+end
+
+function _plot_topology!(
+    fig,
+    ax,
+    geometry,
+    vertex_alignment,
+    edge_alignment;
+    edge_color=:darkolivegreen3,
+    vertex_color=:orange,
+    draw_elements=false,
+)
     topology = Geometry.get_topology(geometry)
     manifold_dim = Topology.get_manifold_dim(topology)
     image_dim = Geometry.get_image_dim(geometry)
 
     TPoint = GLMakie.Point{image_dim, Float32}
 
-    if manifold_dim > 2
-        error("not implemented")
-    end
-
-    # First plot all element lines per patch.
-    xi_element = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2)))
-    for element_id in 1:Geometry.get_num_elements(geometry)
-        element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
-        element_vertices_points = [
-            GLMakie.Point2f(element_vertices[i, :]...) for i in axes(element_vertices, 1)
-        ]
-        GLMakie.linesegments!(element_vertices_points; color=:black)
-        GLMakie.linesegments!(
-            [
-                element_vertices_points[1],
-                element_vertices_points[3],
-                element_vertices_points[2],
-                element_vertices_points[4],
-            ];
-            color=:black,
+    # First plot all element lines per patch, if desired.
+    if draw_elements
+        xi_element = Points.CartesianPoints(
+            ntuple(image_dim) do i
+                return LinRange(0.0, 1.0, 2)
+            end,
         )
+        permutations = ([1, 3, 2, 4], [1, 5, 2, 6, 3, 7, 4, 8])
+        for element_id in 1:Geometry.get_num_elements(geometry)
+            element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
+            element_vertices_points = [
+                TPoint(element_vertices[i, :]...) for i in axes(element_vertices, 1)
+            ]
+            # Element lines in the x direction.
+            GLMakie.linesegments!(element_vertices_points; color=:black)
+            # Element lines in the other directions.
+
+            for dim in 1:(image_dim - 1)
+                GLMakie.linesegments!(
+                    element_vertices_points[permutations[dim]]; color=:black
+                )
+            end
+        end
     end
 
     # Then plot the edges (with label).
-    edge_alignment = (
-        (:left, :center), (:right, :center), (:center, :bottom), (:center, :top)
-    )
     edge_coordinates = Geometry.get_edge_coordinates(TPoint, geometry)
     for edge_id in 1:size(topology, 2)
         for patch_id in topology[2, manifold_dim + 1][edge_id]
@@ -181,15 +264,27 @@ function plot_topology(geometry; edge_color=:darkolivegreen3, vertex_color=:oran
 
             starting_coordinate, final_coordinate = edge_coordinates[edge_id]
             GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
-            edge_midpoint = (
-                (starting_coordinate[1] + final_coordinate[1]) / 2,
-                (starting_coordinate[2] + final_coordinate[2]) / 2,
-            )
+            edge_midpoint = ntuple(image_dim) do dim
+                return (starting_coordinate[dim] + final_coordinate[dim]) / 2
+            end
 
             GLMakie.text!(
                 edge_midpoint;
                 text="($patch_id, $local_edge_id)",
                 align=edge_alignment[local_edge_id],
+                color=edge_color,
+            )
+            # Recompute the edge coordinates using the current patch_id to get the
+            # orientation on the patch.
+            starting_coordinate_local, final_coordinate_local = Geometry.get_edge_coordinates(
+                TPoint, geometry, patch_id, local_edge_id
+            )
+            GLMakie.arrows2d!(
+                starting_coordinate_local,
+                final_coordinate_local;
+                argmode=:endpoint,
+                align=:center,
+                lengthscale=0.25,
                 color=edge_color,
             )
 
@@ -208,7 +303,6 @@ function plot_topology(geometry; edge_color=:darkolivegreen3, vertex_color=:oran
 
     # Then plot the vertices (with global and local label) on top of this to make them more
     # visible.
-    alignment = ((:left, :bottom), (:right, :bottom), (:right, :top), (:left, :top))
     vertex_coordinates = Geometry.get_vertex_coordinates(TPoint, geometry)
     for vertex_id in eachindex(vertex_coordinates)
         for patch_id in topology[1, manifold_dim + 1][vertex_id]
@@ -220,7 +314,7 @@ function plot_topology(geometry; edge_color=:darkolivegreen3, vertex_color=:oran
             GLMakie.text!(
                 coordinate;
                 text="($patch_id, $local_vertex_id)",
-                align=alignment[local_vertex_id],
+                align=vertex_alignment[local_vertex_id],
                 color=vertex_color,
             )
             if patch_id == topology[1, manifold_dim + 1][vertex_id][1]
