@@ -136,6 +136,33 @@ function plot_solution(
     return fig
 end
 
+# 1D
+function plot_topology(
+    geometry::Geometry.AbstractGeometry{manifold_dim, 1};
+    edge_color=:darkolivegreen3,
+    vertex_color=:orange,
+    draw_elements=false,
+) where {manifold_dim}
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+
+    vertex_alignment = ((:left, :bottom), (:right, :bottom))
+    edge_alignment = ((:center, :bottom),)
+
+    fig = _plot_topology!(
+        fig,
+        ax,
+        geometry,
+        vertex_alignment,
+        edge_alignment;
+        edge_color=edge_color,
+        vertex_color=vertex_color,
+        draw_elements=draw_elements,
+    )
+
+    return fig
+end
+
 # 2D
 function plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 2};
@@ -241,12 +268,19 @@ function _plot_topology!(
         for element_id in 1:Geometry.get_num_elements(geometry)
             element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
             element_vertices_points = [
-                TPoint(element_vertices[i, :]...) for i in axes(element_vertices, 1)
+                _pad_point(TPoint(element_vertices[i, :]...)) for
+                i in axes(element_vertices, 1)
             ]
             # Element lines in the x direction.
             GLMakie.linesegments!(element_vertices_points; color=:black)
-            # Element lines in the other directions.
+            if image_dim == 1
+                # Also add a vertical bar for the edges, otherwise they are invisble.
+                GLMakie.scatter!(
+                    element_vertices_points; marker=:vline, markersize=15, color=:black
+                )
+            end
 
+            # Element lines in the other directions.
             for dim in 1:(image_dim - 1)
                 GLMakie.linesegments!(
                     element_vertices_points[permutations[dim]]; color=:black
@@ -258,26 +292,45 @@ function _plot_topology!(
     # Then plot the edges (with label).
     edge_coordinates = Geometry.get_edge_coordinates(TPoint, geometry)
     for edge_id in 1:size(topology, 2)
-        for patch_id in topology[2, manifold_dim + 1][edge_id]
+        if image_dim == 1
+            # Edges and patches are equal, so are their ids.
+            patch_ids = edge_id:edge_id
+        else
+            patch_ids = topology[2, manifold_dim + 1][edge_id]
+        end
+        for patch_id in patch_ids
             # Go through all patches so that we know the global and local ids.
-            local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
-
-            starting_coordinate, final_coordinate = edge_coordinates[edge_id]
-            GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
-            edge_midpoint = ntuple(image_dim) do dim
-                return (starting_coordinate[dim] + final_coordinate[dim]) / 2
+            if image_dim == 1
+                local_edge_id = 1
+            else
+                local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
             end
+
+            starting_coordinate_raw, final_coordinate_raw = edge_coordinates[edge_id]
+            starting_coordinate = _pad_point(starting_coordinate_raw)
+            final_coordinate = _pad_point(final_coordinate_raw)
+
+            edge_midpoint = _pad_point(
+                ntuple(image_dim) do dim
+                    return (starting_coordinate[dim] + final_coordinate[dim]) / 2
+                end,
+            )
+
+            # Recompute the edge coordinates using the current patch_id to get the
+            # orientation on the patch.
+            starting_coordinate_local_raw, final_coordinate_local_raw = Geometry.get_edge_coordinates(
+                TPoint, geometry, patch_id, local_edge_id
+            )
+            starting_coordinate_local = _pad_point(starting_coordinate_local_raw)
+            final_coordinate_local = _pad_point(final_coordinate_local_raw)
+
+            GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
 
             GLMakie.text!(
                 edge_midpoint;
                 text="($patch_id, $local_edge_id)",
                 align=edge_alignment[local_edge_id],
                 color=edge_color,
-            )
-            # Recompute the edge coordinates using the current patch_id to get the
-            # orientation on the patch.
-            starting_coordinate_local, final_coordinate_local = Geometry.get_edge_coordinates(
-                TPoint, geometry, patch_id, local_edge_id
             )
             GLMakie.arrows2d!(
                 starting_coordinate_local,
@@ -288,7 +341,7 @@ function _plot_topology!(
                 color=edge_color,
             )
 
-            if patch_id == topology[2, manifold_dim + 1][edge_id][1]
+            if patch_id == patch_ids[1]
                 # Also add the global edge number
                 GLMakie.text!(
                     edge_midpoint;
@@ -309,7 +362,8 @@ function _plot_topology!(
             # Go through all patches so that we know the global and local ids.
             local_vertex_id = Topology.get_local_id(topology, patch_id, vertex_id, 1)
 
-            coordinate = vertex_coordinates[vertex_id]
+            coordinate_raw = vertex_coordinates[vertex_id]
+            coordinate = _pad_point(coordinate_raw)
             GLMakie.scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)
             GLMakie.text!(
                 coordinate;
@@ -331,4 +385,16 @@ function _plot_topology!(
     end
 
     return fig
+end
+
+# Pad for 1D
+function _pad_point(point::GLMakie.Point{1, T}, pad_value=zero(T)) where {T}
+    return GLMakie.Point{2, T}(point[1], pad_value)
+end
+function _pad_point(point::NTuple{1, T}, pad_value=zero(T)) where {T}
+    return (point[1], pad_value)
+end
+# Otherwise, no padding needed.
+function _pad_point(point, pad_value=0.0)
+    return point
 end

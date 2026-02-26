@@ -227,7 +227,12 @@ function get_edge_coordinates(
     ::Type{VT}, geometry::CartesianGeometry, patch_id::Int, local_edge_id::Int
 ) where {VT}
     topology = get_topology(geometry)
-    global_edge_id = Topology.get_global_id(topology, patch_id, local_edge_id, 2)
+    if get_image_dim(geometry) == 1
+        # The global and local ids are the same, and the edges are the patches.
+        global_edge_id = patch_id
+    else
+        global_edge_id = Topology.get_global_id(topology, patch_id, local_edge_id, 2)
+    end
     global_vertices = topology[2, 1][global_edge_id]
     starting_vertex_coordinate = get_vertex_coordinate(
         VT,
@@ -274,8 +279,14 @@ function get_edge_coordinates(::Type{VT}, geometry::CartesianGeometry) where {VT
         # Get a patch_id of a patch on which this edge is supported. A patch is a
         # (manifold_dim+1)-dimensional geometric object. We can simply take the first patch
         # in this list, because the coordinate of the edge will not change.
-        patch_id = topology[2, manifold_dim + 1][edge_id][1]
-        local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+        if get_image_dim(geometry) == 1
+            # The edges are the patches, so no conversion needed
+            patch_id = edge_id
+            local_edge_id = 1
+        else
+            patch_id = topology[2, manifold_dim + 1][edge_id][1]
+            local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+        end
         edge_coordinates[edge_id] = get_edge_coordinates(geometry, patch_id, local_edge_id)
     end
 
