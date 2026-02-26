@@ -1,6 +1,11 @@
 using Mantis
 
 geo = Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 6)))
+geo1d = Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4),))
+geo1d2 = Mantis.Geometry.CartesianGeometry(
+    ((LinRange(0.0, 1.0, 4),), (LinRange(1.0, 2.0, 6),)),
+    Topology.MeshTopology([[1, 2], [2, 3]]),
+)
 # fig = Mantis.Plot.plot_topology(geo)
 
 geo2 = Mantis.Geometry.CartesianGeometry(
