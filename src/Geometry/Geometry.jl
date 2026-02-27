@@ -316,51 +316,6 @@ function get_num_elements_per_patch(geometry::AbstractGeometry)
 end
 
 """
-    get_geometry(geometry::AbstractGeometry, patch_id::Int)
-
-Get (or create) the physical geometry on a specific patch.
-
-# Arguments
-- `geometry::AbstractGeometry`: The multi-patch geometry.
-- `patch_id::Int`: The patch ID.
-
-# Returns
-- `<:AbstractGeometry{manifold_dim, image_dim, 1}`: The geometry on the specified patch.
-
-# Notes
-There is no generic fallback for this method. It should be implemented for each concrete
-geometry type.
-"""
-function get_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(MethodError(get_geometry, (geometry, patch_id)))
-end
-
-function get_parametric_geometry(geometry::AbstractGeometry)
-    throw(MethodError(get_parametric_geometry, geometry))
-end
-
-"""
-    get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
-
-Finds the parametric geometry of the patch given by `patch_id` in `geometry`. If no
-`patch_id` is given, the parametric geometry of the whole geometry is returned.
-
-# Arguments
-- 'geometry::AbstractGeometry': The (physical) geometry being used.
-- 'patch_id::Int': (Optional) ID of the patch to get the parametric geometry for.
-
-# Returns
-- '<:CartesianGeometry': The (patch-wise) parametric geometry.
-
-# Notes
-There is no generic fallback for this method. It should be implemented for each concrete
-geometry type.
-"""
-function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(MethodError(get_parametric_geometry, (geometry, patch_id)))
-end
-
-"""
     get_element_measure(geometry::AbstractGeometry, element_id::Int)
 
 Computes the measure of the element given by `element_id` in `geometry`.
