@@ -1,31 +1,37 @@
 """
-    CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI} <: AbstractGeometry{
-        manifold_dim, image_dim, num_patches
-    }
+    CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
+        AbstractGeometry{manifold_dim, image_dim, num_patches}
 
-A structure representing a Cartesian grid geometry in `manifold_dim` dimensions. Can have
-multiple patches, even though each patch is still a Cartesian grid. Note that the patches
-are not required to have a matching grid.
+Cartesian geometry in `manifold_dim` dimensions. Has `num_patches` patches, even though
+each patch is still a Cartesian grid. Note that the patches are not required to have a
+matching grid, and that `image_dim` will always be equal to the `manifold_dim`. A Cartesian
+geometry can have non-uniformly spaced elements, but every element is only a scaling and/or
+translation away form the canonical element.
 
 # Fields
-- `breakpoints::B`: A tuple of vectors defining the grid points in each dimension.
-- `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
-    elements in the grid for each patch.
+- `topology::T`: A [`MeshTopology`](@ref)-object specifying the connectivity information.
+- `breakpoints::B`: Grid point locations per patch and per dimension.
+- `cart_num_elements::CI`: A (tuple of) `CartesianIndices` for the elements on each patch.
+- `lin_num_elements::LI`: A (tuple of) `LinearIndices` for the elements on each patch.
 
 # Constructors
 - `CartesianGeometry(
-        breakpoints::B
+        breakpoints::B, topology::T
     ) where {
         manifold_dim,
+        incidence_relations_dim,
         num_patches,
         NT <: Number,
         B <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
+        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
     }`: General constructor.
 - `CartesianGeometry(
         breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
-    ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
+    ) where {manifold_dim, NT <: Number}`: manifold_dim-D, single-patch constructor.
+- `CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}`: 1D, single-
+    patch constructor.
 """
-struct CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI, LI, T, NT} <:
+struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
     topology::T
     breakpoints::B
@@ -93,11 +99,10 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI, LI, T, NT}
             manifold_dim,
             manifold_dim,
             num_patches,
+            T,
             B,
             typeof(cart_num_elements),
             typeof(lin_num_elements),
-            T,
-            NT,
         }(
             topology, breakpoints, cart_num_elements, lin_num_elements
         )
@@ -113,9 +118,15 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI, LI, T, NT}
 
     # Convenience constructor for 1D, single patch geometries.
     function CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}
-        topo = Topology.MeshTopology([[1, 2]])
-        return CartesianGeometry(((breakpoints,),), topo)
+        return CartesianGeometry(((breakpoints,),), Topology.MeshTopology([[1, 2]]))
     end
+end
+
+# Get types.
+function Base.eltype(
+    ::Type{CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI}}
+) where {manifold_dim, image_dim, num_patches, T, B, CI, LI}
+    return eltype(eltype(eltype(eltype(B))))
 end
 
 # Get properties.
@@ -126,11 +137,6 @@ get_breakpoints_per_dim(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]
 get_topology(geometry::CartesianGeometry) = geometry.topology
-function get_number_type(
-    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI, LI, T, NT}
-) where {manifold_dim, image_dim, num_patches, B, CI, LI, T, NT}
-    return NT
-end
 
 """
 	get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
@@ -148,14 +154,19 @@ Returns a LinearIndices iterator of all elements in the patch indicated by `patc
 get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.lin_num_elements[patch_id]
 
-function get_element_id(
-    geometry::CartesianGeometry{manifold_dim}, patch_id, local_vertex_id
-) where {manifold_dim}
-    position = Topology.id2position(manifold_dim, 0, local_vertex_id)
+# Getters using topological information
+"""
+    get_element_id(geometry::CartesianGeometry, patch_id, local_vertex_id)
+
+Compute the global `element_id` of the element on patch `patch_id` on which the vertex with
+`local_vertex_id` is located.
+"""
+function get_element_id(geometry::CartesianGeometry, patch_id, local_vertex_id)
+    position = Topology.id2position(get_manifold_dim(geometry), 0, local_vertex_id)
 
     # Compute the element_id on this patch from the topological position.
     num_elements_per_dim = get_constituent_num_elements(geometry, patch_id)
-    cart_element_id = ntuple(manifold_dim) do i
+    cart_element_id = ntuple(get_manifold_dim(geometry)) do i
         if position[i] == 1
             return num_elements_per_dim[i]
         else
@@ -247,7 +258,7 @@ function evaluate(
         return get_breakpoint(geometry, patch_id, dim, const_element_id[dim])
     end
     num_points = Points.get_num_points(xi)
-    eval = zeros(num_points, manifold_dim)
+    eval = zeros(promote_type(eltype(xi), eltype(geometry)), num_points, manifold_dim)
     for (i, point) in enumerate(xi)
         for dim in axes(eval, 2)
             eval[i, dim] += affine_map(point[dim], scaling[dim], offset[dim])
