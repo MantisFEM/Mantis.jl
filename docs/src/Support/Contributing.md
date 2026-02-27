@@ -26,7 +26,7 @@ wrote is indeed a *contribution*. Here is what we mean by that:
 >   2. Fixes a bug.
 >   3. Adds tests for existing features previously uncovered, or fixes current tests.
 >   4. Increases performance, as in faster computation times, reduced memory usage, or
->      better type type-stability.
+>      better type-stability.
 >   5. Refactors existing code to improve readability or clarity.
 >   6. Extends the documentation, doc-strings, or corrects outdated information, or typos.
 
