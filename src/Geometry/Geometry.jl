@@ -59,6 +59,8 @@ get_num_patches(
     ::AbstractGeometry{manifold_dim, image_dim, num_patches}
 ) where {manifold_dim, image_dim, num_patches} = num_patches
 
+get_topology(geometry::AbstractGeometry) = geometry.topology
+
 """
     get_patch_id(geometry::AbstractGeometry, element_id::Int)
 
@@ -672,7 +674,9 @@ function get_edge_coordinates(::Type{VT}, geometry::AbstractGeometry) where {VT}
             patch_id = topology[2, manifold_dim + 1][edge_id][1]
             local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
         end
-        edge_coordinates[edge_id] = get_edge_coordinates(geometry, patch_id, local_edge_id)
+        edge_coordinates[edge_id] = get_edge_coordinates(
+            VT, geometry, patch_id, local_edge_id
+        )
     end
 
     return edge_coordinates

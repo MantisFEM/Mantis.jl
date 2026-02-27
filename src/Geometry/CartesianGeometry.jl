@@ -136,7 +136,6 @@ get_breakpoints_per_dim(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1
     geometry.breakpoints[patch_id][dim]
 get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::Int=1) =
     geometry.breakpoints[patch_id][dim][point]
-get_topology(geometry::CartesianGeometry) = geometry.topology
 
 """
 	get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
