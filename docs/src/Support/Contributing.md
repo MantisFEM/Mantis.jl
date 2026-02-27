@@ -65,6 +65,9 @@ others are specific for each case.
    contribution. This should be only one or two sentences; the commit messages should handle
    the rest! Also, please add all relevant labels to make it immediately obvious what the
    intent of the pull-request is.
+5. One of the rules in our repository is that we require commits to be signed. If you are
+   already doing that, great. If not, you can read about why it is important, and how to set
+   it up [here](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work).
 
 ### Specific guidelines
 
