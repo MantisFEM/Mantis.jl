@@ -245,6 +245,21 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
+function get_patch_and_local_element_id(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    element_id::Int=1,
+) where {
+    manifold_dim,
+    image_dim,
+    num_patches,
+    T,
+    G <: AbstractGeometry{manifold_dim, num_patches},
+    Map,
+}
+    patch_id = get_patch_id(geometry, element_id)
+    return patch_id, element_id
+end
+
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
