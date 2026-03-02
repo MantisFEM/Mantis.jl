@@ -245,6 +245,24 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
+"""
+    get_patch_and_local_element_id(
+        geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
+    ) where {
+        manifold_dim,
+        image_dim,
+        num_patches,
+        G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
+        Map,
+    }
+
+Specialised version for `MappedGeometry` in the case that the base geometry is a
+multi-patch geometry.
+
+!!! warning
+    For this specific case, the returned `element_id` is still global! Call
+    `get_patch_and_local_element_id` on the base geometry itself to get the truly local id.
+"""
 function get_patch_and_local_element_id(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
 ) where {
@@ -257,6 +275,27 @@ function get_patch_and_local_element_id(
     patch_id = get_patch_id(geometry, element_id)
     return patch_id, element_id
 end
+
+"""
+    get_global_element_id(
+        geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+        patch_id::Int,
+        local_element_id::Int,
+    ) where {
+        manifold_dim,
+        image_dim,
+        num_patches,
+        G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
+        Map,
+    }
+
+Specialised version for `MappedGeometry` in the case that the base geometry is a
+multi-patch geometry.
+
+!!! warning
+    For this specific case, the returned `element_id` is the given `local_element_id`! Call
+    `get_global_element_id` on the base geometry itself to get the truly global id.
+"""
 function get_global_element_id(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
     patch_id::Int,
