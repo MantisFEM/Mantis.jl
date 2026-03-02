@@ -218,6 +218,58 @@ answers_geom_slanted_2patch_onemap = (
 )
 basic_tests(geom_slanted_2patch_onemap, answers_geom_slanted_2patch_onemap)
 
+# Simple mapping (per patch), for a two patch geometry. The base geometry is itself a
+# multi-patch geometry.
+function mapping_patch_1_geo2mapped(x::AbstractVector{Float64})
+    # 0.0 <= x[1] <= 1.0 and 0.0 <= x[2] <= 1.0
+    return [-x[2], x[1]]
+end
+function dmapping_patch_1_geo2mapped(x::AbstractVector{Float64})
+    return [
+        [0.0 1.0]
+        [-1.0 0.0]
+    ]
+end
+mapping_obj_1_geo2mapped = Geometry.Mapping(
+    (2, 2), mapping_patch_1_geo2mapped, dmapping_patch_1_geo2mapped
+)
+function mapping_patch_2_geo2mapped(x::AbstractVector{Float64})
+    # 0.0 <= x[1] <= 1.0 and 0.0 <= x[2] <= 1.0
+    return [x[1], x[2]]
+end
+function dmapping_patch_2_geo2mapped(x::AbstractVector{Float64})
+    return [
+        [1.0 0.0]
+        [0.0 1.0]
+    ]
+end
+mapping_obj_2_geo2mapped = Geometry.Mapping(
+    (2, 2), mapping_patch_2_geo2mapped, dmapping_patch_2_geo2mapped
+)
+geo2mapped = Mantis.Geometry.MappedGeometry(
+    Mantis.Geometry.CartesianGeometry((
+        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
+        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4)),
+    ),),
+    (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
+)
+answers_geo2mapped = (
+    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 6), 6, ((0.0, 0.5), (0.0, 0.5))
+)
+basic_tests(geo2mapped, answers_geo2mapped)
+# Same geometry as above, but now implemented using a tuple of two patches as base geometry.
+geo2mapped2 = Mantis.Geometry.MappedGeometry(
+    (
+        Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3))),
+        Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4))),
+    ),
+    (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
+)
+answers_geo2mapped2 = (
+    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, ((0.0, 0.5), (0.0, 0.5))
+)
+basic_tests(geo2mapped2, answers_geo2mapped2)
+
 # Mapped, single mapping, single patch.
 geom_slanted_2patch_11 = Geometry.MappedGeometry(geom_cart_patch_1, mapping_patch_1_slanted)
 answers_geom_slanted_2patch_11 = (
