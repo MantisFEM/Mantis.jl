@@ -74,12 +74,16 @@ function basic_tests(geometry, answers)
     @test (patch_id, local_element_id) == answers[9]
     @test Geometry.get_global_element_id(geometry, patch_id, local_element_id) ==
         answers[10]
+    base_patch_id, base_element_id = Geometry.get_base_patch_and_element_id(
+        geometry, answers[10]
+    )
+    @test (base_patch_id, base_element_id) == answers[11]
 
     @test all(
         all.([
             isapprox.(
-                Geometry.get_element_vertices(geometry, 1)[i], answers[11][i], rtol=1e-14
-            ) for i in eachindex(answers[11])
+                Geometry.get_element_vertices(geometry, 1)[i], answers[12][i], rtol=1e-14
+            ) for i in eachindex(answers[12])
         ]),
     )
 
@@ -160,7 +164,7 @@ mapping_I_obj = Geometry.Mapping((1, 1), mapping_I, dmapping_I)
 geometry1 = Geometry.MappedGeometry(
     Geometry.CartesianGeometry((LinRange(0.0, 1.0, 2),)), mapping_I_obj
 )
-answers_1 = (1, 1, 1, 1, (1,), 1, (1.0,), 1.0, (1, 1), 1, ((0.0, 1.0),))
+answers_1 = (1, 1, 1, 1, (1,), 1, (1.0,), 1.0, (1, 1), 1, (1, 1), ((0.0, 1.0),))
 basic_tests(geometry1, answers_1)
 
 # Mapped, explicit geometry and mapping per patch.
@@ -169,7 +173,18 @@ geom_slanted_2patch = Geometry.MappedGeometry(
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
 )
 answers_geom_slanted_2patch = (
-    2, 46, 2, 2, (16, 30), 16, (0.25, 0.25), 0.0625, (1, 5), 5, ((0.0, 0.25), (0.0, 0.25))
+    2,
+    46,
+    2,
+    2,
+    (16, 30),
+    16,
+    (0.25, 0.25),
+    0.0625,
+    (1, 5),
+    5,
+    (1, 5),
+    ((0.0, 0.25), (0.0, 0.25)),
 )
 basic_tests(geom_slanted_2patch, answers_geom_slanted_2patch)
 
@@ -189,6 +204,7 @@ answers_geom_slanted_2patch_oneref = (
     1.0 / 24.0,
     (2, 2),
     26,
+    (2, 2),
     ((0.0, 0.25), (0.0, 1.0 / 6.0)),
 )
 basic_tests(geom_slanted_2patch_oneref, answers_geom_slanted_2patch_oneref)
@@ -214,6 +230,7 @@ answers_geom_slanted_2patch_onemap = (
     1 / 48,
     (2, 3),
     15,
+    (2, 3),
     ((0.0, 0.125), (0.0, 1.0 / 6.0)),
 )
 basic_tests(geom_slanted_2patch_onemap, answers_geom_slanted_2patch_onemap)
@@ -254,7 +271,7 @@ geo2mapped = Mantis.Geometry.MappedGeometry(
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
 )
 answers_geo2mapped = (
-    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 6), 6, ((0.0, 0.5), (0.0, 0.5))
+    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, (2, 6), ((0.0, 0.5), (0.0, 0.5))
 )
 basic_tests(geo2mapped, answers_geo2mapped)
 # Same geometry as above, but now implemented using a tuple of two patches as base geometry.
@@ -266,14 +283,25 @@ geo2mapped2 = Mantis.Geometry.MappedGeometry(
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
 )
 answers_geo2mapped2 = (
-    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, ((0.0, 0.5), (0.0, 0.5))
+    2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, (2, 2), ((0.0, 0.5), (0.0, 0.5))
 )
 basic_tests(geo2mapped2, answers_geo2mapped2)
 
 # Mapped, single mapping, single patch.
 geom_slanted_2patch_11 = Geometry.MappedGeometry(geom_cart_patch_1, mapping_patch_1_slanted)
 answers_geom_slanted_2patch_11 = (
-    1, 16, 2, 2, (16,), 16, (0.25, 0.25), 0.0625, (1, 16), 16, ((0.0, 0.25), (0.0, 0.25))
+    1,
+    16,
+    2,
+    2,
+    (16,),
+    16,
+    (0.25, 0.25),
+    0.0625,
+    (1, 16),
+    16,
+    (1, 16),
+    ((0.0, 0.25), (0.0, 0.25)),
 )
 basic_tests(geom_slanted_2patch_11, answers_geom_slanted_2patch_11)
 
@@ -297,7 +325,18 @@ ddgeo(x) = (
 mapping2to3 = Mantis.Geometry.Mapping((2, 3), geo, dgeo, ddgeo)
 geometry2to3 = Mantis.Geometry.MappedGeometry(geom_cart_patch_1, mapping2to3)
 answers_geometry2to3 = (
-    1, 16, 2, 3, (16,), 16, (0.25, 0.25), 0.0625, (1, 14), 14, ((0.0, 0.25), (0.0, 0.25))
+    1,
+    16,
+    2,
+    3,
+    (16,),
+    16,
+    (0.25, 0.25),
+    0.0625,
+    (1, 14),
+    14,
+    (1, 14),
+    ((0.0, 0.25), (0.0, 0.25)),
 )
 basic_tests(geometry2to3, answers_geometry2to3)
 
@@ -345,7 +384,18 @@ end
 # Curvilinear mapping
 geometrycurv = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (4, 4))
 answers_geometrycurv = (
-    1, 16, 2, 2, (16,), 16, (0.25, 0.25), 0.0625, (1, 14), 14, ((0.0, 0.25), (0.0, 0.25))
+    1,
+    16,
+    2,
+    2,
+    (16,),
+    16,
+    (0.25, 0.25),
+    0.0625,
+    (1, 14),
+    14,
+    (1, 14),
+    ((0.0, 0.25), (0.0, 0.25)),
 )
 basic_tests(geometrycurv, answers_geometrycurv)
 
