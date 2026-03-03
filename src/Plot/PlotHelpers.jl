@@ -275,11 +275,15 @@ function _plot_topology!(
     # First plot all element lines per patch, if desired.
     if draw_elements
         xi_element = Points.CartesianPoints(
-            ntuple(image_dim) do i
+            ntuple(manifold_dim) do i
                 return LinRange(0.0, 1.0, 2)
             end,
         )
-        permutations = ([1, 3, 2, 4], [1, 5, 2, 6, 3, 7, 4, 8])
+        if image_dim == manifold_dim
+            permutations = ([1, 3, 2, 4], [1, 5, 2, 6, 3, 7, 4, 8])
+        elseif image_dim == manifold_dim + 1
+            permutations = ([1, 3, 2, 4], [1, 3, 2, 4])
+        end
         for element_id in 1:Geometry.get_num_elements(geometry)
             element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
             element_vertices_points = [
@@ -296,7 +300,7 @@ function _plot_topology!(
             end
 
             # Element lines in the other directions.
-            for dim in 1:(image_dim - 1)
+            for dim in 1:(manifold_dim - 1)
                 GLMakie.linesegments!(
                     element_vertices_points[permutations[dim]]; color=:black
                 )
