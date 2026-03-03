@@ -262,6 +262,9 @@ the `MappedGeometry`. Note that the returned `element_id` may still be global, d
 the type of base geometry.
 """
 function get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int)
+    # This function is the default, which assumes that the base geometry is merely a
+    # collection of unconnected patches. In that case, we need to compute the patch-local
+    # element id to be able to evaluate the base geometry.
     return get_patch_and_local_element_id(geometry, element_id)
 end
 function get_base_patch_and_element_id(
@@ -275,7 +278,8 @@ function get_base_patch_and_element_id(
 }
     # In this case, the base geometry is itself a multi-patch geometry with as many patches
     # as the MappedGeometry. Its elements will thus match, and we don't have to compute a
-    # local element id here.
+    # local element id here, since this geometry expects a global element id (and global
+    # means the same thing on the base geometry as well as the MappedGeometry).
     base_patch_id = get_patch_id(geometry, element_id)
     return base_patch_id, element_id
 end
