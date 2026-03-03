@@ -246,7 +246,8 @@ function get_mapping(
 end
 
 """
-    get_patch_and_local_element_id(
+    get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int)
+    get_base_patch_and_element_id(
         geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
     ) where {
         manifold_dim,
@@ -256,14 +257,14 @@ end
         Map,
     }
 
-Specialised version for `MappedGeometry` in the case that the base geometry is a
-multi-patch geometry.
-
-!!! warning
-    For this specific case, the returned `element_id` is still global! Call
-    `get_patch_and_local_element_id` on the base geometry itself to get the truly local id.
+Compute the `patch_id` and `element_id` for the base geometry, given the `element_id` of
+the `MappedGeometry`. Note that the returned `element_id` may still be global, depending on
+the type of base geometry.
 """
-function get_patch_and_local_element_id(
+function get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int)
+    return get_patch_and_local_element_id(geometry, element_id)
+end
+function get_base_patch_and_element_id(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
 ) where {
     manifold_dim,
@@ -272,58 +273,27 @@ function get_patch_and_local_element_id(
     G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
     Map,
 }
-    patch_id = get_patch_id(geometry, element_id)
-    return patch_id, element_id
-end
-
-"""
-    get_global_element_id(
-        geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
-        patch_id::Int,
-        local_element_id::Int,
-    ) where {
-        manifold_dim,
-        image_dim,
-        num_patches,
-        G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
-        Map,
-    }
-
-Specialised version for `MappedGeometry` in the case that the base geometry is a
-multi-patch geometry.
-
-!!! warning
-    For this specific case, the returned `element_id` is the given `local_element_id`! Call
-    `get_global_element_id` on the base geometry itself to get the truly global id.
-"""
-function get_global_element_id(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
-    patch_id::Int,
-    local_element_id::Int,
-) where {
-    manifold_dim,
-    image_dim,
-    num_patches,
-    G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
-    Map,
-}
-    return local_element_id
+    # In this case, the base geometry is itself a multi-patch geometry with as many patches
+    # as the MappedGeometry. Its elements will thus match, and we don't have to compute a
+    # local element id here.
+    base_patch_id = get_patch_id(geometry, element_id)
+    return base_patch_id, element_id
 end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_lengths(get_base_geometry(geometry, patch_id), local_element_id)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    return get_element_lengths(get_base_geometry(geometry, base_patch_id), base_element_id)
 end
 
 function get_element_measure(geometry::MappedGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_measure(get_base_geometry(geometry, patch_id), local_element_id)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    return get_element_measure(get_base_geometry(geometry, base_patch_id), base_element_id)
 end
 
 function get_element_vertices(geometry::MappedGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return get_element_vertices(get_base_geometry(geometry, patch_id), local_element_id)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    return get_element_vertices(get_base_geometry(geometry, base_patch_id), base_element_id)
 end
 
 # Evaluations and derivatives.
@@ -332,9 +302,9 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, G, Map}
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    x = evaluate(get_base_geometry(geometry, patch_id), local_element_id, xi)
-    x_mapped = evaluate(get_mapping(geometry, patch_id), x)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    x = evaluate(get_base_geometry(geometry, base_patch_id), base_element_id, xi)
+    x_mapped = evaluate(get_mapping(geometry, base_patch_id), x)
 
     return x_mapped
 end
@@ -345,12 +315,12 @@ function jacobian(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, G, Map}
     # the Jacobian for the mapping from the elements to base geometry image
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    base_geometry = get_base_geometry(geometry, patch_id)
-    J_1 = jacobian(base_geometry, local_element_id, xi)
-    x = evaluate(base_geometry, local_element_id, xi)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, base_patch_id)
+    J_1 = jacobian(base_geometry, base_element_id, xi)
+    x = evaluate(base_geometry, base_element_id, xi)
     # the mapping from the image of the  base geometry to the image of the mapping
-    J_2 = jacobian(get_mapping(geometry, patch_id), x)
+    J_2 = jacobian(get_mapping(geometry, base_patch_id), x)
 
     return J_2 .* J_1
 end
@@ -361,14 +331,14 @@ function hessian(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
     # Jacobian and Hessian of the base geometry
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    base_geometry = get_base_geometry(geometry, patch_id)
-    x = evaluate(base_geometry, local_element_id, xi)
-    Jb = jacobian(base_geometry, local_element_id, xi)
-    Hb = hessian(base_geometry, local_element_id, xi)
+    base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
+    base_geometry = get_base_geometry(geometry, base_patch_id)
+    x = evaluate(base_geometry, base_element_id, xi)
+    Jb = jacobian(base_geometry, base_element_id, xi)
+    Hb = hessian(base_geometry, base_element_id, xi)
 
-    Jm = jacobian(get_mapping(geometry, patch_id), x)
-    Hm = hessian(get_mapping(geometry, patch_id), x)
+    Jm = jacobian(get_mapping(geometry, base_patch_id), x)
+    Hm = hessian(get_mapping(geometry, base_patch_id), x)
 
     return [
         ntuple(image_dim) do i
