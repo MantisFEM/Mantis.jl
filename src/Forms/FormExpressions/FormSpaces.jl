@@ -99,7 +99,7 @@ mapped to the parametric element given by `element_idx`.
 # Arguments
 - `form_space::FormSpace{manifold_dim, form_rank, G}`: The differential form space.
 - `element_idx::Int`: The parametric element identifier.
-- `xi::NTuple{manifold_dim, Vector{Float64}`: The set of canonical points.
+- `xi::Points.AbstractPoints{manifold_dim}`: The set of canonical points.
 
 # Returns
 - `Vector{Matrix{Float64}}`: Vector of length equal to the number of components of the form,
