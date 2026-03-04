@@ -5,7 +5,7 @@
 """
     ConstantFormSpace{manifold_dim, form_rank, G, L} <: AbstractFormSpace{manifold_dim, form_rank}
 
-Concrete implementation of a space for constant differential forms. For instance, this can 
+Concrete implementation of a space for constant differential forms. For instance, this can
 be used as a Lagrange multiplier enforcing a zero-average constraint on another differential form.
 
 # Fields
@@ -23,7 +23,7 @@ be used as a Lagrange multiplier enforcing a zero-average constraint on another 
     differential form spaces.
 """
 struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
-        AbstractFormSpace{manifold_dim, form_rank, G, L}
+       AbstractFormSpace{manifold_dim, form_rank}
     geometry::G
     label::L
 
@@ -43,9 +43,7 @@ struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
     - `ConstantFormSpace{manifold_dim, form_rank, G, L}`: The form space.
     """
     function ConstantFormSpace(
-        form_rank::Int,
-        geometry::G,
-        label::AbstractString
+        form_rank::Int, geometry::G, label::AbstractString
     ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
         if (form_rank ∉ Set([0, manifold_dim]))
             throw(
@@ -152,9 +150,7 @@ Evaluate the basis function of a 0-form constant space at given canonical points
     of the element, always equal to `[[1]]` in this case.
 """
 function evaluate(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
+    ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     n_evaluation_points = prod(map(length, xi))
     return [ones(Float64, n_evaluation_points, 1)], [[1]]
