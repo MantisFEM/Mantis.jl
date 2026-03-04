@@ -182,10 +182,10 @@ function evaluate(
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
-    n_evaluation_points = prod(map(length, xi))
+    num_evaluation_points = prod(map(length, xi))
     J = Geometry.jacobian(form_space.geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
     form_eval = [ones(Float64, n_evaluation_points, 1)]
-    form_eval[1][:] .*= LinearAlgebra.det.(eachslice(J; dims=1))
+    form_eval[1][:] .*= LinearAlgebra.det.(J)
 
     return form_eval, [[1]]
 end
