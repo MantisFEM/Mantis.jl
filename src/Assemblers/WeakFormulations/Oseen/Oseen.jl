@@ -89,9 +89,9 @@ function solve_Oseen(
     lhs_expressions, rhs_expressions = Oseen(weak_form_inputs, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
     # display(" assembling...")
-    time1 = time()
+    # time1 = time()
     A, b = assemble(weak_form)
-    time2 = time()
+    #time2 = time()
     # display(" ...done: $(time2 - time1) seconds")
 
     # total number of dofs
@@ -110,19 +110,19 @@ function solve_Oseen(
 
     # reduced problem
     # display(" reducing problem...")
-    time1 = time()
+    # time1 = time()
     A = A[keep_inds, keep_inds]
     b = b[keep_inds]
-    time2 = time()
+    # time2 = time()
     # display(" ...done: $(time2 - time1) seconds")
     # display(" done.")
 
     # solve problem
     sol = zeros(n_dofs)
     # display(" solving...")
-    time1 = time()
+    # time1 = time()
     sol[keep_inds] = SparseArrays.qr(A) \ b
-    time2 = time()
+    # time2 = time()
     # display(" ...done: $(time2 - time1) seconds")
     # display(" done.")
     ωₕ, uₕ, pₕ, λₕ = Forms.build_form_fields((Xⁿ⁻², Xⁿ⁻¹, Xⁿ, Cⁿ), sol; labels=("ωh","uh","ph", "λh"))
