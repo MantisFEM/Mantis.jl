@@ -14,7 +14,6 @@ import Combinatorics
 import LaTeXStrings
 import LinearAlgebra
 import SparseArrays
-import Subscripts
 
 ############################################################################################
 #                                         Exports                                          #
