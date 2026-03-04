@@ -152,8 +152,8 @@ Evaluate the basis function of a 0-form constant space at given canonical points
 function evaluate(
     ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
-    n_evaluation_points = prod(map(length, xi))
-    return [ones(Float64, n_evaluation_points, 1)], [[1]]
+    num_evaluation_points = Points.get_num_points(xi)
+    return [ones(Float64, num_evaluation_points, 1)], [[1]]
 end
 
 """
@@ -182,9 +182,9 @@ function evaluate(
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
-    num_evaluation_points = prod(map(length, xi))
+    num_evaluation_points = Points.get_num_points(xi)
     J = Geometry.jacobian(form_space.geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
-    form_eval = [ones(Float64, n_evaluation_points, 1)]
+    form_eval = [ones(Float64, num_evaluation_points, 1)]
     form_eval[1][:] .*= LinearAlgebra.det.(J)
 
     return form_eval, [[1]]
