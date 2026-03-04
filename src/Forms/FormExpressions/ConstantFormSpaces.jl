@@ -5,7 +5,7 @@
 """
     ConstantFormSpace{manifold_dim, form_rank, G, L} <: AbstractFormSpace{manifold_dim, form_rank}
 
-Concrete implementation of a space for constant differential forms. For instance, this can 
+Concrete implementation of a space for constant scalar differential forms. For instance, this can 
 be used as a Lagrange multiplier enforcing a zero-average constraint on another differential form.
 
 # Fields
@@ -32,7 +32,7 @@ struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
             form_rank::Int, geometry::G, label::L
         ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}, L <: AbstractString}
 
-    Constructor for constant differential form spaces.
+    Constructor for constant, scalar differential form spaces.
 
     # Arguments
     - `form_rank::Int`: Differential form rank.
@@ -127,6 +127,19 @@ Return the form space itself.
 """
 get_form(form_space::ConstantFormSpace) = form_space
 
+"""
+    get_geometry(form_space::ConstantFormSpace)
+
+Return the geometry associated with the constant form space.
+
+# Arguments
+- `form_space::ConstantFormSpace`: The constant form space.
+
+# Returns
+- `G`: The geometry associated with the form space.
+"""
+get_geometry(form_space::ConstantFormSpace) = form_space.geometry
+
 ############################################################################################
 #                                     Evaluate methods                                     #
 ############################################################################################
@@ -187,7 +200,7 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
     n_evaluation_points = prod(map(length, xi))
-    J = Geometry.jacobian(form_space.geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
+    J = Geometry.jacobian(get_geometry(form_space), element_idx, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
     form_eval = [ones(Float64, n_evaluation_points, 1)]
     form_eval[1][:] .*= LinearAlgebra.det.(eachslice(J; dims=1))
 
