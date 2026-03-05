@@ -5,8 +5,12 @@ rtol = 10 * eps(Float64)
 atol = 1e-14
 
 # Compute base directories for data input and output
-reference_directory_tree = ["test", "data", "reference", "Geometry"]
-output_directory_tree = ["test", "data", "output", "Geometry"]
+reference_directory_tree = [
+    dirname(dirname(pathof(Mantis))), "test", "data", "reference", "Geometry"
+]
+output_directory_tree = [
+    dirname(dirname(pathof(Mantis))), "test", "data", "output", "Geometry"
+]
 
 function get_point_cell_data(directory_tree::Vector{String}, file_name::String)
     # Read the cell data from the reference file

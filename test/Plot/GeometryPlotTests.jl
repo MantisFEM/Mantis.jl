@@ -8,8 +8,8 @@ using Printf
 using Test
 
 # Compute directory trees for data input and output
-reference_directory_tree = ["test", "data", "reference", "Plot"]
-output_directory_tree = ["test", "data", "output", "Plot"]
+reference_directory_tree = [dirname(dirname(pathof(Mantis))), "test", "data", "reference", "Plot"]
+output_directory_tree = [dirname(dirname(pathof(Mantis))), "test","data","output","Plot"]
 
 # Test Plotting of 3D Geometry (torus) -------------------------------------------
 deg = 2

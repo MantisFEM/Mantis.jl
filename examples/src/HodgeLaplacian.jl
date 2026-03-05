@@ -95,21 +95,12 @@ A, b = Assemblers.assemble(weak_form, bc)
 sol = vec(A \ b)
 ϕ⁰ = Forms.build_form_field(Λ⁰, sol)
 
-# We can now plot the solution using the `plot` function. This will write the output to a
-# VTK file that can be visualized using a VTK viewer, such as Paraview.
-
-data_folder = joinpath(dirname(dirname(pathof(Mantis))), "examples", "data")
-output_data_folder = joinpath(data_folder, "output", "HodgeLaplacian")
-output_filename = "HodgeLaplacian-0form-Dirichlet-2D.vtu"
-output_file = joinpath(output_data_folder, output_filename)
-Plot.plot(
-    ϕ⁰;
-    vtk_filename=output_file,
-    n_subcells=1,
-    degree=maximum(p),
-    ascii=false,
-    compress=false,
-)
+# We can also write the output to a VTK file that can be visualized using a VTK viewer, such
+# as Paraview. We can do this by running:
+# ```julia
+# output_filename = "HodgeLaplacian-0form-Dirichlet-2D.vtu"
+# Mantis.Plot.export_form_fields_to_vtk((ϕ⁰,), output_filename)
+# ```
 
 # ## Extensions
 
@@ -164,13 +155,3 @@ A_3D, b_3D = Assemblers.assemble(weak_form_3D, bc_3D)
 sol_3D = vec(A_3D \ b_3D)
 ϕ⁰_3D = Forms.build_form_field(Λ⁰_3D, sol_3D)
 
-output_filename_3D = "HodgeLaplacian-0form-Dirichlet-3D.vtu"
-output_file_3D = joinpath(output_data_folder, output_filename_3D)
-Plot.plot(
-    ϕ⁰_3D;
-    vtk_filename=output_file_3D,
-    n_subcells=1,
-    degree=maximum(p_3D),
-    ascii=false,
-    compress=false,
-)

@@ -393,13 +393,11 @@ dΩ_2D_analysis = Quadrature.StandardQuadrature(
 println("L2 error: ", Analysis.L2_norm(ϕ⁰_2D - ϕ⁰_exact_2D, dΩ_2D_analysis))
 
 # We can also write the output to a VTK file that can be visualized using a VTK viewer, such
-# as Paraview. Note that we export both the computed and exact solutions.
-output_filename_2D = "Biharmonic-0form-Homogeneous-Cartesian-$(length(p_2D))D"
-Mantis.Plot.export_form_fields_to_vtk(
-    (ϕ⁰_2D, ϕ⁰_exact_2D),
-    output_filename_2D;
-    output_directory_tree=["examples", "data", "output", "Biharmonic"],
-)
+# as Paraview. We can do this by running:
+# ```julia
+# output_filename_2D = "Biharmonic-0form-Homogeneous-Cartesian-$(length(p_2D))D"
+# Mantis.Plot.export_form_fields_to_vtk((ϕ⁰_2D, ϕ⁰_exact_2D), output_filename_2D)
+# ```
 
 # #### The 2D case on a more complicated geometry.
 
@@ -443,13 +441,6 @@ dΩ_2D_analysis_curv = Quadrature.StandardQuadrature(
 )
 
 println("L2 error: ", Analysis.L2_norm(ϕ⁰_2D_curv - ϕ⁰_exact_2D_curv, dΩ_2D_analysis_curv))
-
-output_filename_2D_curv = "Biharmonic-0form-Homogeneous-Curvilinear-$(length(p_2D))D"
-Mantis.Plot.export_form_fields_to_vtk(
-    (ϕ⁰_2D_curv, ϕ⁰_exact_2D_curv),
-    output_filename_2D_curv;
-    output_directory_tree=["examples", "data", "output", "Biharmonic"],
-)
 
 # #### Convergence studies for the 2D case.
 

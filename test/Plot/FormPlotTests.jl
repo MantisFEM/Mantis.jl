@@ -27,7 +27,7 @@ num_basis = Mantis.Forms.get_num_basis(zero_form_space)
 β².coefficients .= rand(length(β².coefficients))
 
 # Compute base directories for data input and output
-output_directory_tree = ["test","data","output","Plot"]
+output_directory_tree = [dirname(dirname(pathof(Mantis))), "test","data","output","Plot"]
 
 out_deg = maximum([1, maximum(degrees)])
 

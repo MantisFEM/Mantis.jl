@@ -128,22 +128,21 @@ end
 # Export path helper function
 ####################################################
 """
-    export_path(output_directory_tree::Vector{String}, filename::String)
+    export_path(output_directory_tree::Vector, filename)
 
 Create a directory (if needed) and return the path to the output file.
 
 # Arguments
-- `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
-- `filename::String`: The name of the output file.
+- `output_directory_tree::Vector`: A vector representing the directory tree.
+- `filename`: The name of the output file.
 
 # Example
-```julia
-output_file = export_path(["examples", "data", "output"], "output.vtk") # "examples/data/output/output.vtk"
+```@example
+output_file = export_path(["examples", "data", "output"], "output.vtu")
 ```
 """
-function export_path(output_directory_tree::Vector{String}, filename::String)
-	project_directory = dirname(Pkg.project().path)
-    output_directory = joinpath(project_directory, output_directory_tree...)
+function export_path(output_directory_tree::Vector, filename)
+    output_directory = joinpath(output_directory_tree...)
     output_file = joinpath(output_directory, filename)
 
     if !isdir(output_directory)

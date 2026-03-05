@@ -1,5 +1,11 @@
 """
-    visualize_geometry(geo::Geometry.AbstractGeometry, filename::String; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
+    export_geometry_to_vtk(
+		geo::Geometry.AbstractGeometry,
+		filename::String;
+		n_subcells::Int=1,
+		degree::Int=4,
+		output_directory_tree=[pwd()],
+	)
 
 Export the geometry to a VTK file.
 
@@ -8,14 +14,15 @@ Export the geometry to a VTK file.
 - `filename::String`: The name of the output file.
 - `n_subcells::Int`: The number of subcells to be used in the visualization.
 - `degree::Int`: The degree of the basis functions used in the visualization.
-- `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
+- `output_directory_tree`: A vector of strings representing the directory tree. Defaults to
+	the current working directory.
 """
 function export_geometry_to_vtk(
     geo::Geometry.AbstractGeometry,
     filename::String;
     n_subcells::Int=1,
     degree::Int=4,
-    output_directory_tree::Vector{String}=["examples", "data", "output"],
+    output_directory_tree=[pwd()],
 )
     output_file = export_path(output_directory_tree, filename)
     plot(
@@ -31,7 +38,14 @@ function export_geometry_to_vtk(
 end
 
 """
-    export_form_fields_to_vtk(form_sols::Vector{Forms.AbstractForm}, var_names::Vector{String}, filename::String; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
+    export_form_fields_to_vtk(
+		form_sols,
+		var_names,
+		filename;
+		n_subcells::Int=1,
+		degree::Int=4,
+		output_directory_tree=[pwd()],
+	)
 
 Export the form solutions to VTK files.
 
@@ -41,7 +55,8 @@ Export the form solutions to VTK files.
 - `filename::String`: The name of the output file.
 - `n_subcells::Int`: The number of subcells to be used in the visualization.
 - `degree::Int`: The degree of the basis functions used in the visualization.
-- `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
+- `output_directory_tree`: A vector of strings representing the directory tree. Defaults to
+	the current working directory.
 """
 function export_form_fields_to_vtk(
     form_sols,
@@ -49,7 +64,7 @@ function export_form_fields_to_vtk(
     filename;
     n_subcells::Int=1,
     degree::Int=4,
-    output_directory_tree::Vector{String}=["examples", "data", "output"],
+    output_directory_tree=[pwd()],
 )
     for (form_sol, var_name) in zip(form_sols, var_names)
         println("Writing form '$var_name' to file ...")
@@ -68,7 +83,9 @@ function export_form_fields_to_vtk(
 end
 
 """
-    export_form_fields_to_vtk(form_sols::Vector{Forms.AbstractForm}, var_names::Vector{String}, filename::String; n_subcells::Int = 1, degree::Int = 4, output_directory_tree::Vector{String} = ["examples", "data", "output"])
+    export_form_fields_to_vtk(
+		form_sols, filename; n_subcells::Int=1, degree::Int=4, output_directory_tree=[pwd()]
+	)
 
 Export the form solutions to VTK files.
 
@@ -77,14 +94,10 @@ Export the form solutions to VTK files.
 - `filename::String`: The name of the output file.
 - `n_subcells::Int`: The number of subcells to be used in the visualization.
 - `degree::Int`: The degree of the basis functions used in the visualization.
-- `output_directory_tree::Vector{String}`: A vector of strings representing the directory tree.
+	output_directory_tree=[pwd()],
 """
 function export_form_fields_to_vtk(
-    form_sols,
-    filename;
-    n_subcells::Int=1,
-    degree::Int=4,
-    output_directory_tree::Vector{String}=["examples", "data", "output"],
+    form_sols, filename; n_subcells::Int=1, degree::Int=4, output_directory_tree=[pwd()]
 )
     for form in form_sols
         label = Forms.get_label(form)
