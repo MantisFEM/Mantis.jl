@@ -2,7 +2,7 @@ module GeneralHelpers
 
 export integer_sums, get_derivative_idx, export_path
 
-import Combinatorics
+import Combinatorics, Pkg
 
 ####################################################
 # Integer sums and derivatives helper functions
@@ -142,8 +142,8 @@ output_file = export_path(["examples", "data", "output"], "output.vtk") # "examp
 ```
 """
 function export_path(output_directory_tree::Vector{String}, filename::String)
-    Mantis_folder = dirname(dirname(pathof(parentmodule(GeneralHelpers))))
-    output_directory = joinpath(Mantis_folder, output_directory_tree...)
+	project_directory = dirname(Pkg.project().path)
+    output_directory = joinpath(project_directory, output_directory_tree...)
     output_file = joinpath(output_directory, filename)
 
     if !isdir(output_directory)
