@@ -343,7 +343,11 @@ space.
 - `Int`: The number of basis functions of the function space.
 """
 function get_num_basis(form_space::AbstractFormSpace)
-    return FunctionSpaces.get_num_basis(get_fe_space(form_space))
+    try 
+        return FunctionSpaces.get_num_basis(get_fe_space(form_space))
+    catch ArgumentError
+        return get_num_basis(get_form(form_space))
+    end
 end
 
 """
