@@ -97,6 +97,14 @@ Return the geometry associated with the constant form space.
 """
 get_geometry(form_space::ConstantFormSpace) = form_space.geometry
 
+function get_fe_space(::ConstantFormSpace)
+    throw(
+        ArgumentError(
+            "ConstantFormSpace does not have an associated finite element space.",
+        ),
+    )
+end
+
 ############################################################################################
 #                                     Evaluate methods                                     #
 ############################################################################################
@@ -157,9 +165,9 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
     num_evaluation_points = Points.get_num_points(xi)
-    J = Geometry.jacobian(get_geometry(form_space), element_id, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
+    _, sqrt_g = Geometry.metric(get_geometry(form_space), element_id, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
     form_eval = [ones(Float64, num_evaluation_points, 1)]
-    form_eval[1][:] .*= LinearAlgebra.det.(J)
+    form_eval[1][:] .*= sqrt_g
 
     return form_eval, [[1]]
 end
