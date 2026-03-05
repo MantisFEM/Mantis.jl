@@ -4,8 +4,12 @@ rtol = 10 * eps(Float64)
 atol = 1e-14
 
 # Compute base directories for data input and output
-const reference_directory_tree = ["test", "data", "reference", "Assemblers"]
-const output_directory_tree = ["test", "data", "output", "Assemblers"]
+const reference_directory_tree = [
+    dirname(dirname(pathof(Mantis))), "test", "data", "reference", "Assemblers"
+]
+const output_directory_tree = [
+    dirname(dirname(pathof(Mantis))), "test", "data", "output", "Assemblers"
+]
 
 function write_data(sub_dir::String, file_name::String, data)
     # Write the solution to an output file
