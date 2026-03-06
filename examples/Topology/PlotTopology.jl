@@ -120,9 +120,16 @@ function mapping_mobius(x::AbstractVector{Float64})
     ]
 end
 function dmapping_mobius(x::AbstractVector{Float64})
+    u = x[1]
+    v = x[2]
     return [
-        [0.0 1.0]
-        [-1.0 0.0]
+        [-v / 4 * sin(u / 2) * cos(u) - v / 2 * cos(u / 2) * sin(u) 1 / 2 *
+                                                                    cos(u / 2) *
+                                                                    cos(u)]
+        [-v / 4 * sin(u / 2) * cos(u) - v / 2 * cos(u / 2) * cos(u) 1 / 2 *
+                                                                    cos(u / 2) *
+                                                                    sin(u)]
+        [v / 4 * cos(u / 2) 1 / 2 * sin(u / 2)]
     ]
 end
 mapping_obj_mobius = Geometry.Mapping((2, 3), mapping_mobius, dmapping_mobius)
@@ -154,8 +161,9 @@ function mapping_cylinder(x::AbstractVector{Float64})
 end
 function dmapping_cylinder(x::AbstractVector{Float64})
     return [
+        [-sin(x[1]) cos(x[1])]
+        [0.0 0.0]
         [0.0 1.0]
-        [-1.0 0.0]
     ]
 end
 mapping_obj_cylinder = Geometry.Mapping((2, 3), mapping_cylinder, dmapping_cylinder)
