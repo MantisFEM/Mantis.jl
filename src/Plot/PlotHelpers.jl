@@ -168,7 +168,10 @@ function plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 2};
     edge_color=:darkolivegreen3,
     vertex_color=:orange,
+    face_color=(:purple, 0.2),
     draw_elements=false,
+    draw_faces=false,
+    plot_points_per_element=5,
 ) where {manifold_dim}
     fig = GLMakie.Figure()
     ax = GLMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
@@ -186,7 +189,10 @@ function plot_topology(
         edge_alignment;
         edge_color=edge_color,
         vertex_color=vertex_color,
+        face_color=face_color,
         draw_elements=draw_elements,
+        draw_faces=draw_faces,
+        plot_points_per_element=plot_points_per_element,
     )
 
     return fig
@@ -197,7 +203,10 @@ function plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 3};
     edge_color=:darkolivegreen3,
     vertex_color=:orange,
+    face_color=(:purple, 0.2),
     draw_elements=false,
+    draw_faces=true,
+    plot_points_per_element=5,
 ) where {manifold_dim}
     fig = GLMakie.Figure()
     ax = GLMakie.Axis3(fig[1, 1]; viewmode=:fit)
@@ -235,7 +244,10 @@ function plot_topology(
         edge_alignment;
         edge_color=edge_color,
         vertex_color=vertex_color,
+        face_color=face_color,
         draw_elements=draw_elements,
+        draw_faces=draw_faces,
+        plot_points_per_element=plot_points_per_element,
     )
 
     return fig
@@ -247,9 +259,12 @@ function _plot_topology!(
     geometry,
     vertex_alignment,
     edge_alignment;
-    edge_color=:darkolivegreen3,
     vertex_color=:orange,
+    edge_color=:darkolivegreen3,
+    face_color=(:purple, 0.2),
     draw_elements=false,
+    draw_faces=true,
+    plot_points_per_element=5,
 )
     topology = Geometry.get_topology(geometry)
     manifold_dim = Topology.get_manifold_dim(topology)
@@ -310,16 +325,6 @@ function _plot_topology!(
                 local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
             end
 
-            starting_coordinate_raw, final_coordinate_raw = edge_coordinates[edge_id]
-            starting_coordinate = _pad_point(starting_coordinate_raw)
-            final_coordinate = _pad_point(final_coordinate_raw)
-
-            edge_midpoint = _pad_point(
-                ntuple(image_dim) do dim
-                    return (starting_coordinate[dim] + final_coordinate[dim]) / 2
-                end,
-            )
-
             # Recompute the edge coordinates using the current patch_id to get the
             # orientation on the patch.
             starting_coordinate_local_raw, final_coordinate_local_raw = Geometry.get_edge_coordinates(
@@ -328,7 +333,48 @@ function _plot_topology!(
             starting_coordinate_local = _pad_point(starting_coordinate_local_raw)
             final_coordinate_local = _pad_point(final_coordinate_local_raw)
 
-            GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
+            # Compute the edge as a curve
+            elements_on_edge = Geometry.get_elements(geometry, patch_id, local_edge_id, 1)
+            xi_elements = Geometry.get_canonical_points(
+                eltype(TPoint), geometry, local_edge_id, 1, plot_points_per_element
+            )
+            for element_id in elements_on_edge
+                curved_edge_coordinates = Geometry.evaluate(
+                    geometry, element_id, xi_elements
+                )
+                curved_edge_points = [
+                    _pad_point(TPoint(curved_edge_coordinates[i, :]...)) for
+                    i in axes(curved_edge_coordinates, 1)
+                ]
+                GLMakie.lines!(curved_edge_points; color=edge_color)
+            end
+
+            num_elements_on_edge = length(elements_on_edge)
+            if isodd(num_elements_on_edge)
+                middle_element = elements_on_edge[div(num_elements_on_edge, 2) + 1]
+                xi = Geometry.get_canonical_points(
+                    eltype(TPoint), geometry, local_edge_id, 1, 3
+                )
+            else
+                middle_element = elements_on_edge[div(num_elements_on_edge, 2)]
+                xi = Geometry.get_canonical_points(
+                    eltype(TPoint), geometry, local_edge_id, 1, 2
+                )
+            end
+            curved_midpoint_coordinates = Geometry.evaluate(geometry, middle_element, xi)
+            edge_midpoint = _pad_point(TPoint(curved_midpoint_coordinates[2, :]...))
+            # dir = Geometry.jacobian(geometry, middle_element, xi)
+            # t_tup = Geometry.get_tangent_vector(eltype(TPoint), geometry, local_edge_id, 1)
+            # t = [(t_tup)...]
+            # dir_midpoint = _pad_point(TPoint((dir[2] * t)...))
+            dir_midpoint = final_coordinate_local - starting_coordinate_local
+
+            # if isapprox(t_tup[1], zero(eltype(TPoint)))
+            #     dir_midpoint_raw = _pad_point(TPoint((dir[2] * t)...))
+            #     dir_midpoint = TPoint(0.0, dir_midpoint_raw[2], dir_midpoint_raw[3])
+            # else
+            #     dir_midpoint = _pad_point(TPoint((dir[2] * t)...))
+            # end
 
             GLMakie.text!(
                 edge_midpoint;
@@ -337,9 +383,8 @@ function _plot_topology!(
                 color=edge_color,
             )
             GLMakie.arrows2d!(
-                starting_coordinate_local,
-                final_coordinate_local;
-                argmode=:endpoint,
+                edge_midpoint,
+                dir_midpoint;
                 align=:center,
                 lengthscale=0.25,
                 color=edge_color,
@@ -384,6 +429,72 @@ function _plot_topology!(
                     color=vertex_color,
                     offset=(0, 20),
                 )
+            end
+        end
+    end
+
+    # Plot the faces
+    if manifold_dim >= 2 && draw_faces
+        for face_id in 1:size(topology, 3)
+            if manifold_dim == 2
+                patch_ids = [face_id]
+            else
+                patch_ids = topology[3, manifold_dim + 1][face_id]
+            end
+            for patch_id in patch_ids
+                # Go through all patches so that we know the global and local ids.
+                if manifold_dim == 2
+                    local_face_id = 1
+                else
+                    local_face_id = Topology.get_local_id(topology, patch_id, face_id, 3)
+                end
+
+                # Compute the surface
+                elements_on_face = Geometry.get_elements(
+                    geometry, patch_id, local_face_id, 2
+                )
+                xi_elements = Geometry.get_canonical_points(
+                    eltype(TPoint), geometry, local_face_id, 2, plot_points_per_element
+                )
+                for element_id in elements_on_face
+                    curved_face_coordinates = Geometry.evaluate(
+                        geometry, element_id, xi_elements
+                    )
+                    x = reshape(
+                        curved_face_coordinates[:, 1],
+                        (plot_points_per_element, plot_points_per_element),
+                    )
+                    y = reshape(
+                        curved_face_coordinates[:, 2],
+                        (plot_points_per_element, plot_points_per_element),
+                    )
+                    if image_dim > 2
+                        z = reshape(
+                            curved_face_coordinates[:, 3],
+                            (plot_points_per_element, plot_points_per_element),
+                        )
+                        GLMakie.surface!(
+                            x,
+                            y,
+                            z;
+                            color=fill(
+                                face_color, plot_points_per_element, plot_points_per_element
+                            ),
+                            shading=false,
+                            transparency=true,
+                        )
+                    else
+                        GLMakie.surface!(
+                            x,
+                            y;
+                            color=fill(
+                                face_color, plot_points_per_element, plot_points_per_element
+                            ),
+                            shading=false,
+                            transparency=true,
+                        )
+                    end
+                end
             end
         end
     end
