@@ -154,33 +154,33 @@ get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.lin_num_elements[patch_id]
 
 # Getters using topological information
-"""
-    get_element_id(geometry::CartesianGeometry, patch_id, local_vertex_id)
+function get_elements(geometry::CartesianGeometry, patch_id, local_object_id, geometric_dim)
+    position = Topology.id2position(
+        get_manifold_dim(geometry), geometric_dim, local_object_id
+    )
 
-Compute the global `element_id` of the element on patch `patch_id` on which the vertex with
-`local_vertex_id` is located.
-"""
-function get_element_id(geometry::CartesianGeometry, patch_id, local_vertex_id)
-    position = Topology.id2position(get_manifold_dim(geometry), 0, local_vertex_id)
-
-    # Compute the element_id on this patch from the topological position.
+    # Compute the element_ids on this patch from the topological position.
     num_elements_per_dim = get_constituent_num_elements(geometry, patch_id)
-    cart_element_id = ntuple(get_manifold_dim(geometry)) do i
-        if position[i] == 1
-            return num_elements_per_dim[i]
+    mask = ntuple(get_manifold_dim(geometry)) do i
+        if position[i] == 0
+            return 1:num_elements_per_dim[i]
+        elseif position[i] == -1
+            return 1:1
         else
-            return 1
+            return num_elements_per_dim[i]:num_elements_per_dim[i]
         end
     end
+    cart_elements = CartesianIndices(mask)
     lin_num_elements = get_lin_num_elements(geometry, patch_id)
-    element_id = lin_num_elements[cart_element_id...]
+    element_ids = [lin_num_elements[ci] for ci in cart_elements]
 
     # Compute the corresponding global element_id.
+    offset = 0
     for i in 1:(patch_id - 1)
-        element_id += get_num_elements(geometry, i)
+        offset += get_num_elements(geometry, i)
     end
 
-    return element_id
+    return element_ids .+ offset
 end
 
 # Getters for consituents.
