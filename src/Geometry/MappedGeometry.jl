@@ -304,6 +304,57 @@ function get_base_patch_and_element_id(
     return base_patch_id, element_id
 end
 
+# Getters using topological information
+"""
+    get_element_id(geometry::MappedGeometry, patch_id, local_vertex_id)
+
+Compute the global `element_id` of the element on patch `patch_id` on which the vertex with
+`local_vertex_id` is located.
+"""
+function get_elements(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id,
+    local_object_id,
+    geometric_dim,
+) where {manifold_dim, image_dim, num_patches, T, G <: AbstractGeometry, Map}
+    if get_num_patches(get_base_geometry(geometry)) > 1
+        element_ids = get_elements(
+            get_base_geometry(geometry), patch_id, local_object_id, geometric_dim
+        )
+    else
+        element_ids = get_elements(
+            get_base_geometry(geometry), 1, local_object_id, geometric_dim
+        )
+        # Offset the obtained element id in the case where the same base geometry is used
+        # for every patch.
+        offset = 0
+        for i in 1:(patch_id - 1)
+            offset += get_num_elements(geometry, i)
+        end
+        element_ids .+ offset
+    end
+    return element_ids
+end
+function get_elements(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id,
+    local_object_id,
+    geometric_dim,
+) where {
+    manifold_dim, image_dim, num_patches, T, G <: NTuple{num_patches, AbstractGeometry}, Map
+}
+    element_ids = get_elements(
+        get_base_geometry(geometry, patch_id), 1, local_object_id, geometric_dim
+    )
+    # Since the base geometries are stored as a tuple, we always need to offset here to get
+    # the global ids.
+    offset = 0
+    for i in 1:(patch_id - 1)
+        offset += get_num_elements(geometry, i)
+    end
+    return element_ids .+ offset
+end
+
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::MappedGeometry, element_id::Int)
     base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)

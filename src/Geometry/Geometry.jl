@@ -499,22 +499,66 @@ Create a [`CartesianPoints`](@ref)-object with the canonical coordinate for the 
 `local_vertex_id`. Uses `eltype(geometry)` to determine the output coordinate type if none
 is provided.
 """
-function get_canonical_point(geometry::AbstractGeometry, local_vertex_id::Int)
-    return get_canonical_point(eltype(geometry), geometry, local_vertex_id)
+function get_canonical_points(
+    geometry::AbstractGeometry,
+    local_object_id::Int,
+    geometric_dim::Int,
+    points_per_dim::Int=5,
+)
+    return get_canonical_points(
+        eltype(geometry), geometry, local_object_id, geometric_dim, points_per_dim
+    )
 end
-function get_canonical_point(
-    ::Type{T}, geometry::AbstractGeometry, local_vertex_id::Int
+function get_canonical_points(
+    ::Type{T},
+    geometry::AbstractGeometry,
+    local_object_id::Int,
+    geometric_dim::Int,
+    points_per_dim::Int=5,
 ) where {T}
-    position = Topology.id2position(get_manifold_dim(geometry), 0, local_vertex_id)
+    position = Topology.id2position(
+        get_manifold_dim(geometry), geometric_dim, local_object_id
+    )
     return Points.CartesianPoints(
         ntuple(get_manifold_dim(geometry)) do i
             if position[i] == 1
-                return [one(T)]
+                return LinRange(one(T), one(T), 1)
+            elseif position[i] == -1
+                return LinRange(zero(T), zero(T), 1)
             else
-                return [zero(T)]
+                return LinRange(zero(T), one(T), points_per_dim)
             end
         end,
     )
+end
+
+# only for edges
+# function get_tangent_vector(
+#     ::Type{T}, geometry::AbstractGeometry, local_object_id::Int, geometric_dim::Int
+# ) where {T}
+#     position = Topology.id2position(
+#         get_manifold_dim(geometry), geometric_dim, local_object_id
+#     )
+#     return ntuple(get_manifold_dim(geometry)) do i
+#         if position[i] == 1
+#             return zero(T)
+#         elseif position[i] == -1
+#             return zero(T)
+#         else
+#             return one(T)
+#         end
+#     end
+# end
+
+"""
+    get_elements(geometry::AbstractGeometry, patch_id, local_object_id, geometric_dim)
+
+Compute the elements located on the given topological object `local_object_id` (vertices
+`geometric_dim`=0, edges `geometric_dim`=1, surfaces `geometric_dim`=2, etc.) on patch
+`patch_id`.
+"""
+function get_elements(geometry::AbstractGeometry, patch_id, local_object_id, geometric_dim)
+    return get_elements(geometry, patch_id, local_object_id, geometric_dim)
 end
 
 """
@@ -548,8 +592,8 @@ end
 function get_vertex_coordinates(
     ::Type{VT}, geometry::AbstractGeometry, patch_id::Int, local_vertex_id::Int
 ) where {VT}
-    element_id = get_element_id(geometry, patch_id, local_vertex_id)
-    xi_vertex = get_canonical_point(eltype(VT), geometry, local_vertex_id)
+    element_id = get_elements(geometry, patch_id, local_vertex_id, 0)[1]
+    xi_vertex = get_canonical_points(eltype(VT), geometry, local_vertex_id, 0)
     coord = NTuple{get_image_dim(geometry), eltype(VT)}(
         vec(evaluate(geometry, element_id, xi_vertex))
     )
