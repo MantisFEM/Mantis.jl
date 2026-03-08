@@ -227,19 +227,21 @@ function get_edge_coordinates(
     ::Type{VT}, geometry::CartesianGeometry, patch_id::Int, local_edge_id::Int
 ) where {VT}
     topology = get_topology(geometry)
-    global_edge_id = Topology.get_global_id(topology, patch_id, local_edge_id, 2)
+    edge_dim = 1  # this is the geometric dimension of an edge
+    vertex_dim = 0  # this is the geometric dimension of a vertex
+    global_edge_id = abs(Topology.get_global_id(topology, patch_id, local_edge_id, edge_dim))  # object indices are signed
     global_vertices = topology[2, 1][global_edge_id]
     starting_vertex_coordinate = get_vertex_coordinate(
         VT,
         geometry,
         patch_id,
-        Topology.get_local_id(topology, patch_id, global_vertices[1], 1),
+        abs(Topology.get_local_id(topology, patch_id, global_vertices[1], vertex_dim)),
     )
     final_vertex_coordinate = get_vertex_coordinate(
         VT,
         geometry,
         patch_id,
-        Topology.get_local_id(topology, patch_id, global_vertices[2], 1),
+        abs(Topology.get_local_id(topology, patch_id, global_vertices[2], vertex_dim)),
     )
     return starting_vertex_coordinate, final_vertex_coordinate
 end
@@ -270,12 +272,13 @@ function get_edge_coordinates(::Type{VT}, geometry::CartesianGeometry) where {VT
 
     manifold_dim = get_manifold_dim(geometry)
     edge_coordinates = Vector{NTuple{2, VT}}(undef, num_edges)
+    edge_dim = 1  # the geometric dimension of the edge is 1
     for edge_id in eachindex(edge_coordinates)
         # Get a patch_id of a patch on which this edge is supported. A patch is a
         # (manifold_dim+1)-dimensional geometric object. We can simply take the first patch
         # in this list, because the coordinate of the edge will not change.
         patch_id = topology[2, manifold_dim + 1][edge_id][1]
-        local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+        local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, edge_dim))
         edge_coordinates[edge_id] = get_edge_coordinates(geometry, patch_id, local_edge_id)
     end
 
