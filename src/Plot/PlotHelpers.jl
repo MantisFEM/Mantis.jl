@@ -275,7 +275,7 @@ function _plot_topology!(
     for edge_id in 1:size(topology, 2)
         for patch_id in topology[2, manifold_dim + 1][edge_id]
             # Go through all patches so that we know the global and local ids.
-            local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+            local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
 
             starting_coordinate, final_coordinate = edge_coordinates[edge_id]
             GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
@@ -322,7 +322,7 @@ function _plot_topology!(
     for vertex_id in eachindex(vertex_coordinates)
         for patch_id in topology[1, manifold_dim + 1][vertex_id]
             # Go through all patches so that we know the global and local ids.
-            local_vertex_id = Topology.get_local_id(topology, patch_id, vertex_id, 1)
+            local_vertex_id = abs(Topology.get_local_id(topology, patch_id, vertex_id, 0))
 
             coordinate = vertex_coordinates[vertex_id]
             GLMakie.scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)

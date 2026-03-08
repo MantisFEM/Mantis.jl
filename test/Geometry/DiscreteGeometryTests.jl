@@ -38,7 +38,7 @@ section_spaces = (
 regularities = (1, -1)
 
 # create tensor-product space
-Bθ, Br = FunctionSpaces.create_dim_wise_bspline_spaces(
+Bθ, Br = FunctionSpaces.(
     starting_points, box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
 )
 Bθ_periodic = FunctionSpaces.GTBSplineSpace((Bθ,), [1])

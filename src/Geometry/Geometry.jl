@@ -539,6 +539,7 @@ include("EvaluationMask/EvaluationMask.jl")
 include("MaskedGeometry.jl")
 include("UnstructuredGeometry.jl")
 include("Metric.jl")
+include("SkeletonGeometry.jl")
 
 include("./GeometryConversions.jl")
 
