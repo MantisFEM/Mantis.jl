@@ -319,33 +319,24 @@ function _plot_topology!(
         end
         for patch_id in patch_ids
             # Go through all patches so that we know the global and local ids.
-<<<<<<< HEAD
-            local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
-
-            starting_coordinate, final_coordinate = edge_coordinates[edge_id]
-            GLMakie.lines!([starting_coordinate, final_coordinate]; color=edge_color)
-            edge_midpoint = ntuple(image_dim) do dim
-                return (starting_coordinate[dim] + final_coordinate[dim]) / 2
-=======
             if image_dim == 1
                 local_edge_id = 1
             else
-                local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
->>>>>>> 305-feat-incorporate-topology
+                local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 1)
             end
 
             # Recompute the edge coordinates using the current patch_id to get the
             # orientation on the patch.
             starting_coordinate_local_raw, final_coordinate_local_raw = Geometry.get_edge_coordinates(
-                TPoint, geometry, patch_id, local_edge_id
+                TPoint, geometry, patch_id, abs(local_edge_id)
             )
             starting_coordinate_local = _pad_point(starting_coordinate_local_raw)
             final_coordinate_local = _pad_point(final_coordinate_local_raw)
 
             # Compute the edge as a curve
-            elements_on_edge = Geometry.get_elements(geometry, patch_id, local_edge_id, 1)
+            elements_on_edge = Geometry.get_elements(geometry, patch_id, abs(local_edge_id), 1)
             xi_elements = Geometry.get_canonical_points(
-                eltype(TPoint), geometry, local_edge_id, 1, plot_points_per_element
+                eltype(TPoint), geometry, abs(local_edge_id), 1, plot_points_per_element
             )
             for element_id in elements_on_edge
                 curved_edge_coordinates = Geometry.evaluate(
@@ -362,12 +353,12 @@ function _plot_topology!(
             if isodd(num_elements_on_edge)
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2) + 1]
                 xi = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, local_edge_id, 1, 3
+                    eltype(TPoint), geometry, abs(local_edge_id), 1, 3
                 )
             else
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2)]
                 xi = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, local_edge_id, 1, 2
+                    eltype(TPoint), geometry, abs(local_edge_id), 1, 2
                 )
             end
             curved_midpoint_coordinates = Geometry.evaluate(geometry, middle_element, xi)
@@ -388,7 +379,7 @@ function _plot_topology!(
             GLMakie.text!(
                 edge_midpoint;
                 text="($patch_id, $local_edge_id)",
-                align=edge_alignment[local_edge_id],
+                align=edge_alignment[abs(local_edge_id)],
                 color=edge_color,
             )
             GLMakie.arrows2d!(
@@ -455,15 +446,15 @@ function _plot_topology!(
                 if manifold_dim == 2
                     local_face_id = 1
                 else
-                    local_face_id = Topology.get_local_id(topology, patch_id, face_id, 3)
+                    local_face_id = Topology.get_local_id(topology, patch_id, face_id, 2)
                 end
 
                 # Compute the surface
                 elements_on_face = Geometry.get_elements(
-                    geometry, patch_id, local_face_id, 2
+                    geometry, patch_id, abs(local_face_id), 2
                 )
                 xi_elements = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, local_face_id, 2, plot_points_per_element
+                    eltype(TPoint), geometry, abs(local_face_id), 2, plot_points_per_element
                 )
                 for element_id in elements_on_face
                     curved_face_coordinates = Geometry.evaluate(
