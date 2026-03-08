@@ -629,7 +629,7 @@ function get_vertex_coordinates(::Type{VT}, geometry::AbstractGeometry) where {V
             geometry,
             topology[1, manifold_dim + 1][vertex_id][1], # The patch_id of a support patch.
             Topology.get_local_id(
-                topology, topology[1, manifold_dim + 1][vertex_id][1], vertex_id, 1
+                topology, topology[1, manifold_dim + 1][vertex_id][1], vertex_id, 0
             ), # local vertex id
         ) for vertex_id in 1:num_vertices
     ]
@@ -666,20 +666,20 @@ function get_edge_coordinates(
         # The global and local ids are the same, and the edges are the patches.
         global_edge_id = patch_id
     else
-        global_edge_id = Topology.get_global_id(topology, patch_id, local_edge_id, 2)
+        global_edge_id = Topology.get_global_id(topology, patch_id, abs(local_edge_id), 1)
     end
-    global_vertices = topology[2, 1][global_edge_id]
+    global_vertices = topology[2, 1][abs(global_edge_id)]
     starting_vertex_coordinate = get_vertex_coordinates(
         VT,
         geometry,
         patch_id,
-        Topology.get_local_id(topology, patch_id, global_vertices[1], 1),
+        Topology.get_local_id(topology, patch_id, global_vertices[1], 0),
     )
     final_vertex_coordinate = get_vertex_coordinates(
         VT,
         geometry,
         patch_id,
-        Topology.get_local_id(topology, patch_id, global_vertices[2], 1),
+        Topology.get_local_id(topology, patch_id, global_vertices[2], 0),
     )
     return starting_vertex_coordinate, final_vertex_coordinate
 end
@@ -716,7 +716,7 @@ function get_edge_coordinates(::Type{VT}, geometry::AbstractGeometry) where {VT}
             local_edge_id = 1
         else
             patch_id = topology[2, manifold_dim + 1][edge_id][1]
-            local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 2)
+            local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
         end
         edge_coordinates[edge_id] = get_edge_coordinates(
             VT, geometry, patch_id, local_edge_id
