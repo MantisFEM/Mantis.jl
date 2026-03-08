@@ -109,48 +109,53 @@ function hessian(
     ]
 end
 
-struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
+struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
+    topology::T
     geometry::G
     mapping::Map
     num_elements::Int
     num_elements_per_patch::NTuple{num_patches, Int}
 
-    # Constructor for multiple mappings, one per patch, with each parametric geometry being
-    # a different object for each patch.
+    # Constructor for multiple mappings, one per patch, with each base geometry being a
+    # different object for each patch.
     function MappedGeometry(
-        geometry::G, mapping::M
+        geometry::G, mapping::M, topology::T
     ) where {
         manifold_dim,
         image_dim_base,
         image_dim,
         num_patches,
+        incidence_relations_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
+        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
             get_num_elements(geometry[geo_i])
         end
 
-        return new{manifold_dim, image_dim, num_patches, G, M}(
-            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        return new{manifold_dim, image_dim, num_patches, T, G, M}(
+            topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
-    # Constructor for multiple mappings, one per patch, with the parametric geometry being
-    # only one object. If this is a single patch geometry, this one geometry will be used
-    # for every patch. If it is a multi-patch geometry, it must have the same number of
-    # patches as the number of mappings.
+    # Constructor for multiple mappings, one per patch, with the base geometry being only
+    # one object. If the base geometry is a single patch geometry, this one geometry will
+    # be used for every patch. If it is a multi-patch geometry, it must have the same
+    # number of patches as the number of mappings.
     function MappedGeometry(
-        geometry::G, mapping::M
+        geometry::G, mapping::M, topology::T
     ) where {
         manifold_dim,
         image_dim_base,
         image_dim,
         num_patches,
         num_patches_G,
+        incidence_relations_dim,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
+        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
     }
         if !(num_patches_G == 1 || num_patches_G == num_patches)
             throw(
@@ -175,28 +180,30 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
             num_elements_per_patch = get_num_elements_per_patch(geometry)
         end
 
-        return new{manifold_dim, image_dim, num_patches, G, M}(
-            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        return new{manifold_dim, image_dim, num_patches, T, G, M}(
+            topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
     # Constructor for a single mapping for all patches.
     function MappedGeometry(
-        geometry::G, mapping::Map
+        geometry::G, mapping::Map, topology::T
     ) where {
         manifold_dim,
         image_dim_base,
         image_dim,
         num_patches,
+        incidence_relations_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         Map <: AbstractMapping{manifold_dim, image_dim},
+        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
             get_num_elements(geometry[geo_i])
         end
 
-        return new{manifold_dim, image_dim, num_patches, G, Map}(
-            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        return new{manifold_dim, image_dim, num_patches, T, G, Map}(
+            topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 
@@ -212,37 +219,116 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
     }
         num_elements_per_patch = get_num_elements_per_patch(geometry)
 
-        return new{manifold_dim, image_dim, 1, G, Map}(
-            geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
+        # Since this is a single-patch case, we can inherent the topology from the base.
+        topology = get_topology(geometry)
+
+        return new{manifold_dim, image_dim, 1, typeof(topology), G, Map}(
+            topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
 end
 
+function Base.eltype(
+    ::Type{MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map}}
+) where {manifold_dim, image_dim, num_patches, T, G, Map}
+    return eltype(G)
+end
+
 # Get properties.
 function get_base_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
-) where {manifold_dim, image_dim, num_patches, G <: AbstractGeometry, Map}
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id::Int=1,
+) where {manifold_dim, image_dim, num_patches, T, G <: AbstractGeometry, Map}
     return geometry.geometry
 end
 
 function get_base_geometry(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id::Int=1,
 ) where {
-    manifold_dim, image_dim, num_patches, G <: NTuple{num_patches, AbstractGeometry}, Map
+    manifold_dim, image_dim, num_patches, T, G <: NTuple{num_patches, AbstractGeometry}, Map
 }
     return geometry.geometry[patch_id]
 end
 
 function get_mapping(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
-) where {manifold_dim, image_dim, num_patches, G, Map <: Mapping}
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id::Int=1,
+) where {manifold_dim, image_dim, num_patches, T, G, Map <: Mapping}
     return geometry.mapping
 end
 
 function get_mapping(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, patch_id::Int=1
-) where {manifold_dim, image_dim, num_patches, G, Map <: NTuple{num_patches, Mapping}}
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id::Int=1,
+) where {manifold_dim, image_dim, num_patches, T, G, Map <: NTuple{num_patches, Mapping}}
     return geometry.mapping[patch_id]
+end
+
+function get_patch_and_local_element_id(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    element_id::Int=1,
+) where {
+    manifold_dim,
+    image_dim,
+    num_patches,
+    T,
+    G <: AbstractGeometry{manifold_dim, num_patches},
+    Map,
+}
+    patch_id = get_patch_id(geometry, element_id)
+    return patch_id, element_id
+end
+
+# Getters using topological information
+"""
+    get_element_id(geometry::MappedGeometry, patch_id, local_vertex_id)
+
+Compute the global `element_id` of the element on patch `patch_id` on which the vertex with
+`local_vertex_id` is located.
+"""
+function get_elements(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id,
+    local_object_id,
+    geometric_dim,
+) where {manifold_dim, image_dim, num_patches, T, G <: AbstractGeometry, Map}
+    if get_num_patches(get_base_geometry(geometry)) > 1
+        element_ids = get_elements(
+            get_base_geometry(geometry), patch_id, local_object_id, geometric_dim
+        )
+    else
+        element_ids = get_elements(
+            get_base_geometry(geometry), 1, local_object_id, geometric_dim
+        )
+        # Offset the obtained element id in the case where the same base geometry is used
+        # for every patch.
+        offset = 0
+        for i in 1:(patch_id - 1)
+            offset += get_num_elements(geometry, i)
+        end
+        element_ids .+ offset
+    end
+    return element_ids
+end
+function get_elements(
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    patch_id,
+    local_object_id,
+    geometric_dim,
+) where {
+    manifold_dim, image_dim, num_patches, T, G <: NTuple{num_patches, AbstractGeometry}, Map
+}
+    element_ids = get_elements(
+        get_base_geometry(geometry, patch_id), 1, local_object_id, geometric_dim
+    )
+    # Since the base geometries are stored as a tuple, we always need to offset here to get
+    # the global ids.
+    offset = 0
+    for i in 1:(patch_id - 1)
+        offset += get_num_elements(geometry, i)
+    end
+    return element_ids .+ offset
 end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
@@ -263,10 +349,10 @@ end
 
 # Evaluations and derivatives.
 function evaluate(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G, Map}
+) where {manifold_dim, image_dim, num_patches}
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     x = evaluate(get_base_geometry(geometry, patch_id), local_element_id, xi)
     x_mapped = evaluate(get_mapping(geometry, patch_id), x)
@@ -275,10 +361,10 @@ function evaluate(
 end
 
 function jacobian(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map},
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G, Map}
+) where {manifold_dim, image_dim, num_patches}
     # the Jacobian for the mapping from the elements to base geometry image
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
     base_geometry = get_base_geometry(geometry, patch_id)
