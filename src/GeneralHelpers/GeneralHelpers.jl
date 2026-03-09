@@ -2,7 +2,7 @@ module GeneralHelpers
 
 export integer_sums, get_derivative_idx, export_path
 
-import Combinatorics, Pkg
+import Combinatorics
 
 ####################################################
 # Integer sums and derivatives helper functions
