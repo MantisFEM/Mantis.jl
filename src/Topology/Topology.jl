@@ -249,7 +249,7 @@ end
 """
     AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
 
-Abstract type of all topologies that represent the topological structure of 
+Abstract type of all topologies that represent the topological structure of
 a collection of patches (of equal shape) forming a mesh.
 
 Each patch is considered an individual mesh element at the global level. These structures
@@ -283,7 +283,8 @@ edges, faces, volumes), and the determination of topological neighbors. Supports
 - `MeshTopology(patches::Vector{Vector{Int}})`: Builds the patch topology from a list of
     patch connectivities (vertex indices).
 """
-struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches} <: AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
+struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches} <:
+       AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
     incidence_relations::NTuple{
         incidence_relations_dim, NTuple{incidence_relations_dim, Vector{Vector{Int}}}
     }  # incidence relations between the geometric objects
@@ -300,17 +301,19 @@ struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches} <: Abstr
         # - hexahedra: 3D patches
 
         # Number of vertices in the first patch (assumed to be the same for all)
-        # Defines the geometry of patches 
-        # 2: line segments 
-        # 4: quads 
+        # Defines the geometry of patches
+        # 2: line segments
+        # 4: quads
         # 8: hexahedra
-        n_patch_vertices = length(patches[1])  
+        n_patch_vertices = length(patches[1])
 
         # Get the number of geometric objects of each dimension [#vertices, #edges, #facets]
-        # The local incidence relations between 
+        # The local incidence relations between
         #    i) edges and vertices
         #   ii) faces and vertices
-        manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex = get_local_incidence_relations(n_patch_vertices)
+        manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex = get_local_incidence_relations(
+            n_patch_vertices
+        )
 
         # Preallocate memory for the total number of geometric objects in each dimension
         n_geometric_objects = Vector{Int}(undef, manifold_dim + 1)
@@ -481,17 +484,16 @@ struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches} <: Abstr
     end
 end
 
-
 """
     SkeletonTopology{manifold_dim, incidence_relations_dim, num_patches}
 
 Represents the topological structure of the skeleton of a mesh.
 
-A skeleton of a (parent) mesh of `manifold_dim` is a mesh containing the collection of all 
+A skeleton of a (parent) mesh of `manifold_dim` is a mesh containing the collection of all
 geometric objects of dimension `<= (manifold_dim - 1)` of the (parent) mesh and their
 incidence relations. For this reason, a `SkeletonTopology` can be seen as `MeshTopology`.
 
-Additionally, a `SkeletonTopology` contains information relating its geometric objects to 
+Additionally, a `SkeletonTopology` contains information relating its geometric objects to
 the ones in the parent mesh.
 
 
@@ -509,12 +511,21 @@ the ones in the parent mesh.
 - `MeshTopology(patches::Vector{Vector{Int}})`: Builds the patch topology from a list of
     patch connectivities (vertex indices).
 """
-struct SkeletonTopology{manifold_dim, incidence_relations_dim, num_patches, parent_type <: MeshTopology} <: AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
+struct SkeletonTopology{
+    manifold_dim, incidence_relations_dim, num_patches, parent_type <: MeshTopology
+} <: AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
     parent_topology::parent_type
 
     function SkeletonTopology(
         parent_topology::MT
-    ) where {manifold_dim_parent, incidence_relations_dim_parent, num_patches_parent, MT <: MeshTopology{manifold_dim_parent, incidence_relations_dim_parent, num_patches_parent}}
+    ) where {
+        manifold_dim_parent,
+        incidence_relations_dim_parent,
+        num_patches_parent,
+        MT <: MeshTopology{
+            manifold_dim_parent, incidence_relations_dim_parent, num_patches_parent
+        },
+    }
         # Extract geometric information for skeleton
         manifold_dim = manifold_dim_parent - 1
         incidence_relations_dim = manifold_dim + 1
@@ -523,7 +534,6 @@ struct SkeletonTopology{manifold_dim, incidence_relations_dim, num_patches, pare
         return new{manifold_dim, incidence_relations_dim, n_patches, MT}(parent_topology)
     end
 end
-
 
 function get_manifold_dim(
     ::AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
@@ -546,16 +556,18 @@ end
 Base.IndexStyle(::Type{<:MeshTopology}) = IndexLinear()
 # i and k and geometric dimension indices, i.e., if geometric dimension is n
 # then the index is (n + 1), this is because julia starts indices at 1 and vertices
-# have dimension 0. 
+# have dimension 0.
 Base.getindex(mesh_topology::MeshTopology, i::Int, k::Int) =
     mesh_topology.incidence_relations[i][k]
-Base.lastindex(mesh_topology::AbstractTopology{manifold_dim}, d::Int=1) where {manifold_dim} =
-    manifold_dim + 1
-
+Base.lastindex(
+    mesh_topology::AbstractTopology{manifold_dim}, d::Int=1
+) where {manifold_dim} = manifold_dim + 1
 
 Base.IndexStyle(::Type{<:SkeletonTopology}) = IndexLinear()
 
-function Base.getindex(skeleton_topology::SkeletonTopology{manifold_dim}, i::Int, k::Int) where {manifold_dim}
+function Base.getindex(
+    skeleton_topology::SkeletonTopology{manifold_dim}, i::Int, k::Int
+) where {manifold_dim}
     @boundscheck begin
         if !(1 ≤ i ≤ (manifold_dim + 1) && 1 ≤ k ≤ (manifold_dim + 1))
             throw(BoundsError(skeleton_topology, (i, k)))
@@ -575,13 +587,15 @@ Base.size(topology::MeshTopology) = topology.n_geometric_objects
 Base.size(topology::MeshTopology, geometric_dim_id::Int) =
     topology.n_geometric_objects[geometric_dim_id]
 
-Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim} = 
+Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim} =
     topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
 
 # geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
 # has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
 # not at 0 (vertices have geometric dimension 0).
-function Base.size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
+function Base.size(
+    topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int
+) where {manifold_dim}
     @boundscheck begin
         if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
             throw(BoundsError(topology, geometric_dim_id))
@@ -637,7 +651,9 @@ All patches are assumed to have the same number of local geometric objects.
 # Returns
 - `Int`: Number of local geometric objects of the given dimension per patch.
 """
-function get_local_size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
+function get_local_size(
+    topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int
+) where {manifold_dim}
     # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
     @boundscheck begin
         if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
@@ -659,13 +675,13 @@ Return a `4 × N` matrix describing the neighbouring patches of the face
 `face_local_id` of patch `patch_id`.
 
 The columns of the returned matrix correspond to each of the neighbouring patches,
-and the rows encode local identification of face and orientation with respect to 
+and the rows encode local identification of face and orientation with respect to
 original patch (`patch_id`).
 
 If `include_local_patch=true`, the current patch is also included
 in the output. In this case the **orientation** and **rotation** (see below) is with
 respect to the definition of the face (as given in the mesh topology).
- 
+
 # Notes
 - Only applicable to 3D hexahedral meshes.
 - Assumes consistent local face numbering on each patch.
@@ -688,11 +704,11 @@ respect to the definition of the face (as given in the mesh topology).
     4. **Orientation**: `+1` if aligned, `-1` if reversed, meaning that a transpose is required
     in the degree-of-freedom (DoF) numbering to ensure consistent orientation between DoFs of
     original patch (or edge definition if `include_local_patch = true`) and neighbours.
-    
+
     **Note**: The sequence of vertices that define a face dictates its orientation.
 """
 function compute_face_neighbours(
-    mesh_topology::MT, patch_id::Int, face_local_id::Int; include_local_patch::Bool=false 
+    mesh_topology::MT, patch_id::Int, face_local_id::Int; include_local_patch::Bool=false
 ) where {MT <: AbstractTopology{3, 4}}
     manifold_dim = 3  # we are in 3D
     patch_dimension = manifold_dim
@@ -704,7 +720,9 @@ function compute_face_neighbours(
     @debug println("patch id: ", patch_id)
     # patch_faces = mesh_topology[patch_dimension + 1, face_dimension + 1][patch_id]
     # face_id = patch_faces[face_local_id]
-    face_id = get_global_id(mesh_topology, patch_id, patch_dimension, face_local_id, face_dimension)
+    face_id = get_global_id(
+        mesh_topology, patch_id, patch_dimension, face_local_id, face_dimension
+    )
 
     num_vertices_per_face = length(
         mesh_topology[face_dimension + 1, vertex_dimension + 1][1]
@@ -720,7 +738,7 @@ function compute_face_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_face_neighbours = length(face_patch_neighbours_ids)
-    else 
+    else
         # The original patch, i.e., the one with `patch_id` is excluded
         n_face_neighbours = length(face_patch_neighbours_ids) - 1
     end
@@ -766,8 +784,10 @@ function compute_face_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the face
-                        patch_face_vertices = mesh_topology[face_dimension + 1, vertex_dimension + 1][abs(face_id)]
-                        
+                        patch_face_vertices = mesh_topology[
+                            face_dimension + 1, vertex_dimension + 1
+                        ][abs(face_id)]
+
                     else
                         # Get the sequence of vertices of the face in the current (original) patch
                         face_vertices_local_idx = mesh_topology.local_face2vertex[
@@ -867,7 +887,9 @@ respect to the definition of the face (as given in the mesh topology).
   associated with the `j`-th face of patch `i`. The neighbour matrix has the
   format described in [`compute_face_neighbours(::AbstractTopology{3,4}, ::Int, ::Int)`](@ref).
 """
-function compute_face_neighbours(mesh_topology::MT; include_local_patch::Bool=false) where {MT <: AbstractTopology{3, 4}}
+function compute_face_neighbours(
+    mesh_topology::MT; include_local_patch::Bool=false
+) where {MT <: AbstractTopology{3, 4}}
     manifold_dim = 3  # we are in 3D
     # Preallocate memory for the neighbours information
     n_local_faces = get_local_size(mesh_topology, manifold_dim)  # number of faces per patch
@@ -884,7 +906,10 @@ function compute_face_neighbours(mesh_topology::MT; include_local_patch::Bool=fa
 
             # Get the neighbours information for this face
             face_neighbours[patch_id, face_local_id] = compute_face_neighbours(
-                mesh_topology, patch_id, face_local_id, include_local_patch=include_local_patch
+                mesh_topology,
+                patch_id,
+                face_local_id;
+                include_local_patch=include_local_patch,
             )
         end
     end
@@ -920,11 +945,11 @@ in the neighbour list.
 
 # Returns
 - `Matrix{Int}` of size `4 × N`, where `N` is the number of neighbouring patches with
-    each rown being 
-    1. **Neighbour patch ID**  
-    2. **Local edge ID in the neighbour patch**  
-    3. **Rotation**: always `0` (edges do not rotate; only orientation matters)  
-    4. **Orientation**: `+1` if aligned, `-1` if reversed.  
+    each rown being
+    1. **Neighbour patch ID**
+    2. **Local edge ID in the neighbour patch**
+    3. **Rotation**: always `0` (edges do not rotate; only orientation matters)
+    4. **Orientation**: `+1` if aligned, `-1` if reversed.
     A value of `-1` indicates that the edge degree-of-freedom (DoF)
     numbering must be reversed to ensure consistent orientation.
 """
@@ -941,7 +966,9 @@ function compute_edge_neighbours(
     @debug println("patch id: ", patch_id)
     # patch_edges = mesh_topology[manifold_dim + 1, manifold_dim][patch_id]
     # edge_id = patch_edges[edge_local_id]
-    edge_id = get_global_id(mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension)
+    edge_id = get_global_id(
+        mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension
+    )
 
     num_vertices_per_edge = length(mesh_topology[manifold_dim, 1][1]) # the number of vertices per facet (assumed to be the same for all facets)
 
@@ -955,7 +982,7 @@ function compute_edge_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_edge_neighbours = length(edge_patch_neighbours_ids)
-    else 
+    else
         # The original patch, i.e., the one with `patch_id` is excluded
         n_edge_neighbours = length(edge_patch_neighbours_ids) - 1
     end
@@ -968,7 +995,6 @@ function compute_edge_neighbours(
         edge_neighbours = zeros(Int, 4, n_edge_neighbours)
     end
 
-    
     for (k_neighbour, neighbour_patch_id) in enumerate(edge_patch_neighbours_ids)
         @debug println("      neighbour patch id: ", neighbour_patch_id)
 
@@ -994,7 +1020,9 @@ function compute_edge_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the edge
-                        patch_edge_vertices = mesh_topology[edge_dimension + 1, vertex_dimension + 1][edge_id]
+                        patch_edge_vertices = mesh_topology[
+                            edge_dimension + 1, vertex_dimension + 1
+                        ][edge_id]
 
                     else
                         # Get the sequence of vertices of the edge in the current (original) patch
@@ -1074,11 +1102,11 @@ in the neighbour list.
 
 # Returns
 - `Matrix{Int}` of size `4 × N`, where `N` is the number of neighbouring patches with
-    each rown being 
-    1. **Neighbour patch ID**  
-    2. **Local edge ID in the neighbour patch**  
-    3. **Rotation**: always `0` (edges do not rotate; only orientation matters)  
-    4. **Orientation**: `+1` if aligned, `-1` if reversed.  
+    each rown being
+    1. **Neighbour patch ID**
+    2. **Local edge ID in the neighbour patch**
+    3. **Rotation**: always `0` (edges do not rotate; only orientation matters)
+    4. **Orientation**: `+1` if aligned, `-1` if reversed.
     A value of `-1` indicates that the edge degree-of-freedom (DoF)
     numbering must be reversed to ensure consistent orientation.
 """
@@ -1094,7 +1122,9 @@ function compute_edge_neighbours(
     @debug println("patch id: ", patch_id)
     # patch_edges = mesh_topology[manifold_dim + 1, 2][patch_id]
     # edge_id = patch_edges[edge_local_id]
-    edge_id = get_global_id(mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension)
+    edge_id = get_global_id(
+        mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension
+    )
 
     @debug println("   facet $edge_local_id id: ", edge_id)
 
@@ -1106,7 +1136,7 @@ function compute_edge_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_edge_neighbours = length(edge_patch_neighbours_ids)
-    else 
+    else
         # The original patch, i.e., the one with `patch_id` is excluded
         n_edge_neighbours = length(edge_patch_neighbours_ids) - 1
     end
@@ -1144,7 +1174,9 @@ function compute_edge_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the edge
-                        patch_edge_vertices = mesh_topology[edge_dimension + 1, vertex_dimension + 1][edge_id]
+                        patch_edge_vertices = mesh_topology[
+                            edge_dimension + 1, vertex_dimension + 1
+                        ][edge_id]
 
                     else
                         # Get the sequence of vertices of the edge in the current (original) patch
@@ -1248,7 +1280,10 @@ function compute_edge_neighbours(
 
             # Get the neighbours information for this face
             edge_neighbours[patch_id, edge_local_id] = compute_edge_neighbours(
-                mesh_topology, patch_id, edge_local_id, include_local_patch=include_local_patch
+                mesh_topology,
+                patch_id,
+                edge_local_id;
+                include_local_patch=include_local_patch,
             )
         end
     end
@@ -1292,28 +1327,29 @@ in the neighbour list.
     4. **Orientation**: always `1` (vertices have no orientation required to match DoFs)
 """
 function compute_vertex_neighbours(
-    mesh_topology::MT, 
-    patch_id::Int, 
-    vertex_local_id::Int;
-    include_local_patch::Bool = false
+    mesh_topology::MT, patch_id::Int, vertex_local_id::Int; include_local_patch::Bool=false
 ) where {
     manifold_dim,
     incidence_relations_dim,
     MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
-}   
-    patch_dimension = manifold_dim 
+}
+    patch_dimension = manifold_dim
     vertex_dimension = 0
 
     # Determine the global vertex id
     @debug println("patch id: ", patch_id)
     # patch_vertices = mesh_topology[manifold_dim + 1, 1][patch_id]
     # vertex_id = patch_vertices[vertex_local_id]
-    vertex_id = get_global_id(mesh_topology, patch_id, patch_dimension, vertex_local_id, vertex_dimension)
+    vertex_id = get_global_id(
+        mesh_topology, patch_id, patch_dimension, vertex_local_id, vertex_dimension
+    )
 
     @debug println("   vertex $vertex_local_id id: ", vertex_id)
 
     # Determine how many neighbours the vertex has
-    vertex_patch_neighbours_ids = mesh_topology[vertex_dimension + 1, patch_dimension + 1][abs(vertex_id)]
+    vertex_patch_neighbours_ids = mesh_topology[vertex_dimension + 1, patch_dimension + 1][abs(
+        vertex_id
+    )]
     if include_local_patch
         # All patches sharing the face are included
         n_vertex_neighbours = length(vertex_patch_neighbours_ids)
@@ -1453,7 +1489,11 @@ get_global_id(topology, 5, 1, 2, 0)
 ```
 """
 function get_global_id(
-    topology::AbstractTopology, container_id::Int, container_dim::Int, local_id::Int, local_dim::Int
+    topology::AbstractTopology,
+    container_id::Int,
+    container_dim::Int,
+    local_id::Int,
+    local_dim::Int,
 )
     # Definitions
     #   - container: is the object of dimension container_dim and global index container_id
@@ -1497,10 +1537,13 @@ To obtain the global index of the 2nd vertex (dimension 0) of the 5th patch:
 get_global_id(topology, 5, 2, 0)
 ```
 """
-function get_global_id(topology::AbstractTopology{manifold_dim}, patch_id, local_object_id, local_object_dim) where {manifold_dim}
-    return get_global_id(topology, patch_id, manifold_dim, local_object_id, local_object_dim)
+function get_global_id(
+    topology::AbstractTopology{manifold_dim}, patch_id, local_object_id, local_object_dim
+) where {manifold_dim}
+    return get_global_id(
+        topology, patch_id, manifold_dim, local_object_id, local_object_dim
+    )
 end
-
 
 """
     get_local_id(
@@ -1540,9 +1583,11 @@ function get_local_id(topology::AbstractTopology, patch_id, global_object_id, ob
         topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id],
     )
 
-    # Then get the sign 
-    local_object_id = local_object_id * 
-        sign(topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id][local_object_id])
+    # Then get the sign
+    local_object_id =
+        local_object_id * sign(
+            topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id][local_object_id],
+        )
 
     return local_object_id
 end
@@ -1686,138 +1731,144 @@ A tuple `(manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex
 - `ArgumentError`: If `n_patch_vertices` does not correspond to a supported patch type.
 """
 function get_local_incidence_relations(n_patch_vertices::Int)
-        # 1D manifold
-        # Lines with vertices numbered as
+    # 1D manifold
+    # Lines with vertices numbered as
+    #
+    # 1 --------- 2 --- ξ
+    #
+    if n_patch_vertices == 2
+        manifold_dim = 1
+        patch_type = MeshCore.L2
+
+        n_local_geometric_objects = [2, 1]  # vertices, edges
+
+        # Store the local face to vertex incidence relation for hexahedra
+        # local_facet2vertex[i, j]: the i-th vertex of the j-th face
+        local_edge2vertex = reshape(
+            [
+                1
+                2
+            ],
+            :,
+            1,
+        )
+
+        # Store the local face to vertex incidence relation for hexahedra
+        # local_facet2vertex[i, j]: the i-th vertex of the j-th face
+        local_face2vertex = zeros(Int, 1, 1)
+
+        # 2D manifold
+        # Quads with vertices numbered as
         #
-        # 1 --------- 2 --- ξ
+        #   η
+        #   |
+        #   |
+        #   4 ---------- 3
+        #   |            |
+        #   |            |
+        #   |            |
+        #   1 ---------- 2 --- ξ
         #
-        if n_patch_vertices == 2
-            manifold_dim = 1
-            patch_type = MeshCore.L2
+    elseif n_patch_vertices == 4
+        manifold_dim = 2
+        patch_type = MeshCore.Q4
 
-            n_local_geometric_objects = [2, 1]  # vertices, edges
+        n_local_geometric_objects = [4, 4, 1]  # vertices, edges, facets
 
-            # Store the local face to vertex incidence relation for hexahedra
-            # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-            local_edge2vertex = reshape(
-                [
-                    1
-                    2
-                ],
-                :,
-                1,
-            )
+        # Store the local facet to vertex incidence relation for quads
+        # local_facet2vertex[i, j]: the i-th vertex of the j-th facet (edge)
+        local_edge2vertex = [
+            1 2 1 4
+            4 3 2 3
+        ]
 
-            # Store the local face to vertex incidence relation for hexahedra
-            # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-            local_face2vertex = zeros(Int, 1, 1)
+        # Store the local face to vertex incidence relation for hexahedra
+        # local_facet2vertex[i, j]: the i-th vertex of the j-th face
+        local_face2vertex = reshape(
+            [
+                1
+                2
+                3
+                4
+            ],
+            :,
+            1,
+        )
 
-            # 2D manifold
-            # Quads with vertices numbered as
-            #
-            #   η
-            #   |
-            #   |
-            #   4 ---------- 3
-            #   |            |
-            #   |            |
-            #   |            |
-            #   1 ---------- 2 --- ξ
-            #
-        elseif n_patch_vertices == 4
-            manifold_dim = 2
-            patch_type = MeshCore.Q4
+        # 3D manifold
+        # Hexahedra with vertices numbered as
+        #
+        #          ζ
+        #          |
+        #          |
+        #          5 --------- 8
+        #        / .         / .
+        #      /   .       /   .
+        #    6 --------- 7     .
+        #    |     1 ----|---- 4 --- η
+        #    |   .       |   .
+        #    | .         | .
+        #    2 --------- 3
+        #   /
+        # /
+        # ξ
+        #
+    elseif n_patch_vertices == 8
+        manifold_dim = 3
+        patch_type = MeshCore.H8
 
-            n_local_geometric_objects = [4, 4, 1]  # vertices, edges, facets
+        n_local_geometric_objects = [8, 12, 6, 1]  # vertices, edges, facets, volumes
 
-            # Store the local facet to vertex incidence relation for quads
-            # local_facet2vertex[i, j]: the i-th vertex of the j-th facet (edge)
-            local_edge2vertex = [
-                1 2 1 4
-                4 3 2 3
-            ]
+        # Store the local edge to vertex incidence relation for hexahedra
+        # local_edge2vertex[i, j]: the i-th vertex of the j-th edge
+        local_edge2vertex = [
+            8 5 1 4 6 5 1 2 3 4 1 2
+            7 6 2 3 7 8 4 3 7 8 5 6
+        ]
 
-            # Store the local face to vertex incidence relation for hexahedra
-            # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-            local_face2vertex = reshape(
-                [
-                    1
-                    2
-                    3
-                    4
-                ],
-                :,
-                1,
-            )
+        # Store the local face to vertex incidence relation for hexahedra
+        # local_facet2vertex[i, j]: the i-th vertex of the j-th face
+        local_face2vertex = [
+            1 2 1 4 1 5
+            4 3 2 3 2 6
+            8 7 6 7 3 7
+            5 6 5 8 4 8
+        ]
 
-            # 3D manifold
-            # Hexahedra with vertices numbered as
-            #
-            #          ζ
-            #          |
-            #          |
-            #          5 --------- 8
-            #        / .         / .
-            #      /   .       /   .
-            #    6 --------- 7     .
-            #    |     1 ----|---- 4 --- η
-            #    |   .       |   .
-            #    | .         | .
-            #    2 --------- 3
-            #   /
-            # /
-            # ξ
-            #
-        elseif n_patch_vertices == 8
-            manifold_dim = 3
-            patch_type = MeshCore.H8
-
-            n_local_geometric_objects = [8, 12, 6, 1]  # vertices, edges, facets, volumes
-
-            # Store the local edge to vertex incidence relation for hexahedra
-            # local_edge2vertex[i, j]: the i-th vertex of the j-th edge
-            local_edge2vertex = [
-                8 5 1 4 6 5 1 2 3 4 1 2
-                7 6 2 3 7 8 4 3 7 8 5 6
-            ]
-
-            # Store the local face to vertex incidence relation for hexahedra
-            # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-            local_face2vertex = [
-                1 2 1 4 1 5
-                4 3 2 3 2 6
-                8 7 6 7 3 7
-                5 6 5 8 4 8
-            ]
-
-        else
-            throw(
-                ArgumentError(
-                    LazyString(
-                        "Unsupported patch type with ", num_patch_vertices, " vertices."
-                    ),
-                ),
-            )
-        end
-
-        return manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex
-    end 
-
-    function get_patch_parents(topology::SkeletonTopology{manifold_dim}, patch_id) where {manifold_dim}
-        patch_dim = manifold_dim  # geometric dimension of the current patch
-        parent_dim = patch_dim + 1  # geometric dimension of the parent patch containing current patch as
-                                    # part of its boundary
-
-        # Get the list of parent geometric objects containing the current patch with id patch_id
-        # for which the curretn patch is part of their boundary
-        parent_patches_id = topology.parent_topology[patch_dim + 1, parent_dim + 1][patch_id]
-
-        # Get the local id on each of these parent patches, together with orientation relative
-        # to the definition of the current patch
-        parent_patch_id = parent_patches_id[1]  # pick one (the first) to identify the patch (we need one to start)
-        local_patch_id = abs(get_local_id(topology.parent_topology, parent_patch_id, patch_id, patch_dim))
-        patch_parents = compute_face_neighbours(topology.parent_topology, parent_patch_id, local_patch_id; include_local_patch=true)
-
-        return patch_parents
+    else
+        throw(
+            ArgumentError(
+                LazyString("Unsupported patch type with ", num_patch_vertices, " vertices.")
+            ),
+        )
     end
+
+    return manifold_dim,
+    patch_type, n_local_geometric_objects, local_edge2vertex,
+    local_face2vertex
+end
+
+function get_patch_parents(
+    topology::SkeletonTopology{manifold_dim}, patch_id
+) where {manifold_dim}
+    patch_dim = manifold_dim  # geometric dimension of the current patch
+    parent_dim = patch_dim + 1  # geometric dimension of the parent patch containing current patch as
+    # part of its boundary
+
+    # Get the list of parent geometric objects containing the current patch with id patch_id
+    # for which the curretn patch is part of their boundary
+    parent_patches_id = topology.parent_topology[patch_dim + 1, parent_dim + 1][patch_id]
+
+    # Get the local id on each of these parent patches, together with orientation relative
+    # to the definition of the current patch
+    parent_patch_id = parent_patches_id[1]  # pick one (the first) to identify the patch (we need one to start)
+    local_patch_id = abs(
+        get_local_id(topology.parent_topology, parent_patch_id, patch_id, patch_dim)
+    )
+    patch_parents = compute_face_neighbours(
+        topology.parent_topology, parent_patch_id, local_patch_id; include_local_patch=true
+    )
+
+    return patch_parents
+end
 end

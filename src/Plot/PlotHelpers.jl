@@ -349,7 +349,9 @@ function _plot_topology!(
             final_coordinate_local = _pad_point(final_coordinate_local_raw)
 
             # Compute the edge as a curve
-            elements_on_edge = Geometry.get_elements(geometry, patch_id, abs(local_edge_id), 1)
+            elements_on_edge = Geometry.get_elements(
+                geometry, patch_id, abs(local_edge_id), 1
+            )
             xi_elements = Geometry.get_canonical_points(
                 eltype(TPoint), geometry, abs(local_edge_id), 1, plot_points_per_element
             )

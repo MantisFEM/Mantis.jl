@@ -36,19 +36,13 @@ struct SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG} <:
         parent_manifold_dim,
         image_dim,
         parent_num_patches,
-        PG <: AbstractGeometry{parent_manifold_dim, image_dim, parent_num_patches}
+        PG <: AbstractGeometry{parent_manifold_dim, image_dim, parent_num_patches},
     }
         manifold_dim = parent_manifold_dim - 1
         topology = Topology.SkeletonTopology(Geometry.get_topology(parent_geometry))
         num_patches = Topology.get_num_patches(topology)
 
-        return new{
-            manifold_dim, 
-            image_dim, 
-            num_patches, 
-            typeof(topology), 
-            PG
-        }(
+        return new{manifold_dim, image_dim, num_patches, typeof(topology), PG}(
             topology, parent_geometry
         )
     end

@@ -1,7 +1,9 @@
 using Mantis
 
 # Generate a parent topology
-parent_topology = Topology.MeshTopology([[1, 2, 3, 4, 5, 6, 7, 8], [2, 9, 10, 3, 6, 11, 12, 7]])
+parent_topology = Topology.MeshTopology([
+    [1, 2, 3, 4, 5, 6, 7, 8], [2, 9, 10, 3, 6, 11, 12, 7]
+])
 
 # Construct a geometry for it
 geo3d2 = Mantis.Geometry.CartesianGeometry(
@@ -15,14 +17,12 @@ fig = Mantis.Plot.plot_topology(geo3d2)
 
 display(fig)
 
-
 # Generate a skeleton topology
 skeleton_topology = Topology.SkeletonTopology(parent_topology)
 
 patch_parents = Topology.get_patch_parents(skeleton_topology, 1)
 
 skeleton_geometry = Mantis.Geometry.SkeletonGeometry(geo3d2)
-
 
 # # Oriol Periodic B-Splines
 
@@ -41,8 +41,6 @@ skeleton_geometry = Mantis.Geometry.SkeletonGeometry(geo3d2)
 # )
 # Bx_periodic = Mantis.FunctionSpaces.GTBSplineSpace((Bx,), [deg[1]-1])
 # By_periodic = Mantis.FunctionSpaces.GTBSplineSpace((By,), [deg[2]-1])
-
-
 
 # using Makie
 
