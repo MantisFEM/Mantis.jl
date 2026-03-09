@@ -168,7 +168,7 @@ Faces (cyclic vertex order indicates orientation):
 ---
 
 # Arguments
-- `n_patch_vertices::Int`: Number of vertices in the patch.
+- `num_patch_vertices::Int`: Number of vertices in the patch.
 
 # Returns
 A tuple `(manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex)` where:
@@ -183,10 +183,10 @@ A tuple `(manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex
   matrix is a placeholder and should not be used.
 
 # Throws
-- `ArgumentError`: If `n_patch_vertices` does not correspond to a supported patch type.
+- `ArgumentError`: If `num_patch_vertices` does not correspond to a supported patch type.
 """
-function get_local_incidence_relations(n_patch_vertices::Int)
-    if n_patch_vertices == 2
+function get_local_incidence_relations(num_patch_vertices::Int)
+    if num_patch_vertices == 2
         # 1D Line
         manifold_dim = 1
         patch_type = MeshCore.L2
@@ -201,7 +201,7 @@ function get_local_incidence_relations(n_patch_vertices::Int)
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
         local_face2vertex = zeros(Int, 1, 1)
 
-    elseif n_patch_vertices == 4
+    elseif num_patch_vertices == 4
         # 2D Quad
         manifold_dim = 2
         patch_type = MeshCore.Q4
@@ -219,7 +219,7 @@ function get_local_incidence_relations(n_patch_vertices::Int)
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
         local_face2vertex = reshape([1, 2, 3, 4], :, 1)
 
-    elseif n_patch_vertices == 8
+    elseif num_patch_vertices == 8
         # 3D Hexahedra
         manifold_dim = 3
         patch_type = MeshCore.H8
