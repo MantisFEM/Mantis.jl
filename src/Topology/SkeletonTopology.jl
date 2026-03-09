@@ -49,6 +49,11 @@ struct SkeletonTopology{
     end
 end
 
+# Property getters.
+function get_parent_topology(topology::SkeletonTopology)
+    return topology.parent_topology
+end
+
 # Indexing.
 Base.IndexStyle(::Type{<:SkeletonTopology}) = IndexLinear()
 
@@ -61,7 +66,7 @@ function Base.getindex(
         end
     end
 
-    @inbounds return topology.parent_topology[i, k]
+    @inbounds return get_parent_topology(topology)[i, k]
 end
 
 # Sizes.
@@ -71,7 +76,7 @@ function Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim
     # types of geometry objects in a topology, so using the skeleton_manifold_dim + 1 as
     # index for the parent_topology will give exactly the number of geometric objects of
     # the skeleton.
-    return topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
+    return size(get_parent_topology(topology))[1:(manifold_dim + 1)]
 end
 
 # geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
@@ -85,18 +90,14 @@ function Base.size(
             throw(BoundsError(topology, geometric_dim_id))
         end
     end
-    @inbounds return topology.parent_topology.n_geometric_objects[geometric_dim_id]
-end
-
-function get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
-    return topology.parent_topology.n_local_geometric_objects[1:(manifold_dim + 1)]
+    @inbounds return size(get_parent_topology(topology), geometric_dim_id)
 end
 
 """
     get_local_size(
         topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int
     ) where {manifold_dim}
+    get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
 
 Return the number of local geometric objects per patch for a given geometric dimension.
 
@@ -120,7 +121,10 @@ function get_local_size(
             throw(BoundsError(topology, geometric_dim_id))
         end
     end
-    @inbounds return topology.parent_topology.n_local_geometric_objects[geometric_dim_id]
+    @inbounds return get_local_size(get_parent_topology(topology), geometric_dim_id)
+end
+function get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
+    return get_local_size(get_parent_topology(topology))[1:(manifold_dim + 1)]
 end
 
 # Parent information.
@@ -130,19 +134,20 @@ function get_patch_parents(
     patch_dim = manifold_dim  # geometric dimension of the current patch
     parent_dim = patch_dim + 1  # geometric dimension of the parent patch containing current patch as
     # part of its boundary
+    parent_topology = get_parent_topology(topology)
 
     # Get the list of parent geometric objects containing the current patch with id patch_id
     # for which the curretn patch is part of their boundary
-    parent_patches_id = topology.parent_topology[patch_dim + 1, parent_dim + 1][patch_id]
+    parent_patches_id = parent_topology[patch_dim + 1, parent_dim + 1][patch_id]
 
     # Get the local id on each of these parent patches, together with orientation relative
     # to the definition of the current patch
     parent_patch_id = parent_patches_id[1]  # pick one (the first) to identify the patch (we need one to start)
     local_patch_id = abs(
-        get_local_id(topology.parent_topology, parent_patch_id, patch_id, patch_dim)
+        get_local_id(parent_topology, parent_patch_id, patch_id, patch_dim)
     )
     patch_parents = compute_face_neighbours(
-        topology.parent_topology, parent_patch_id, local_patch_id; include_local_patch=true
+        parent_topology, parent_patch_id, local_patch_id; include_local_patch=true
     )
 
     return patch_parents
