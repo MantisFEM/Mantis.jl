@@ -65,10 +65,18 @@ function Base.getindex(
 end
 
 # Sizes.
+function Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
+    # Note that indexing up to and including manifold_dim + 1 uses the manifold dim of the
+    # skeleton, which is always one less than the parent. There are always manifold_dim + 1
+    # types of geometry objects in a topology, so using the skeleton_manifold_dim + 1 as
+    # index for the parent_topology will give exactly the number of geometric objects of
+    # the skeleton.
+    return topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
+end
 
 # geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
 # has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
-# not at 0 (vertices have geometric dimension 0).
+# not at 0 (vertices have geometric dimension 0, and thus geometric_dim_id 1).
 function Base.size(
     topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int
 ) where {manifold_dim}

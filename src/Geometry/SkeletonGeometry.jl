@@ -1,29 +1,23 @@
 """
-    CartesianGeometry{manifold_dim, image_dim, num_patches, B, CI} <: AbstractGeometry{
-        manifold_dim, image_dim, num_patches
-    }
+    SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG} <:
+           AbstractGeometry{manifold_dim, image_dim, num_patches}
 
-A structure representing a Cartesian grid geometry in `manifold_dim` dimensions. Can have
-multiple patches, even though each patch is still a Cartesian grid. Note that the patches
-are not required to have a matching grid.
+Contains the geometry of the skeleton of its `parent_geometry`, as well as the `topology`
+of the skeleton.
 
 # Fields
-- `breakpoints::B`: A tuple of vectors defining the grid points in each dimension.
-- `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
-    elements in the grid for each patch.
+- `topology::T`: Skeleton topology, see [`SkeletonTopology`](@ref)
+- `parent_geometry::PG`: The provided geometry of which to obtain the skeleton.
 
 # Constructors
-- `CartesianGeometry(
-        breakpoints::B
+- `SkeletonGeometry(
+        parent_geometry::PG
     ) where {
-        manifold_dim,
-        num_patches,
-        NT <: Number,
-        B <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
+        parent_manifold_dim,
+        image_dim,
+        parent_num_patches,
+        PG <: AbstractGeometry{parent_manifold_dim, image_dim, parent_num_patches},
     }`: General constructor.
-- `CartesianGeometry(
-        breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
-    ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
 """
 struct SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}

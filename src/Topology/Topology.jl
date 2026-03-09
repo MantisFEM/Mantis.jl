@@ -14,8 +14,8 @@ end
 """
     AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
 
-Abstract type of all topologies that represent the topological structure of
-a collection of patches (of equal shape) forming a mesh.
+Abstract type of all topologies that represent the topological structure of a collection of
+patches (of equal shape) forming a mesh. This includes the skeleton mesh.
 
 Each patch is considered an individual mesh element at the global level. These structures
 enable the computation of all incidence relations between geometric objects (vertices,
@@ -42,13 +42,9 @@ function get_num_patches(
 end
 
 # Indexing.
-Base.lastindex(
-    mesh_topology::AbstractTopology{manifold_dim}, d::Int=1
-) where {manifold_dim} = manifold_dim + 1
-
-# Sizes.
-Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim} =
-    topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
+function Base.lastindex(::AbstractTopology{manifold_dim}, d::Int=1) where {manifold_dim}
+    return manifold_dim + 1
+end
 
 # Local numbering and connectivity.
 """
@@ -190,12 +186,8 @@ A tuple `(manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex
 - `ArgumentError`: If `n_patch_vertices` does not correspond to a supported patch type.
 """
 function get_local_incidence_relations(n_patch_vertices::Int)
-    # 1D manifold
-    # Lines with vertices numbered as
-    #
-    # 1 --------- 2 --- ξ
-    #
     if n_patch_vertices == 2
+        # 1D Line
         manifold_dim = 1
         patch_type = MeshCore.L2
 
@@ -203,32 +195,14 @@ function get_local_incidence_relations(n_patch_vertices::Int)
 
         # Store the local face to vertex incidence relation for hexahedra
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-        local_edge2vertex = reshape(
-            [
-                1
-                2
-            ],
-            :,
-            1,
-        )
+        local_edge2vertex = reshape([1, 2], :, 1)
 
         # Store the local face to vertex incidence relation for hexahedra
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
         local_face2vertex = zeros(Int, 1, 1)
 
-        # 2D manifold
-        # Quads with vertices numbered as
-        #
-        #   η
-        #   |
-        #   |
-        #   4 ---------- 3
-        #   |            |
-        #   |            |
-        #   |            |
-        #   1 ---------- 2 --- ξ
-        #
     elseif n_patch_vertices == 4
+        # 2D Quad
         manifold_dim = 2
         patch_type = MeshCore.Q4
 
@@ -243,36 +217,10 @@ function get_local_incidence_relations(n_patch_vertices::Int)
 
         # Store the local face to vertex incidence relation for hexahedra
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
-        local_face2vertex = reshape(
-            [
-                1
-                2
-                3
-                4
-            ],
-            :,
-            1,
-        )
+        local_face2vertex = reshape([1, 2, 3, 4], :, 1)
 
-        # 3D manifold
-        # Hexahedra with vertices numbered as
-        #
-        #          ζ
-        #          |
-        #          |
-        #          5 --------- 8
-        #        / .         / .
-        #      /   .       /   .
-        #    6 --------- 7     .
-        #    |     1 ----|---- 4 --- η
-        #    |   .       |   .
-        #    | .         | .
-        #    2 --------- 3
-        #   /
-        # /
-        # ξ
-        #
     elseif n_patch_vertices == 8
+        # 3D Hexahedra
         manifold_dim = 3
         patch_type = MeshCore.H8
 
