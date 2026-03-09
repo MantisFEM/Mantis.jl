@@ -1,5 +1,9 @@
+############################################################################################
+#                                        Structure                                         #
+############################################################################################
+
 """
-    struct HierarchicalActiveInfo
+    struct ActiveInfo
 
 Contains information about active objects in a hierarchical construction. The indexing in
 the hierarchical space is such that the index of an object in level l-1 is always less than
@@ -13,36 +17,38 @@ that of an object in level l.
     i.e. 'level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))'. First entry is always 0 for
     ease of use.
 """
-mutable struct HierarchicalActiveInfo
+mutable struct ActiveInfo
     level_ids::Vector{Vector{Int}}
     level_cum_num_ids::Vector{Int}
 
-    function HierarchicalActiveInfo(level_ids::Vector{Vector{Int}})
+    function ActiveInfo(level_ids::Vector{Vector{Int}})
 		level_cum_num_ids = [0; cumsum(map(length, level_ids))]
 
         return new(level_ids, level_cum_num_ids)
     end
 end
 
-# Basis getters for HierarchicalActiveInfo
+############################################################################################
+#                                         Getters                                          #
+############################################################################################
 
-function get_level_ids(active_info::HierarchicalActiveInfo)
+function get_level_ids(active_info::ActiveInfo)
     return active_info.level_ids
 end
 
-function get_level_ids(active_info::HierarchicalActiveInfo, level::Int)
+function get_level_ids(active_info::ActiveInfo, level::Int)
     return get_level_ids(active_info)[level]
 end
 
-function get_level_cum_num_ids(active_info::HierarchicalActiveInfo)
+function get_level_cum_num_ids(active_info::ActiveInfo)
     return active_info.level_cum_num_ids
 end
 
-function get_level_cum_num_ids(active_info::HierarchicalActiveInfo, level::Int)
+function get_level_cum_num_ids(active_info::ActiveInfo, level::Int)
     return get_level_cum_num_ids(active_info)[level + 1]
 end
 
-function get_level_num_ids(active_info::HierarchicalActiveInfo, level::Int)
+function get_level_num_ids(active_info::ActiveInfo, level::Int)
     level == 0 ? (return 0) : nothing
 
     level_cum_num_ids = get_level_cum_num_ids(active_info)
@@ -50,25 +56,27 @@ function get_level_num_ids(active_info::HierarchicalActiveInfo, level::Int)
     return level_cum_num_ids[level + 1] - level_cum_num_ids[level]
 end
 
-function get_num_levels(active_info::HierarchicalActiveInfo)
+function get_num_levels(active_info::ActiveInfo)
     return length(get_level_ids(active_info))
 end
 
-function get_num_objects(active_info::HierarchicalActiveInfo)
-    return sum(length.(get_level_ids(active_info)))
+function get_num_objects(active_info::ActiveInfo)
+    return sum(length, get_level_ids(active_info))
 end
 
-function get_num_active(active_info::HierarchicalActiveInfo)
+function get_num_active(active_info::ActiveInfo)
     return active_info.level_cum_num_ids[end]
 end
 
-function get_level(active_info::HierarchicalActiveInfo, hier_id::Int)
+function get_level(active_info::ActiveInfo, hier_id::Int)
     return findlast(x -> x < hier_id, get_level_cum_num_ids(active_info))
 end
 
-# Other basic functionality
+############################################################################################
+#                                       Conversions                                        #
+############################################################################################
 
-function convert_to_level_id(active_info::HierarchicalActiveInfo, hier_id::Int)
+function convert_to_level_id(active_info::ActiveInfo, hier_id::Int)
     object_level = get_level(active_info, hier_id)
 
     return get_level_ids(active_info, object_level)[hier_id - get_level_cum_num_ids(
@@ -76,7 +84,7 @@ function convert_to_level_id(active_info::HierarchicalActiveInfo, hier_id::Int)
     )]
 end
 
-function convert_to_level_and_level_id(active_info::HierarchicalActiveInfo, hier_id::Int)
+function convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
 	level = get_level(active_info, hier_id)
 	level_id = get_level_ids(active_info, level)[hier_id - get_level_cum_num_ids(
         active_info, level - 1
@@ -86,7 +94,7 @@ function convert_to_level_and_level_id(active_info::HierarchicalActiveInfo, hier
     return level, level_id
 end
 
-function convert_to_level_ids(active_info::HierarchicalActiveInfo)
+function convert_to_level_ids(active_info::ActiveInfo)
     num_levels = get_num_levels(active_info)
 
     level_ids = [Int[] for _ in 1:num_levels]
@@ -100,7 +108,7 @@ function convert_to_level_ids(active_info::HierarchicalActiveInfo)
     return level_ids
 end
 
-function convert_to_hier_id(active_info::HierarchicalActiveInfo, level::Int, level_id::Int)
+function convert_to_hier_id(active_info::ActiveInfo, level::Int, level_id::Int)
     level_id_count = findfirst(id -> id == level_id, get_level_ids(active_info, level))
 
     return level_id_count + get_level_cum_num_ids(active_info, level - 1)

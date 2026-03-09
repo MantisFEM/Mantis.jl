@@ -36,7 +36,7 @@ CTS = Mantis.FunctionSpaces.TensorProductTwoScaleOperator(CTP, FTP, (TS1,TS2))
 coarse_elements_to_refine = [3,4,5,8,9,10]
 refined_elements = vcat(Mantis.FunctionSpaces.get_element_children.(Ref(CTS), coarse_elements_to_refine)...)
 
-refined_domains = Mantis.FunctionSpaces.HierarchicalActiveInfo([collect(1:CTP_num_els),refined_elements])
+refined_domains = Mantis.Hierarchy.ActiveInfo([collect(1:CTP_num_els),refined_elements])
 
 ###
 hier_space = Mantis.FunctionSpaces.HierarchicalFiniteElementSpace(spaces, [CTS], refined_domains, (nsub1, nsub2))
@@ -90,7 +90,7 @@ basis2_support = Mantis.FunctionSpaces.get_support(CTP, 98)
 coarse_elements_to_refine = vcat(basis1_support, basis2_support)
 refined_elements = vcat(Mantis.FunctionSpaces.get_element_children.(Ref(CTS), coarse_elements_to_refine)...)
 
-refined_domains = Mantis.FunctionSpaces.HierarchicalActiveInfo([collect(1:CTP_num_els),refined_elements])
+refined_domains = Mantis.Hierarchy.ActiveInfo([collect(1:CTP_num_els),refined_elements])
 
 non_simplified_hier_space = Mantis.FunctionSpaces.HierarchicalFiniteElementSpace(
     spaces, [CTS], refined_domains, (nsub1, nsub2), false

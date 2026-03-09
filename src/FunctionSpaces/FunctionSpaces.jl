@@ -15,6 +15,7 @@ import ToeplitzMatrices
 using ..Geometry
 using ..Points
 using ..GeneralHelpers
+using ..Hierarchy
 
 """
     AbstractFunctionSpace

@@ -65,7 +65,7 @@ bsplines = (
     FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k1),
     FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k2),
 )
-const refined_domains = FunctionSpaces.HierarchicalActiveInfo([
+const refined_domains = Hierarchy.ActiveInfo([
     collect(1:25),
     [100, 99, 98, 97, 90, 89, 88, 87, 80, 79, 78, 77, 70, 69, 68, 67],
     [400, 399, 398, 397, 380, 379, 378, 377, 360, 359, 358, 357, 340, 339, 338, 337],

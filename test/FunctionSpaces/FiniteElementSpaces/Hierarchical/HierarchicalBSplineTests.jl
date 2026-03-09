@@ -27,7 +27,7 @@ for l in 1:(nlevels - 1)
     bsplines[l + 1] = bspline
 end
 
-refined_domains = FunctionSpaces.HierarchicalActiveInfo([
+refined_domains = Hierarchy.ActiveInfo([
     [1, 2, 3, 4, 5, 6], [3, 4, 5, 6, 7, 8, 9, 10], [7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 ])
 hier_space = FunctionSpaces.HierarchicalFiniteElementSpace(
