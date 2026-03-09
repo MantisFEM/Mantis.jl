@@ -53,15 +53,15 @@ end
 Base.IndexStyle(::Type{<:SkeletonTopology}) = IndexLinear()
 
 function Base.getindex(
-    skeleton_topology::SkeletonTopology{manifold_dim}, i::Int, k::Int
+    topology::SkeletonTopology{manifold_dim}, i::Int, k::Int
 ) where {manifold_dim}
     @boundscheck begin
         if !(1 ≤ i ≤ (manifold_dim + 1) && 1 ≤ k ≤ (manifold_dim + 1))
-            throw(BoundsError(skeleton_topology, (i, k)))
+            throw(BoundsError(topology, (i, k)))
         end
     end
 
-    @inbounds return skeleton_topology.parent_topology[i, k]
+    @inbounds return topology.parent_topology[i, k]
 end
 
 # Sizes.
@@ -94,7 +94,9 @@ function get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifol
 end
 
 """
-    get_local_size(topology::SkeletonTopology, geometric_dim_id::Int)
+    get_local_size(
+        topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int
+    ) where {manifold_dim}
 
 Return the number of local geometric objects per patch for a given geometric dimension.
 

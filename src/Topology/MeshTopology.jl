@@ -228,8 +228,7 @@ Base.IndexStyle(::Type{<:MeshTopology}) = IndexLinear()
 # i and k and geometric dimension indices, i.e., if geometric dimension is n
 # then the index is (n + 1), this is because julia starts indices at 1 and vertices
 # have dimension 0.
-Base.getindex(mesh_topology::MeshTopology, i::Int, k::Int) =
-    mesh_topology.incidence_relations[i][k]
+Base.getindex(topology::MeshTopology, i::Int, k::Int) = topology.incidence_relations[i][k]
 
 # Sizes.
 # Provide quick access to the number of geometric objects in each dimension
@@ -242,13 +241,9 @@ Base.size(topology::MeshTopology) = topology.n_geometric_objects
 Base.size(topology::MeshTopology, geometric_dim_id::Int) =
     topology.n_geometric_objects[geometric_dim_id]
 
-function get_local_size(topology::MeshTopology)
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
-    return topology.n_local_geometric_objects
-end
-
 """
     get_local_size(topology::MeshTopology, geometric_dim_id::Int)
+    get_local_size(topology::MeshTopology)
 
 Return the number of local geometric objects per patch for a given geometric dimension.
 
@@ -264,6 +259,8 @@ All patches are assumed to have the same number of local geometric objects.
 - `Int`: Number of local geometric objects of the given dimension per patch.
 """
 function get_local_size(topology::MeshTopology, geometric_dim_id::Int)
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
     return topology.n_local_geometric_objects[geometric_dim_id]
+end
+function get_local_size(topology::MeshTopology)
+    return topology.n_local_geometric_objects
 end

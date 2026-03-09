@@ -620,10 +620,10 @@ end
 # Neighbour information
 """
     compute_face_neighbours(
-        mesh_topology::AbstractTopology{3,4},
+        mesh_topology::AbstractTopology{3, 4},
         patch_id::Int,
         face_local_id::Int;
-        include_local_patch::Bool = false,
+        include_local_patch::Bool=false,
     )
 
 Return a `4 × N` matrix describing the neighbouring patches of the face
@@ -663,8 +663,11 @@ respect to the definition of the face (as given in the mesh topology).
     **Note**: The sequence of vertices that define a face dictates its orientation.
 """
 function compute_face_neighbours(
-    mesh_topology::MT, patch_id::Int, face_local_id::Int; include_local_patch::Bool=false
-) where {MT <: AbstractTopology{3, 4}}
+    mesh_topology::AbstractTopology{3, 4},
+    patch_id::Int,
+    face_local_id::Int;
+    include_local_patch::Bool=false,
+)
     manifold_dim = 3  # we are in 3D
     patch_dimension = manifold_dim
     face_dimension = manifold_dim - 1
@@ -813,8 +816,7 @@ end
 
 """
     compute_face_neighbours(
-        mesh_topology::AbstractTopology{3,4};
-        include_local_patch::Bool = false,
+        mesh_topology::AbstractTopology{3, 4}; include_local_patch::Bool=false
     )
 
 Return a matrix collecting the face-neighbour information for all patches
@@ -843,8 +845,8 @@ respect to the definition of the face (as given in the mesh topology).
   format described in [`compute_face_neighbours(::AbstractTopology{3,4}, ::Int, ::Int)`](@ref).
 """
 function compute_face_neighbours(
-    mesh_topology::MT; include_local_patch::Bool=false
-) where {MT <: AbstractTopology{3, 4}}
+    mesh_topology::AbstractTopology{3, 4}; include_local_patch::Bool=false
+)
     manifold_dim = 3  # we are in 3D
     # Preallocate memory for the neighbours information
     n_local_faces = get_local_size(mesh_topology, manifold_dim)  # number of faces per patch
@@ -873,10 +875,10 @@ end
 
 """
     compute_edge_neighbours(
-        mesh_topology::AbstractTopology{2,3},
+        mesh_topology::AbstractTopology{2, 3},
         patch_id::Int,
         edge_local_id::Int;
-        include_local_patch::Bool = false,
+        include_local_patch::Bool=false,
     )
 
 Return a `4 × N` matrix describing the neighbouring patches across
@@ -909,8 +911,11 @@ in the neighbour list.
     numbering must be reversed to ensure consistent orientation.
 """
 function compute_edge_neighbours(
-    mesh_topology::MT, patch_id::Int, edge_local_id::Int; include_local_patch::Bool=false
-) where {MT <: AbstractTopology{2, 3}}
+    mesh_topology::AbstractTopology{2, 3},
+    patch_id::Int,
+    edge_local_id::Int;
+    include_local_patch::Bool=false,
+)
     manifold_dim = 2  # we are in 2D
     patch_dimension = manifold_dim
     edge_dimension = manifold_dim - 1
@@ -1029,11 +1034,11 @@ function compute_edge_neighbours(
 end
 
 """
-   compute_edge_neighbours(
-        mesh_topology::AbstractTopology{3,4},
+    compute_edge_neighbours(
+        mesh_topology::AbstractTopology{3, 4},
         patch_id::Int,
         edge_local_id::Int;
-        include_local_patch::Bool = false,
+        include_local_patch::Bool=false,
     )
 
 Return a `4 × N` matrix describing the neighbouring patches across
@@ -1066,8 +1071,11 @@ in the neighbour list.
     numbering must be reversed to ensure consistent orientation.
 """
 function compute_edge_neighbours(
-    mesh_topology::MT, patch_id::Int, edge_local_id::Int; include_local_patch::Bool=false
-) where {MT <: AbstractTopology{3, 4}}
+    mesh_topology::AbstractTopology{3, 4},
+    patch_id::Int,
+    edge_local_id::Int;
+    include_local_patch::Bool=false,
+)
     manifold_dim = 3  # we are in 2D
     patch_dimension = manifold_dim
     edge_dimension = manifold_dim - 2
@@ -1184,9 +1192,9 @@ end
 
 """
     compute_edge_neighbours(
-        mesh_topology::AbstractTopology{3,4};
-        include_local_patch::Bool = false,
-    )
+        mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim};
+        include_local_patch::Bool=false,
+    ) where {manifold_dim, incidence_relations_dim}
 
 Return a matrix collecting the edge-neighbour information for all patches
 and all edges in the mesh.
@@ -1214,12 +1222,9 @@ respect to the definition of the edge (as given in the mesh topology).
   format described in [`compute_edge_neighbours(::AbstractTopology{3,4}, ::Int, ::Int)`](@ref).
 """
 function compute_edge_neighbours(
-    mesh_topology::MT
-) where {
-    manifold_dim,
-    incidence_relations_dim,
-    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
-}
+    mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim};
+    include_local_patch::Bool=false,
+) where {manifold_dim, incidence_relations_dim}
     # Preallocate memory for the neighbours information
     n_local_edges = get_local_size(mesh_topology, 2)  # number of edges per patch
     n_total_patches = size(mesh_topology, manifold_dim + 1)
@@ -1247,11 +1252,11 @@ end
 
 """
     compute_vertex_neighbours(
-        mesh_topology::MeshTopology,
+        mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim},
         patch_id::Int,
         vertex_local_id::Int;
-        include_local_patch::Bool = false,
-    )
+        include_local_patch::Bool=false,
+    ) where {manifold_dim, incidence_relations_dim}
 
 Return a `4 × N` matrix describing the neighbouring patches sharing
 vertex `vertex_local_id` of patch `patch_id`.
@@ -1282,12 +1287,11 @@ in the neighbour list.
     4. **Orientation**: always `1` (vertices have no orientation required to match DoFs)
 """
 function compute_vertex_neighbours(
-    mesh_topology::MT, patch_id::Int, vertex_local_id::Int; include_local_patch::Bool=false
-) where {
-    manifold_dim,
-    incidence_relations_dim,
-    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
-}
+    mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim},
+    patch_id::Int,
+    vertex_local_id::Int;
+    include_local_patch::Bool=false,
+) where {manifold_dim, incidence_relations_dim}
     patch_dimension = manifold_dim
     vertex_dimension = 0
 
@@ -1364,8 +1368,7 @@ end
 
 """
     compute_vertex_neighbours(
-        mesh_topology::AbstractTopology;
-        include_local_patch::Bool = false
+        mesh_topology::AbstractTopology; include_local_patch::Bool=false
     )
 
 Return a matrix collecting the vertex-neighbour information for all patches
@@ -1392,7 +1395,9 @@ in the neighbour data.
   associated with the `j`-th vertex of patch `i`. The neighbour matrix has the
   format described in [`compute_vertex_neighbours(::AbstractTopology, ::Int, ::Int)`](@ref).
 """
-function compute_vertex_neighbours(mesh_topology::AbstractTopology)
+function compute_vertex_neighbours(
+    mesh_topology::AbstractTopology; include_local_patch::Bool=false
+)
     manifold_dim = get_manifold_dim(mesh_topology)
 
     # Preallocate memory for the neighbours information
@@ -1406,7 +1411,10 @@ function compute_vertex_neighbours(mesh_topology::AbstractTopology)
         # Loop over the faces of the patch and get the neighbours information
         for vertex_local_id in 1:n_local_vertices            # Get the neighbours information for this face
             vertex_neighbours[patch_id, vertex_local_id] = compute_vertex_neighbours(
-                mesh_topology, patch_id, vertex_local_id
+                mesh_topology,
+                patch_id,
+                vertex_local_id;
+                include_local_patch=include_local_patch,
             )
         end
     end
