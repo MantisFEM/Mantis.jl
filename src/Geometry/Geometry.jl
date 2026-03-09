@@ -10,6 +10,7 @@ using StaticArrays
 
 import ..Points
 import ..GeneralHelpers
+import ..Hierarchy
 
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
@@ -537,6 +538,7 @@ include("TensorProductGeometry.jl")
 include("EvaluationMask/EvaluationMask.jl")
 include("MaskedGeometry.jl")
 include("UnstructuredGeometry.jl")
+include("HierarchicalGeometry.jl")
 include("Metric.jl")
 
 include("./GeometryConversions.jl")
