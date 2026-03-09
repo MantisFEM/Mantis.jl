@@ -1,4 +1,4 @@
-module AbstractPointsTests
+module GeneralHelpersTests
 
 using Mantis
 using Test
