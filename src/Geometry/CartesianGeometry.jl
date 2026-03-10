@@ -180,7 +180,9 @@ function get_elements(geometry::CartesianGeometry, patch_id, local_object_id, ge
         offset += get_num_elements(geometry, i)
     end
 
-    return element_ids .+ offset
+    dims_to_drop = Tuple(findall(i -> length(mask[i]) == 1, 1:length(mask)))
+    return dropdims(element_ids .+ offset, dims=dims_to_drop)
+    # return element_ids .+ offset
 end
 
 # Getters for consituents.

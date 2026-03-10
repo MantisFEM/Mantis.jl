@@ -584,8 +584,42 @@ function get_interfaces_on_boundary(topology)
             end
         end
     end
-
     return unique(interfaces_on_boundary)
+end
+
+# Provide quick access to the number of geometric objects in each dimension
+# (vertices, edges, patches) in 2D
+# (vertices, edges, faces, patches) in 3D
+Base.size(topology::MeshTopology) = topology.n_geometric_objects
+# geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
+# has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
+# not at 0 (vertices have geometric dimension 0).
+Base.size(topology::MeshTopology, geometric_dim_id::Int) =
+    topology.n_geometric_objects[geometric_dim_id]
+
+Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim} = 
+    topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
+
+# geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
+# has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
+# not at 0 (vertices have geometric dimension 0).
+function Base.size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
+    @boundscheck begin
+        if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
+            throw(BoundsError(topology, geometric_dim_id))
+        end
+    end
+    @inbounds return topology.parent_topology.n_geometric_objects[geometric_dim_id]
+end
+
+function get_local_size(topology::MeshTopology)
+    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
+    return topology.n_local_geometric_objects
+end
+
+function get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
+    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
+    return topology.parent_topology.n_local_geometric_objects[1:(manifold_dim + 1)]
 end
 
 # Local/global conversions.
@@ -638,6 +672,11 @@ function get_global_id(
     return global_id
 end
 
+function get_local_size(topology::MeshTopology, geometric_dim_id::Int)
+    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
+    return topology.n_local_geometric_objects[geometric_dim_id]
+end
+
 """
     get_global_id(
         topology::AbstractTopology{manifold_dim},
@@ -673,6 +712,15 @@ function get_global_id(
     return get_global_id(
         topology, patch_id, manifold_dim, local_object_id, local_object_dim
     )
+end
+function get_local_size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
+    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
+    @boundscheck begin
+        if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
+            throw(BoundsError(topology, geometric_dim_id))
+        end
+    end
+    @inbounds return topology.parent_topology.n_local_geometric_objects[geometric_dim_id]
 end
 
 """
@@ -782,28 +830,23 @@ respect to the definition of the face (as given in the mesh topology).
     **Note**: The sequence of vertices that define a face dictates its orientation.
 """
 function compute_face_neighbours(
-    mesh_topology::AbstractTopology{3, 4},
-    patch_id::Int,
-    face_local_id::Int;
-    include_local_patch::Bool=false,
-)
+    mesh_topology::MT, patch_id::Int, face_local_id::Int; include_local_patch::Bool=false 
+) where {MT <: AbstractTopology{3, 4}}
     manifold_dim = 3  # we are in 3D
     patch_dimension = manifold_dim
     face_dimension = manifold_dim - 1
     vertex_dimension = 0
-
+    
     # Determine the global face id and the
     # Get the faces of this patch
     @debug println("patch id: ", patch_id)
     # patch_faces = mesh_topology[patch_dimension + 1, face_dimension + 1][patch_id]
     # face_id = patch_faces[face_local_id]
-    face_id = get_global_id(
-        mesh_topology, patch_id, patch_dimension, face_local_id, face_dimension
-    )
+    face_id = get_global_id(mesh_topology, patch_id, patch_dimension, face_local_id, face_dimension)
 
     num_vertices_per_face = length(
         mesh_topology[face_dimension + 1, vertex_dimension + 1][1]
-    ) # the number of vertices per face (assumed to be the same for all facets)
+    ) # the number of vertices per face (assumed to be the same for all faces)
 
     @debug println("   face $face_local_id id: ", face_id)
 
@@ -815,7 +858,7 @@ function compute_face_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_face_neighbours = length(face_patch_neighbours_ids)
-    else
+    else 
         # The original patch, i.e., the one with `patch_id` is excluded
         n_face_neighbours = length(face_patch_neighbours_ids) - 1
     end
@@ -861,10 +904,8 @@ function compute_face_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the face
-                        patch_face_vertices = mesh_topology[
-                            face_dimension + 1, vertex_dimension + 1
-                        ][abs(face_id)]
-
+                        patch_face_vertices = mesh_topology[face_dimension + 1, vertex_dimension + 1][abs(face_id)]
+                        
                     else
                         # Get the sequence of vertices of the face in the current (original) patch
                         face_vertices_local_idx = mesh_topology.local_face2vertex[
@@ -963,9 +1004,7 @@ respect to the definition of the face (as given in the mesh topology).
   associated with the `j`-th face of patch `i`. The neighbour matrix has the
   format described in [`compute_face_neighbours(::AbstractTopology{3,4}, ::Int, ::Int)`](@ref).
 """
-function compute_face_neighbours(
-    mesh_topology::AbstractTopology{3, 4}; include_local_patch::Bool=false
-)
+function compute_face_neighbours(mesh_topology::MT; include_local_patch::Bool=false) where {MT <: AbstractTopology{3, 4}}
     manifold_dim = 3  # we are in 3D
     # Preallocate memory for the neighbours information
     n_local_faces = get_local_size(mesh_topology, manifold_dim)  # number of faces per patch
@@ -982,10 +1021,7 @@ function compute_face_neighbours(
 
             # Get the neighbours information for this face
             face_neighbours[patch_id, face_local_id] = compute_face_neighbours(
-                mesh_topology,
-                patch_id,
-                face_local_id;
-                include_local_patch=include_local_patch,
+                mesh_topology, patch_id, face_local_id, include_local_patch=include_local_patch
             )
         end
     end
@@ -1030,11 +1066,8 @@ in the neighbour list.
     numbering must be reversed to ensure consistent orientation.
 """
 function compute_edge_neighbours(
-    mesh_topology::AbstractTopology{2, 3},
-    patch_id::Int,
-    edge_local_id::Int;
-    include_local_patch::Bool=false,
-)
+    mesh_topology::MT, patch_id::Int, edge_local_id::Int; include_local_patch::Bool=false
+) where {MT <: AbstractTopology{2, 3}}
     manifold_dim = 2  # we are in 2D
     patch_dimension = manifold_dim
     edge_dimension = manifold_dim - 1
@@ -1045,9 +1078,7 @@ function compute_edge_neighbours(
     @debug println("patch id: ", patch_id)
     # patch_edges = mesh_topology[manifold_dim + 1, manifold_dim][patch_id]
     # edge_id = patch_edges[edge_local_id]
-    edge_id = get_global_id(
-        mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension
-    )
+    edge_id = get_global_id(mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension)
 
     num_vertices_per_edge = length(mesh_topology[manifold_dim, 1][1]) # the number of vertices per facet (assumed to be the same for all facets)
 
@@ -1061,7 +1092,7 @@ function compute_edge_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_edge_neighbours = length(edge_patch_neighbours_ids)
-    else
+    else 
         # The original patch, i.e., the one with `patch_id` is excluded
         n_edge_neighbours = length(edge_patch_neighbours_ids) - 1
     end
@@ -1074,6 +1105,7 @@ function compute_edge_neighbours(
         edge_neighbours = zeros(Int, 4, n_edge_neighbours)
     end
 
+    
     for (k_neighbour, neighbour_patch_id) in enumerate(edge_patch_neighbours_ids)
         @debug println("      neighbour patch id: ", neighbour_patch_id)
 
@@ -1099,9 +1131,7 @@ function compute_edge_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the edge
-                        patch_edge_vertices = mesh_topology[
-                            edge_dimension + 1, vertex_dimension + 1
-                        ][edge_id]
+                        patch_edge_vertices = mesh_topology[edge_dimension + 1, vertex_dimension + 1][edge_id]
 
                     else
                         # Get the sequence of vertices of the edge in the current (original) patch
@@ -1190,11 +1220,8 @@ in the neighbour list.
     numbering must be reversed to ensure consistent orientation.
 """
 function compute_edge_neighbours(
-    mesh_topology::AbstractTopology{3, 4},
-    patch_id::Int,
-    edge_local_id::Int;
-    include_local_patch::Bool=false,
-)
+    mesh_topology::MT, patch_id::Int, edge_local_id::Int; include_local_patch::Bool=false
+) where {MT <: AbstractTopology{3, 4}}
     manifold_dim = 3  # we are in 2D
     patch_dimension = manifold_dim
     edge_dimension = manifold_dim - 2
@@ -1204,9 +1231,7 @@ function compute_edge_neighbours(
     @debug println("patch id: ", patch_id)
     # patch_edges = mesh_topology[manifold_dim + 1, 2][patch_id]
     # edge_id = patch_edges[edge_local_id]
-    edge_id = get_global_id(
-        mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension
-    )
+    edge_id = get_global_id(mesh_topology, patch_id, patch_dimension, edge_local_id, edge_dimension)
 
     @debug println("   facet $edge_local_id id: ", edge_id)
 
@@ -1218,7 +1243,7 @@ function compute_edge_neighbours(
     if include_local_patch
         # All patches sharing the face are included
         n_edge_neighbours = length(edge_patch_neighbours_ids)
-    else
+    else 
         # The original patch, i.e., the one with `patch_id` is excluded
         n_edge_neighbours = length(edge_patch_neighbours_ids) - 1
     end
@@ -1256,9 +1281,7 @@ function compute_edge_neighbours(
 
                     if include_local_patch
                         # Get the sequence of vertices that define the edge
-                        patch_edge_vertices = mesh_topology[
-                            edge_dimension + 1, vertex_dimension + 1
-                        ][edge_id]
+                        patch_edge_vertices = mesh_topology[edge_dimension + 1, vertex_dimension + 1][edge_id]
 
                     else
                         # Get the sequence of vertices of the edge in the current (original) patch
@@ -1341,9 +1364,13 @@ respect to the definition of the edge (as given in the mesh topology).
   format described in [`compute_edge_neighbours(::AbstractTopology{3,4}, ::Int, ::Int)`](@ref).
 """
 function compute_edge_neighbours(
-    mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim};
-    include_local_patch::Bool=false,
-) where {manifold_dim, incidence_relations_dim}
+    mesh_topology::MT;
+    include_local_patch::Bool = false,
+) where {
+    manifold_dim,
+    incidence_relations_dim,
+    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
+}
     # Preallocate memory for the neighbours information
     n_local_edges = get_local_size(mesh_topology, 2)  # number of edges per patch
     n_total_patches = size(mesh_topology, manifold_dim + 1)
@@ -1359,10 +1386,7 @@ function compute_edge_neighbours(
 
             # Get the neighbours information for this face
             edge_neighbours[patch_id, edge_local_id] = compute_edge_neighbours(
-                mesh_topology,
-                patch_id,
-                edge_local_id;
-                include_local_patch=include_local_patch,
+                mesh_topology, patch_id, edge_local_id, include_local_patch=include_local_patch
             )
         end
     end
@@ -1406,28 +1430,28 @@ in the neighbour list.
     4. **Orientation**: always `1` (vertices have no orientation required to match DoFs)
 """
 function compute_vertex_neighbours(
-    mesh_topology::AbstractTopology{manifold_dim, incidence_relations_dim},
-    patch_id::Int,
+    mesh_topology::MT, 
+    patch_id::Int, 
     vertex_local_id::Int;
-    include_local_patch::Bool=false,
-) where {manifold_dim, incidence_relations_dim}
-    patch_dimension = manifold_dim
+    include_local_patch::Bool = false
+) where {
+    manifold_dim,
+    incidence_relations_dim,
+    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
+}   
+    patch_dimension = manifold_dim 
     vertex_dimension = 0
 
     # Determine the global vertex id
     @debug println("patch id: ", patch_id)
     # patch_vertices = mesh_topology[manifold_dim + 1, 1][patch_id]
     # vertex_id = patch_vertices[vertex_local_id]
-    vertex_id = get_global_id(
-        mesh_topology, patch_id, patch_dimension, vertex_local_id, vertex_dimension
-    )
+    vertex_id = get_global_id(mesh_topology, patch_id, patch_dimension, vertex_local_id, vertex_dimension)
 
     @debug println("   vertex $vertex_local_id id: ", vertex_id)
 
     # Determine how many neighbours the vertex has
-    vertex_patch_neighbours_ids = mesh_topology[vertex_dimension + 1, patch_dimension + 1][abs(
-        vertex_id
-    )]
+    vertex_patch_neighbours_ids = mesh_topology[vertex_dimension + 1, patch_dimension + 1][abs(vertex_id)]
     if include_local_patch
         # All patches sharing the face are included
         n_vertex_neighbours = length(vertex_patch_neighbours_ids)
@@ -1515,7 +1539,8 @@ in the neighbour data.
   format described in [`compute_vertex_neighbours(::AbstractTopology, ::Int, ::Int)`](@ref).
 """
 function compute_vertex_neighbours(
-    mesh_topology::AbstractTopology; include_local_patch::Bool=false
+    mesh_topology::AbstractTopology; 
+    include_local_patch::Bool = false
 )
     manifold_dim = get_manifold_dim(mesh_topology)
 
@@ -1530,10 +1555,7 @@ function compute_vertex_neighbours(
         # Loop over the faces of the patch and get the neighbours information
         for vertex_local_id in 1:n_local_vertices            # Get the neighbours information for this face
             vertex_neighbours[patch_id, vertex_local_id] = compute_vertex_neighbours(
-                mesh_topology,
-                patch_id,
-                vertex_local_id;
-                include_local_patch=include_local_patch,
+                mesh_topology, patch_id, vertex_local_id, include_local_patch=include_local_patch
             )
         end
     end
@@ -1541,7 +1563,141 @@ function compute_vertex_neighbours(
     return vertex_neighbours
 end
 
+"""
+    compute_neighbours(
+        mesh_topology::MeshTopology,
+        patch_id::Int,
+        local_object_id::Int,
+        local_object_dim::Int;
+        include_local_patch::Bool = false,
+    )
+
+Return a `4 × N` matrix describing the neighbouring patches sharing
+local object of dimension `local_object_dim` with id `local_object_id` of patch `patch_id`.
+
+Each column corresponds to one neighbouring patch.
+
+If `include_local_patch=true`, the current patch is also included
+in the neighbour list.
+
+# Notes
+- Applicable to all supported mesh topologies.
+- Assumes consistent local object numbering across patches.
+
+# Arguments
+- `mesh_topology::MeshTopology`: A mesh topology of any supported type.
+- `patch_id::Int`: Global identifier of the patch.
+- `local_object_id::Int`: Local object index of the patch.
+- `local_object_dim::Int`: Geometric dimension of local object.
+- `include_local_patch::Bool=false`: Whether to include the current patch
+  in the neighbour list.
+
+# Returns
+- `Matrix{Int}` of size `4 × N`, where `N` is the number of neighbouring patches.
+  If `include_local_patch` is `true` then it contains `N+1` columns, i.e. the total
+  number of patches that share this vertex. Each row contains:
+    1. **Neighbour patch ID**
+    2. **Local object ID in the neighbour patch**
+    3. **Rotation**: for vertices and edges (`local_object_dim = 0, 1`) this is always `0` 
+       (vertices and edges have no rotation required to match DoFs), for faces
+       (`local_object_dim = 2`) this indicates the number of π/2 rotations needed to match dofs.
+    4. **Orientation**: for vertices (`local_object_dim = 0`) is always `1`  
+       (vertices have no orientation required to match DoFs), for edges (`local_object_dim = 1`)
+       this can be either 1 or -1 indicating if the order of dofs is reversed or not, for faces
+       (`local_object_dim = 2`) this indicates if dofs must be transposed to match.
+"""
+function compute_neighbours(
+    mesh_topology::MT, 
+    patch_id::Int, 
+    local_object_id::Int,
+    local_object_dim::Int;
+    include_local_patch::Bool = false
+) where {
+    manifold_dim,
+    incidence_relations_dim,
+    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
+}  
+    if local_object_dim == 0
+        local_object_neighbours = compute_vertex_neighbours(mesh_topology, patch_id, local_object_id, include_local_patch=include_local_patch)
+
+    elseif local_object_dim == 1
+        local_object_neighbours = compute_edge_neighbours(mesh_topology, patch_id, local_object_id, include_local_patch=include_local_patch)
+
+    elseif local_object_dim == 2
+        local_object_neighbours = compute_face_neighbours(mesh_topology, patch_id, local_object_id, include_local_patch=include_local_patch)
+
+    else
+        throw(ArgumentError("local_object_dim ($nlocal_object_dim) must be smaller than 3, topologies are 3D at most"))
+    end 
+
+    return local_object_neighbours
+end
+
+"""
+    compute_neighbours(
+        mesh_topology::MeshTopology,
+        local_object_dim::Int;
+        include_local_patch::Bool = false,
+    )
+
+Return a matrix collecting the neighbour information for all patches
+and all local_objects of dimension `local_object_dim` in the mesh.
+
+The returned object is indexed as `[i, j]`, where entry `(i, j)` contains
+the neighbour information for the `j`-th local object of dimension 
+`local_object_dim` of patch `i`, in the same
+format as returned by [`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
+
+Each column corresponds to one neighbouring patch.
+
+If `include_local_patch=true`, the current patch is also included
+in the neighbour list.
+
+# Notes
+- Applicable to all supported mesh topologies.
+- Assumes consistent local object numbering across patches.
+
+# Arguments
+- `mesh_topology::MeshTopology`: A mesh topology of any supported type.
+- `patch_id::Int`: Global identifier of the patch.
+- `local_object_id::Int`: Local object index of the patch.
+- `local_object_dim::Int`: Geometric dimension of local object.
+- `include_local_patch::Bool=false`: Whether to include the current patch
+  in the neighbour list.
+
+# Returns
+- A matrix whose entry `(i, j)` contains the `4 × N` neighbour matrix
+  associated with the `j`-th vertex of patch `i`. The neighbour matrix has the
+  format described in [`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
+"""
+function compute_neighbours(
+    mesh_topology::MT, 
+    local_object_dim::Int;
+    include_local_patch::Bool = false
+) where {
+    manifold_dim,
+    incidence_relations_dim,
+    MT <: AbstractTopology{manifold_dim, incidence_relations_dim},
+}  
+    if local_object_dim == 0
+        local_object_neighbours = compute_vertex_neighbours(mesh_topology, include_local_patch=include_local_patch)
+
+    elseif local_object_dim == 1
+        local_object_neighbours = compute_edge_neighbours(mesh_topology, include_local_patch=include_local_patch)
+
+    elseif local_object_dim == 2
+        local_object_neighbours = compute_face_neighbours(mesh_topology, include_local_patch=include_local_patch)
+
+    else
+        throw(ArgumentError("local_object_dim ($nlocal_object_dim) must be smaller than 3, topologies are 3D at most"))
+    end 
+
+    return local_object_neighbours
+end
+
+
 include("MeshTopology.jl")
 include("SkeletonTopology.jl")
+
 
 end

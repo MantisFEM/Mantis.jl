@@ -8,21 +8,25 @@ parent_topology = Topology.MeshTopology([
 # Construct a geometry for it
 geo3d2 = Mantis.Geometry.CartesianGeometry(
     (
-        (LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 6), LinRange(0.0, 1.0, 8)),
-        (LinRange(1.0, 3.0, 3), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 8)),
+        (LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 4)),
+        (LinRange(1.0, 3.0, 3), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 4)),
     ),
     parent_topology,
 )
-fig = Mantis.Plot.plot_topology(geo3d2)
+# fig = Mantis.Plot.plot_topology(geo3d2)
 
-display(fig)
+# display(fig)
 
 # Generate a skeleton topology
-skeleton_topology = Topology.SkeletonTopology(parent_topology)
+skeleton_topology = Mantis.Topology.SkeletonTopology(parent_topology)
 
-patch_parents = Topology.get_patch_parents(skeleton_topology, 1)
+patch_parents = Mantis.Topology.get_patch_parents(skeleton_topology, 1)
 
 skeleton_geometry = Mantis.Geometry.SkeletonGeometry(geo3d2)
+
+num_elements_per_patch = Mantis.Geometry.get_num_elements_per_patch(skeleton_geometry)
+
+
 
 # # Oriol Periodic B-Splines
 
