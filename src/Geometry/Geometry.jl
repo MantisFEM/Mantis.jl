@@ -558,7 +558,7 @@ Compute the elements located on the given topological object `local_object_id` (
 `patch_id`.
 """
 function get_elements(geometry::AbstractGeometry, patch_id, local_object_id, geometric_dim)
-    return get_elements(geometry, patch_id, local_object_id, geometric_dim)
+    throw(MethodError(get_elements, (geometry, patch_id, local_object_id, geometric_dim)))
 end
 
 """
