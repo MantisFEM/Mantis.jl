@@ -1,0 +1,17 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions" # Keep the github actions dependencies up-to-date
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+  - package-ecosystem: "julia" # Mantis' dependencies.
+    directories: 
+      - "/" # Deals with the main environment, including the tests, which is a workspace.
+      - "/docs" # The docs folder has its own project and manifest, so it is separate.
+    schedule:
+      interval: "daily"
+    target-branch: "dev"
