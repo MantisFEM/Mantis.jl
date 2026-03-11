@@ -17,12 +17,12 @@ that of an object in level l.
     i.e. 'level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))'. First entry is always 0 for
     ease of use.
 """
-mutable struct ActiveInfo
+struct ActiveInfo
     level_ids::Vector{Vector{Int}}
     level_cum_num_ids::Vector{Int}
 
     function ActiveInfo(level_ids::Vector{Vector{Int}})
-		level_cum_num_ids = [0; cumsum(map(length, level_ids))]
+        level_cum_num_ids = [0; cumsum(map(length, level_ids))]
 
         return new(level_ids, level_cum_num_ids)
     end
@@ -85,11 +85,10 @@ function convert_to_level_id(active_info::ActiveInfo, hier_id::Int)
 end
 
 function convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
-	level = get_level(active_info, hier_id)
-	level_id = get_level_ids(active_info, level)[hier_id - get_level_cum_num_ids(
+    level = get_level(active_info, hier_id)
+    level_id = get_level_ids(active_info, level)[hier_id - get_level_cum_num_ids(
         active_info, level - 1
     )]
-	
 
     return level, level_id
 end
@@ -112,4 +111,32 @@ function convert_to_hier_id(active_info::ActiveInfo, level::Int, level_id::Int)
     level_id_count = findfirst(id -> id == level_id, get_level_ids(active_info, level))
 
     return level_id_count + get_level_cum_num_ids(active_info, level - 1)
+end
+
+############################################################################################
+#                                      Field changes                                       #
+############################################################################################
+
+function update!(active_info::ActiveInfo, level::Int, remove::Vector{Int}, add::Vector{Int})
+    num_levels = get_num_levels(active_info)
+    if level == num_levels && !isempty(add)
+        add_level!(active_info)
+    end
+
+    setdiff!(get_level_ids(active_info)[level], remove)
+    union!(get_level_ids(active_info)[level + 1], add)
+    level_cum_num_ids = get_level_cum_num_ids(active_info)
+    for l in level:(level + 1)
+        level_cum_num_ids[l + 1] =
+            level_cum_num_ids[l] + length(get_level_ids(active_info)[l])
+    end
+
+    return active_info
+end
+
+function add_level!(active_info::ActiveInfo)
+    push!(get_level_ids(active_info), Int[])
+    append!(get_level_cum_num_ids(active_info), get_level_cum_num_ids(active_info)[end])
+
+    return active_info
 end

@@ -69,8 +69,8 @@ struct HierarchicalFiniteElementSpace{
         manifold_dim,
         num_components,
         num_patches,
-		G <: Geometry.HierarchicalGeometry,
-		GP <: Geometry.HierarchicalGeometry,
+        G <: Geometry.HierarchicalGeometry,
+        GP <: Geometry.HierarchicalGeometry,
         S <: AbstractFESpace{manifold_dim, num_components, num_patches},
         T <: AbstractTwoScaleOperator,
     }
@@ -913,225 +913,87 @@ end
 #                                       Update Space                                       #
 ############################################################################################	
 
-"""
-	update_space!(
-	    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
-	)
-
-Updates the given hierarchical `space` based on  `marked_elements_per_level`.
-
-# Returns
-- `space::HierarchicalFiniteElementSpace`: The updated space.
-
-See also [`refine_mesh!`](@ref) and [`update_basis!`](@ref).
-"""
-function update_space!(
-    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
+function refine_space(
+    space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo
 )
-    refine_mesh!(space, marked_elements_per_level)
-    update_basis!(space)
+    L = Hierarchy.get_num_levels(domains)
+    spaces = get_spaces(space)
+    two_scale_operators = get_two_scale_operators(space)
+	while L > length(spaces)
+        new_ts, new_space = build_two_scale_operator(
+            spaces[end], get_num_subdivisions(space)
+        )
+        push!(spaces, new_space)
+        push!(two_scale_operators, new_ts)
+    end
 
-    return space
+    refined_space = HierarchicalFiniteElementSpace(
+        spaces,
+        two_scale_operators,
+        domains,
+        get_num_subdivisions(space),
+        is_truncated(space),
+        is_simplified(space),
+    )
+
+    return refined_space
 end
 
-"""
-	refine_mesh!(
-	    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
-	)
-
-Updates the hierarchical mesh underlying `space` based on `marked_elements_per_level`.
-
-# Returns
-- `space::HierarchicalFiniteElementSpace`: Space with refined mesh.
-"""
-function refine_mesh!(
+function refine_space(
     space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
 )
     L = get_num_levels(space)
+    spaces = get_spaces(space)
+    two_scale_operators = get_two_scale_operators(space)
+    domains = get_nested_domains(space)
     if !isempty(marked_elements_per_level[L])
-        add_level!(space)
+        new_ts, new_space = build_two_scale_operator(
+            spaces[end], get_num_subdivisions(space)
+        )
+        push!(spaces, new_space)
+        push!(two_scale_operators, new_ts)
+        Hierarchy.add_level!(domains)
     end
 
-    for level in 1:L
+    refine_domains!(domains, two_scale_operators, marked_elements_per_level)
+    refined_space = HierarchicalFiniteElementSpace(
+        spaces,
+        two_scale_operators,
+        get_nested_domains(space),
+        get_num_subdivisions(space),
+        is_truncated(space),
+        is_simplified(space),
+    )
+
+    return refined_space
+end
+
+function refine_domains!(
+    domains::Hierarchy.ActiveInfo,
+    two_scale_operators,
+    marked_elements_per_level::Vector{Vector{Int}},
+)
+    for level in eachindex(marked_elements_per_level)
         marked_elements = marked_elements_per_level[level]
         if !isempty(marked_elements)
-            refine_mesh!(space, level, marked_elements)
+            refine_domains!(domains, two_scale_operators, marked_elements, level)
         end
     end
 
-    return space
+    return domains
 end
 
-"""
-	add_level!(space::HierarchicalFiniteElementSpace)
+function refine_domains!(domains, two_scale_operators, marked_elements, level)
+	if isempty(marked_elements)
+		return domains
+	end
 
-Adds an empty level to `space`.
-
-# Returns
-- `space::HierarchicalFiniteElementSpace`: Space with an extra refinement level.
-"""
-function add_level!(space::HierarchicalFiniteElementSpace)
-    L = get_num_levels(space)
-    new_ts, new_space = build_two_scale_operator(
-        get_space(space, L), get_num_subdivisions(space)
+    refined_elements = mapreduce(
+        el -> get_element_children(two_scale_operators[level], el), vcat, marked_elements
     )
-    push!(get_spaces(space), new_space)
-    push!(get_two_scale_operators(space), new_ts)
-    push!(Hierarchy.get_level_ids(get_active_elements(space)), Int[])
-    append!(
-        Hierarchy.get_level_cum_num_ids(get_active_elements(space)),
-        last(Hierarchy.get_level_cum_num_ids(get_active_elements(space))),
-    )
-    push!(Hierarchy.get_level_ids(get_nested_domains(space)), Int[])
-    append!(
-        Hierarchy.get_level_cum_num_ids(get_nested_domains(space)),
-        last(Hierarchy.get_level_cum_num_ids(get_nested_domains(space))),
-    )
-    push!(Hierarchy.get_level_ids(get_active_basis(space)), Int[])
-    append!(
-        Hierarchy.get_level_cum_num_ids(get_active_basis(space)),
-        last(Hierarchy.get_level_cum_num_ids(get_active_basis(space))),
-    )
+    Hierarchy.update!(domains, level, marked_elements, refined_elements)
 
-    return space
-end
-
-"""
-	refine_mesh!(
-	    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
-	)
-
-Updates the hierarchical mesh underlying `space` based on `marked_elements_per_level` at
-`level`.
-
-# Returns
-- `space::HierarchicalFiniteElementSpace`: Space with refined mesh at `level`.
-"""
-function refine_mesh!(
-    space::HierarchicalFiniteElementSpace, level::Int, marked_elements::Vector{Int}
-)
-    if isempty(marked_elements)
-        return space
-    end
-
-    L = get_num_levels(space)
-    if level == L
-        add_level!(space)
-    end
-
-    active_elements = get_active_elements(space)
-    nested_domains = get_nested_domains(space)
-    setdiff!(Hierarchy.get_level_ids(active_elements, level), marked_elements)
-    ts = get_twoscale_operator(space, level)
-    refined_elements = mapreduce(el -> get_element_children(ts, el), vcat, marked_elements)
-    union!(Hierarchy.get_level_ids(active_elements, level + 1), refined_elements)
-    union!(Hierarchy.get_level_ids(nested_domains, level + 1), refined_elements)
-    setfield!(
-        space,
-        :active_elements,
-        Hierarchy.ActiveInfo(Hierarchy.get_level_ids(active_elements)),
-    )
-    setfield!(
-        space,
-        :nested_domains,
-        Hierarchy.ActiveInfo(Hierarchy.get_level_ids(nested_domains)),
-    )
-    parametric_geometry = create_masked_geometry(
-        get_spaces(space), get_two_scale_operators(space), get_active_elements(space)
-    )
-    if typeof(get_geometry(space)) <: Geometry.MappedGeometry
-        geometry = Geometry.MappedGeometry(
-            parametric_geometry, Geometry.get_mapping(get_geometry(space))
-        )
-    else
-        geometry = parametric_geometry
-    end
-
-    setfield!(space, :geometry, geometry)
-    setfield!(space, :parametric_geometry, parametric_geometry)
-
-    return space
-end
-
-"""
-	update_basis!(space::HierarchicalFiniteElementSpace)
-
-Updates the hierarchical basis underlying `space`, after the latter has had mesh refinement.
-
-# Returns
-- `space::HierarchicalFiniteElementSpace`: Space with updated hierarchical basis.
-"""
-function update_basis!(space::HierarchicalFiniteElementSpace)
-    L = get_num_levels(space)
-    active_basis = get_active_basis(space)
-    nested_domains = get_nested_domains(space)
-    simplified = is_simplified(space)
-    for level in 1:(L - 1)
-        level_space = get_space(space, level)
-        next_level_space = get_space(space, level + 1)
-        level_ts = get_twoscale_operator(space, level)
-        next_level_domain = Set(Hierarchy.get_level_ids(nested_domains, level + 1))
-        basis_to_remove = Int[]
-        basis_to_add = Int[]
-        if !simplified
-            for parent_basis in Hierarchy.get_level_ids(active_basis, level)
-                parent_support = get_support(level_space, parent_basis)
-                if all(
-                    child -> child in next_level_domain,
-                    mapreduce(
-                        el -> get_element_children(level_ts, el), vcat, parent_support
-                    ),
-                )
-                    append!(basis_to_remove, parent_basis)
-                end
-            end
-
-            for child_basis in 1:get_num_basis(next_level_space)
-                child_support = get_support(next_level_space, child_basis)
-                if all(child -> child in next_level_domain, child_support)
-                    union!(basis_to_add, child_basis)
-                end
-            end
-        else
-            for parent_basis in Hierarchy.get_level_ids(active_basis, level)
-                parent_support = get_support(level_space, parent_basis)
-                if all(
-                    child -> child in next_level_domain,
-                    mapreduce(
-                        el -> get_element_children(level_ts, el), vcat, parent_support
-                    ),
-                )
-                    append!(basis_to_remove, parent_basis)
-                    union!(basis_to_add, get_basis_children(level_ts, parent_basis))
-                end
-            end
-        end
-
-        setdiff!(Hierarchy.get_level_ids(active_basis, level), basis_to_remove)
-        union!(Hierarchy.get_level_ids(active_basis, level + 1), basis_to_add)
-    end
-
-    setfield!(
-        active_basis,
-        :level_cum_num_ids,
-        [0; cumsum(map(length, Hierarchy.get_level_ids(active_basis)))],
-    )
-    multilevel_els, multilevel_coeffs, multilevel_indices = get_multilevel_extraction(
-        get_spaces(space),
-        get_two_scale_operators(space),
-        get_active_elements(space),
-        get_active_basis(space),
-        is_truncated(space),
-    )
-    dof_partition = compute_dof_partition(
-        get_spaces(space), active_basis, get_num_levels(space)
-    )
-    setfield!(space, :multilevel_elements, multilevel_els)
-    setfield!(space, :multilevel_extraction_coeffs, multilevel_coeffs)
-    setfield!(space, :multilevel_basis_indices, multilevel_indices)
-    setfield!(space, :dof_partition, dof_partition)
-
-    return space
+    return domains
 end
 
 ############################################################################################

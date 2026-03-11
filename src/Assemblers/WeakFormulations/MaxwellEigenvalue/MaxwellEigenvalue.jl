@@ -244,12 +244,14 @@ function solve_maxwell_eig(
             H⁰, dorfler_marking
         )
         if Lchains
-            FunctionSpaces.update_space_with_lchains!(H⁰, marked_elements_per_level)
+            domains = FunctionSpaces.update_domains_with_lchains!(H⁰, marked_elements_per_level)
+            complex = Forms.update_hierarchical_de_rham_complex(complex, domains)
         else
-            FunctionSpaces.update_space!(H⁰, marked_elements_per_level)
+            complex = Forms.update_hierarchical_de_rham_complex(
+                complex, marked_elements_per_level
+            )
         end
 
-        complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
         geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
             Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)

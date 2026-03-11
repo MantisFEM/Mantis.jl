@@ -566,6 +566,28 @@ function update_hierarchical_de_rham_complex(
     return new_complex
 end
 
+function update_hierarchical_de_rham_complex(
+    complex::C, data
+) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+    new_complex = ntuple(num_forms) do k
+        num_components = FunctionSpaces.get_num_components(get_fe_space(complex[k]))
+        if num_components == 1
+            new_space = FunctionSpaces.refine_space(get_fe_space(complex[k]), data)
+        else
+            comp_spaces = FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
+            new_space = FunctionSpaces.DirectSumSpace(
+                ntuple(num_components) do c
+                    FunctionSpaces.refine_space(comp_spaces[c], data)
+                end,
+            )
+        end
+
+        return FormSpace(k - 1, new_space, get_label(complex[k]))
+    end
+
+    return new_complex
+end
+
 ################################################################################
 # Polar B-spline de Rham complex
 ################################################################################

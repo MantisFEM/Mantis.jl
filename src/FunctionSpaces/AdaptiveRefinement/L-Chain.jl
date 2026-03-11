@@ -14,19 +14,27 @@ L-chains where needed. We refer the reader to [Cabanas2025](@cite) for further d
 # Returns
 - `space::HierarchicalFiniteElementSpace{2}`: The refined space, with no problematic pairs.
 """
-function update_space_with_lchains!(
+function update_domains_with_lchains!(
     space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
 )
     previous_parents = Int[]
     L = get_num_levels(space)
+    domains = get_nested_domains(space)
+	two_scale_operators = copy(get_two_scale_operators(space))
+    spaces = get_spaces(space)
     for level in L:-1:1
         level_marked_els = marked_els[level]
         if isempty(level_marked_els)
             continue
+        elseif level == L
+            new_ts, _ = FunctionSpaces.build_two_scale_operator(
+                spaces[end], FunctionSpaces.get_num_subdivisions(space)
+            )
+            push!(two_scale_operators, new_ts)
         end
 
         level_space = get_space(space, level)
-        refine_mesh!(space, level, level_marked_els)
+        refine_domains!(domains, two_scale_operators, level_marked_els, level)
         Blk = get_Blk(space, level)
         unchecked_pairs = initiate_pairs(space, level, Blk, level_marked_els)
         problematic_mesh = true
@@ -50,7 +58,7 @@ function update_space_with_lchains!(
                 c -> get_support(level_space, c), union, current_corners
             )
             intersect!(corner_elements, get_level_element_ids(space, level))
-            refine_mesh!(space, level, corner_elements)
+            refine_domains!(domains, two_scale_operators, corner_elements, level)
             Blk = get_Blk(space, level)
             unchecked_pairs = get_local_pairs(space, level, Blk, current_corners)
             union!(level_corners, current_corners)
@@ -75,7 +83,7 @@ function update_space_with_lchains!(
         intersect!(marked_els[level - 1], get_level_element_ids(space, level - 1))
     end
 
-    return update_basis!(space)
+    return domains
 end
 
 """
