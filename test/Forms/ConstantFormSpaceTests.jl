@@ -27,16 +27,16 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geom))
 
     # Setup the form spaces, evaluate and check the results
-    ξ = Points.CartesianPoints(ntuple(i->range(0.0, rand(), num_points_per_dim), manifold_dim))
+    ξ = Points.CartesianPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
     for form_rank in 0:manifold_dim
         if form_rank ∉ Set([0, manifold_dim])
             @test_throws ArgumentError Forms.ConstantFormSpace(form_rank, geom, "c")
         else
             form_space = Forms.ConstantFormSpace(form_rank, geom, "a")
-
+        
             # Check number of basis functions
             @test Forms.get_num_basis(form_space) == 1
-
+            
             # Check number of basis functions for each element
             for element_id in 1:Forms.get_num_elements(form_space)
                 @test Forms.get_num_basis(form_space, element_id) == 1
@@ -107,31 +107,19 @@ const r = 1.0
 const Δr = 0.1
 
 function mapping(x::AbstractVector)
-    return [x[1].*cos(x[2]*π/2), x[1].*sin(x[2]*π/2)]
+    return [x[1].*cos(x[2]*π/2), x[1].*sin(x[2]*π/2), 1.0]
 end
 function dmapping(x::AbstractVector)
     return [cos(x[2]*π/2) -x[1]*sin(x[2]*π/2)*π/2;
-            sin(x[2]*π/2) x[1]*cos(x[2]*π/2)*π/2]
+            sin(x[2]*π/2) x[1]*cos(x[2]*π/2)*π/2;
+            0.0 0.0]
 end
-dimension = (2, 2)
+dimension = (2, 3)
 curved_mapping = Geometry.Mapping(dimension, mapping, dmapping)
 
 breakpoints = (LinRange(Δr, r, 4), LinRange(0.0, 1.0, 4))
 geom = Geometry.CartesianGeometry(breakpoints)
 mapped_geometry = Geometry.MappedGeometry(geom, curved_mapping)
-
-reference_directory_tree = ["test", "data", "reference", "Plot"]
-output_directory_tree = ["test", "data", "output", "Plot"]
-output_filename = "mytemp_hemisphere.vtu"
-output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename)
-Plot.plot(
-    mapped_geometry;
-    vtk_filename=output_file[1:(end - 4)],
-    n_subcells=1,
-    degree=4,
-    ascii=false,
-    compress=false,
-)
 
 surface_area = π * (r^2 - Δr^2)/4
 
@@ -143,14 +131,12 @@ function test_mapped(num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(mapped_geometry))
 
     # Setup the form spaces, evaluate and check the results
-    ξ = Points.CartesianPoints(ntuple(i->range(0.0, rand(), num_points_per_dim), manifold_dim))
+    ξ = Points.CartesianPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
     for form_rank in 0:manifold_dim
         if form_rank ∉ Set([0, manifold_dim])
             @test_throws ArgumentError Forms.ConstantFormSpace(form_rank, mapped_geometry, "c")
         else
             form_space = Forms.ConstantFormSpace(form_rank, mapped_geometry, "a")
-            α = Mantis.Forms.FormField(form_space, "α")
-            α.coefficients .= 1.0
             
             # Check number of basis functions
             @test Forms.get_num_basis(form_space) == 1
@@ -194,9 +180,9 @@ function test_mapped(num_quad_points_per_dim::Int)
 
             # Check integral
             if form_rank == 0
-                integral = ∫(★(α), dΩ)
+                integral = ∫(★(form_space), dΩ)
             else
-                integral = ∫(α, dΩ)
+                integral = ∫(form_space, dΩ)
             end
             integral_Eval = 0.0
             for element_id in 1:Forms.get_num_elements(form_space)
