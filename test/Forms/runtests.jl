@@ -10,5 +10,8 @@ end
 @testset "FormOperators" verbose = true begin
     include("FormOperators/runtests.jl")
 end
+@testset "ConstantFormSpaces" verbose = true begin
+    include("ConstantFormSpaceTests.jl")
+end
 
 end

@@ -325,6 +325,27 @@ function _evaluate_exterior_derivative(
     return local_d_form_basis_eval, form_basis_indices
 end
 
+############################################################################################
+#                                  Constant Form Space                                     #
+############################################################################################
+
+function _evaluate_exterior_derivative(
+    ::ConstantFormSpace{manifold_dim, 0},
+    ::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim}
+    # Preallocate memory for output array
+    n_derivative_form_components = manifold_dim
+    n_basis_functions = 1
+    n_evaluation_points = Points.get_num_points(xi)
+    local_d_form_basis_eval = [
+        zeros(Float64, n_evaluation_points, n_basis_functions) for
+        _ in 1:n_derivative_form_components
+    ]
+
+    return local_d_form_basis_eval, [[1]]
+end
+
 # #############################################################################################
 # #                                           dd                                              #
 # #############################################################################################

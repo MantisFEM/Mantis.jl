@@ -162,7 +162,9 @@ Returns the geometry of the given form expression.
 # Returns
 - `<:Geometry.AbstractGeometry`: The geometry of the form expression.
 """
-get_geometry(form::AbstractForm) = FunctionSpaces.get_geometry(get_fe_space(form))
+function get_geometry(form::AbstractForm)
+    return get_geometry(get_form(form))
+end
 
 """
     get_geometry(
@@ -342,7 +344,7 @@ space.
 - `Int`: The number of basis functions of the function space.
 """
 function get_num_basis(form_space::AbstractFormSpace)
-    return FunctionSpaces.get_num_basis(get_fe_space(form_space))
+    return get_num_basis(get_form(form_space))
 end
 
 """
@@ -358,7 +360,7 @@ the given form space.
 - `Int`: The number of basis functions at the given element.
 """
 function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
-    return FunctionSpaces.get_num_basis(get_fe_space(form_space), element_id)
+    return get_num_basis(get_form(form_space), element_id)
 end
 
 ############################################################################################
