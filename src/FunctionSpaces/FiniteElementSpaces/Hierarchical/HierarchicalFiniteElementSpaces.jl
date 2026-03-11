@@ -3,22 +3,35 @@
 ############################################################################################
 
 """
-    HierarchicalFiniteElementSpace{
-        manifold_dim, num_components, num_patches, S, T, G, GP
-    } <: AbstractFESpace{manifold_dim, num_components, num_patches}
+	HierarchicalFiniteElementSpace{
+		manifold_dim, num_components, num_patches, S, T, G, GP
+	} <: AbstractFESpace{manifold_dim, num_components, num_patches}
 
-A hierarchical space that is built from nested hierarchies of `manifold_dim`-variate
-function spaces and domains; see [Giannelli2013](@cite).
+A hierarchical space that is built from a nested hierarchy of `manifold_dim`-variate
+function `spaces` and `nested_domains`. At each level of the hierarchy, a certain set of
+elements and basis functions are deemed as active, depending on the `nested_domains`, while
+the rest is inactive.
+
+See [Giannelli2013](@cite) for more information.
 
 # Fields
-- `spaces::Vector{S} `: Collection of `manifold_dim`- variate function spaces.
-- `two_scale_operators::Vector{T}`: Collection of two-scale operators relating each
-	consecutive pair of finite element spaces. See [`AbstractTwoScaleOperator`](@ref).
-- `active_elements::Hierarchy.ActiveInfo`: Information about the active elements in each
-	level.
-- `active_basis::Hierarchy.ActiveInfo`: Information about the active basis in each level.
-- `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains in each
-	level. This is the usual definition of Ωₗ in the literature.
+- `geometry::G`: The hierarchical geometry associated with the hierarchical space. Will be a
+	subtype of [`Geometry.HierarchicalGeometry`](@ref).
+- `parametric_geometry::G`: The parametic hierarchical geometry associated with the
+	hierarchy of parametic geometries from each level. Will be a subtype of
+	[`Geometry.HierarchicalGeometry`](@ref).
+- `spaces::Vector{S} `: Collection of `L` `manifold_dim`-variate function spaces, where `L`
+	is the total number of levels.
+- `two_scale_operators::Vector{T}`: Collection of `L-1` two-scale operators relating each
+	consecutive pair of finite element spaces, where `L` is the total number of levels. See
+	[`AbstractTwoScaleOperator`](@ref).
+- `active_elements::Hierarchy.ActiveInfo`: Information about the active elements at each
+	level. See [`Hierarchy.ActiveInfo`](@ref).
+- `active_basis::Hierarchy.ActiveInfo`: Information about the active basis at each level.
+	See [`Hierarchy.ActiveInfo`](@ref).
+- `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
+	level. This is the usual definition of Ωₗ in the literature. See
+	[`Hierarchy.ActiveInfo`](@ref).
 - `multilevel_elements::SparseArrays.SparseVector{Int, Int}`: Elements where basis from
     multiple levels have non-empty support.
 - `multilevel_extraction_coeffs::Vector{NTuple{num_components, Matrix{Float64}}}`:
@@ -209,7 +222,7 @@ end
 		T <: AbstractTwoScaleOperator,
 	}
 
-Helper constructor for domains given in a per-level vector.
+Constructor for domains given in a per-level vector.
 """
 function HierarchicalFiniteElementSpace(
     spaces::Vector{S},
@@ -287,8 +300,11 @@ applied to determine the active elements.
     determined.
 
 # Returns
-- `active_elements::Hierarchy.ActiveInfo`: Active elements on each level.
-- `active_basis::Hierarchy.ActiveInfo`: Active basis on each level.
+- `active_elements::Hierarchy.ActiveInfo`: Active elements at each level.
+- `active_basis::Hierarchy.ActiveInfo`: Active basis at each level.
+- `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
+	level. This is the usual definition of Ωₗ in the literature. See
+	[`Hierarchy.ActiveInfo`](@ref).
 """
 function get_active_objects_and_nested_domains(
     spaces::Vector{S},
@@ -913,13 +929,25 @@ end
 #                                       Update Space                                       #
 ############################################################################################	
 
-function refine_space(
-    space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo
-)
+"""
+	refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo)
+
+Returns a refined hierarchical space, given an original `space` and a set of hierarchically
+nested `domains`.
+
+# Arguments
+- `space::HierarchicalFiniteElementSpace`: The original hierarchical space.
+- `domains::Hierarchy.ActiveInfo`: Information about the nested domains at each level. This
+	is the usual definition of Ωₗ in the literature. See [`Hierarchy.ActiveInfo`](@ref).
+
+# Returns
+- `refine_space::HierarchicalFiniteElementSpace`: A refined hierarchical space.
+"""
+function refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo)
     L = Hierarchy.get_num_levels(domains)
     spaces = get_spaces(space)
     two_scale_operators = get_two_scale_operators(space)
-	while L > length(spaces)
+    while L > length(spaces)
         new_ts, new_space = build_two_scale_operator(
             spaces[end], get_num_subdivisions(space)
         )
@@ -939,6 +967,23 @@ function refine_space(
     return refined_space
 end
 
+"""
+	refine_space(
+	    space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
+	)
+
+Returns a refined hierarchical space, given an original `space` and a set of
+`marked_elements_per_level`. The elements are used for refinement at each level by
+extracting their children, and consequently updating the `nested_domains` of `space`.
+
+# Arguments
+- `space::HierarchicalFiniteElementSpace`: The original hierarchical space.
+- `marked_elements_per_level::Vector{Vector{Int}}`: The elements marked for refinement at
+	each level, which will be used to refine the nested domains.
+
+# Returns
+- `refine_space::HierarchicalFiniteElementSpace`: A refined hierarchical space.
+"""
 function refine_space(
     space::HierarchicalFiniteElementSpace, marked_elements_per_level::Vector{Vector{Int}}
 )
@@ -968,6 +1013,26 @@ function refine_space(
     return refined_space
 end
 
+"""
+	refine_domains!(
+	    domains::Hierarchy.ActiveInfo,
+	    two_scale_operators,
+	    marked_elements_per_level::Vector{Vector{Int}},
+	)
+
+Refines `domains` in-place, by extracting the children of the `marked_elements_per_level`
+using `two_scale_operators`.
+
+# Arguments
+- `domains::Hierarchy.ActiveInfo`: The hierarchical domains to be refined.
+- `two_scale_operators`: The two-scale operators used to extract the children of the marked
+	elements.
+- `marked_elements_per_level::Vector{Vector{Int}}`: The elements marked for refinement at
+	each level, which will be used to refine the nested domains.
+
+# Returns
+- `domains::Hierarchy.ActiveInfo`: The refined `domains`.
+"""
 function refine_domains!(
     domains::Hierarchy.ActiveInfo,
     two_scale_operators,
@@ -983,10 +1048,16 @@ function refine_domains!(
     return domains
 end
 
+"""
+	refine_domains!(domains, two_scale_operators, marked_elements, level)
+
+Refines `domains` in-place, by extracting the children of the `marked_elements` using
+`two_scale_operators` at the given `level`.
+"""
 function refine_domains!(domains, two_scale_operators, marked_elements, level)
-	if isempty(marked_elements)
-		return domains
-	end
+    if isempty(marked_elements)
+        return domains
+    end
 
     refined_elements = mapreduce(
         el -> get_element_children(two_scale_operators[level], el), vcat, marked_elements

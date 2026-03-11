@@ -566,6 +566,25 @@ function update_hierarchical_de_rham_complex(
     return new_complex
 end
 
+"""
+	update_hierarchical_de_rham_complex(
+		complex::C, data
+	) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+
+Returns a refined hierarchical de Rham complex, based on the given `complex` and refinement
+`data`. The input `data` should have a dedicated method in
+`FunctionSpaces.refine_space(space, data)`.
+
+See also [`FunctionSpaces.refine_space`](@ref).
+
+# Arguments
+- `complex::C`: The hierarchical B-spline de Rham complex.
+- `data`: The information used for refinement.
+
+# Returns
+- `new_complex<:NTuple{num_forms, AbstractFormSpace}`:A tuple with the `manifold_dim + 1`
+	refined spaces that form the de Rham complex.
+"""
 function update_hierarchical_de_rham_complex(
     complex::C, data
 ) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}

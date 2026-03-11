@@ -1,18 +1,22 @@
 """
-	update_space_with_lchains!(
+	update_domains_with_lchains!(
 	    space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
 	)
 
-Takes as input a `space` corresponding to an exact de Rham complex and a set of `marked_els`
-for refinement, and returns  a refined space corresponding to an exact complex by adding
-L-chains where needed. We refer the reader to [Cabanas2025](@cite) for further details.
+Returns a hierarchically nested set of `domains`, associated with an exact de Rham complex.
+The `domains` are computed from the original domains of the given `space`, and refinement
+procedure that uses `marked_els` and L-chains. We refer the reader to [Cabanas2025](@cite)
+for further details.
+Note that the bang (!) is used to denote an in-place change, despite returning `domains`
+which is not an argument. This is because `domains` is a field of the `space` structure.
 
 # Arguments
-- `space::HierarchicalFiniteElementSpace{2}`: The space to be updated.
-- `marked_els::Vector{Vector{Int}}`: The marked elements.
+- `space::HierarchicalFiniteElementSpace{2}`: The space to be refined.
+- `marked_els::Vector{Vector{Int}}`: The elements used for refinement.
 
 # Returns
-- `space::HierarchicalFiniteElementSpace{2}`: The refined space, with no problematic pairs.
+- `domains::Hierarchy.ActiveInfo`: The hierarchically nested domains after refinement. This
+	is also a field of `space`, which is modified in-place.
 """
 function update_domains_with_lchains!(
     space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
