@@ -17,8 +17,8 @@ Concrete implementation of a function space for differential forms.
 - `F`: Type of the finite element space
 
 # Inner Constructors
-- `FormSpace(form_rank::Int,fem_space::F, label::AbstractString)`: Constructor for differential
-    form spaces.
+- `FormSpace(form_rank::Int,fem_space::F, label::AbstractString)`: Constructor for
+	differential form spaces.
 """
 struct FormSpace{manifold_dim, form_rank, F, L} <:
        AbstractFormSpace{manifold_dim, form_rank}
@@ -58,7 +58,7 @@ struct FormSpace{manifold_dim, form_rank, F, L} <:
                 ArgumentError(
                     "Mantis.Forms.FormSpace: form_rank = $form_rank with " *
                     "manifold_dim = $manifold_dim requires FE space with only one " *
-                    "component (got num_compoents = $num_components).",
+                    "component (got num_components = $num_components).",
                 ),
             )
         elseif (form_rank ∉ Set([0, manifold_dim])) && (num_components != manifold_dim)
@@ -66,7 +66,7 @@ struct FormSpace{manifold_dim, form_rank, F, L} <:
                 ArgumentError(
                     "Mantis.Forms.FormSpace: form_rank = $form_rank with " *
                     "manifold_dim = $manifold_dim requires a FE space with " *
-                    "num_components = $manifold_dim (got num_components = $num_components).",
+                    "num_components = $manifold_dim (got $num_components).",
                 ),
             )
         end
@@ -84,9 +84,13 @@ get_estimated_nnz_per_elem(form_space::FormSpace) = get_max_local_dim(form_space
 
 get_geometry(form_space::FormSpace) = FunctionSpaces.get_geometry(get_fe_space(form_space))
 
-get_num_basis(form_space::FormSpace) = FunctionSpaces.get_num_basis(get_fe_space(form_space))
+function get_num_basis(form_space::FormSpace)
+    return FunctionSpaces.get_num_basis(get_fe_space(form_space))
+end
 
-get_num_basis(form_space::FormSpace, element_id::Int) = FunctionSpaces.get_num_basis(get_fe_space(form_space), element_id)
+function get_num_basis(form_space::FormSpace, element_id::Int)
+    return FunctionSpaces.get_num_basis(get_fe_space(form_space), element_id)
+end
 
 ############################################################################################
 #                                     Evaluate methods                                     #
