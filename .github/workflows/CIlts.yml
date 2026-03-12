@@ -24,7 +24,7 @@ jobs:
     name: Julia "lts" - ubuntu-latest - x64 - ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: "lts"
