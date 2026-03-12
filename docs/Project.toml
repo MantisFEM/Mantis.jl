@@ -13,3 +13,4 @@ Mantis = {path = ".."}
 
 [compat]
 Documenter = "1.3"
+Literate = "2.21.0"
