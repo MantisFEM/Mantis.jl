@@ -765,64 +765,6 @@ function compute_dof_partition(spaces, active_basis, L)
     return dof_partition
 end
 
-function create_masked_geometry(spaces, two_scale_operators, active_elements)
-    eval_mask = create_evaluation_mask(spaces, two_scale_operators, active_elements)
-    base_geoemtry = get_geometry(first(spaces))
-
-    return Geometry.MaskedGeometry(base_geoemtry, eval_mask)
-end
-
-function create_evaluation_mask(
-    spaces::Vector{S}, two_scale_operators, active_elements
-) where {manifold_dim, S <: AbstractFESpace{manifold_dim}}
-    num_elements_base = get_num_elements(first(spaces))
-    base_geometry = get_parametric_geometry(first(spaces))
-    base_element_vertices = [
-        Geometry.get_element_vertices(base_geometry, i) for i in 1:num_elements_base
-    ]
-    num_elements = Hierarchy.get_num_objects(active_elements)
-    element_id_map = zeros(Int, num_elements)
-    eval_element_vertices = Vector{NTuple{manifold_dim, NTuple{2, Float64}}}(
-        undef, num_elements
-    )
-    for i in 1:num_elements
-        element_level, element_level_id = Hierarchy.convert_to_level_and_level_id(
-            active_elements, i
-        )
-        eval_element_vertices[i] = get_element_vertices(
-            spaces[element_level], element_level_id
-        )
-        element_id_map[i] = get_element_ancestor(
-            two_scale_operators, element_level_id, element_level, element_level - 1
-        )
-    end
-
-    translations = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
-    scalings = Vector{NTuple{manifold_dim, Float64}}(undef, num_elements)
-    for element_id in 1:num_elements
-        element_id_base = element_id_map[element_id]
-        base_el_verts = base_element_vertices[element_id_base]
-        eval_el_verts = eval_element_vertices[element_id]
-        scalings[element_id] = ntuple(manifold_dim) do k
-            eval_scaling = eval_el_verts[k][2] - eval_el_verts[k][1]
-            base_scaling = base_el_verts[k][2] - base_el_verts[k][1]
-
-            return eval_scaling / base_scaling
-        end
-
-        translations[element_id] = ntuple(manifold_dim) do k
-            return (eval_el_verts[k][1] - base_el_verts[k][1]) /
-                   (base_el_verts[k][2] - base_el_verts[k][1])
-        end
-    end
-
-    eval_mask = Geometry.AffineEvaluationMask(
-        num_elements, num_elements_base, element_id_map, translations, scalings
-    )
-
-    return eval_mask
-end
-
 ############################################################################################
 #                                        Extraction                                        #
 ############################################################################################
