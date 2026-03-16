@@ -82,8 +82,8 @@ struct HierarchicalFiniteElementSpace{
         manifold_dim,
         num_components,
         num_patches,
-        G <: Geometry.HierarchicalGeometry,
-        GP <: Geometry.HierarchicalGeometry,
+        G <: Geometry.AbstractGeometry,
+        GP <: Geometry.AbstractGeometry,
         S <: AbstractFESpace{manifold_dim, num_components, num_patches},
         T <: AbstractTwoScaleOperator,
     }
