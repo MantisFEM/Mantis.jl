@@ -11,24 +11,73 @@ Conceptually, this structure combines the functionalities of `CartesianIndices` 
   indexing.
 - `lin_num_points::LI`: The `LinearIndices` used to convert from cartesian to linear
   indexing.
+- `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
+	`cart_num_points`. If the `dim`-th entry has value `i`, then dimension `dim` will be the
+	`i`-th fastest changing index.
+- `permuted_cart_num_points::CI`: A permuted version of `cart_num_points` as given by
+	`iteration_order`.
+
+# Example
+```julia
+julia> points = Points.CartesianPoints(([1,2], [1,2,3]), (1,2));
+
+julia> for point in points
+           display(point)
+       end
+(1, 1)
+(2, 1)
+(1, 2)
+(2, 2)
+(1, 3)
+(2, 3)
+
+julia> points = Points.CartesianPoints(([1,2], [1,2,3]), (2,1));
+
+julia> for point in points
+           display(point)
+       end
+(1, 1)
+(1, 2)
+(1, 3)
+(2, 1)
+(2, 2)
+(2, 3)
+```
 """
 struct CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
     constituent_points::NTuple{manifold_dim, T}
     cart_num_points::CI
     lin_num_points::LI
+    iteration_order::NTuple{manifold_dim, Int}
+    permuted_cart_num_points::CI
 
     function CartesianPoints(
-        constituent_points::NTuple{manifold_dim, T}
+        constituent_points::NTuple{manifold_dim, T},
+        iteration_order::NTuple{manifold_dim, Int},
     ) where {manifold_dim, T <: AbstractVector}
+        constituent_num_points = map(length, constituent_points)
         cart_num_points = CartesianIndices(
-            ntuple(dim -> length(constituent_points[dim]), manifold_dim)
+            ntuple(dim -> constituent_num_points[dim], manifold_dim)
         )
         lin_num_points = LinearIndices(cart_num_points)
+        permuted_cart_num_points = CartesianIndices(
+            ntuple(dim -> constituent_num_points[iteration_order[dim]], manifold_dim)
+        )
 
         return new{manifold_dim, T, typeof(cart_num_points), typeof(lin_num_points)}(
-            constituent_points, cart_num_points, lin_num_points
+            constituent_points,
+            cart_num_points,
+            lin_num_points,
+            iteration_order,
+            permuted_cart_num_points,
         )
     end
+end
+
+function CartesianPoints(constituent_points::NTuple{manifold_dim}) where {manifold_dim}
+    iteration_order = ntuple(k -> k, manifold_dim)
+
+    return CartesianPoints(constituent_points, iteration_order)
 end
 
 Base.eltype(::CartesianPoints{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
@@ -49,6 +98,21 @@ Returns the `LinearIndices` used to convert from cartesian to linear indexing.
 get_lin_num_points(points::CartesianPoints) = points.lin_num_points
 
 """
+	get_iteration_order(points::CartesianPoints)
+
+Returns the `iteration_order` order used to index `points`.
+"""
+get_iteration_order(points::CartesianPoints) = points.iteration_order
+
+"""
+	get_permuted_cart_num_points(points::CartesianPoints)
+
+Returns the permuted `cart_num_points` used to index `points`, as given by
+`iteration_order`.
+"""
+get_permuted_cart_num_points(points::CartesianPoints) = points.permuted_cart_num_points
+
+"""
     get_constituent_num_points(
       points::CartesianPoints{manifold_dim}
     ) where {manifold_dim}
@@ -61,8 +125,12 @@ function get_constituent_num_points(
     return size(get_cart_num_points(points))
 end
 
-function Base.getindex(points::CartesianPoints, i::Int)
-    return getindex(points, get_cart_num_points(points)[i])
+function Base.getindex(points::CartesianPoints{manifold_dim}, i::Int) where {manifold_dim}
+    unordered_point = get_permuted_cart_num_points(points)[i]
+    iteration_order = get_iteration_order(points)
+    ordered_point = ntuple(dim -> unordered_point[iteration_order[dim]], manifold_dim)
+
+    return getindex(points, ordered_point)
 end
 
 function Base.getindex(
