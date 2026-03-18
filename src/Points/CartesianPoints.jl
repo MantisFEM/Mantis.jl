@@ -58,7 +58,7 @@ Returns the number of constituent points per manifold dimension.
 function get_constituent_num_points(
     points::CartesianPoints{manifold_dim}
 ) where {manifold_dim}
-    return Tuple(maximum(get_cart_num_points(points)))
+    return size(get_cart_num_points(points))
 end
 
 function Base.getindex(points::CartesianPoints, i::Int)
