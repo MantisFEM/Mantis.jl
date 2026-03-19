@@ -2,4 +2,4 @@
 
 using .Forms
 
-export d, ★, ♯, ∧, ∫, codifferential, dstar, δ
+export d, ★, ♯, ∧, ∫, codifferential, dstar, δ, ∂
