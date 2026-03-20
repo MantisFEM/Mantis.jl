@@ -72,6 +72,13 @@ Returns the dimension-wise derivative orders of `partial_der`.
 """
 get_orders(partial_der::PartialDerivative) = partial_der.orders
 
+"""
+	get_form(partial_der::PartialDerivative)
+
+Returns the form to which the partial derivative is applied.
+"""
+get_form(partial_der::PartialDerivative) = partial_der.form
+
 ############################################################################################
 #                                        Evaluation                                        #
 ############################################################################################
