@@ -143,7 +143,7 @@ function _add_geometric_scaling!(
 ) where {manifold_dim}
     jacobian = Geometry.jacobian(get_geometry(form), element_id, xi)
     for point in axes(partial_der_eval[1], 1), dim in 1:manifold_dim
-        scaling = jacobian[point, dim, dim]^partial_orders[dim]
+        scaling = jacobian[point][dim, dim]^partial_orders[dim]
         for component in eachindex(partial_der_eval)
             partial_der_eval[component][point, :] ./= scaling
         end
