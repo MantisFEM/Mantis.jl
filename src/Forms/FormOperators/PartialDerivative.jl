@@ -112,7 +112,7 @@ function evaluate(
     partial_orders = get_orders(partial_der)
     num_derivatives = sum(partial_orders)
     form_eval, form_indices = _evaluate_form_in_canonical_coordinates(
-        get_form_space(form), element_id, xi, num_derivatives
+        get_form(form), element_id, xi, num_derivatives
     )
     der_idx = FunctionSpaces.get_derivative_idx([partial_orders...])
     partial_der_eval = [

@@ -17,5 +17,8 @@ end
 @testset "Integral" verbose = true begin
     include("IntegralTests.jl")
 end
+@testset "PartialDerivative" verbose = true begin
+    include("PartialDerivativeTests.jl")
+end
 
 end
