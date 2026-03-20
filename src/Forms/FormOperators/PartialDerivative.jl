@@ -103,6 +103,29 @@ function evaluate(
     return partial_der_eval, form_indices
 end
 
+function evaluate(
+    partial_der::PartialDerivative{manifold_dim, 0, 0},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim}
+    form = get_form(partial_der)
+    partial_orders = get_orders(partial_der)
+    num_derivatives = sum(partial_orders)
+    form_eval, form_indices = _evaluate_form_in_canonical_coordinates(
+        get_form_space(form), element_id, xi, num_derivatives
+    )
+    der_idx = FunctionSpaces.get_derivative_idx([partial_orders...])
+    partial_der_eval = [
+        form_eval[num_derivatives + 1][der_idx][1] *
+        view(get_coefficients(form), form_indices[1]),
+    ]
+    partial_der_eval = _add_geometric_scaling!(
+        partial_der_eval, form, element_id, xi, partial_orders
+    )
+
+    return partial_der_eval, [[1]]
+end
+
 """
 	_add_geometric_scaling!(
 	    partial_der_eval, form::AbstractForm{manifold_dim}, element_id, xi, partial_orders
