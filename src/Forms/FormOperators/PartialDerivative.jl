@@ -36,12 +36,10 @@ struct PartialDerivative{manifold_dim, form_rank, expression_rank, F, L} <:
         end
 
         if !(typeof(get_geometry(form)) <: Geometry.CartesianGeometry)
-            throw(
-                ArgumentError(
-                    "Only 'CartesianGeometry' is allowed. " *
-                    "A geometry of type '$(nameof(typeof(get_geometry(form))))' was given.",
-                ),
-            )
+            message =
+                "Only 'CartesianGeometry' is guaranteed to work correctly. " *
+                "A geometry of type '$(nameof(typeof(get_geometry(form))))' was given."
+            @warn message
         end
 
         old_label = get_label(form)
