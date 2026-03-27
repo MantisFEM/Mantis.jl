@@ -1,7 +1,7 @@
-module GLMakieExt
+module MakieExt
 
 using Mantis
-using GLMakie
+using Makie
 
 function Mantis.Plot.plot_solution(
     fields::T,
