@@ -5,15 +5,12 @@ using Mantis
 using Test
 using DelimitedFiles
 
-# Refer to the following file for method and variable definitions
-include("../../examples/HelperFunctions.jl")
-
 ############################################################################################
 #                                      Problem setup                                       #
 ############################################################################################
 # Mesh
 const starting_point = (0.0, 0.0)
-const box_size = (fpi, 1.0) # This size is so that the eigenvalues are unique.
+const box_size = (Float64(pi), 1.0) # This size is so that the eigenvalues are unique.
 const num_runs = 2 # Number of problem runs. Each solve 2≤i≤num_runs will have 2^i elements.
 num_elements = [(2, 2) .^ i for i in 1:num_runs]
 

@@ -4,15 +4,12 @@ using Mantis
 
 using Test
 
-# Refer to the following file for method and variable definitions
-include("../../examples/HelperFunctions.jl")
-
 ############################################################################################
 #                                      Problem setup                                       #
 ############################################################################################
 # Mesh
 const starting_point = (0.0, 0.0)
-const box_size = (fpi, fpi)
+const box_size = (Float64(pi), Float64(pi))
 num_elements = (2, 2) .^ 3 # Initial mesh size.
 
 # B-spline parameters
