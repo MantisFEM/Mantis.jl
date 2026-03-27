@@ -12,8 +12,8 @@ hero:
     alt: Mantis
   actions:
     - theme: brand
-      text: Getting Mantis
-      link: /Manual/InstallGuide
+      text: Getting Started
+      link: /GettingStarted
     - theme: alt
       text: View on Github
       link: https://github.com/MantisFEM/Mantis.jl

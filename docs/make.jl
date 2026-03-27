@@ -27,8 +27,6 @@ for example in readdir(examples_dir)
     end
 end
 
-Manual = [joinpath("Manual", "InstallGuide.md")]
-
 Examples = [
     joinpath("Examples", "Introduction.md"),
     map(example_name -> joinpath("Examples", "$example_name.md"), example_names)...,
@@ -82,7 +80,7 @@ ReleaseHistory = [
 
 Pages = [
     "Home" => "index.md",
-    "Manual" => Manual,
+	"Getting Started" => "GettingStarted.md",
     "Examples" => Examples,
     "Tutorials" => Tutorials,
     "Developer Documentation" => DevelDocs,
