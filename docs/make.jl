@@ -17,7 +17,7 @@ for example in readdir(examples_dir)
 
         push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
 
-        Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
+        # Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
         Literate.markdown(
             path_to_example,
