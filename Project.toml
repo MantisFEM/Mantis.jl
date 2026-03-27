@@ -1,6 +1,6 @@
 name = "Mantis"
 uuid = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Diogo Costa Cabanas <d.costacabanas@tudelft.nl>", "Joey Dekker <j.dekker-2@tudelft.nl>", "Deepesh Toshniwal <d.toshniwal@tudelft.nl>", "Artur Palha <a.palha@tudelft.nl>"]
 
 [deps]
