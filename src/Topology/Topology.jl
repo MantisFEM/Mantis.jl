@@ -483,6 +483,111 @@ function position2id(position::NTuple{manifold_dim, Int}) where {manifold_dim}
     return POSITION2ID_DICT[position]
 end
 
+const ID2DOFDIVISION_DICT = Dict(
+    #----------------------------------------------------
+    # 1D
+    #----------------------------------------------------
+    # Vertex numbering
+    (1, 0, 1) => 1,
+    (1, 0, 2) => 3,
+    # Edge numbering
+    (1, 1, 1) => 2,
+    #----------------------------------------------------
+    # 2D
+    #----------------------------------------------------
+    # Vertex numbering
+    (2, 0, 1) => 1,
+    (2, 0, 2) => 3,
+    (2, 0, 3) => 9,
+    (2, 0, 4) => 7,
+    # Edge numbering
+    (2, 1, 1) => 4,
+    (2, 1, 2) => 6,
+    (2, 1, 3) => 2,
+    (2, 1, 4) => 8,
+    # Face numbering
+    (2, 2, 1) => 5,
+    #----------------------------------------------------
+    # 3D
+    #----------------------------------------------------
+    # Vertex numbering
+    (3, 0, 1) => 1,
+    (3, 0, 2) => 3,
+    (3, 0, 3) => 9,
+    (3, 0, 4) => 7,
+    (3, 0, 5) => 19,
+    (3, 0, 6) => 21,
+    (3, 0, 7) => 27,
+    (3, 0, 8) => 25,
+    # Edge numbering
+    (3, 1, 1) => 26,
+    (3, 1, 2) => 20,
+    (3, 1, 3) => 2,
+    (3, 1, 4) => 8,
+    (3, 1, 5) => 24,
+    (3, 1, 6) => 22,
+    (3, 1, 7) => 4,
+    (3, 1, 8) => 6,
+    (3, 1, 9) => 18,
+    (3, 1, 10) => 16,
+    (3, 1, 11) => 10,
+    (3, 1, 12) => 12,
+    # Face numbering
+    (3, 2, 1) => 13,
+    (3, 2, 2) => 15,
+    (3, 2, 3) => 11,
+    (3, 2, 4) => 17,
+    (3, 2, 5) => 5,
+    (3, 2, 6) => 23,
+    # Volume numbering
+    (3, 3, 1) => 14,
+)
+
+function id_to_dof_division(manifold_dim::Int, object_dim::Int, object_local_id::Int)
+    return ID2DOFDIVISION_DICT[(manifold_dim, object_dim, abs(object_local_id))]
+end
+
+
+function get_boundaries_and_interfaces(topology)
+    manifold_dim = get_manifold_dim(topology)
+    boundaries = Tuple{Int, Int}[]
+    interfaces = Tuple{Int, Int}[]
+    for dim in manifold_dim-1:-1:0
+        # Check which patches (of dimension manifold_dim) the current bounding entities
+        # belong to.
+        bounding_entities = topology[dim+1, manifold_dim+1]
+        for i in eachindex(bounding_entities)
+            # If they are not shared, this entity has only 1 patch in its list.
+            if length(bounding_entities[i]) == 1
+                push!(boundaries, (dim, i))
+            else
+                push!(interfaces, (dim, i))
+            end
+        end
+    end
+
+    return boundaries, interfaces
+end
+
+function get_interfaces_on_boundary(topology)
+    manifold_dim = get_manifold_dim(topology)
+    boundaries, interfaces = get_boundaries_and_interfaces(topology)
+    interfaces_on_boundary = Tuple{Int, Int}[]
+    for (dim, global_id) in interfaces
+        # Check which bounding entities (of dimension manifold_dim-1) the current interface
+        # belongs to.
+        connected_edges = topology[dim+1, dim+2][global_id]
+        for edge in connected_edges
+            if (dim+1, edge) in boundaries
+                push!(interfaces_on_boundary, (dim, global_id))
+                continue
+            end
+        end
+    end
+
+    return unique(interfaces_on_boundary)
+end
+
 # Local/global conversions.
 """
     get_global_id(
@@ -602,17 +707,31 @@ get_local_id(topology, 3, 7, 1)
 ```
 """
 function get_local_id(topology::AbstractTopology, patch_id, global_object_id, object_dim)
-    # First get the local id with no sign
-    local_object_id = findfirst(
-        x -> abs(x) == global_object_id,
-        topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id],
-    )
+    incidence_relation = topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id]
+    # First get the local id while ignoring the sign.
+    local_object_id = findfirst(x -> abs(x) == global_object_id, incidence_relation)
+
+    if isnothing(local_object_id)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Mantis.Topology.get_local_id: no local object id found for inputs:",
+                    " patch_id ",
+                    patch_id,
+                    ", global_object_id ",
+                    global_object_id,
+                    ", object_dim ",
+                    object_dim,
+                    ". The available global topological objects on this patch are ",
+                    incidence_relation,
+                    "."
+                )
+            )
+        )
+    end
 
     # Then get the sign
-    local_object_id =
-        local_object_id * sign(
-            topology[get_manifold_dim(topology) + 1, object_dim + 1][patch_id][local_object_id],
-        )
+    local_object_id = local_object_id * sign(incidence_relation[local_object_id])
 
     return local_object_id
 end
