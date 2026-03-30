@@ -376,7 +376,7 @@ function evaluate(
     geometry::MappedGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches, G, Map}
+) where {manifold_dim, image_dim, num_patches}
     base_patch_id, base_element_id = get_base_patch_and_element_id(geometry, element_id)
     x = evaluate(get_base_geometry(geometry, base_patch_id), base_element_id, xi)
     x_mapped = evaluate(get_mapping(geometry, base_patch_id), x)
