@@ -1,4 +1,5 @@
 using Mantis
+using GLMakie
 
 # Generate a parent topology
 parent_topology = Topology.MeshTopology([
@@ -9,7 +10,7 @@ parent_topology = Topology.MeshTopology([
 geo3d2 = Mantis.Geometry.CartesianGeometry(
     (
         (LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 4)),
-        (LinRange(1.0, 3.0, 3), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 4)),
+        (LinRange(1.0, 3.0, 4), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 4)),
     ),
     parent_topology,
 )
@@ -26,7 +27,63 @@ skeleton_geometry = Mantis.Geometry.SkeletonGeometry(geo3d2)
 
 num_elements_per_patch = Mantis.Geometry.get_num_elements_per_patch(skeleton_geometry)
 
+parent_elements_ids, patch_parents = Mantis.Geometry.get_parent_elements(skeleton_geometry, 1, 1)
 
+constituent_points = tuple(LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3))
+points_skeleton = Mantis.Points.CartesianPoints(constituent_points)
+
+points_parent = Mantis.Geometry.skeleton_element_to_parent_element_coords(
+    points_skeleton, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1])
+
+for point in points_parent
+    display(point)
+end
+
+# skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, 10, points_skeleton)
+
+function plot_points_sequential(geometry, points::Matrix{Float64}, lag::Float64=0.1)
+    size(points, 2) == 3 || throw(ArgumentError("points must be an n×3 matrix"))
+    
+    fig = Mantis.Plot.plot_topology(geometry)
+    resize!(fig, 1600, 1200)
+    ax = fig.content[1]
+    ax.elevation[] = π/6
+    ax.azimuth[] = 2*π/10
+
+    xs = Observable(Float64[])
+    ys = Observable(Float64[])
+    zs = Observable(Float64[])
+
+    scatter!(ax, xs, ys, zs)
+
+    display(fig)
+
+    for i in 1:size(points, 1)
+        push!(xs[], points[i, 1])
+        push!(ys[], points[i, 2])
+        push!(zs[], points[i, 3])
+        notify(xs)
+        notify(ys)
+        notify(zs)
+        sleep(lag)
+    end
+end
+
+skeleton_topology[3, 1]
+
+for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
+    skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
+    plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
+end
+
+# for element_id in 19:27
+#     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
+#     plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
+# end
+
+parent_elements_ids, patch_parents = Mantis.Geometry.get_parent_elements(skeleton_geometry, 3, 1)
+points_parent = Mantis.Geometry.skeleton_element_to_parent_element_coords(
+points_skeleton, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1])
 
 # # Oriol Periodic B-Splines
 

@@ -587,40 +587,6 @@ function get_interfaces_on_boundary(topology)
     return unique(interfaces_on_boundary)
 end
 
-# Provide quick access to the number of geometric objects in each dimension
-# (vertices, edges, patches) in 2D
-# (vertices, edges, faces, patches) in 3D
-Base.size(topology::MeshTopology) = topology.n_geometric_objects
-# geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
-# has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
-# not at 0 (vertices have geometric dimension 0).
-Base.size(topology::MeshTopology, geometric_dim_id::Int) =
-    topology.n_geometric_objects[geometric_dim_id]
-
-Base.size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim} = 
-    topology.parent_topology.n_geometric_objects[1:(manifold_dim + 1)]
-
-# geometric_dim_id is the index associated to the geometric dimension. Geometric dimension n
-# has index (n + 1), this is done to keep consistency with julia indices that start at 1 and
-# not at 0 (vertices have geometric dimension 0).
-function Base.size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
-    @boundscheck begin
-        if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
-            throw(BoundsError(topology, geometric_dim_id))
-        end
-    end
-    @inbounds return topology.parent_topology.n_geometric_objects[geometric_dim_id]
-end
-
-function get_local_size(topology::MeshTopology)
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
-    return topology.n_local_geometric_objects
-end
-
-function get_local_size(topology::SkeletonTopology{manifold_dim}) where {manifold_dim}
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects in each dimension
-    return topology.parent_topology.n_local_geometric_objects[1:(manifold_dim + 1)]
-end
 
 # Local/global conversions.
 """
@@ -672,11 +638,6 @@ function get_global_id(
     return global_id
 end
 
-function get_local_size(topology::MeshTopology, geometric_dim_id::Int)
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
-    return topology.n_local_geometric_objects[geometric_dim_id]
-end
-
 """
     get_global_id(
         topology::AbstractTopology{manifold_dim},
@@ -712,15 +673,6 @@ function get_global_id(
     return get_global_id(
         topology, patch_id, manifold_dim, local_object_id, local_object_dim
     )
-end
-function get_local_size(topology::SkeletonTopology{manifold_dim}, geometric_dim_id::Int) where {manifold_dim}
-    # Get the (local, i.e., per patch, assumed all patches identical) number of geometric objects for a given dimension
-    @boundscheck begin
-        if !(1 ≤ geometric_dim_id ≤ (manifold_dim + 1))
-            throw(BoundsError(topology, geometric_dim_id))
-        end
-    end
-    @inbounds return topology.parent_topology.n_local_geometric_objects[geometric_dim_id]
 end
 
 """
