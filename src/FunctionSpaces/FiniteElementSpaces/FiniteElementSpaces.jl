@@ -214,7 +214,9 @@ function get_dof_partition(space::AbstractFESpace)
     return space.dof_partition
 end
 
-function get_dofs(space::AbstractFESpace, patch_id::Int, object_dim::Int, object_local_id::Int)
+function get_dofs(
+    space::AbstractFESpace, patch_id::Int, object_dim::Int, object_local_id::Int
+)
     manifold_dim = get_manifold_dim(space)
     dof_division = Topology.id_to_dof_division(manifold_dim, object_dim, object_local_id)
     return get_dof_partition(space)[patch_id][dof_division]
@@ -233,7 +235,7 @@ function get_interface_dofs(space::AbstractFESpace)
     for interface in interfaces
         dim = interface[1]
         interface_id = interface[2]
-        patch_id = topology[dim+1, get_manifold_dim(space)+1][interface_id][1] # There is only one patch.
+        patch_id = topology[dim + 1, get_manifold_dim(space) + 1][interface_id][1] # There is only one patch.
         local_interface_id = Topology.get_local_id(topology, patch_id, interface_id, dim)
         push!(local_ids, (patch_id, dim, local_interface_id))
     end
@@ -250,7 +252,7 @@ function get_boundary_dofs(space::AbstractFESpace, include_boundary_interfaces=t
     for boundary in boundaries
         dim = boundary[1]
         boundary_id = boundary[2]
-        patch_id = topology[dim+1, get_manifold_dim(space)+1][boundary_id][1] # There is only one patch.
+        patch_id = topology[dim + 1, get_manifold_dim(space) + 1][boundary_id][1] # There is only one patch.
         local_boundary_id = Topology.get_local_id(topology, patch_id, boundary_id, dim)
         push!(local_ids, (patch_id, dim, local_boundary_id))
     end
@@ -659,7 +661,7 @@ degrees of freedom to the local degrees of freedom.
 - `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
 """
 function assemble_global_extraction_matrix(space::AbstractFESpace)
-    throw(
+    return throw(
         ArgumentError(
             "'assemble_global_extraction_matrix' not implemented for $(typeof(space))"
         ),
@@ -791,6 +793,7 @@ include("TensorProductSpaces/TensorProductSpaces.jl")
 
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
+include("UnstructuredSpaces/C0Spaces.jl")
 
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
