@@ -154,7 +154,14 @@ get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.lin_num_elements[patch_id]
 
 # Getters using topological information
-function get_elements(geometry::CartesianGeometry, patch_id, local_object_id, geometric_dim)
+function get_elements(
+    geometry::CartesianGeometry, 
+    patch_id::Int, 
+    local_object_id::Int, 
+    geometric_dim::Int;
+    rotation::Int=0,
+    orientation::Int=1
+)
     position = Topology.id2position(
         get_manifold_dim(geometry), geometric_dim, local_object_id
     )
@@ -180,9 +187,26 @@ function get_elements(geometry::CartesianGeometry, patch_id, local_object_id, ge
         offset += get_num_elements(geometry, i)
     end
 
+    # Drops the dimensions that have only one element, to get
+    # an array of minimal dimension, i.e., an array of dimension
+    # geometric_dim
     dims_to_drop = Tuple(findall(i -> length(mask[i]) == 1, 1:length(mask)))
-    return dropdims(element_ids .+ offset, dims=dims_to_drop)
-    # return element_ids .+ offset
+    element_ids = dropdims(element_ids .+ offset, dims=dims_to_drop)
+    
+    # We now need to match the element numbers depending on the 
+    # rotation and orientation requested
+    if orientation == -1
+        # Transpose if orientation must be reversed
+        element_ids = transpose(element_ids)
+    end
+    
+    if rotation != 0
+        # Perform rotation of the numbers
+        element_ids = rotl90(element_ids, rotation)
+    end
+    
+    # Return flattened (as vector) numbers
+    return vec(element_ids)
 end
 
 # Getters for consituents.
@@ -191,24 +215,79 @@ function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int
     return get_cart_num_elements(geometry, patch_id)[local_element_id], patch_id
 end
 
-function get_constituent_num_elements(geometry::CartesianGeometry, patch_id::Int)
+function get_constituent_num_elements(
+    geometry::CartesianGeometry{manifold_dim}, 
+    patch_id::Int;
+    local_object_id::Int=1, 
+    geometric_dim::Int=manifold_dim
+) where {manifold_dim}
     # The cartesian number of elements is always ordered and created with the number of
     # elements in each constituent. So, its last entry is the total number of elements per
     # constituent. This means we don't have to search for its maximum.
-    return Tuple(last(get_cart_num_elements(geometry, patch_id)))
+    num_elements_per_dimension = Tuple(last(get_cart_num_elements(geometry, patch_id)))
+
+    # Check which the position/definition of the local object
+    position = Topology.id2position(
+        manifold_dim, geometric_dim, local_object_id
+    )
+
+    # Compute the element_ids on this patch from the topological position.
+    
+    # Code below will break if not ran in sequence, which is not guaranteed
+    # in julia.
+    # position_id = Ref(1)
+    # constituent_num_elements = ntuple(geometric_dim) do k
+    #     while position[position_id[]] != 0
+    #         position_id[] += 1
+    #     end
+    #     position_id[] += 1
+    #     num_elements_per_dimension[position_id[] - 1]
+    # end
+    # return constituent_num_elements
+
+    constituent_num_elements = Vector{Int}(undef, geometric_dim)
+    position_id = 1
+    for k in 1:geometric_dim
+        while position[position_id] != 0
+            position_id += 1
+        end
+        constituent_num_elements[k] = num_elements_per_dimension[position_id]
+        position_id += 1
+    end
+    return NTuple{geometric_dim, Int}(constituent_num_elements)
 end
-function get_constituent_num_elements(geometry::CartesianGeometry)
-    return (get_constituent_num_elements(geometry, i) for i in 1:get_num_patches(geometry))
+
+function get_constituent_num_elements(
+    geometry::CartesianGeometry{manifold_dim};
+    local_object_id::Int=1, 
+    geometric_dim::Int=manifold_dim
+) where {manifold_dim}
+    return (get_constituent_num_elements(geometry, i; 
+        local_object_id=local_object_id, geometric_dim=geometric_dim) 
+        for i in 1:get_num_patches(geometry))
 end
 
 # Getters for numbers, sizes, shapes, lengths, etc.
-function get_num_elements(geometry::CartesianGeometry, patch_id::Int)
-    return length(get_cart_num_elements(geometry, patch_id))
+function get_num_elements(
+    geometry::CartesianGeometry{manifold_dim},
+    patch_id::Int;
+    local_object_id::Int=1, 
+    geometric_dim::Int=manifold_dim
+) where {manifold_dim}
+    return prod(get_constituent_num_elements(
+        geometry, patch_id; local_object_id=local_object_id, 
+        geometric_dim=geometric_dim))
 end
-function get_num_elements(geometry::CartesianGeometry)
+
+function get_num_elements(
+    geometry::CartesianGeometry{manifold_dim};
+    local_object_id::Int=1, 
+    geometric_dim::Int=manifold_dim
+) where {manifold_dim}
     num_elements = 0
     for patch_id in 1:get_num_patches(geometry)
-        num_elements += get_num_elements(geometry, patch_id)
+        num_elements += get_num_elements(geometry, patch_id; 
+            local_object_id=local_object_id[patch_id], geometric_dim=geometric_dim)
     end
     return num_elements
 end
