@@ -263,15 +263,19 @@ end
 """
     get_num_elements(geometry::AbstractGeometry)
     get_num_elements(geometry::AbstractGeometry, patch_id::Int)
+    get_num_elements(geometry::AbstractGeometry, patch_id::Int, local_object_id, geometric_dim)
 
-Returns the number of elements in `geometry`. If a `patch_id` is given, return the number of
-elements in the patch.
+Returns the number of elements in `geometry`. If only a `patch_id` is given, return the
+number of elements in the patch. If a `patch_id`, `local_object_id`, and `geometric_dim`
+are given, return the number of elements on the patch located on the requested topological
+object.
 
 # Arguments
 - `geometry::AbstractGeometry`: The geometry being used.
+- `patch_id::Int`:
 
 # Returns
-- `::Int`: The number of elements in the geometry.
+- `::Int`: The number of elements.
 
 # Notes
 This method is used as a fallback and assumes that the number of elements (per patch) are
@@ -291,6 +295,9 @@ function get_num_elements(geometry::AbstractGeometry)
 end
 function get_num_elements(geometry::AbstractGeometry, patch_id::Int)
     return get_num_elements_per_patch(geometry)[patch_id]
+end
+function get_num_elements(geometry::AbstractGeometry, patch_id::Int, local_object_id, geometric_dim)
+    return prod(size(get_elements(geometry, patch_id, local_object_id, geometric_dim)))
 end
 
 """
