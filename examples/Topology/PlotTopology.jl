@@ -15,6 +15,13 @@ geo2 = Mantis.Geometry.CartesianGeometry(
     ),
     Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),
 )
+geo22 = Mantis.Geometry.CartesianGeometry(
+    (
+        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
+        (LinRange(1.0, 2.0, 3), LinRange(0.0, 1.0, 3)),
+    ),
+    Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),
+)
 # fig = Mantis.Plot.plot_topology(geo2)
 
 function mapping_patch_1_geo2mapped(x::AbstractVector{Float64})
@@ -44,22 +51,77 @@ mapping_obj_2_geo2mapped = Geometry.Mapping(
     (2, 2), mapping_patch_2_geo2mapped, dmapping_patch_2_geo2mapped
 )
 
-geo2mapped = Mantis.Geometry.MappedGeometry(
-    Mantis.Geometry.CartesianGeometry(
-        (
-            (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
-            (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4)),
-        ),
-        Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),#[5, 6, 7, 8]
+geo2base = Mantis.Geometry.CartesianGeometry(
+    (
+        (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)),
+        (LinRange(1.0, 2.0, 3), LinRange(0.0, 1.0, 4)),
     ),
-    # (
-    #     Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3))),
-    #     Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4))),
+    Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),#[5, 6, 7, 8]
+)
+tp1_geo2base = FunctionSpaces.create_bspline_space(
+    (0.0,0.0), (1.0, 1.0), (3,4), (2,2), (1,1)
+);
+tp2_geo2base = FunctionSpaces.create_bspline_space(
+    (1.0,0.0), (1.0, 1.0), (2,3), (2,2), (1,1)
+);
+# c0_geo2base = FunctionSpaces.C0Space((tp1_geo2base, tp2_geo2base), geo2base); # mismatched dofs.
+
+geo2mapped = Mantis.Geometry.MappedGeometry(
+    # Mantis.Geometry.CartesianGeometry(
+    #     (
+    #         (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)),
+    #         (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4)),
+    #     ),
+    #     Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),#[5, 6, 7, 8]
     # ),
+    (
+        Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5))),
+        Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4))),
+    ),
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
     Topology.MeshTopology([[1, 2, 3, 4], [1, 5, 6, 2]]),
 )
+
 # fig = Mantis.Plot.plot_topology(geo2mapped)
+tp1_geo2mapped = FunctionSpaces.create_bspline_space(
+    (0.0,0.0), (1.0, 1.0), (3,4), (2,2), (1,1)
+);
+tp2_geo2mapped = FunctionSpaces.create_bspline_space(
+    (0.0,0.0), (1.0, 1.0), (2,3), (2,2), (1,1)
+);
+c0_geo2mapped = FunctionSpaces.C0Space((tp1_geo2mapped, tp2_geo2mapped), geo2mapped);
+
+function forcing_function(x::Matrix{Float64})
+    return [@. 8.0 * pi^2 * sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2])]
+end
+f⁰ = Forms.AnalyticalFormField(0, forcing_function, geo2mapped, "f⁰");
+formspace = Forms.FormSpace(0, c0_geo2mapped, "C0");
+canonical_qrule = Quadrature.tensor_product_rule((5,5), Quadrature.gauss_legendre);
+dΩ = Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geo2mapped));
+sol = Assemblers.solve_zero_form_hodge_laplacian(formspace, f⁰, dΩ);
+
+geo3_2cube = Mantis.Geometry.CartesianGeometry(
+    (
+        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)),
+        (LinRange(1.0, 2.0, 3), LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5)),
+    ),
+    Topology.MeshTopology([[1, 2, 3, 4, 5, 6, 7, 8], [2, 9, 10, 3, 6, 11, 12, 7]]),
+)
+tp1_geo3_2cube = FunctionSpaces.create_bspline_space(
+    (0.0,0.0,0.0), (1.0, 1.0,1.0), (2,3,4), (2,2,2), (1,1,1)
+);
+tp2_geo3_2cube = FunctionSpaces.create_bspline_space(
+    (1.0,0.0,0.0), (1.0, 1.0,1.0), (2,3,4), (2,2,2), (1,1,1)
+);
+c0_geo3_2cube = FunctionSpaces.C0Space((tp1_geo3_2cube, tp2_geo3_2cube), geo3_2cube);
+function forcing_function_3D(x::Matrix{Float64})
+    return [@. 12.0 * pi^2 * sin(2.0 * pi * x[:, 1]) * sin(2.0 * pi * x[:, 2]) * sin(2.0 * pi * x[:, 3])]
+end
+f⁰_3D = Forms.AnalyticalFormField(0, forcing_function_3D, geo3_2cube, "f⁰");
+formspace_3D = Forms.FormSpace(0, c0_geo3_2cube, "C0");
+canonical_qrule_3D = Quadrature.tensor_product_rule((5,5,5), Quadrature.gauss_legendre);
+dΩ_3D = Quadrature.StandardQuadrature(canonical_qrule_3D, Geometry.get_num_elements(geo3_2cube));
+sol_3D = Assemblers.solve_zero_form_hodge_laplacian(formspace_3D, f⁰_3D, dΩ_3D);
 
 geo3 = Mantis.Geometry.CartesianGeometry(
     (
@@ -186,6 +248,29 @@ cylinder_2patch = Mantis.Geometry.MappedGeometry(
     ),
     mapping_obj_cylinder,
     Topology.MeshTopology([[1, 2, 3, 4], [2, 1, 4, 3]]),#[2, 4, 1, 3]]),
+)
+
+function mapping_rect(x::AbstractVector{Float64})
+    # 0.0 <= x[1] <= 1.0 and 0.0 <= x[2] <= 1.0
+    u = x[1]
+    v = x[2]
+    return [u, v, u + v]
+end
+function dmapping_rect(x::AbstractVector{Float64})
+    u = x[1]
+    v = x[2]
+    return [
+        [1.0 0.0]
+        [0.0 1.0]
+        [1.0 1.0]
+    ]
+end
+mapping_obj_rect = Geometry.Mapping((2, 3), mapping_rect, dmapping_rect)
+
+rect_1patch = Mantis.Geometry.MappedGeometry(
+    (Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 21), LinRange(0.0, 1.0, 21))),),
+    mapping_obj_rect,
+    Topology.MeshTopology([[1, 2, 3, 4]]),
 )
 
 # fig = Mantis.Plot.plot_topology(cylinder_1patch)
