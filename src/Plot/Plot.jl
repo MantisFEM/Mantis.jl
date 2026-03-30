@@ -11,6 +11,7 @@ import WriteVTK
 using ..GeneralHelpers
 using ..Points
 using ..Geometry
+using ..FunctionSpaces
 using ..Forms
 using ..Topology
 

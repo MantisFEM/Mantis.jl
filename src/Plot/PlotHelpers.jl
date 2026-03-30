@@ -151,6 +151,128 @@ function plot_solution(
     return fig
 end
 
+function plot_solution(
+    field::Forms.AbstractFormField{2},
+    plot_points_per_element=25;
+    draw_patch_wireframe=true,
+    colorrange = (-1.0, 1.0),
+    colormap = :viridis
+)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis3(fig[1, 1]; viewmode=:fit)
+
+    geometry = Forms.get_geometry(field)
+
+    TPoint = GLMakie.Point{2, Float32}
+
+    # First plot the geometry wireframe if desired.
+    if draw_patch_wireframe
+        _draw_patch_wireframe!(ax, geometry, plot_points_per_element, TPoint)
+    end
+
+    num_elements = Geometry.get_num_elements(geometry)
+    xi = Points.CartesianPoints(ntuple(2) do i
+        return LinRange(0.0, 1.0, plot_points_per_element)
+    end)
+
+    for element_id in 1:num_elements
+        position_coordinates = Geometry.evaluate(Forms.get_geometry(field), element_id, xi)
+
+        x = reshape(
+            position_coordinates[:, 1],
+            (plot_points_per_element, plot_points_per_element),
+        )
+        y = reshape(
+            position_coordinates[:, 2],
+            (plot_points_per_element, plot_points_per_element),
+        )
+
+        function_values = Forms.evaluate(field, element_id, xi)[1]
+        z = reshape(
+            function_values[1],
+            (plot_points_per_element, plot_points_per_element),
+        )
+        GLMakie.surface!(
+            ax,
+            x,
+            y,
+            z;
+            shading=true,
+            transparency=false,
+            colorrange=colorrange,
+            colormap=colormap,
+        )
+    end
+
+    GLMakie.Colorbar(fig[1, 2], limits=colorrange, colormap=colormap)
+
+    return fig
+end
+
+function plot_solution(
+    field::Forms.AbstractFormField{3},
+    plot_points_per_element=5;
+    draw_patch_wireframe=true,
+    colorrange = (-1.0, 1.0),
+    colormap = :viridis
+)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis3(fig[1, 1]; viewmode=:fit)
+
+    geometry = Forms.get_geometry(field)
+
+    TPoint = GLMakie.Point{3, Float32}
+
+    # First plot the geometry wireframe if desired.
+    if draw_patch_wireframe
+        _draw_patch_wireframe!(ax, geometry, plot_points_per_element, TPoint)
+    end
+
+    num_elements = Geometry.get_num_elements(geometry)
+    xi = Points.CartesianPoints(ntuple(3) do i
+        return LinRange(0.0, 1.0, plot_points_per_element)
+    end)
+
+    for element_id in 1:num_elements
+        position_coordinates = Geometry.evaluate(Forms.get_geometry(field), element_id, xi)
+        x = reshape(
+            position_coordinates[:, 1],
+            (plot_points_per_element, plot_points_per_element, plot_points_per_element),
+        )
+        y = reshape(
+            position_coordinates[:, 2],
+            (plot_points_per_element, plot_points_per_element, plot_points_per_element),
+        )
+        z = reshape(
+            position_coordinates[:, 3],
+            (plot_points_per_element, plot_points_per_element, plot_points_per_element),
+        )
+        points = TPoint.(x, y, z)
+
+        function_values = Forms.evaluate(field, element_id, xi)[1]
+        vals = reshape(
+            function_values[1],
+            (plot_points_per_element, plot_points_per_element, plot_points_per_element),
+        )
+        GLMakie.volume!(
+            ax,
+            x[1,1,1] .. x[end,end,end],
+            y[1,1,1] .. y[end,end,end],
+            z[1,1,1] .. z[end,end,end],
+            vals;
+            shading=true,
+            transparency=true,
+            colorrange=colorrange,
+            colormap=colormap,
+            ssao=true,
+        )
+    end
+
+    GLMakie.Colorbar(fig[1, 2], limits=colorrange, colormap=colormap)
+
+    return fig
+end
+
 # 1D
 function plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 1};
@@ -289,38 +411,7 @@ function _plot_topology!(
 
     # First plot all element lines per patch, if desired.
     if draw_elements
-        xi_element = Points.CartesianPoints(
-            ntuple(manifold_dim) do i
-                return LinRange(0.0, 1.0, 2)
-            end,
-        )
-        if image_dim == manifold_dim
-            permutations = ([1, 3, 2, 4], [1, 5, 2, 6, 3, 7, 4, 8])
-        elseif image_dim == manifold_dim + 1
-            permutations = ([1, 3, 2, 4], [1, 3, 2, 4])
-        end
-        for element_id in 1:Geometry.get_num_elements(geometry)
-            element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
-            element_vertices_points = [
-                _pad_point(TPoint(element_vertices[i, :]...)) for
-                i in axes(element_vertices, 1)
-            ]
-            # Element lines in the x direction.
-            GLMakie.linesegments!(element_vertices_points; color=:black)
-            if image_dim == 1
-                # Also add a vertical bar for the edges, otherwise they are invisble.
-                GLMakie.scatter!(
-                    element_vertices_points; marker=:vline, markersize=15, color=:black
-                )
-            end
-
-            # Element lines in the other directions.
-            for dim in 1:(manifold_dim - 1)
-                GLMakie.linesegments!(
-                    element_vertices_points[permutations[dim]]; color=:black
-                )
-            end
-        end
+        _draw_elements!(ax, geometry, TPoint)
     end
 
     # Then plot the edges (with label).
@@ -517,6 +608,281 @@ function _plot_topology!(
     end
 
     return fig
+end
+
+
+function plot_basis(
+    space::FunctionSpaces.AbstractFESpace{1, 1};
+    ids=1:FunctionSpaces.get_num_basis(space),
+    draw_patch_wireframe=true,
+    draw_elements=true,
+    plot_points_per_element=75,
+    color_per_basis=true,
+    colorrange=(0.0, 1.0),
+    colormap=Makie.wong_colors(),
+    show_legend=true,
+    show_colormap=true,
+)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis(fig[1, 1])
+
+    fig = _plot_basis!(
+        fig,
+        ax,
+        space;
+        ids=ids,
+        draw_patch_wireframe=draw_patch_wireframe,
+        draw_elements=draw_elements,
+        plot_points_per_element=plot_points_per_element,
+        color_per_basis=color_per_basis,
+        colorrange=colorrange,
+        colormap=colormap,
+        show_legend=show_legend,
+        show_colormap=show_colormap,
+    )
+
+    return fig
+end
+
+function plot_basis(
+    space::FunctionSpaces.AbstractFESpace{2, 1};
+    ids=1:FunctionSpaces.get_num_basis(space),
+    draw_patch_wireframe=true,
+    draw_elements=false,
+    plot_points_per_element=25,
+    color_per_basis=false,
+    colorrange=(0.0, 1.0),
+    colormap=:viridis,
+    show_legend=true,
+    show_colormap=true,
+)
+    fig = GLMakie.Figure()
+    ax = GLMakie.Axis3(fig[1, 1]; viewmode=:fit)
+
+    fig = _plot_basis!(
+        fig,
+        ax,
+        space;
+        ids=ids,
+        draw_patch_wireframe=draw_patch_wireframe,
+        draw_elements=draw_elements,
+        plot_points_per_element=plot_points_per_element,
+        color_per_basis=color_per_basis,
+        colorrange=colorrange,
+        colormap=colormap,
+        show_legend=show_legend,
+        show_colormap=show_colormap,
+    )
+
+    return fig
+end
+
+function _plot_basis!(
+    fig,
+    ax,
+    space;
+    ids,
+    draw_patch_wireframe,
+    draw_elements,
+    plot_points_per_element,
+    color_per_basis,
+    colorrange,
+    colormap,
+    show_legend,
+    show_colormap,
+)
+    if typeof(ids) <: Integer
+        basis_ids = ids:ids
+    else
+        basis_ids = ids
+    end
+
+    manifold_dim = FunctionSpaces.get_manifold_dim(space)
+    geometry = FunctionSpaces.get_geometry(space)
+    image_dim = Geometry.get_image_dim(geometry)
+
+    TPoint = GLMakie.Point{image_dim, Float32}
+    xi = Points.CartesianPoints(
+        ntuple(manifold_dim) do i
+            return LinRange(zero(eltype(TPoint)), one(eltype(TPoint)), plot_points_per_element)
+        end,
+    )
+    point_shape = ntuple(image_dim) do i
+        return plot_points_per_element
+    end
+
+    # First plot the geometry wireframe and/or the elements, if desired.
+    if draw_patch_wireframe
+        _draw_patch_wireframe!(
+            ax, FunctionSpaces.get_geometry(space), plot_points_per_element, TPoint
+        )
+    end
+    if draw_elements
+        _draw_elements!(ax, geometry, TPoint)
+    end
+
+    # Then plot the basis functions on top.
+    for basis_id in basis_ids
+        # Get the elements on which the current basis function is supported.
+        element_ids = FunctionSpaces.get_support(space, basis_id)
+
+        for element_id in element_ids
+            position_coordinates = Geometry.evaluate(geometry, element_id, xi)
+
+            x = reshape(
+                position_coordinates[:, 1],
+                point_shape,
+            )
+            if manifold_dim == 2
+                y = reshape(
+                    position_coordinates[:, 2],
+                    (plot_points_per_element, plot_points_per_element),
+                )
+            end
+
+            function_values, bases = FunctionSpaces.evaluate(space, element_id, xi)
+            basis_index = findfirst(isequal(basis_id), bases)
+            z = reshape(
+                function_values[1][1][1][:, basis_index],
+                point_shape,
+            )
+            if manifold_dim == 1
+                if color_per_basis
+                    color = colormap[basis_id % length(colormap) + 1]
+                    GLMakie.lines!(
+                        ax,
+                        x,
+                        z;
+                        color=color,
+                        label=string(basis_id),
+                    )
+                else
+                    GLMakie.lines!(
+                        ax,
+                        x,
+                        z;
+                        color=z,
+                        colorrange=colorrange,
+                        colormap=colormap,
+                    )
+                end
+
+            else
+                if color_per_basis
+                    color = colormap[basis_id % length(colormap) + 1]
+                    GLMakie.surface!(
+                        ax,
+                        x,
+                        y,
+                        z;
+                        shading=true,
+                        transparency=false,
+                        color=fill(
+                            color, plot_points_per_element, plot_points_per_element
+                        ),
+                        label=string(basis_id),
+                    )
+                else
+                    GLMakie.surface!(
+                        ax,
+                        x,
+                        y,
+                        z;
+                        shading=true,
+                        transparency=false,
+                        colorrange=colorrange,
+                        colormap=colormap,
+                    )
+                end
+            end
+        end
+    end
+
+    if show_legend && color_per_basis
+        GLMakie.Legend(fig[1, 2], ax, unique=true)
+    end
+    if show_colormap && !color_per_basis
+        GLMakie.Colorbar(fig[1, 2], limits=colorrange, colormap=colormap)
+    end
+
+    return fig
+end
+
+function _draw_elements!(ax, geometry, TPoint)
+    manifold_dim = Geometry.get_manifold_dim(geometry)
+    image_dim = Geometry.get_image_dim(geometry)
+
+    xi_element = Points.CartesianPoints(
+        ntuple(manifold_dim) do i
+            return LinRange(0.0, 1.0, 2)
+        end,
+    )
+    if image_dim == manifold_dim
+        permutations = ([1, 3, 2, 4], [1, 5, 2, 6, 3, 7, 4, 8])
+    elseif image_dim == manifold_dim + 1
+        permutations = ([1, 3, 2, 4], [1, 3, 2, 4])
+    end
+    for element_id in 1:Geometry.get_num_elements(geometry)
+        element_vertices = Geometry.evaluate(geometry, element_id, xi_element)
+        element_vertices_points = [
+            _pad_point(TPoint(element_vertices[i, :]...)) for
+            i in axes(element_vertices, 1)
+        ]
+        # Element lines in the x direction.
+        GLMakie.linesegments!(element_vertices_points; color=:black)
+        if image_dim == 1
+            # Also add a vertical bar for the edges, otherwise they are invisble.
+            GLMakie.scatter!(
+                ax, element_vertices_points; marker=:vline, markersize=15, color=:black
+            )
+        end
+
+        # Element lines in the other directions.
+        for dim in 1:(manifold_dim - 1)
+            GLMakie.linesegments!(
+                ax, element_vertices_points[permutations[dim]]; color=:black
+            )
+        end
+    end
+end
+
+function _draw_patch_wireframe!(ax, geometry, plot_points_per_element, TPoint)
+    topology = Geometry.get_topology(geometry)
+    image_dim = Geometry.get_image_dim(geometry)
+    for edge_id in 1:size(topology, 2)
+        if image_dim == 1
+            # Edges and patches are equal, so are their ids.
+            patch_ids = edge_id:edge_id
+        else
+            patch_ids = topology[2, Geometry.get_manifold_dim(geometry) + 1][edge_id]
+        end
+        for patch_id in patch_ids
+            # Go through all patches so that we know the global and local ids.
+            if image_dim == 1
+                local_edge_id = 1
+            else
+                local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 1)
+            end
+
+            # Compute the edge as a curve
+            elements_on_edge = Geometry.get_elements(
+                geometry, patch_id, abs(local_edge_id), 1
+            )
+            xi_elements = Geometry.get_canonical_points(
+                eltype(TPoint), geometry, abs(local_edge_id), 1, plot_points_per_element
+            )
+            for element_id in elements_on_edge
+                curved_edge_coordinates = Geometry.evaluate(
+                    geometry, element_id, xi_elements
+                )
+                curved_edge_points = [
+                    _pad_point(TPoint(curved_edge_coordinates[i, :]...)) for
+                    i in axes(curved_edge_coordinates, 1)
+                ]
+                GLMakie.lines!(ax, curved_edge_points; color=:black)
+            end
+        end
+    end
 end
 
 # Pad for 1D
