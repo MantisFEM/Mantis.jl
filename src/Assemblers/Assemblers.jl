@@ -11,7 +11,6 @@ import SparseArrays; const spa = SparseArrays
 using ..Geometry
 using ..Forms
 using ..Quadrature
-using ..Mesh
 using ..FunctionSpaces
 using ..Analysis
 

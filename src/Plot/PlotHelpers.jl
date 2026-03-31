@@ -118,5 +118,16 @@ function export_form_fields_to_vtk(
     return nothing
 end
 
-# Only usable if GLMakie is also loaded.
+# Only usable if Makie is also loaded.
 function plot_solution end
+function plot_topology end
+function plot_basis end
+
+# Pad for 1D.
+function _pad_point(point::NTuple{1, T}, pad_value=zero(T)) where {T}
+    return (point[1], pad_value)
+end
+# Otherwise, no padding needed.
+function _pad_point(point, pad_value=0.0)
+    return point
+end
