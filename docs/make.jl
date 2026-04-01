@@ -32,21 +32,14 @@ Examples = [
     map(example_name -> joinpath("Examples", "$example_name.md"), example_names)...,
 ]
 
-Tutorials = [
-    "Documentation" => [
-        joinpath("Tutorials", "BuildingDocs.md"),
-        joinpath("Tutorials", "CreatingDocsPage.md"),
-    ],
-    "Running MANTIS" => [joinpath("Tutorials", "RunningMantis.md")],
-]
-
-DevelDocs = [
-    joinpath("DevelDocs", "MainPageDevelDocs.md"),
-    "Documents" => [joinpath("DevelDocs", "Documentation.md")],
-    "Modules" =>
+PhilTheoDes = [
+    joinpath("PhilTheoDes", "MainPhilTheoDes.md"),
+    "Philosophy" => [joinpath("PhilTheoDes", "Philosophy", "WhyMantis.md")],
+    "Theory" => [joinpath("PhilTheoDes", "Theory", "FEM.md")],
+    "Design" =>
         joinpath.(
-            "DevelDocs",
-            "Modules",
+            "PhilTheoDes",
+            "Design",
             [
                 "Analysis.md",
                 "Assemblers.md",
@@ -83,14 +76,15 @@ ReleaseHistory = [
 ]
 
 Pages = [
-    "Home" => "index.md",
 	"Getting Started" => "GettingStarted.md",
-    "Examples" => Examples,
-    "Tutorials" => Tutorials,
-    "Developer Documentation" => DevelDocs,
+	"Examples" => Examples,
+    "Design" => PhilTheoDes,
     "Support(ing)" => Support,
-    "Release History" => ReleaseHistory,
-    "references.md",
+    "Releases" => ReleaseHistory,
+    "Bibliography" => [
+        joinpath("BibliographicInformation", "references.md"),
+        joinpath("BibliographicInformation", "HowToCite.md")
+    ],
 ]
 
 # References are handled by DocumenterCitations so this should be set up.

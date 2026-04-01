@@ -23,8 +23,6 @@ hero:
 ---
 ````
 
-# Home page
-
 Welcome to the documentation for `Mantis`, a Julia package for high-order
 structure-preserving finite element methods.
 
@@ -52,9 +50,12 @@ from TU Delft's Institute of Applied Mathematics (DIAM).
 !!! warning "Under development"
     `Mantis` is under active development and can still undergo large changes.
 
+## References on this page
 ```@bibliography
 Pages = []
 Canonical = false
 
 Arnold2006
 ```
+See the full [refrence list](@ref References) for all references cited throughout this 
+documentation.
