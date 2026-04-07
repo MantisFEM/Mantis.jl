@@ -1,6 +1,6 @@
 # Citing `Mantis`
 
-Thank you for using `Mantis`. If you use `Mantis` in your work, please cite it using the 
+Thank you for using `Mantis`. Please consider including a citation using the 
 Zenodo citation [Cabanas2026](@cite):
 ```@bibliography
 Pages = ["HowToCite.md"]
