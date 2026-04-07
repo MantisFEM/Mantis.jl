@@ -32,14 +32,14 @@ Examples = [
     map(example_name -> joinpath("Examples", "$example_name.md"), example_names)...,
 ]
 
-PhilTheoDes = [
-    joinpath("PhilTheoDes", "MainPhilTheoDes.md"),
-    "Philosophy" => [joinpath("PhilTheoDes", "Philosophy", "WhyMantis.md")],
-    "Theory" => [joinpath("PhilTheoDes", "Theory", "FEM.md")],
-    "Design" =>
+Design = [
+    joinpath("Design", "DesignIntroduction.md"),
+    "Philosophy" => [joinpath("Design", "Philosophy", "WhyMantis.md")],
+    "Theory" => [joinpath("Design", "Theory", "FEM.md")],
+    "Modules" =>
         joinpath.(
-            "PhilTheoDes",
             "Design",
+            "Modules",
             [
                 "Analysis.md",
                 "Assemblers.md",
@@ -78,7 +78,7 @@ ReleaseHistory = [
 Pages = [
 	"Getting Started" => "GettingStarted.md",
 	"Examples" => Examples,
-    "Design" => PhilTheoDes,
+    "Design" => Design,
     "Support(ing)" => Support,
     "Releases" => ReleaseHistory,
     "Bibliography" => [
