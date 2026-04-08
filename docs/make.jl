@@ -46,6 +46,7 @@ Design = [
                 "Forms.md",
                 "FunctionSpaces.md",
                 "GeneralHelpers.md",
+				"Hierarchy.md",
                 "Geometry.md",
                 "Mesh.md",
                 "Plot.md",
@@ -97,7 +98,7 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:authory
 # definitions as work-around.
 # Author names are ordered alphabetically on last name.
 makedocs(;
-    modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature],
+    modules=[Mantis.Assemblers, Mantis.FunctionSpaces, Mantis.Quadrature, Mantis.Hierarchy],
     repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
     sitename="Mantis.jl",
     authors="Diogo C. Cabanas, Joey Dekker, Artur Palha, Deepesh Toshniwal",
