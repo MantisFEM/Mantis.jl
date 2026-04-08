@@ -88,7 +88,7 @@ Pages = [
 ]
 
 # References are handled by DocumenterCitations so this should be set up.
-bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
+bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:authoryear)
 
 # The modules option will raise an error when some docstrings from the
 # listed modules are not included in the docs. Due to an issue in Julia

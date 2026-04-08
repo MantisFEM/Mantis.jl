@@ -52,10 +52,8 @@ from TU Delft's Institute of Applied Mathematics (DIAM).
 
 ## References on this page
 ```@bibliography
-Pages = []
+Pages = ["index.md"]
 Canonical = false
-
-Arnold2006
 ```
-See the full [refrence list](@ref References) for all references cited throughout this 
+See the full [reference list](@ref References) for all references cited throughout this 
 documentation.
