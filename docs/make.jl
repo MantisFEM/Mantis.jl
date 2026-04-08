@@ -35,26 +35,25 @@ Examples = [
 Design = [
     joinpath("Design", "DesignIntroduction.md"),
     "Philosophy" => [joinpath("Design", "Philosophy", "WhyMantis.md")],
-    "Theory" => joinpath.("Design", "Theory", ["FEM.md", "DifferentialForms.md"]),
-    "Modules" =>
-        joinpath.(
-            "Design",
-            "Modules",
-            [
-                "Analysis.md",
-                "Assemblers.md",
-                "Forms.md",
-                "FunctionSpaces.md",
-                "GeneralHelpers.md",
-				"Hierarchy.md",
-                "Geometry.md",
-                "Mesh.md",
-                "Plot.md",
-                "Points.md",
-                "Quadrature.md",
-                "TimeIntegrators.md",
-            ],
-        ),
+    "Theory" => joinpath.("Design", "Theory", ["FEM.md", "FEEC.md"]),
+    "Modules" => joinpath.(
+        "Design",
+        "Modules",
+        [
+            "Analysis.md",
+            "Assemblers.md",
+            "Forms.md",
+            "FunctionSpaces.md",
+            "GeneralHelpers.md",
+            "Hierarchy.md",
+            "Geometry.md",
+            "Mesh.md",
+            "Plot.md",
+            "Points.md",
+            "Quadrature.md",
+            "TimeIntegrators.md",
+        ],
+    ),
 ]
 
 Support = [
@@ -119,14 +118,14 @@ makedocs(;
     pages=Pages,
     plugins=[bib],
     format=DocumenterVitepress.MarkdownVitepress(;
-        repo="github.com/MantisFEM/Mantis.jl", devbranch = "dev", devurl = "dev"
+        repo="github.com/MantisFEM/Mantis.jl", devbranch="dev", devurl="dev"
     ),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
     target="build", # this is where Vitepress stores its output
     devbranch="dev",
-    devurl = "dev",
+    devurl="dev",
     branch="gh-pages",
     push_preview=true,
 )
