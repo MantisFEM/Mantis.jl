@@ -84,6 +84,11 @@ function convert_to_level_id(active_info::ActiveInfo, hier_id::Int)
     )]
 end
 
+"""
+	convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
+
+Returns the `level` and `level_id` that correspond to hierarchical index `hier_id`.
+"""
 function convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
     level = get_level(active_info, hier_id)
     level_id = get_level_ids(active_info, level)[hier_id - get_level_cum_num_ids(

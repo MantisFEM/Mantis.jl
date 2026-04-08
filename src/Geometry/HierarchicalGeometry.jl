@@ -13,10 +13,10 @@ See also [`Hierarchy.ActiveInfo`](@ref).
 
 # Fiels
 - `geometries::G`: A tuple `G` such that `G <: NTuple{num_levels, AbstractGeometry}`, where
-	`num_levels` is the number of levels in the hierarchy. As a consequence, `num_levels` is
-	also the number of distinct level-wise geometries.
+`num_levels` is the number of levels in the hierarchy. As a consequence, `num_levels` is
+also the number of distinct level-wise geometries.
 - `active_elements::Hierarchy.ActiveInfo`: Information about which elements are active or
-	inactive at each level and geometry.
+inactive at each level and geometry.
 """
 struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, G} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -120,7 +120,7 @@ end
 
 Returns the `level` and `level_id` of the `element_id` in hierarchical indexing.
 
-See also [`Hierarchy.ActiveInfo.convert_to_level_and_level_id`](@ref).
+See also [`Hierarchy.convert_to_level_and_level_id`](@ref).
 
 # Arguments
 - `geometry::HierarchicalGeometry`: The hierarchical geometry.
