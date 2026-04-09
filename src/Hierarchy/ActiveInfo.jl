@@ -6,15 +6,15 @@
     struct ActiveInfo
 
 Contains information about active objects in a hierarchical construction. The indexing in
-the hierarchical space is such that the index of an object in level l-1 is always less than
-that of an object in level l.
+the hierarchical space is such that the index of an object in level `l-1` is always smaller
+than that of an object in level `l`.
 
 # Fields
 - `level_ids::Vector{Vector{Int}}`: Per level collection of active objects.
-    'level_ids[l][i]' gives the id in level 'l' of the object indicated by 'i',
+    `level_ids[l][i]` gives the id in level `l` of the object indicated by `i`,
     not the hierarchical id of the overall set of objects.
 - `level_cum_num_ids::Vector{Int}`: Total number of active objects up to a certain level,
-    i.e. 'level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))'. First entry is always 0 for
+    i.e. `level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))`. First entry is always 0 for
     ease of use.
 """
 struct ActiveInfo
