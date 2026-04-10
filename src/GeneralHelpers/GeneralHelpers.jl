@@ -68,7 +68,7 @@ end
 
 Call `cache_dict` on the types `K` and `V` with `id` to retrieve a cached dictionary.
 Then, call `get!` on the dictionary with `key` and `f(key)`.
-  
+
 An optional `id` can be given choose the used cache. This is useful to avoid clashes of
 dictionaries using the same types.
 
@@ -222,7 +222,7 @@ assuming equality of mixed partial derivatives.
 
 # Examples
 ```jldoctest
-using Mantis
+julia> using Mantis
 
 julia> Mantis.GeneralHelpers.num_der_indices(1, 2)
 1
@@ -247,8 +247,10 @@ Create a directory (if needed) and return the path to the output file.
 - `filename`: The name of the output file.
 
 # Example
-```@example
-output_file = export_path(["examples", "data", "output"], "output.vtu")
+```julia
+julia> using Mantis
+
+julia> output_file = Mantis.GeneralHelpers.export_path(["examples", "data", "output"], "output.vtu");
 ```
 """
 function export_path(output_directory_tree::Vector, filename)
