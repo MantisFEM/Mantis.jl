@@ -1,4 +1,4 @@
-# Geometry
+# [Geometry](@id DocGeometryModule)
 
 Mantis' `Geometry` module contains all functionality related to geometry.
 
