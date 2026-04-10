@@ -12,12 +12,12 @@ whitespace_typedefs = true
 # Enables formatting for code blocks
 format_docstrings = false
 # Enables formatting for markdown
-format_markdown = false
+# format_markdown = false
 # Stops pipes from being converted to function calls
 pipe_to_function_call = false
 # Since the `formart_markdown` can break markdown blocks in the docs, it is best to ignore
-# the docs folder. 
+# the docs folder.
 ignore = ["docs"]
-# NOTES: It is possible to skip sections of code from being formatted by typing 
-# `#! format: off` and `#! format: on` comments. The same can be done for indentation with 
+# NOTES: It is possible to skip sections of code from being formatted by typing
+# `#! format: off` and `#! format: on` comments. The same can be done for indentation with
 # `#! format: noindent`.

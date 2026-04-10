@@ -124,7 +124,6 @@
 #    where the function space ``W_n`` consists of spatially-varying functions in ``V_n``
 #    that satisfy homogeneous (or, equivalently, zero) boundary conditions.
 
-
 # ## The finite element method
 
 # Now we are at a stage where, if we make a choice for ``V_n``, we can convert the discrete
@@ -166,7 +165,8 @@
 # ```
 # for some numbers ``c_i \in \mathbb{R}``.
 #
-# > **EXAMPLE:** ``V_n`` with ``(N,p,k) = (4, 1, 0)``.
+# ::: details EXAMPLE: ``V_n`` with ``(N,p,k) = (4, 1, 0)``.
+#
 # Consider the space of functions that are linear polynomials over each mesh element, and
 # which are ``C^0`` smooth (or, equivalently, continuous) at the interfaces ``x_i``
 # between the elements. This space of functions has dimension:
@@ -184,66 +184,36 @@ using GLMakie
 using DisplayAs #hide
 
 ## The size of the domain where to solve our problem
-L = 1.0
+L1 = 1.0
 
 ## The degree of the piecewise-polynomial basis functions
-p = 1
+p1 = 1
 ## The number of elements in the mesh
-N = 4
+N1 = 4
 ## The smoothness of the basis functions (must be smaller than the polynomial degree, and
 ## larger than -1)
-k = 0
+k1 = 0
 
 ## The number of basis functions in the piecewise-polynomial function space
-n = N * (p + 1) - (k + 1) * (N - 1)
+n1 = N1 * (p1 + 1) - (k1 + 1) * (N1 - 1)
 
 ## Create the mesh and the function space
-breakpoints = LinRange(0.0, L, N+1)
-line_geo = Geometry.CartesianGeometry((breakpoints,))
-B = FunctionSpaces.BSplineSpace(line_geo, p, k)
+breakpoints1 = LinRange(0.0, L1, N1+1)
+line_geo1 = Geometry.CartesianGeometry((breakpoints1,))
+B1 = FunctionSpaces.BSplineSpace(line_geo1, p1, k1)
 
-## Create a Form Space.
-BF = Forms.FormSpace(0, B, "b")
-
-## Plot the basis functions.
-n_plot_points_per_element = 25
-
-fig = Figure()
-ax = Axis(fig[1, 1],
-    title = "Basis functions of V_n",
-    xlabel = "x",
-    ylabel = "b_i(x)",
+fig1 = Mantis.Plot.plot_basis(
+    B1;
+    label_prefix=L"\phi_",
+    title=L"\text{Basis functions of }V_n",
+    xlabel=L"x",
+    ylabel=L"\phi_i(x)",
 )
-
-n_elements = Geometry.get_num_elements(line_geo)
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Forms.FormField(BF)
-
-dim_V = Forms.get_num_basis(BF)
-colors = [:blue, :green, :red, :purple, :orange]
-for basis_idx in 1:dim_V
-
-    BFF.coefficients[basis_idx] = 1.0
-    if basis_idx > 1
-        BFF.coefficients[basis_idx - 1] = 0.0
-    end
-
-    color_i = colors[basis_idx]
-
-    for element_idx in 1:n_elements
-        form_eval, _ = Forms.evaluate(BFF, element_idx, xi)
-        x = Geometry.evaluate(Forms.get_geometry(BF), element_idx, xi)
-
-        lines!(ax, x[:], form_eval[1], color=color_i, label=L"\phi_{%$basis_idx}")
-
-        scatter!(ax, x[:][[1, end]], [0.0, 0.0], color=:tomato)
-    end
-end
-fig[1, 2] = Legend(fig, ax, marge=true, unique=true)
-
-fig = DisplayAs.Text(DisplayAs.PNG(fig))
-
-# > **EXAMPLE:** ``V_n`` with ``(N,p,k) = (4, 2, 1)``.
+fig1 = DisplayAs.Text(DisplayAs.PNG(fig1)) #hide
+# :::
+#
+# ::: details EXAMPLE: ``V_n`` with ``(N,p,k) = (4, 2, 1)``.
+#
 # Consider now the space of functions that are quadratic polynomials over each mesh
 # element, and which are ``C^1`` smooth (or, equivalently, continuous and continuously
 # differentiable) at the interfaces ``x_i`` between the elements. This space of functions
@@ -255,51 +225,22 @@ fig = DisplayAs.Text(DisplayAs.PNG(fig))
 # space ``V_n``. Run the code below to create such a ``V_n`` and look at one such choice of
 # the basis functions called *B-splines*. (Each function is plotted in a different color.)
 
+p2 = 2
+k2 = 1
+n2 = N1 * (p2 + 1) - (k2 + 1) * (N1 - 1)
 
-p = 2
-k = 1
-n = N * (p + 1) - (k + 1) * (N - 1)
+B2 = FunctionSpaces.BSplineSpace(line_geo1, p2, k2)
 
-B = FunctionSpaces.BSplineSpace(line_geo, p, k)
-
-## Create a Form Space.
-BF = Forms.FormSpace(0, B, "b")
-
-fig = Figure()
-ax = Axis(fig[1, 1],
-    title = "Basis functions of V_n",
-    xlabel = "x",
-    ylabel = "b_i(x)",
+fig2 = Mantis.Plot.plot_basis(
+    B2;
+    label_prefix=L"\phi_",
+    title=L"\text{Basis functions of }V_n",
+    xlabel=L"x",
+    ylabel=L"\phi_i(x)",
 )
-
-n_elements = Geometry.get_num_elements(line_geo)
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Forms.FormField(BF)
-
-dim_V = Forms.get_num_basis(BF)
-colors = [:blue, :green, :red, :purple, :orange, :black]
-for basis_idx in 1:dim_V
-
-    BFF.coefficients[basis_idx] = 1.0
-    if basis_idx > 1
-        BFF.coefficients[basis_idx - 1] = 0.0
-    end
-
-    color_i = colors[basis_idx]
-
-    for element_idx in 1:n_elements
-        form_eval, _ = Forms.evaluate(BFF, element_idx, xi)
-        x = Geometry.evaluate(Forms.get_geometry(BF), element_idx, xi)
-
-        lines!(ax, x[:], form_eval[1], color=color_i, label=L"\phi_{%$basis_idx}")
-
-        scatter!(ax, x[:][[1, end]], [0.0, 0.0], color=:tomato)
-    end
-end
-fig[1, 2] = Legend(fig, ax, marge=true, unique=true)
-
-fig = DisplayAs.Text(DisplayAs.PNG(fig))
-
+fig2 = DisplayAs.Text(DisplayAs.PNG(fig2)) #hide
+# :::
+#
 # > **Note:** In both of the above examples, the only functions non-zero at ``x=0`` and
 # > ``x=L`` are ``\phi_1`` and ``\phi_n``. This means that, in particular, the functions
 # > ``\phi_2, \dots, \phi_{n-1}`` form a basis for ``W_n``. We will use this fact later on.
@@ -397,5 +338,226 @@ fig = DisplayAs.Text(DisplayAs.PNG(fig))
 # f(x, t) = \frac{2\alpha\pi^{2}}{L^{2}}\cos\left(\frac{2\pi}{L} x\right)\,.
 # ```
 # We choose a finite element space with ``(N,p,k) = (10,2,1)``, i.e., with more elements
-#  compared to the last example. This is to ensure that we have sufficient accuracy for
+# compared to the last example. This is to ensure that we have sufficient accuracy for
 # computing a decent solution.
+
+## The size of the domain where to solve our problem
+L = 1.0
+## The number of elements in the mesh
+num_elements = 10
+line_geometry = Geometry.create_cartesian_box((0.0,), (L,), (num_elements,))
+
+## The degree of the piecewise-polynomial basis functions
+polynomial_degree = 2
+## The smoothness of the basis functions (-1 <= smoothness <= p-1)
+smoothness = 1
+
+## The piecewise-polynomial function space
+V = FunctionSpaces.BSplineSpace(line_geometry, polynomial_degree, smoothness)
+## The number of basis functions in the piecewise-polynomial function space
+num_basis_functions = FunctionSpaces.get_num_basis(V)
+
+## Use this function space as a differential form
+V⁰ = Forms.FormSpace(0, V, L"V^0")
+
+## Thermal diffusivity
+const alpha = 1.0
+
+## Analytical solution
+u_analytical_expression(x) = [1.0 .+ 0.5*cos.((2.0*π/L)*x[:, 1])]
+u_analytical = Mantis.Forms.AnalyticalFormField(
+    0, u_analytical_expression, line_geometry, L"u_{\text{exact}}"
+)
+
+## Right hand side
+f_expression(x) = [@. alpha*0.5*(4.0*(π^2)/(L^2))*cos(2.0*π*x[:, 1]/L)]
+f = Mantis.Forms.AnalyticalFormField(0, f_expression, line_geometry, "f")
+
+function assemble_system_matrices(
+    V::Forms.FormSpace,
+    f::Forms.AnalyticalFormField,
+    alpha::Float64,
+    dΩ::Quadrature.AbstractQuadratureRule,
+)
+    ## assemble L2 inner-product matrix
+    weak_form_inputs = Assemblers.WeakFormInputs(V, f)
+    lhs_expressions, rhs_expressions = Assemblers.L2_projection(weak_form_inputs, dΩ)
+    weak_form = Assemblers.WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
+    M, _ = Assemblers.assemble(weak_form)
+
+    ## assemble H1 inner-product matrix
+    weak_form_inputs = Assemblers.WeakFormInputs(V, f)
+    lhs_expressions, rhs_expressions = Assemblers.zero_form_hodge_laplacian(
+        weak_form_inputs, dΩ
+    )
+    weak_form = Assemblers.WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
+    ## bc = Forms.set_dirichlet_boundary_conditions(V, 0.0)
+    K, f = Assemblers.assemble(weak_form)
+
+    return M, alpha .* K, f
+end
+
+## Define the quadrature
+quadrature_degree = polynomial_degree + 2
+∫ = Quadrature.gauss_legendre(quadrature_degree)
+dΩ = Quadrature.StandardQuadrature(∫, num_elements)
+
+## Assemble the matrices
+M, K, F = assemble_system_matrices(V⁰, f, alpha, dΩ)
+
+## Remove the unecessary parts of the matrices
+F = Vector(F[2:(end - 1)])
+
+K_0 = Vector(K[2:(end - 1), 1])
+K_L = Vector(K[2:(end - 1), end])
+
+M = M[2:(end - 1), 2:(end - 1)]
+K = K[2:(end - 1), 2:(end - 1)]
+
+## Boundary conditions
+u_0 = 1.5
+u_L = 1.5
+
+## Solution field
+u_h = Mantis.Forms.FormField(V⁰, zeros(Forms.get_num_basis(V⁰)), "u_h")
+
+## With boundary values set
+u_h.coefficients[1] = u_0
+u_h.coefficients[end] = u_L
+
+## Solve for the unknown coefficients
+u_h.coefficients[2:(end - 1)] = K \ (F - u_0*K_0 - u_L*K_L)
+
+## Plot the error with respect to the analytical solution
+error = u_analytical - u_h
+
+## Compute the error norm
+error_nom = Analysis.L2_norm(error, dΩ)
+
+# ## Time Integration
+
+# We will now consider a specific time integrator to evolve our solution in time: the
+# midpoint rule.
+#
+# The midpoint rule is the lowest order Gauss integrator and, for linear systems (as is our
+# case), is an explicit integrator. Additionally, it can be interpreted as a Runge-Kutta
+# method (i.e., it has an associated Butcher tableau). Given a first order ODE in the time
+# interval ``(0, T)``
+# ```math
+#     \frac{\mathrm{d}g}{\mathrm{d}t} = f(t, g(t))
+# ```
+# with initial condition ``g(0) = g_{0}``, the midpoint rule to evolve the solution from
+# the time instant ``t_{k}`` to the time instant ``t_{k+1} = t_{k} + \Delta t`` is
+# ```math
+#     g_{k+1} = g_{k} + \Delta t\, f\left(t + \frac{\Delta t}{2}, \frac{g_{k+1} + g_{k}}{2}\right)\,.
+# ```
+# where ``g_{k} = g(k\Delta t)``.
+#
+# The spatial discretisation process has left us with the following system of ODEs:
+# ```math
+# \mathbf{M}\frac{d\mathbf{C}}{dt} = - \mathbf{K} \mathbf{C} + \mathbf{F} - u_{0}\mathbf{F}^{b,0} - u_{L}\mathbf{F}^{b,L}\;.
+# ```
+# We can integrate this in time using the pre-implemented midpoint rule.
+#
+# !!! note "Explicit ODE with a matrix solve"
+#     While the integrator is considered explicit, this only holds for simple ODEs. In our
+#     case, we have a coupled system of ODEs, so that we do have to use a matrix solver.
+
+## Time step size and final time.
+const dt = 0.001
+const num_time_steps = 501
+
+## Here, we encode the ODE information for the time integrator. We are using LinearSolve's
+## ability to cachee the factorised M matrix. Since this matrix does not change per
+## timestep, we can reuse the factorisation. This is more efficient than refactorising every
+## step.
+import LinearSolve as LS
+const prob = LS.LinearProblem(M, zeros(Forms.get_num_basis(V⁰)-2))
+const linsolve = LS.init(prob)
+function heat_equation_solver(output, C::Vector{Float64}, t::Float64)
+    linsolve.b = (-K * C + F - u_0 * K_0 - u_L * K_L)
+    output .= LS.solve!(linsolve)
+    return output
+end
+const heat_equation = TimeIntegrators.define_explicit_ode(heat_equation_solver)
+
+scheme = TimeIntegrators.EXPLICIT_MIDPOINT
+
+## We also create a helper function to easily evaluate our solution.
+function evaluate_solution(u_h)
+    geometry = Forms.get_geometry(u_h)
+    num_elements = Geometry.get_num_elements(geometry)
+    xi = Points.CartesianPoints((LinRange(0.0, 1.0, 25),))
+    all_x = Vector{Float64}(undef, 25 * num_elements)
+    all_values = Vector{Float64}(undef, 25 * num_elements)
+    for element_id in 1:num_elements
+        form_eval, _ = Forms.evaluate(u_h, element_id, xi)
+        x = Geometry.evaluate(geometry, element_id, xi)
+
+        all_x[((element_id - 1) * 25 + 1):((element_id) * 25)] = x[:]
+        all_values[((element_id - 1) * 25 + 1):((element_id) * 25)] = form_eval[1]
+    end
+
+    return all_x, all_values
+end
+
+## We project the initial condition onto our form space
+u_initial_expression(x) = [@. 1.5 + sin((2.0*π/L)*x[:, 1])]
+u_initial = Forms.AnalyticalFormField(0, u_initial_expression, line_geometry, "u")
+u_hi = Assemblers.solve_L2_projection(V⁰, u_initial, dΩ)
+
+## Enforce the boundary condition on the initial condition, just in case the initial
+## condition does not satisfy the boundary conditions already
+u_hi.coefficients[1] = u_0
+u_hi.coefficients[end] = u_L
+
+## Initialise the time scheme
+const u_h_n = TimeIntegrators.initialize_scheme(u_hi.coefficients[2:(end - 1)], scheme)
+
+# Now we are set to march our equation in time. We will also create a video, which is why
+# we set up the time `Observable`. The `all_y` variable is a lift, which is `Makie`'s way
+# of expressing a depency. That is, as soon as we update `time`, `Makie` will automatically
+# update all other variables in the plot that depend on `time`. In our case, this is the
+# `all_y` variable, which calls `TimeIntegrators.time_integrate!` to advance our solution.
+
+## We use Printf to print the time in our animation.
+using Printf
+
+time = Observable(dt)
+
+all_y = lift(time) do t
+    TimeIntegrators.time_integrate!(u_h_n, heat_equation, t, dt)
+
+    u_hi.coefficients[2:(end - 1)] = TimeIntegrators.get_solution(u_h_n)
+
+    all_x, all_values = evaluate_solution(u_hi)
+
+    return all_values
+end
+
+all_x, all_values = evaluate_solution(u_hi)
+fig = lines(
+    all_x,
+    all_y;
+    color=:blue,
+    axis=(
+        title=@lift("t = $(@sprintf("%0.2f", round($time, digits = 2)))"),
+        limits=(0.0, 1.0, 0.0, 3.0),
+    ),
+)
+
+xe, ye = evaluate_solution(u_analytical)
+lines!(xe, ye; color=:black, label="exact")
+
+record(
+    fig,
+    "heat_equation_1d.mp4",
+    LinRange(dt, dt*num_time_steps, num_time_steps);
+    framerate=30,
+) do t
+    time[] = t
+end
+
+# ```@raw html
+# <video autoplay loop muted playsinline controls src="./heat_equation_1d.mp4" />
+# ```

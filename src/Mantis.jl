@@ -13,6 +13,7 @@ include("Quadrature/Quadrature.jl")  # Creates Module Quadrature
 include("Forms/Forms.jl")  # Creates Module Forms
 include("Analysis/Analysis.jl")  # Creates Module Analysis
 include("Assemblers/Assemblers.jl")  # Creates Module Assemblers
+include("TimeIntegrators/TimeIntegrators.jl")  # Creates Module TimeIntegrators
 include("Plot/Plot.jl")  # Creates Module Plot
 
 ############################################################################################
@@ -28,6 +29,7 @@ export Mesh,
     Forms,
     Analysis,
     Assemblers,
+    TimeIntegrators,
     Plot
 
 # Exports from Forms.

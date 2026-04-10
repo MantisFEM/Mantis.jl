@@ -15,7 +15,7 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
+        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
 
         # Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -52,6 +52,7 @@ Design = [
                 "Plot.md",
                 "Points.md",
                 "Quadrature.md",
+                "TimeIntegrators.md",
             ],
         ),
 ]
@@ -64,29 +65,27 @@ Support = [
 ]
 
 ReleaseHistory = [
-    "v0.6 Acanthops onorei" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.6-onorei.md"),
-    "v0.5 Acanthops godmani" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.5-godmani.md"),
-    "v0.4 Acanthops falcata" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.4-falcata.md"),
-    "v0.3 Acanthops erosa" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.3-erosa.md"),
-    "v0.2 Acanthops centralis" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.2-centralis.md"),
-    "v0.1 Acanthops brunneri" => joinpath(
-		"ReleaseHistory", "v0-Acanthops", "v0.1-brunneri.md"),
+    "v0.6 Acanthops onorei" => joinpath("ReleaseHistory", "v0-Acanthops", "v0.6-onorei.md"),
+    "v0.5 Acanthops godmani" =>
+        joinpath("ReleaseHistory", "v0-Acanthops", "v0.5-godmani.md"),
+    "v0.4 Acanthops falcata" =>
+        joinpath("ReleaseHistory", "v0-Acanthops", "v0.4-falcata.md"),
+    "v0.3 Acanthops erosa" => joinpath("ReleaseHistory", "v0-Acanthops", "v0.3-erosa.md"),
+    "v0.2 Acanthops centralis" =>
+        joinpath("ReleaseHistory", "v0-Acanthops", "v0.2-centralis.md"),
+    "v0.1 Acanthops brunneri" =>
+        joinpath("ReleaseHistory", "v0-Acanthops", "v0.1-brunneri.md"),
 ]
 
 Pages = [
-	"Getting Started" => "GettingStarted.md",
-	"Examples" => Examples,
+    "Getting Started" => "GettingStarted.md",
+    "Examples" => Examples,
     "Design" => Design,
     "Support(ing)" => Support,
     "Releases" => ReleaseHistory,
     "Bibliography" => [
         joinpath("BibliographicInformation", "references.md"),
-        joinpath("BibliographicInformation", "HowToCite.md")
+        joinpath("BibliographicInformation", "HowToCite.md"),
     ],
 ]
 
@@ -112,6 +111,7 @@ makedocs(;
         Mantis.Plot,
         Mantis.Points,
         Mantis.Quadrature,
+        Mantis.TimeIntegrators,
     ],
     repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
     sitename="Mantis.jl",
