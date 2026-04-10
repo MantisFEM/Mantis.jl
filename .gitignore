@@ -57,6 +57,12 @@ Manifest.toml
 !docs/src/assets/*.svg
 !docs/src/assets/*.ico
 
+# Ignore videos by default
+*.mkv
+*.mp4
+*.webm
+*.gif
+
 # Ignore all Vim temporary buffer files
 *.swp
 *.swo
