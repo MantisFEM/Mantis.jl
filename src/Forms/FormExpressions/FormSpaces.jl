@@ -5,46 +5,47 @@
 """
     FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, form_rank}
 
-Concrete implementation of a function space for differential forms.
+Differential forms with a bases.
+
+A `FormSpace` relies on a [FunctionSpaces.AbstractFESpace](@ref) to represent a
+differential form with the function space as basis. While the function space provides a
+basis, the `form_rank` of the `FormSpace` will dictate the behaviour of the form (i.e. is
+it a ``0``-form, ``1``-form, etc.) and thus its properties.
+
+# Constructors
+- `FormSpace(form_rank::Int, fem_space::F, label::AbstractString)`: General constructor.
+
+# Example
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2,2));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form with B as basis.
+
+julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
+```
 
 # Fields
-- `fem_space::F`: The finite element space(s) used for the form components
-- `label::AbstractString`: Label for the form space
+- `fem_space::F`: The finite element space [FunctionSpaces.AbstractFESpace](@ref) used as
+    basis for this form. From this space, the `manifold_dim` and geometry are inherited.
+    Additionally, the `num_components` of the function space must be consistent with the
+    provided `form_rank` and the `manifold_dim`, i.e., a real-valued ``0``-form has 1
+    component (in any dimension), a ``1``-form in 3D has 3 components, etc.
+- `label::AbstractString`: Label for the form space. This will be used in export and
+    plotting functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold
-- `form_rank`: Rank of the differential form
-- `F`: Type of the finite element space
-
-# Inner Constructors
-- `FormSpace(form_rank::Int,fem_space::F, label::AbstractString)`: Constructor for
-	differential form spaces.
+- `manifold_dim`: Dimension of the manifold.
+- `form_rank`: Rank of the differential form.
+- `F`: Type of the finite element space (a [FunctionSpaces.AbstractFESpace](@ref)).
+- `L`: Type of the label (an `AbstractString`).
 """
 struct FormSpace{manifold_dim, form_rank, F, L} <:
        AbstractFormSpace{manifold_dim, form_rank}
     fem_space::F
     label::L
 
-    """
-        FormSpace(
-            form_rank::Int, fem_space::F, label::AbstractString
-        ) where {
-            manifold_dim,
-            num_components,
-            num_patches,
-            F <: FunctionSpaces.AbstractFESpace{manifold_dim, num_components, num_patches},
-        }
-
-    General constructor for differential form spaces.
-
-    # Arguments
-    - `form_rank::Int`: Differential form rank.
-    - `fem_space::F`: The function space used to represent the form.
-    - `label::AbstractString`: The label of the form space.
-
-    # Returns
-    - `FormSpace{manifold_dim, form_rank, F}`: The FormSpace.
-    """
     function FormSpace(
         form_rank::Int, fem_space::F, label::AbstractString
     ) where {
@@ -57,7 +58,7 @@ struct FormSpace{manifold_dim, form_rank, F, L} <:
             throw(
                 ArgumentError(
                     "Mantis.Forms.FormSpace: form_rank = $form_rank with " *
-                    "manifold_dim = $manifold_dim requires FE space with only one " *
+                    "manifold_dim = $manifold_dim requires an FE space with only one " *
                     "component (got num_components = $num_components).",
                 ),
             )
@@ -65,7 +66,7 @@ struct FormSpace{manifold_dim, form_rank, F, L} <:
             throw(
                 ArgumentError(
                     "Mantis.Forms.FormSpace: form_rank = $form_rank with " *
-                    "manifold_dim = $manifold_dim requires a FE space with " *
+                    "manifold_dim = $manifold_dim requires an FE space with " *
                     "num_components = $manifold_dim (got $num_components).",
                 ),
             )
@@ -74,6 +75,7 @@ struct FormSpace{manifold_dim, form_rank, F, L} <:
         return new{manifold_dim, form_rank, F, typeof(label)}(fem_space, label)
     end
 end
+
 ############################################################################################
 #                                   Getters and setters                                    #
 ############################################################################################
@@ -96,28 +98,6 @@ end
 #                                     Evaluate methods                                     #
 ############################################################################################
 
-"""
-    evaluate(
-        form_space::FormSpace{manifold_dim, form_rank},
-        element_idx::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, form_rank}
-
-Evaluate the basis functions of a differential form space at given canonical points `xi`
-mapped to the parametric element given by `element_idx`.
-
-# Arguments
-- `form_space::FormSpace{manifold_dim, form_rank, G}`: The differential form space.
-- `element_idx::Int`: The parametric element identifier.
-- `xi::Points.AbstractPoints{manifold_dim}`: The set of canonical points.
-
-# Returns
-- `Vector{Matrix{Float64}}`: Vector of length equal to the number of components of the form,
-    where each entry is a `Matrix{Float64}`  of size `(n_evaluation_points,
-    n_basis_functions)`
-- `form_basis_indices::Vector{Vector{Int}}`: The basis function indices evaluated at the
-    canonical coordinates of the element.
-"""
 function evaluate(
     form_space::FormSpace{manifold_dim, form_rank},
     element_idx::Int,

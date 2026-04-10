@@ -12,6 +12,22 @@ import ..Points
 import ..GeneralHelpers
 import ..Hierarchy
 
+"""
+    AbstractGeometry{manifold_dim, image_dim, num_patches}
+
+Supertype for all geometries.
+
+# Type parameters
+- `manifold_dim`: Dimension of the manifold that parameterises the geometry (the intrinsic
+    dimension).
+- `image_dim`: Embedding dimension of the geometry. For example, a planar geometry will
+    have a `manifold_dim` and `image_dim` of 2. But a surface embedded in 3D will have a
+    `manifold_dim` of 2 and an `image_dim` of 3.
+- `num_patches`: The number of patch that constitute the geometry. There can be many
+    elements on one patch, but a single patch is always structured as a tensorial cube. The
+    multi-patch setting allows for an unstructured connecting of the patches, allowing more
+    general geometries to be described.
+"""
 abstract type AbstractGeometry{manifold_dim, image_dim, num_patches} end
 
 """

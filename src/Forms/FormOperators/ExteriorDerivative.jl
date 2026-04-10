@@ -110,29 +110,10 @@ Returns the geometry of the form associated with the exterior derivative.
 """
 get_geometry(ext_der::ExteriorDerivative) = get_geometry(get_form(ext_der))
 
-"""
-    evaluate(
-        ext_der::ExteriorDerivative{manifold_dim},
-        element_id::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim}
+############################################################################################
+#                                     Evaluate methods                                     #
+############################################################################################
 
-Computes the exterior derivative at the element given by `element_id`, and canonical points
-`xi`.
-
-# Arguments
-- `ext_der::ExteriorDerivative{manifold_dim}`: The exterior derivative structure.
-- `element_id::Int`: The element identifier.
-- `xi::Points.AbstractPoints{manifold_dim}`: The set of canonical points.
-
-# Returns
-- `::Vector{Array{Float64, expression_rank + 1}}`: The evaluated exterior derivative. The
-    number of entries in the `Vector` is `binomial(manifold_dim, form_rank)`. The size
-    of the `Array` is `(num_eval_points, num_basis)`, where `num_eval_points =
-    Points.get_num_points(xi)` and `num_basis` is the number of basis functions used to represent
-    the `form` on `element_id` ― for `expression_rank = 0` the inner `Array` is equivalent
-    to a `Vector`.
-"""
 function evaluate(
     ext_der::ExteriorDerivative{manifold_dim},
     element_id::Int,

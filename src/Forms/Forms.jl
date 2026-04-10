@@ -1,8 +1,3 @@
-"""
-    module Forms
-
-Contains all definitions of forms, including form fields, form spaces, and form expressions.
-"""
 module Forms
 
 using ..Points
@@ -31,27 +26,32 @@ include("FormsExports.jl")
 Supertype for all form expressions representing differential forms.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: Rank of the differential form.
-- `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
-    with one single set of basis forms have rank 1, with two sets of basis forms have rank
-    2. Higher ranks are not possible.
+- `manifold_dim`: Dimension of the manifold on which the form lives. This will always be
+    inherited from the underlying function space or geometry.
+- `form_rank`: The rank of the form, i.e. ``0``-form, ``1``-form, ``2``-form, etc.
+- `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
+    present, ``1`` for a single basis, and ``2`` for two bases. If `expression_rank` is
+    larger than ``0``, this means that the expression acts on at least one basis, but not
+    necessarily that there is a basis for the total expression. For example, applying the
+    exterior derivative to a `FormSpace` will results in a form with expression rank ``1``.
+    However, while the `FormSpace` has a basis, this does not generate a basis for the
+    exterior derivative (only a spanning set).
 """
 abstract type AbstractForm{manifold_dim, form_rank, expression_rank} end
 
 """
-    AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
+    AbstractFormField{manifold_dim, form_rank}
 
-Alias for `AbstractForm`s with expression rank 0, that is, a form without a basis. See
-[`AbstractForm`](@ref) for more details.
+Alias for `AbstractForm`s with expression rank 0, that is, a form expression without a
+basis. See [`AbstractForm`](@ref) for more details.
 """
 const AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
 
 """
-    AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
+    AbstractFormSpace{manifold_dim, form_rank}
 
-Alias for `AbstractForm`s with expression rank 1, that is, a form with a basis. See
-[`AbstractForm`](@ref) for more details.
+Alias for `AbstractForm`s with expression rank 1, that is, a form expression involving one
+basis. See [`AbstractForm`](@ref) for more details.
 """
 const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
 
@@ -362,6 +362,75 @@ the given form space.
 """
 function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
     return get_num_basis(get_form(form_space), element_id)
+end
+
+"""
+    evaluate(
+        form::AbstractForm{manifold_dim},
+        element_id::Int,
+        xi::Points.AbstractPoints{manifold_dim},
+    ) where {manifold_dim}
+
+Evaluate any form (expression) on the given `element_id` at the given points `xi`.
+
+!!! note "Evaluation in the canonical domain."
+    The evaluation of a form (expression) is always done in the canonical domain, not the
+    physical domain. See the [documentation on the Geometry module](@ref DocGeometryModule)
+    for more details on these domains.
+
+# Arguments
+- `form::AbstractForm{manifold_dim}`: The differential form space.
+- `element_id::Int`: The global element id. See [Geometry](@ref) for the details.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
+    evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
+    canonical domain and point structure.
+
+# Returns
+- `Vector{Array{Float64, expression_rank+1}}`: Vector of length equal to the number of
+    components of the form, where each entry is a `Array{Float64, expression_rank+1}` (so,
+    a `Vector` for `AbstractFormField`s and a `Matrix` for `AbstractFormSpace`s)  of size
+    `(num_evaluation_points,)`, `(num_evaluation_points, num_basis_functions_on_element)`,
+    respectively. For expressions involving two forms (such as the `wedge`), the entries
+    will be of type `Array{Float64, 1 + expression_rank_1 + expression_rank_2}`
+- `form_basis_indices::Vector{Vector{Int}}`: The indices of the underlying function space
+    that have been evaluated (the inner vector), per basis (the outer vector). For
+    `AbstractFormField`s (things without a basis), this will always be [[1]].
+
+# Examples
+Evaluating a ``0``-form:
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form with B as basis.
+
+julia> xi = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
+
+julia> Forms.evaluate(Λ⁰ₕ, 1, xi)
+([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+```
+Evaluating a ``2``-form in 2D (a top form). Note how the result is scaled by the pullback
+to the canonical domain.
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
+
+julia> xi = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
+
+julia> Forms.evaluate(Λ²ₕ, 1, xi)
+([[0.25 0.0 … 0.0 0.0; 0.0 0.125 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0625 0.0625]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+```
+"""
+function evaluate(
+    form::AbstractForm{manifold_dim},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim}
+    throw(MethodError(evaluate, (form, element_id, xi)))
 end
 
 ############################################################################################

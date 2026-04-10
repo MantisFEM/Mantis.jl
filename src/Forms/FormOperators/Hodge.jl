@@ -118,28 +118,6 @@ get_geometry(form_expression::Hodge) = get_geometry(get_form(form_expression))
 #                                     Evaluate methods                                     #
 ############################################################################################
 
-"""
-    evaluate(
-        hodge::Hodge{manifold_dim},
-        element_id::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim}
-
-Computes the hodge star at the element given by `element_id`, and canonical points `xi`.
-
-# Arguments
-- `hodge::Hodge{manifold_dim}`: The hodge star structure.
-- `element_id::Int`: The element identifier.
-- `xi::NTuple{manifold_dim, Vector{Float64}`: The set of canonical points.
-
-# Returns
-- `::Vector{Array{Float64, expression_rank + 1}}`: The evaluated hodge star. The number of
-    entries in the `Vector` is `binomial(manifold_dim, manifold_dim - form_rank)`. The size
-    of the `Array` is `(num_eval_points, num_basis)`, where `num_eval_points =
-    Points.get_num_points(xi)` and `num_basis` is the number of basis functions used to represent
-    the `form` on `element_id` ― for `expression_rank = 0` the inner `Array` is equivalent
-    to a `Vector`.
-"""
 function evaluate(
     hodge::Hodge{manifold_dim}, element_id::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}

@@ -172,24 +172,6 @@ end
 #                                     Evaluate methods                                     #
 ############################################################################################
 
-"""
-    evaluate(
-        wedge::Wedge{manifold_dim}, element_id::Int, xi::Points.AbstractPoints{manifold_dim}
-    ) where {manifold_dim}
-
-Computes the wedge at the element given by `element_id`, and canonical points `xi`.
-
-# Arguments
-- `wedge::Wedge`: The wedge structure.
-- `element_id::Int`: The element identifier.
-- `xi::Points.AbstractPoints{manifold_dim}`: The canonical points used for evaluation.
-# Returns
-- `wedge_eval::Vector{Array{Float64, 1 + expression_rank_1 + expression_rank_2}}`: The
-    evaluation of the wedge. The length of the vector if `binomial(manifold_dim, form_rank)`.
-- `wedge_indices::Vector{Int}`: The indices of the evaluated basis. The length of the vector
-    is the sum of the number of basis functions of each form of the wedge supported at the
-    given element.
-"""
 function evaluate(
     wedge::Wedge{manifold_dim}, element_id::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}

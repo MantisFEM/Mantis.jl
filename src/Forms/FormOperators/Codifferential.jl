@@ -66,8 +66,26 @@ struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
     end
 end
 
+"""
+    codifferential
+
+Symbolic wrapper for the codifferential. See [`CoDifferential`](@ref) for the details.
+"""
 const codifferential = CoDifferential
+
+"""
+    dstar
+
+Symbolic wrapper for the codifferential. See [`CoDifferential`](@ref) for the details.
+"""
 const dstar = CoDifferential
+
+"""
+    δ
+
+Symbolic wrapper for the codifferential. The unicode character command is `\\delta`. See
+[`CoDifferential`](@ref) for the details.
+"""
 const δ = CoDifferential
 
 get_form(co_der::CoDifferential) = co_der.form

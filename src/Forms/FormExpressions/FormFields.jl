@@ -3,9 +3,10 @@
 ############################################################################################
 
 """
-    FormField{manifold_dim, form_rank, FS} <: AbstractFormField{manifold_dim, form_rank}
+    FormField{manifold_dim, form_rank, FS, L} <: AbstractFormField{manifold_dim, form_rank}
 
-Represents a differential form field.
+Represents a differential form field, i.e., a differential form with `coefficients` and
+`form_space`. Note that this is considered a field, and thus to **not** have a basis.
 
 # Fields
 - `form_space::FS`: The form space associated with this field.
@@ -18,9 +19,12 @@ Represents a differential form field.
 - `FS`: Type of the form space.
 
 # Inner Constructors
-- `FormField(form_space::FS, coefficients::Vector{Int}, label::AbstractString)`: General
-    constructor for form fields.
-- `FormField(form_space::FS, label::AbstractString)`: Constructor with zero coefficients.
+- `FormField(
+    form_space::AbstractFormSpace{manifold_dim, form_rank},
+    coefficients::Vector{Float64}=zeros(get_num_basis(form_space)),
+    label::AbstractString="field over "*get_label(form_space),
+)`: General constructor for form fields. Note that the coefficients default to zero if not
+    given, and that the label also has a default.
 """
 struct FormField{manifold_dim, form_rank, FS, L} <:
        AbstractFormField{manifold_dim, form_rank}
@@ -28,29 +32,23 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
     coefficients::Vector{Float64}
     label::L
 
-    """
-        FormField(
-            form_space::FS, coefficients::Vector{Float64}, label::AbstractString
-        ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
-
-    Construct a FormField with zero coefficients.
-
-    # Arguments
-    - `form_space::FS`: The form space.
-    - `coefficients::Vector{Float64}`: The form field coefficients.
-    - `label::String`: Label for the form field.
-
-    # Returns
-    - `FormField`: A new FormField instance.
-    """
     function FormField(
-        form_space::FS, coefficients::Vector{Float64}, label::AbstractString
+        form_space::FS,
+        coefficients::Vector{Float64}=zeros(get_num_basis(form_space)),
+        label::AbstractString="field over "*get_label(form_space),
     ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
         if length(coefficients) != get_num_basis(form_space)
-            throw(ArgumentError("""\
-                      The number of coefficients ($(length(coefficients))) must match the\
-                      number of basis functions ($(get_num_basis(form_space))).
-                      """))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The number of coefficients (",
+                        length(coefficients),
+                        ") must match the number of basis functions (",
+                        get_num_basis(form_space),
+                        ") in the space, but doesn't.",
+                    )
+                )
+            )
         end
 
         return new{manifold_dim, form_rank, FS, typeof(label)}(
@@ -198,30 +196,6 @@ get_geometry(form_field::AnalyticalFormField) = form_field.geometry
 #                                    Evaluation methods                                    #
 ############################################################################################
 
-"""
-    evaluate(
-        form_field::FormField{manifold_dim, form_rank, FS},
-        element_idx::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {
-        manifold_dim,
-        form_rank,
-        FS <: AbstractFormSpace{manifold_dim, form_rank},
-    }
-
-Evaluates a differential form field at given canonical points `xi` mapped to the parametric
-element given by `element_idx`.
-
-# Arguments
-- `form::FS`: The differential form field.
-- `element_idx::Int`: The parametric element identifier.
-- `xi::NTuple{manifold_dim, Vector{Float64}`: The set of canonical points.
-
-# Returns
-- `Vector{Vector{Float64}}`: Vector of length equal to the number of components of the form,
-    where each entry is a `Vector{Float64}`  of length `n_evaluation_points`.
-- `Vector{Vector{Int}}`: This vector is always `[[1]]` because form fields have no basis.
-"""
 function evaluate(
     form_field::FormField{manifold_dim, form_rank, FS},
     element_idx::Int,
@@ -244,26 +218,6 @@ function evaluate(
     return form_eval, [[1]]
 end
 
-"""
-    evaluate(
-        form_field::AnalyticalFormField{manifold_dim},
-        element_idx::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim}
-
-Evaluates a differential form field at given canonical points `xi` mapped to the parametric
-element given by `element_idx`.
-
-# Arguments
-- `form::FS`: The analytical, differential form field.
-- `element_idx::Int`: The parametric element identifier.
-- `xi::NTuple{manifold_dim, Vector{Float64}`: The set of canonical points.
-
-# Returns
-- `Vector{Vector{Float64}}`: Vector of length equal to the number of components of the form,
-    where each entry is a `Vector{Float64}`  of length `n_evaluation_points`.
-- `Vector{Vector{Int}}`: This vector is always `[[1]]` because form fields have no basis.
-"""
 function evaluate(
     form_field::AnalyticalFormField{manifold_dim},
     element_id::Int,
