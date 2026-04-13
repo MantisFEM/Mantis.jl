@@ -2,7 +2,6 @@ module IntegralTests
 
 using Mantis
 using Test
-using JET
 
 using LinearAlgebra
 using SparseArrays
@@ -198,7 +197,7 @@ dΩ₂ = Quadrature.StandardQuadrature(
         curv_u⁰ = curv_complex_2d[1]
         curv_u¹ = curv_complex_2d[2]
         curv_u² = curv_complex_2d[3]
-        # Higher tolerance due to the trigonometric mapping 
+        # Higher tolerance due to the trigonometric mapping
         test_2d_evaluations(curv_u⁰, curv_u¹, curv_u², dΩ₂; atol=1e-4)
     end
 end
@@ -244,7 +243,7 @@ Plot.export_geometry_to_vtk(Forms.get_geometry(curv_complex_3d[1]), "curv_test")
             curv_u⁰,
             curv_u¹,
             dΩ₃;
-            atol=1e-4, # Higher tolerance due to the trigonometric mapping 
+            atol=1e-4, # Higher tolerance due to the trigonometric mapping
         )
     end
 end
