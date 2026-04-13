@@ -13,12 +13,14 @@ using Test
 @testset verbose=true "GeneralHelpers" begin include("GeneralHelpers/runtests.jl") end
 
 # Do not run JET tests on pre-release versions, as JET is too unstable and the CI will
-# appear as failing.
-if isempty(VERSION.prerelease)
-    Pkg.activate("JET")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-    @testset verbose=true "JET Tests" include("JET/runtests.jl")
+# appear as failing. Also only run it from v1.12 onwards, also for compatibility reasons.
+@static if VERSION >= v"1.12"
+    if isempty(VERSION.prerelease)
+        Pkg.activate("Inference")
+        Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+        Pkg.instantiate()
+        @testset verbose=true "Inference Tests" include("Inference/runtests.jl")
+    end
 end
 
 end; nothing
