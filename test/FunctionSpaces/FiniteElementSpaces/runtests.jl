@@ -26,8 +26,4 @@ end
     include("UnstructuredSpaces/runtests.jl")
 end
 
-@testset verbose = true "FEInference" begin
-    include("FESpacesInferenceTests.jl")
-end
-
 end

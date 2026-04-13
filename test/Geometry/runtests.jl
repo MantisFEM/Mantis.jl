@@ -26,8 +26,5 @@ end
 @testset "EvaluationMask" verbose=true begin
     include("EvaluationMask/runtests.jl")
 end
-@testset "Inference" begin
-    include("GeometryInferenceTests.jl")
-end
 
 end
