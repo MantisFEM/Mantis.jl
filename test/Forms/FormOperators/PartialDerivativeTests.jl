@@ -52,15 +52,23 @@ function forcing(x::Matrix{Float64}, order)
     return result
 end
 
-orders = ((1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (2, 2))
+const orders = ((1, 0), (0, 1), (1, 1), (2, 0), (0, 2), (2, 1), (1, 2), (2, 2))
 forcings = Dict(order => (x -> forcing(x, order)) for order in orders)
 B = FunctionSpaces.create_bspline_space(starting_point, box_size, num_elements, p, k)
 G = FunctionSpaces.get_geometry(B)
 f = Forms.AnalyticalFormField(0, x -> forcing(x, (0, 0)), G, "f")
-∂f = Dict(
+const ∂f = Dict(
     order => Forms.AnalyticalFormField(0, forcings[order], G, "∂f") for order in orders
 )
-fₕ = Forms.FormSpace(0, B, "fₕ")
+const fₕ = Forms.FormSpace(0, B, "fₕ")
+# Mapped geometry equivalent to G to test general scaling method
+ϕ(x) = [x[1], x[2]]
+dϕ(_) = [1 0; 0 1]
+MG = Geometry.MappedGeometry(G, Geometry.Mapping((2, 2), ϕ, dϕ))
+Mf = Forms.AnalyticalFormField(0, x -> forcing(x, (0, 0)), MG, "f")
+const ∂Mf = Dict(
+    order => Forms.AnalyticalFormField(0, forcings[order], MG, "∂f") for order in orders
+)
 
 ############################################################################################
 #                                        Helper                                            #
@@ -122,44 +130,55 @@ end
 #                                          Tests                                           #
 ############################################################################################
 
-one_form_error = Forms.FormSpace(1, FunctionSpaces.DirectSumSpace((B, B)), "u")
-@test_throws MethodError ∂(one_form_error, (1, 1))
-@test_throws ArgumentError ∂(fₕ, (-1, 0))
-@test_throws ArgumentError ∂(fₕ, (0, -1))
-@test_throws MethodError ∂(fₕ, (1,))
-@test_throws MethodError ∂(fₕ, (0, 1, 0))
-# Non-cartesian Geometry
-mapping = Geometry.Mapping(Val(1), Val(1), x -> x[1], x -> zero(x))
-mapped_B = FunctionSpaces.BSplineSpace(
-    Geometry.create_cartesian_box((0.0,), (1.0,), (4,)), mapping, 1, 0
-)
-@test_throws ArgumentError ∂(Forms.FormSpace(0, mapped_B, "ω"), (1,))
-
-# Manufactured solutions
-L2_fₕ = Assemblers.solve_L2_projection(fₕ, f, dΩₐ)
-verbose ? println("Running manufactured solution tests...") : nothing
-for order in orders
-    verbose ? println("\tOrder=$(order)...") : nothing
-    ∂fₕ = build_partial_form_field(L2_fₕ, order)
-    error_l2 = Analysis.L2_norm(∂fₕ - ∂f[order], dΩₑ)
-    @test isapprox(error_l2, 0.0, atol=1e-11)
-    verbose ? println("\t\tL2 projection error=$(error_l2).") : nothing
-    if sum(order) <= 2
-        ∂fₕ = solve_problem(fₕ, ∂f[order], dΩₐ, order)
-        error_∂ = Analysis.L2_norm(∂fₕ - ∂f[order], dΩₑ)
-        @test isapprox(error_∂, 0.0, atol=1e-15)
-        verbose ? println("\t\t∂ weak form error=$(error_∂).") : nothing
-    end
+@testset "Construction Errors (PartialOrder)" verbose = true begin
+    @test_throws ArgumentError Forms.PartialOrder((0, -1))
+    @test_throws ArgumentError Forms.PartialOrder((1, 0), Val(2))
 end
 
-if export_vtk
-    name = "PartialDerivative-Test"
-    labels = ("fₕ", "∂ₓ₁fₕ", "∂ₓ₂fₕ", "∂ₓ₁∂ₓ₂fₕ", "∂ₓ₁∂ₓ₁fₕ", "∂ₓ₂∂ₓ₂fₕ")
-    Plot.export_form_fields_to_vtk(
-        (L2_fₕ, ∂(fₕ, (0, 1)), ∂(fₕ, (1, 1)), ∂(fₕ, (2, 0)), ∂(fₕ, (0, 2))),
-        labels,
-        name,
-    )
+@testset "Construction Errors (PartialDerivative)" verbose = true begin
+    one_form_error = Forms.FormSpace(1, FunctionSpaces.DirectSumSpace((B, B)), "u")
+    @test_throws MethodError ∂(one_form_error, (1, 1))
+    @test_throws ArgumentError ∂(fₕ, (-1, 0))
+    @test_throws ArgumentError ∂(fₕ, (0, -1))
+    @test_throws MethodError ∂(fₕ, (1,))
+    @test_throws MethodError ∂(fₕ, (0, 1, 0))
+    @test_throws ArgumentError ∂(Mf, (0, 3))
+end
+
+@testset "L2 Projection (Cartesian)" verbose = true begin
+    # Manufactured solutions
+    L2_fₕ = Assemblers.solve_L2_projection(fₕ, f, dΩₐ)
+    L2_Mfₕ = Assemblers.solve_L2_projection(fₕ, Mf, dΩₐ)
+    verbose ? println("Running manufactured solution tests...") : nothing
+    for order in orders
+        verbose ? println("\tOrder=$(order)...") : nothing
+        ∂fₕ = build_partial_form_field(L2_fₕ, order)
+        error_l2 = Analysis.L2_norm(∂fₕ - ∂f[order], dΩₑ)
+        @test isapprox(error_l2, 0.0, atol=1e-11)
+        verbose ? println("\t\tL2 projection error=$(error_l2).") : nothing
+        if sum(order) <= 2
+            ∂fₕ = solve_problem(fₕ, ∂f[order], dΩₐ, order)
+            error_∂ = Analysis.L2_norm(∂fₕ - ∂f[order], dΩₑ)
+            @test isapprox(error_∂, 0.0, atol=1e-15)
+            verbose ? println("\t\t∂ weak form error=$(error_∂).") : nothing
+            if sum(order) == 1
+                ∂Mfₕ = build_partial_form_field(L2_Mfₕ, order)
+                error_l2 = Analysis.L2_norm(∂fₕ - ∂Mf[order], dΩₑ)
+                @test isapprox(error_l2, 0.0, atol=1e-11)
+                @test all(isapprox.(∂fₕ.form.coefficients, ∂Mfₕ.coefficients, atol=1e-11))
+            end
+        end
+    end
+
+    if export_vtk
+        name = "PartialDerivative-Test"
+        labels = ("fₕ", "∂ₓ₁fₕ", "∂ₓ₂fₕ", "∂ₓ₁∂ₓ₂fₕ", "∂ₓ₁∂ₓ₁fₕ", "∂ₓ₂∂ₓ₂fₕ")
+        Plot.export_form_fields_to_vtk(
+            (L2_fₕ, ∂(fₕ, (0, 1)), ∂(fₕ, (1, 1)), ∂(fₕ, (2, 0)), ∂(fₕ, (0, 2))),
+            labels,
+            name,
+        )
+    end
 end
 
 end
