@@ -167,24 +167,16 @@ end
 
 """
 	_add_geometric_scaling!(
-		partial_der_eval,
-		partial_der::PartialDerivative{manifold_dim, 0, expression_rank, G, F, PO},
-		element_id,
-		xi,
-		partial_orders,
-	) where {manifold_dim, expression_rank, G, F, PO <: PartialOrder{manifold_dim, 1}}
+		partial_der_eval, partial_der::PartialDerivative{manifold_dim}, element_id, xi, _
+	) where {manifold_dim}
 
 Scales `partial_der_eval` from canonical to physical coordinates by applying the coordinate
 transformation
 	∂/∂xᵢ = Σⱼ (g⁻¹Jᵀ)ⱼᵢ ∂/∂ξⱼ.
 """
 function _add_geometric_scaling!(
-    partial_der_eval,
-    partial_der::PartialDerivative{manifold_dim, 0, expression_rank, G, F, PO},
-    element_id,
-    xi,
-    _,
-) where {manifold_dim, expression_rank, G, F, PO <: PartialOrder{manifold_dim, 1}}
+    partial_der_eval, partial_der::PartialDerivative{manifold_dim}, element_id, xi, _
+) where {manifold_dim}
     geometry = get_geometry(partial_der)
     image_dim = Geometry.get_image_dim(geometry)
     J_T = transpose.(Geometry.jacobian(geometry, element_id, xi))
