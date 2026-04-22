@@ -52,7 +52,7 @@ function solve_L2_projection(Xᵏ, fₑ, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
     A, b = assemble(weak_form)
     sol = vec(A \ b)
-    fₕ = Forms.build_form_field(Xᵏ, sol; label="fₕ")
+    fₕ = Forms.build_form_field(Xᵏ, sol)
 
     return fₕ
 end

@@ -69,7 +69,7 @@ function solve_one_form_hodge_laplacian(X⁰, X¹, f¹, dΩ, bc_type="")
     end
 
     sol = vec(A \ b)
-    δu¹ₕ, u¹ₕ = Forms.build_form_fields((X⁰, X¹), sol; labels=("δu¹ₕ", "u¹ₕ"))
+    δu¹ₕ, u¹ₕ = Forms.build_form_fields((X⁰, X¹), sol)
 
     return δu¹ₕ, u¹ₕ
 end

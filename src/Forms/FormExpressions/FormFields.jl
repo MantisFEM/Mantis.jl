@@ -57,24 +57,27 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
             form_space, coefficients, label
         )
     end
+end
 
-    """
-        FormField(form_space::FS, label::String)
+"""
+    FormField(form_space::FS, label::String)
 
-    Construct a FormField with zero coefficients.
+Construct a FormField with zero coefficients.
 
-    # Arguments
-    - `form_space::FS`: The form space.
-    - `label::String`: Label for the form field.
+# Arguments
+- `form_space::FS`: The form space.
+- `label::String`: Label for the form field.
 
-    # Returns
-    - `FormField`: A new FormField instance with zero coefficients.
-    """
-    function FormField(form_space::FS, label::AbstractString) where {FS}
-        coefficients = zeros(get_num_basis(form_space))
-
-        return FormField(form_space, coefficients, label)
+# Returns
+- `FormField`: A new FormField instance with zero coefficients.
+"""
+function FormField(form_space::FS, label::Union{AbstractString, Nothing}=nothing) where {FS}
+    coefficients = zeros(get_num_basis(form_space))
+    if isnothing(label)
+        return FormField(form_space, coefficients, Forms.get_label(form_space))
     end
+
+    return FormField(form_space, coefficients, label)
 end
 
 """

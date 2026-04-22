@@ -5,7 +5,7 @@ function build_form_field(
     form_space::AbstractFormSpace; label::Union{String, Nothing}=nothing
 )
     if isnothing(label)
-        return FormField(form_space, form_space.label)
+        return FormField(form_space, Forms.get_label(form_space))
     end
 
     return FormField(form_space, label)

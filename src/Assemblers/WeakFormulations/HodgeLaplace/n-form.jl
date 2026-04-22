@@ -60,7 +60,7 @@ function solve_volume_form_hodge_laplacian(Xⁿ⁻¹, Xⁿ, fₑ, dΩ)
     weak_form = WeakForm(lhs_expressions, rhs_expressions, weak_form_inputs)
     A, b = assemble(weak_form)
     sol = vec(A \ b)
-    u¹ₕ, ϕ²ₕ = Forms.build_form_fields((Xⁿ⁻¹, Xⁿ), sol; labels=("u¹ₕ", "ϕ²ₕ"))
+    u¹ₕ, ϕ²ₕ = Forms.build_form_fields((Xⁿ⁻¹, Xⁿ), sol)
 
     return u¹ₕ, ϕ²ₕ
 end

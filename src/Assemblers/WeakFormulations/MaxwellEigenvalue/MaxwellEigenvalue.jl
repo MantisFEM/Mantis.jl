@@ -160,9 +160,11 @@ function solve_maxwell_eig(
 
     ωₕ² = (ωₕ²[(nullspace_offset + 1):end])[1:num_eig]
     u¹ₕ = Vector{Forms.FormField{2, 1}}(undef, num_eig)
+    original_label = Forms.get_label(X¹)
+    pad = ndigits(num_eig)
     for eig_id in 1:num_eig
-        subscript_str = join(Char(0x2080 + d) for d in reverse(digits(eig_id)))
-        u¹ₕ[eig_id] = Forms.FormField(X¹, "uₕ" * subscript_str)
+        subscript_str = join(Char(0x2080 + d) for d in reverse(digits(eig_id; pad=pad)))
+        u¹ₕ[eig_id] = Forms.FormField(X¹, original_label * subscript_str)
         u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .=
             real.(eig_vecs[:, nullspace_offset + eig_id])
     end
@@ -248,7 +250,7 @@ function solve_maxwell_eig(
         end
 
         complex = Forms.update_hierarchical_de_rham_complex(complex, H⁰)
-		geo = Forms.get_geometry(complex[1])
+        geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
             Quadrature.get_canonical_quadrature_rule(dΩₐ), Geometry.get_num_elements(geo)
         )

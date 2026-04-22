@@ -330,7 +330,7 @@ function _plot(
         vtkversion=:latest,
     ) do vtk
         vtk.version == "2.2"
-        vtk["point_data", WriteVTK.VTKPointData()] = point_data
+        vtk[Forms.get_label(form), WriteVTK.VTKPointData()] = point_data
     end
 
     ###################################
@@ -403,9 +403,8 @@ function _plot(
             end
         end
 
-        # chop is used to remove ".vtu" from the original filename
         WriteVTK.vtk_grid(
-            chop(vtk_filename; tail=4) * "_wireframe.vtu",
+            vtk_filename * "_wireframe.vtu",
             vertices_on_edges,
             edges;
             append=false,
