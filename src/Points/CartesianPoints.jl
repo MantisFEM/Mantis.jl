@@ -44,27 +44,34 @@ julia> for point in points
 (2, 3)
 ```
 """
-struct CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
-    constituent_points::NTuple{manifold_dim, T}
+struct CartesianPoints{
+        manifold_dim, 
+        T <: Real,
+        CP <:Tuple{Vararg{AbstractVector{T}, manifold_dim}}, 
+        CI, 
+        LI
+    } <: AbstractPoints{manifold_dim}
+    constituent_points::CP
     cart_num_points::CI
     lin_num_points::LI
     iteration_order::NTuple{manifold_dim, Int}
     permuted_cart_num_points::CI
 
     function CartesianPoints(
-        constituent_points::NTuple{manifold_dim, T},
-        iteration_order::NTuple{manifold_dim, Int},
-    ) where {manifold_dim, T <: AbstractVector}
-        constituent_num_points = map(length, constituent_points)
+        constituent_points::Vararg{AbstractVector{T}, manifold_dim};
+        iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim)
+    ) where {manifold_dim, T<:Real}
+        constituent_num_points = map(length, constituent_points)  # this will always be a Tuple no need to convert  
         cart_num_points = CartesianIndices(
             ntuple(dim -> constituent_num_points[dim], manifold_dim)
         )
         lin_num_points = LinearIndices(cart_num_points)
+        inv_iteration_order = invperm(iteration_order)
         permuted_cart_num_points = CartesianIndices(
-            ntuple(dim -> constituent_num_points[iteration_order[dim]], manifold_dim)
+            ntuple(dim -> constituent_num_points[inv_iteration_order[dim]], manifold_dim)
         )
 
-        return new{manifold_dim, T, typeof(cart_num_points), typeof(lin_num_points)}(
+        return new{manifold_dim, T, typeof(constituent_points), typeof(cart_num_points), typeof(lin_num_points)}(
             constituent_points,
             cart_num_points,
             lin_num_points,
@@ -74,10 +81,11 @@ struct CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
     end
 end
 
-function CartesianPoints(constituent_points::NTuple{manifold_dim}) where {manifold_dim}
-    iteration_order = ntuple(k -> k, manifold_dim)
-
-    return CartesianPoints(constituent_points, iteration_order)
+function CartesianPoints(
+    constituent_points::NTuple{manifold_dim, T};
+    iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim)
+    ) where {manifold_dim, T <: AbstractVector{<:Real}}
+    return CartesianPoints(constituent_points...; iteration_order)
 end
 
 Base.eltype(::CartesianPoints{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
