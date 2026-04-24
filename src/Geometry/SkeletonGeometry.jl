@@ -196,30 +196,41 @@ function skeleton_element_to_parent_element_coords(
     local_geometric_object::Int,
     rotation::Int, 
     orientation::Int,
-) where {P <: Points.AbstractPoints{2}}
+) where {P <: Points.CartesianPoints{2}}
     manifold_dim = 2
+
+    println(rotation)
+    println(orientation)
+    println("\n\n\n")
 
     # Get the constituent points
     skeleton_σ_τ = Points.get_constituent_points(skeleton_points)
-
+   
     # Step 1: Apply orientation
-    σ_τ = if orientation == -1
-        (skeleton_σ_τ[2], skeleton_σ_τ[1])
+    iteration_order_rotation = collect(1:manifold_dim)
+    if orientation == -1
+        iteration_order_rotation[1], iteration_order_rotation[2] = iteration_order_rotation[2], iteration_order_rotation[1]
+        σ_τ = (skeleton_σ_τ[2], skeleton_σ_τ[1])
     elseif orientation == 1
-        skeleton_σ_τ
+        σ_τ = skeleton_σ_τ
     else
         throw(ArgumentError("orientation must be 1 or -1, got $orientation"))
     end
 
+
     # Step 2: Apply rotation
     σ_τ = if rotation == 0
         σ_τ
+        # No iteration order swap needed
     elseif rotation == 1
-        (1 .- σ_τ[2], σ_τ[1])
+        (1.0 .- σ_τ[2], σ_τ[1])
+        iteration_order_rotation[1], iteration_order_rotation[2] = iteration_order_rotation[2], iteration_order_rotation[1] 
     elseif rotation == 2
-        (1 .- σ_τ[1], 1 .- σ_τ[2])
+        (1.0 .- σ_τ[1], 1.0 .- σ_τ[2])
+        # No iteration order swap needed
     elseif rotation == 3
-        (σ_τ[2], 1 .- σ_τ[1])
+        (σ_τ[2], 1.0 .- σ_τ[1])
+        iteration_order_rotation[1], iteration_order_rotation[2] = iteration_order_rotation[2], iteration_order_rotation[1]
     else
         throw(ArgumentError("rotation must be 0, 1, 2, or 3, got $orientation"))
     end
@@ -234,12 +245,15 @@ function skeleton_element_to_parent_element_coords(
     
     constituent_points = Vector{eltype(σ_τ)}(undef, manifold_dim + 1)
 
+    iteration_order = zeros(Int, manifold_dim + 1)  # allocate the memory to store the final iteration order
     skeleton_position_id = 1
     for position_id in 1:(manifold_dim + 1)
         if position[position_id] == 0
+            iteration_order[position_id] = iteration_order_rotation[skeleton_position_id]
             constituent_points[position_id] = σ_τ[skeleton_position_id]
             skeleton_position_id += 1
         else 
+            iteration_order[position_id] = 3
             # Rescale to 0 or 1 instead of -1 or 1 as in position
             constituent_points[position_id] = 
                 single_coordinate_of_type(
@@ -250,8 +264,7 @@ function skeleton_element_to_parent_element_coords(
     end
     
     # Step 4: Construct new Points of the same type, but evaluatable in parent geometry
-    constructor = Base.typename(P).wrapper
-	return constructor(NTuple{manifold_dim + 1, eltype(constituent_points)}(constituent_points))
+    return Points.CartesianPoints(constituent_points...; iteration_order=Tuple(iteration_order))
 end
 
 

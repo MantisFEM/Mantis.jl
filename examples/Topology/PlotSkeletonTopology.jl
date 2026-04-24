@@ -69,12 +69,12 @@ function plot_points_sequential(geometry, points::Matrix{Float64}, lag::Float64=
     end
 end
 
-skeleton_topology[3, 1]
+# skeleton_topology[3, 1]
 
-for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
-    skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
-    plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
-end
+# for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
+#     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
+#     plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
+# end
 
 # for element_id in 19:27
 #     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)

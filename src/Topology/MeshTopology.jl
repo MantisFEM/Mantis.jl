@@ -141,6 +141,13 @@ struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches} <:
                     incidence_relations[manifold_dim + 1][manifold_dim],
                     collect(patch2face._v[patch_id]),
                 )
+                if manifold_dim > 2
+                    # Meshcore uses a different definition for the internal faces
+                    # Due to this difference, internal faces 1, 4, and 5 need to flip their orientation
+                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][1] *= -1
+                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][4] *= -1
+                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][5] *= -1
+                end
             end
 
             # Third the face to patch (manifold_dim, manifold + 1)
