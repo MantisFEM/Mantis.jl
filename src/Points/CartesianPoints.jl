@@ -60,8 +60,9 @@ struct CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
             ntuple(dim -> constituent_num_points[dim], manifold_dim)
         )
         lin_num_points = LinearIndices(cart_num_points)
+		inv_iteration_order = invperm(iteration_order)
         permuted_cart_num_points = CartesianIndices(
-            ntuple(dim -> constituent_num_points[iteration_order[dim]], manifold_dim)
+            ntuple(dim -> constituent_num_points[inv_iteration_order[dim]], manifold_dim)
         )
 
         return new{manifold_dim, T, typeof(cart_num_points), typeof(lin_num_points)}(
