@@ -1,25 +1,25 @@
 """
-    CartesianPoints{manifold_dim, T, CI, LI} <: AbstractPoints{manifold_dim}
+    CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim}
 
 Represents a set of points constructed from `manifold_dim` lists of uni-dimensional points.
 Conceptually, this structure combines the functionalities of `CartesianIndices` and
 `Iterators.product`.
 
 # Fields
-- `constituent_points::NTuple{manifold_dim, T}`: The set of points per manifold dimension.
+- `constituent_points::CP`: The set of points per manifold dimension.
 - `cart_num_points::CI`: The `CartesianIndices` used to convert from linear to cartesian
-  indexing.
+    indexing.
 - `lin_num_points::LI`: The `LinearIndices` used to convert from cartesian to linear
-  indexing.
+    indexing.
 - `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
-	`cart_num_points`. If the `dim`-th entry has value `i`, then dimension `dim` will be the
-	`i`-th fastest changing index.
+    `cart_num_points`. If the `dim`-th entry has value `i`, then dimension `dim` will be the
+    `i`-th fastest changing index.
 - `permuted_cart_num_points::CI`: A permuted version of `cart_num_points` as given by
-	`iteration_order`.
+    `iteration_order`.
 
 # Example
 ```julia
-julia> points = Points.CartesianPoints(([1,2], [1,2,3]), (1,2));
+julia> points = Points.CartesianPoints([1,2], [1,2,3]; iteration_order=(1,2));
 
 julia> for point in points
            display(point)
@@ -31,7 +31,7 @@ julia> for point in points
 (1, 3)
 (2, 3)
 
-julia> points = Points.CartesianPoints(([1,2], [1,2,3]), (2,1));
+julia> points = Points.CartesianPoints([1,2], [1,2,3]; iteration_order=(2,1));
 
 julia> for point in points
            display(point)
@@ -44,13 +44,7 @@ julia> for point in points
 (2, 3)
 ```
 """
-struct CartesianPoints{
-        manifold_dim, 
-        T <: Real,
-        CP <:Tuple{Vararg{AbstractVector{T}, manifold_dim}}, 
-        CI, 
-        LI
-    } <: AbstractPoints{manifold_dim}
+struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim}
     constituent_points::CP
     cart_num_points::CI
     lin_num_points::LI
@@ -59,9 +53,9 @@ struct CartesianPoints{
 
     function CartesianPoints(
         constituent_points::Vararg{AbstractVector{T}, manifold_dim};
-        iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim)
-    ) where {manifold_dim, T<:Real}
-        constituent_num_points = map(length, constituent_points)  # this will always be a Tuple no need to convert  
+        iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
+    ) where {manifold_dim, T <: Real}
+        constituent_num_points = map(length, constituent_points)
         cart_num_points = CartesianIndices(
             ntuple(dim -> constituent_num_points[dim], manifold_dim)
         )
@@ -71,7 +65,13 @@ struct CartesianPoints{
             ntuple(dim -> constituent_num_points[inv_iteration_order[dim]], manifold_dim)
         )
 
-        return new{manifold_dim, T, typeof(constituent_points), typeof(cart_num_points), typeof(lin_num_points)}(
+        return new{
+            manifold_dim,
+            T,
+            typeof(constituent_points),
+            typeof(cart_num_points),
+            typeof(lin_num_points),
+        }(
             constituent_points,
             cart_num_points,
             lin_num_points,
@@ -82,9 +82,9 @@ struct CartesianPoints{
 end
 
 function CartesianPoints(
-    constituent_points::NTuple{manifold_dim, T};
-    iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim)
-    ) where {manifold_dim, T <: AbstractVector{<:Real}}
+    constituent_points::NTuple{manifold_dim, V};
+    iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
+) where {manifold_dim, V <: AbstractVector{<:Real}}
     return CartesianPoints(constituent_points...; iteration_order)
 end
 
