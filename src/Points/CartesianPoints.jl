@@ -88,6 +88,10 @@ function CartesianPoints(
     return CartesianPoints(constituent_points...; iteration_order)
 end
 
+function CartesianPoints(constituent_points...; kwargs...)
+    return CartesianPoints(promote(map(collect, constituent_points)...)...; kwargs...)
+end
+
 Base.eltype(::CartesianPoints{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
 
 """
