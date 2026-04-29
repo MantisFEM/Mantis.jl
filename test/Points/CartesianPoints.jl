@@ -27,7 +27,7 @@ end
 
 # Iteration order
 
-@test_throws MethodError Points.CartesianPoints((1:2, 1:2), (1, 2, 3))
+@test_throws TypeError Points.CartesianPoints(1:2, 1:2; iteration_order=(1, 2, 3))
 
 points = (1:2, 1:2, 1:2)
 order_1 = (1, 2, 3)
@@ -37,12 +37,12 @@ order_4 = (2, 3, 1)
 order_5 = (3, 1, 2)
 order_6 = (3, 2, 1)
 points_0 = Points.CartesianPoints(points)
-points_1 = Points.CartesianPoints(points, order_1)
-points_2 = Points.CartesianPoints(points, order_2)
-points_3 = Points.CartesianPoints(points, order_3)
-points_4 = Points.CartesianPoints(points, order_4)
-points_5 = Points.CartesianPoints(points, order_5)
-points_6 = Points.CartesianPoints(points, order_6)
+points_1 = Points.CartesianPoints(points; iteration_order=order_1)
+points_2 = Points.CartesianPoints(points; iteration_order=order_2)
+points_3 = Points.CartesianPoints(points; iteration_order=order_3)
+points_4 = Points.CartesianPoints(points; iteration_order=order_4)
+points_5 = Points.CartesianPoints(points; iteration_order=order_5)
+points_6 = Points.CartesianPoints(points; iteration_order=order_6)
 num_points = Points.get_num_points(points_0)
 
 for p in 1:num_points
@@ -108,5 +108,45 @@ end
 @test points_6[6] == (2, 1, 2)
 @test points_6[7] == (2, 2, 1)
 @test points_6[8] == (2, 2, 2)
+
+# Test different number of points
+
+points = Mantis.Points.CartesianPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
+@test points[1] == (1, 1, 1)
+@test points[2] == (1, 2, 1)
+@test points[3] == (1, 3, 1)
+@test points[4] == (1, 1, 2)
+@test points[5] == (1, 2, 2)
+@test points[6] == (1, 3, 2)
+@test points[7] == (1, 1, 3)
+@test points[8] == (1, 2, 3)
+@test points[9] == (1, 3, 3)
+@test points[10] == (1, 1, 4)
+@test points[11] == (1, 2, 4)
+@test points[12] == (1, 3, 4)
+@test points[13] == (2, 1, 1)
+@test points[14] == (2, 2, 1)
+@test points[15] == (2, 3, 1)
+@test points[16] == (2, 1, 2)
+@test points[17] == (2, 2, 2)
+@test points[18] == (2, 3, 2)
+@test points[19] == (2, 1, 3)
+@test points[20] == (2, 2, 3)
+@test points[21] == (2, 3, 3)
+@test points[22] == (2, 1, 4)
+@test points[23] == (2, 2, 4)
+@test points[24] == (2, 3, 4)
+
+# Test heterogeneous types
+@inferred Points.CartesianPoints([1, 2], [1.0, 2.0])
+@inferred Points.CartesianPoints(LinRange(0, 1, 2), [1.0, 2.0])
+@inferred Points.CartesianPoints(LinRange(0, 1, 2), [1, 2])
+@inferred Points.CartesianPoints(
+    1:10, [1, 2], LinRange(0, 1, 10), zeros(Float32, 3); iteration_order=(4, 2, 1, 3)
+)
+weird_points = Points.CartesianPoints(
+    1:10, [1, 2], LinRange(0, 1, 10), zeros(Float32, 3); iteration_order=(4, 2, 1, 3)
+)
+@inferred weird_points[3]
 
 end
