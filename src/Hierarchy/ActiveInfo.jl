@@ -61,10 +61,6 @@ function get_num_levels(active_info::ActiveInfo)
 end
 
 function get_num_objects(active_info::ActiveInfo)
-    return sum(length, get_level_ids(active_info))
-end
-
-function get_num_active(active_info::ActiveInfo)
     return active_info.level_cum_num_ids[end]
 end
 
@@ -96,20 +92,6 @@ function convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
     )]
 
     return level, level_id
-end
-
-function convert_to_level_ids(active_info::ActiveInfo)
-    num_levels = get_num_levels(active_info)
-
-    level_ids = [Int[] for _ in 1:num_levels]
-
-    for i in 1:get_num_objects(active_info)
-        level, level_id = convert_to_level_and_level_id(active_info, i)
-
-        append!(level_ids[level], level_id)
-    end
-
-    return level_ids
 end
 
 function convert_to_hier_id(active_info::ActiveInfo, level::Int, level_id::Int)
