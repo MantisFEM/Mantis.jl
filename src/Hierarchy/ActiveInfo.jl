@@ -108,12 +108,13 @@ function update!(active_info::ActiveInfo, level::Int, remove::Vector{Int}, add::
     num_levels = get_num_levels(active_info)
     if level == num_levels && !isempty(add)
         add_level!(active_info)
+        num_levels += 1
     end
 
     setdiff!(get_level_ids(active_info)[level], remove)
     union!(get_level_ids(active_info)[level + 1], add)
     level_cum_num_ids = get_level_cum_num_ids(active_info)
-    for l in level:(level + 1)
+    for l in level:num_levels
         level_cum_num_ids[l + 1] =
             level_cum_num_ids[l] + length(get_level_ids(active_info)[l])
     end
