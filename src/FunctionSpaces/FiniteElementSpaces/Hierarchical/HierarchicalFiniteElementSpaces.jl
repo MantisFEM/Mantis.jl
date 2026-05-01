@@ -16,34 +16,34 @@ See [Giannelli2013](@cite) for more information.
 
 # Fields
 - `geometry::G`: The hierarchical geometry associated with the hierarchical space. Will be a
-subtype of [`Geometry.HierarchicalGeometry`](@ref).
-- `parametric_geometry::G`: The parametic hierarchical geometry associated with the
-hierarchy of parametic geometries from each level. Will be a subtype of
-[`Geometry.HierarchicalGeometry`](@ref).
+    subtype of [`Geometry.HierarchicalGeometry`](@ref).
+- `parametric_geometry::GP`: The parametic hierarchical geometry associated with the
+    hierarchy of parametic geometries from each level. Will be a subtype of
+    [`Geometry.HierarchicalGeometry`](@ref).
 - `spaces::Vector{S} `: Collection of `L` `manifold_dim`-variate function spaces, where `L`
-is the total number of levels.
+    is the total number of levels.
 - `two_scale_operators::Vector{T}`: Collection of `L-1` two-scale operators relating each
-consecutive pair of finite element spaces, where `L` is the total number of levels. See
-[`AbstractTwoScaleOperator`](@ref).
+    consecutive pair of finite element spaces, where `L` is the total number of levels. See
+    [`AbstractTwoScaleOperator`](@ref).
 - `active_elements::Hierarchy.ActiveInfo`: Information about the active elements at each
-level. See [`Hierarchy.ActiveInfo`](@ref).
+    level. See [`Hierarchy.ActiveInfo`](@ref).
 - `active_basis::Hierarchy.ActiveInfo`: Information about the active basis at each level.
-See [`Hierarchy.ActiveInfo`](@ref).
+    See [`Hierarchy.ActiveInfo`](@ref).
 - `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
-level. This is the usual definition of Ωₗ in the literature. See
-[`Hierarchy.ActiveInfo`](@ref).
+    level. This is the usual definition of Ωₗ in the literature. See
+    [`Hierarchy.ActiveInfo`](@ref).
 - `multilevel_elements::SparseArrays.SparseVector{Int, Int}`: Elements where basis from
-multiple levels have non-empty support.
+    multiple levels have non-empty support.
 - `multilevel_extraction_coeffs::Vector{NTuple{num_components, Matrix{Float64}}}`:
-Extraction coefficients of active basis functions in `multilevel_elements`.
+    Extraction coefficients of active basis functions in `multilevel_elements`.
 - `multilevel_basis_indices::Vector{Vector{Int}}`: Indices of active basis in
-`multilevel_elements`, in hierarchical indexing.
+    `multilevel_elements`, in hierarchical indexing.
 - `num_subdivisions::NTuple{manifold_dim, Int}`: Number of subdivisions per `manifold_dim`,
-per level for the hierarchical mesh.
+    per level for the hierarchical mesh.
 - `truncated::Bool`: Flag for truncated hierarchical spaces.
 - `simplified::Bool`: Flag for simplified hierarchical spaces.
 - `dof_partition::Vector{Vector{Vector{Int}}}`: The degree-of-freedom partitioning of the
-hierarchical space, in hierarchical indexing.
+    hierarchical space, in hierarchical indexing.
 """
 struct HierarchicalFiniteElementSpace{
     manifold_dim, num_components, num_patches, S, T, G, GP
@@ -303,8 +303,8 @@ applied to determine the active elements.
 - `active_elements::Hierarchy.ActiveInfo`: Active elements at each level.
 - `active_basis::Hierarchy.ActiveInfo`: Active basis at each level.
 - `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
-	level. This is the usual definition of Ωₗ in the literature. See
-	[`Hierarchy.ActiveInfo`](@ref).
+    level. This is the usual definition of Ωₗ in the literature. See
+    [`Hierarchy.ActiveInfo`](@ref).
 """
 function get_active_objects_and_nested_domains(
     spaces::Vector{S},
