@@ -97,8 +97,9 @@ function jacobian(
     # Generate derivatives indices. For derivative order 1, each dimension is derivated
     # once. Then, the corresponding derivative index for the given key is computed.
     der_idxs = ntuple(manifold_dim) do k
-        key = zeros(Int, manifold_dim)
-        key[k] = 1
+        key = ntuple(manifold_dim) do dim
+            return dim == k ? 1 : 0
+        end
         der_idx = GeneralHelpers.get_derivative_idx(key)
 
         return der_idx

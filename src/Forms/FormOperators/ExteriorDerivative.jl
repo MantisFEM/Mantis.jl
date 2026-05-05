@@ -209,11 +209,12 @@ function _evaluate_exterior_derivative(
     )
 
     # Store the required values
-    key = zeros(Int, manifold_dim)
     for coordinate_idx in 1:manifold_dim
-        key[coordinate_idx] = 1
+        key = ntuple(manifold_dim) do dim
+            return dim == coordinate_idx ? 1 : 0
+        end
+
         der_idx = FunctionSpaces.get_derivative_idx(key)
-        key[coordinate_idx] = 0
         @. local_d_form_basis_eval[coordinate_idx] = d_local_fem_basis[2][der_idx][1]
     end
 
@@ -242,8 +243,8 @@ function _evaluate_exterior_derivative(
     # The exterior derivative is
     # (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
     # Store the required values
-    der_idx_1 = FunctionSpaces.get_derivative_idx([1, 0])
-    der_idx_2 = FunctionSpaces.get_derivative_idx([0, 1])
+    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0))
+    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1))
     @. local_d_form_basis_eval[1] =
         d_local_fem_basis[2][der_idx_1][2] - d_local_fem_basis[2][der_idx_2][1]
 
@@ -272,9 +273,9 @@ function _evaluate_exterior_derivative(
 
     # The exterior derivative is
     # (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃ + (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁ + (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    der_idx_1 = FunctionSpaces.get_derivative_idx([1, 0, 0])
-    der_idx_2 = FunctionSpaces.get_derivative_idx([0, 1, 0])
-    der_idx_3 = FunctionSpaces.get_derivative_idx([0, 0, 1])
+    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
+    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
+    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
     # First: (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃
     @. local_d_form_basis_eval[1] =
         d_local_fem_basis[2][der_idx_2][3] - d_local_fem_basis[2][der_idx_3][2]
@@ -313,9 +314,9 @@ function _evaluate_exterior_derivative(
     # α₁ dξ₂∧dξ₃ + α₂ dξ₃∧dξ₁ + α₃ dξ₁∧dξ₂
     # The exterior derivative is
     # (∂α₁/∂ξ₁ + ∂α₂/∂ξ₂ + ∂α₃/∂ξ₃) dξ₁∧dξ₂∧dξ₃
-    der_idx_1 = FunctionSpaces.get_derivative_idx([1, 0, 0])
-    der_idx_2 = FunctionSpaces.get_derivative_idx([0, 1, 0])
-    der_idx_3 = FunctionSpaces.get_derivative_idx([0, 0, 1])
+    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
+    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
+    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
     @. local_d_form_basis_eval[1] =
         d_local_fem_basis[2][der_idx_1][1] +
         d_local_fem_basis[2][der_idx_2][2] +

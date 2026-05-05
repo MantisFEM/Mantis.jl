@@ -141,7 +141,7 @@ function _evaluate_codifferential(
     # α^1 = α¹ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
     # Note that d/dx(1/sqrt(det(g))) = - (d/dx(sqrt(g)))/(sqrt(g)^2)
-    idx_du = FunctionSpaces.get_derivative_idx([1])
+    idx_du = FunctionSpaces.get_derivative_idx((1,))
     for i in axes(codiff_eval[1], 1)
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
@@ -181,8 +181,8 @@ function _evaluate_codifferential(
     # α¹ = d(β⁰) = ∂ᵤ β⁰ du
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
     # Note that d/dx(1/sqrt(det(g))) = - (d/dx(sqrt(g)))/(sqrt(g)^2)
-    idx_du = FunctionSpaces.get_derivative_idx([1])
-    idx_duu = FunctionSpaces.get_derivative_idx([2])
+    idx_du = FunctionSpaces.get_derivative_idx((1,))
+    idx_duu = FunctionSpaces.get_derivative_idx((2,))
     for i in axes(codiff_eval[1], 1)
         inv_sqrt_point = 1.0 / sqrt_g[i]
         codiff_eval[1][i, :] .=
@@ -219,8 +219,8 @@ function _evaluate_codifferential(
     # Compute the coderivative.
     # α^1 = α¹ du + α² dv
     # d*α¹ = β⁰
-    idx_du = FunctionSpaces.get_derivative_idx([1, 0])
-    idx_dv = FunctionSpaces.get_derivative_idx([0, 1])
+    idx_du = FunctionSpaces.get_derivative_idx((1, 0))
+    idx_dv = FunctionSpaces.get_derivative_idx((0, 1))
     for i in axes(codiff_eval[1], 1)
         codiff_eval[1][i, :] .=
             view(fem_evals[2][idx_du][1], i, :) .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
@@ -271,11 +271,11 @@ function _evaluate_codifferential(
     # Compute the laplacian, which is the coderivative of the exterior derivative.
     # α¹ = α¹ du + α² dv
     # α¹ = d(β⁰) = ∂ᵤ β⁰ du + ∂ᵥ β⁰ dv
-    idx_du = FunctionSpaces.get_derivative_idx([1, 0])
-    idx_dv = FunctionSpaces.get_derivative_idx([0, 1])
-    idx_duu = FunctionSpaces.get_derivative_idx([2, 0])
-    idx_dvv = FunctionSpaces.get_derivative_idx([0, 2])
-    idx_duv = FunctionSpaces.get_derivative_idx([1, 1])
+    idx_du = FunctionSpaces.get_derivative_idx((1, 0))
+    idx_dv = FunctionSpaces.get_derivative_idx((0, 1))
+    idx_duu = FunctionSpaces.get_derivative_idx((2, 0))
+    idx_dvv = FunctionSpaces.get_derivative_idx((0, 2))
+    idx_duv = FunctionSpaces.get_derivative_idx((1, 1))
     for i in 1:n_evaluation_points
         codiff_eval[1][i, :] .=
             view(fem_evals[3][idx_duu][1], i, :) .* inv_g[i][1, 1] .+  # ∂u α¹ * g¹¹
