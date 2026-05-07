@@ -125,15 +125,11 @@ Returns the permuted `cart_num_points` used to index `points`, as given by
 get_permuted_cart_num_points(points::CartesianPoints) = points.permuted_cart_num_points
 
 """
-    get_constituent_num_points(
-      points::CartesianPoints{manifold_dim}
-    ) where {manifold_dim}
+    get_constituent_num_points(points::CartesianPoints)
 
 Returns the number of constituent points per manifold dimension.
 """
-function get_constituent_num_points(
-    points::CartesianPoints{manifold_dim}
-) where {manifold_dim}
+function get_constituent_num_points(points::CartesianPoints)
     return size(get_cart_num_points(points))
 end
 
