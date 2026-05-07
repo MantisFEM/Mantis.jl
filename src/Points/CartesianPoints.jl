@@ -1,5 +1,5 @@
 """
-    CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim}
+    CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim, T}
 
 Represents a set of points constructed from `manifold_dim` lists of uni-dimensional points.
 Conceptually, this structure combines the functionalities of `CartesianIndices` and
@@ -44,7 +44,7 @@ julia> for point in points
 (2, 3)
 ```
 """
-struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim}
+struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_dim, T}
     constituent_points::CP
     cart_num_points::CI
     lin_num_points::LI
@@ -91,8 +91,6 @@ end
 function CartesianPoints(constituent_points...; kwargs...)
     return CartesianPoints(promote(map(collect, constituent_points)...)...; kwargs...)
 end
-
-Base.eltype(::CartesianPoints{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
 
 """
     get_cart_num_points(points::CartesianPoints)

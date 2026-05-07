@@ -11,14 +11,15 @@ module Points
 ############################################################################################
 
 """
-    AbstractPoints{manifold_dim}
+    AbstractPoints{manifold_dim, T}
 
 Supertype for all evaluable points.
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold where the points are evaluated.
+- `T`: The [`eltype`](@ref) of the points.
 """
-abstract type AbstractPoints{manifold_dim} end
+abstract type AbstractPoints{manifold_dim, T} end
 
 ############################################################################################
 #                                    Abstract Methods                                      #
@@ -82,11 +83,12 @@ function scale_and_shift_points(
     transformed_points = ntuple(
         dim -> constituent_points[dim] .* scalings[dim] .+ translations[dim], manifold_dim
     )
-	constructor = Base.typename(P).wrapper
+    constructor = Base.typename(P).wrapper
 
-	return constructor(transformed_points)
+    return constructor(transformed_points)
 end
 
+Base.eltype(::AbstractPoints{manifold_dim, T}) where {manifold_dim, T} = T
 Base.firstindex(points::AbstractPoints) = 1
 Base.lastindex(points::AbstractPoints) = get_num_points(points)
 Base.keys(points::AbstractPoints) = firstindex(points):lastindex(points)

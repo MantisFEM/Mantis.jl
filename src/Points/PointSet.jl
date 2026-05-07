@@ -1,5 +1,5 @@
 """
-    PointSet{manifold_dim, T} <: AbstractPoints{manifold_dim}
+    PointSet{manifold_dim, T} <: AbstractPoints{manifold_dim, T}
 
 Represents a set of points in `manifold_dim` dimensions.
 
@@ -50,8 +50,6 @@ function PointSet(point_set::Vector{Vector{T}}) where {T <: Real}
 
     return PointSet(constituent_points)
 end
-
-Base.eltype(::PointSet{manifold_dim, T}) where {manifold_dim, T} = eltype(T)
 
 get_num_points(points::PointSet) = points.num_points
 
