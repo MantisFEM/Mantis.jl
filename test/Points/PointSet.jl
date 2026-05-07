@@ -22,4 +22,13 @@ for i in 1:3
     end
 end
 
+@test_throws ArgumentError Points.PointSet([1, 2], [1, 2, 3])
+# Test heterogeneous types
+@inferred Points.PointSet([1, 2], [1.0, 2.0])
+@inferred Points.PointSet(LinRange(0, 1, 2), [1.0, 2.0])
+@inferred Points.PointSet(LinRange(0, 1, 2), [1, 2])
+@inferred Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2))
+weird_points = Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2))
+@inferred weird_points[2]
+
 end
