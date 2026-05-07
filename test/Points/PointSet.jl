@@ -3,6 +3,11 @@ module PointSetTests
 using Mantis
 using Test
 
+@test_throws ArgumentError Points.PointSet(())
+@test_throws ArgumentError Points.PointSet(([1], Int[]))
+@test_throws ArgumentError Points.PointSet([1, 2], [1, 2, 3])
+@test_throws ArgumentError Points.PointSet(([1], ["wrong_type"]))
+
 manifold_dims = [1, 2, 3]
 num_points = [7, 8, 9]
 for i in 1:3
@@ -22,13 +27,15 @@ for i in 1:3
     end
 end
 
-@test_throws ArgumentError Points.PointSet([1, 2], [1, 2, 3])
 # Test heterogeneous types
-@inferred Points.PointSet([1, 2], [1.0, 2.0])
-@inferred Points.PointSet(LinRange(0, 1, 2), [1.0, 2.0])
-@inferred Points.PointSet(LinRange(0, 1, 2), [1, 2])
-@inferred Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2))
-weird_points = Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2))
-@inferred weird_points[2]
+@test typeof(Points.PointSet([1, 2], [1.0, 2.0]).constituent_points) ==
+    Tuple{Vector{Float64}, Vector{Float64}}
+@test typeof(Points.PointSet(LinRange(0, 1, 2), [1.0, 2.0]).constituent_points) ==
+    Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(Points.PointSet(LinRange(0, 1, 2), [1, 2]).constituent_points) ==
+    Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(
+    Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)).constituent_points
+) == Tuple{Vector{Float64}, Vector{Float64}, LinRange{Float64, Int}, Vector{Float64}}
 
 end

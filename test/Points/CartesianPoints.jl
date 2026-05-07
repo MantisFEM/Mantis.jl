@@ -3,6 +3,11 @@ module CartesianPointsTests
 using Mantis
 using Test
 
+@test_throws ArgumentError Points.CartesianPoints(())
+@test_throws ArgumentError Points.CartesianPoints(([1], Int[]))
+@test_throws ArgumentError Points.CartesianPoints(([1], ["wrong_type"]))
+@test_throws TypeError Points.CartesianPoints(1:2, 1:2; iteration_order=(1, 2, 3))
+
 manifold_dims = [1, 2, 3]
 num_const_points = [(2,), (4, 3), (2, 1, 5)]
 num_points = [prod(num_const_points[dim]) for dim in 1:3]
@@ -24,10 +29,6 @@ for i in 1:3
         @test xi[j] == original_point
     end
 end
-
-# Iteration order
-
-@test_throws TypeError Points.CartesianPoints(1:2, 1:2; iteration_order=(1, 2, 3))
 
 points = (1:2, 1:2, 1:2)
 order_1 = (1, 2, 3)
@@ -138,15 +139,16 @@ points = Mantis.Points.CartesianPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
 @test points[24] == (2, 3, 4)
 
 # Test heterogeneous types
-@inferred Points.CartesianPoints([1, 2], [1.0, 2.0])
-@inferred Points.CartesianPoints(LinRange(0, 1, 2), [1.0, 2.0])
-@inferred Points.CartesianPoints(LinRange(0, 1, 2), [1, 2])
-@inferred Points.CartesianPoints(
-    1:10, [1, 2], LinRange(0, 1, 10), zeros(Float32, 3); iteration_order=(4, 2, 1, 3)
-)
-weird_points = Points.CartesianPoints(
-    1:10, [1, 2], LinRange(0, 1, 10), zeros(Float32, 3); iteration_order=(4, 2, 1, 3)
-)
-@inferred weird_points[3]
+@test typeof(Points.CartesianPoints([1, 2], [1.0, 2.0]).constituent_points) ==
+    Tuple{Vector{Float64}, Vector{Float64}}
+@test typeof(Points.CartesianPoints(LinRange(0, 1, 2), [1.0, 2.0]).constituent_points) ==
+    Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(Points.CartesianPoints(LinRange(0, 1, 2), [1, 2]).constituent_points) ==
+    Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(
+    Points.CartesianPoints(
+        1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)
+    ).constituent_points,
+) == Tuple{Vector{Float64}, Vector{Float64}, LinRange{Float64, Int}, Vector{Float64}}
 
 end
