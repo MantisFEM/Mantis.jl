@@ -11,25 +11,31 @@ struct PointSet{manifold_dim, T, CP} <: AbstractPoints{manifold_dim, T}
     num_points::Int
 
     function PointSet(
-        constituent_points::Vararg{AbstractVector{T}, manifold_dim}
-    ) where {manifold_dim, T <: Real}
-        allequal(length, constituent_points) ||
+        constituent_points::Vararg{AbstractVector, manifold_dim}
+    ) where {manifold_dim}
+        iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
+        constituent_num_points = map(length, constituent_points)
+        any(iszero, constituent_num_points) &&
+            throw(ArgumentError("Number of points must be non-empty."))
+        allequal(constituent_num_points) ||
             throw(ArgumentError("Number of points in each dimension must match."))
-        num_points = length(constituent_points[1])
+        num_points = first(constituent_num_points)
+        types = map(eltype, constituent_points)
+        T = promote_type(types...)
+        T <: Number || throw(ArgumentError("Points must be a subtype of `Number`."))
+        promoted_points = ntuple(manifold_dim) do k
+            if types[k] != T
+                return convert.(T, constituent_points[k])
+            end
 
-        return new{manifold_dim, T, typeof(constituent_points)}(
-            constituent_points, num_points
-        )
+            return constituent_points[k]
+        end
+
+        return new{manifold_dim, T, typeof(promoted_points)}(promoted_points, num_points)
     end
 end
 
-function PointSet(
-    constituent_points::NTuple{manifold_dim, V}
-) where {manifold_dim, V <: AbstractVector{<:Real}}
-    return PointSet(constituent_points...)
-end
-
-PointSet(constituent_points...) = PointSet(promote(map(collect, constituent_points)...)...)
+PointSet(constituent_points::Tuple) = PointSet(constituent_points...)
 
 function PointSet(point_set::Vector{NTuple{manifold_dim, T}}) where {manifold_dim, T}
     # Split a list of n manifold_dim-dimensional points into manifold_dim lists of n points
@@ -38,17 +44,17 @@ function PointSet(point_set::Vector{NTuple{manifold_dim, T}}) where {manifold_di
         dim -> [point_set[point][dim] for point in 1:num_points], manifold_dim
     )
 
-    return PointSet(constituent_points)
+    return PointSet(constituent_points...)
 end
 
-function PointSet(point_set::Vector{Vector{T}}) where {T <: Real}
+function PointSet(point_set::Vector{Vector{T}}) where {T <: Number}
     # Split a list of n manifold_dim-dimensional points into manifold_dim lists of n points
     manifold_dim = length(first(point_set))
     constituent_points = ntuple(
         dim -> [point_set[point][dim] for point in 1:length(point_set)], manifold_dim
     )
 
-    return PointSet(constituent_points)
+    return PointSet(constituent_points...)
 end
 
 get_num_points(points::PointSet) = points.num_points

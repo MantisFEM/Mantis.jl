@@ -52,10 +52,24 @@ struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_d
     permuted_cart_num_points::CI
 
     function CartesianPoints(
-        constituent_points::Vararg{AbstractVector{T}, manifold_dim};
+        constituent_points::Vararg{AbstractVector, manifold_dim};
         iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
-    ) where {manifold_dim, T <: Real}
+    ) where {manifold_dim}
+        iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
         constituent_num_points = map(length, constituent_points)
+        any(iszero, constituent_num_points) &&
+            throw(ArgumentError("Number of points must be non-empty."))
+        types = map(eltype, constituent_points)
+        T = promote_type(types...)
+        T <: Number || throw(ArgumentError("Points must be a subtype of `Number`."))
+        promoted_points = ntuple(manifold_dim) do k
+            if types[k] != T
+                return convert.(T, constituent_points[k])
+            end
+
+            return constituent_points[k]
+        end
+
         cart_num_points = CartesianIndices(
             ntuple(dim -> constituent_num_points[dim], manifold_dim)
         )
@@ -68,11 +82,11 @@ struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_d
         return new{
             manifold_dim,
             T,
-            typeof(constituent_points),
+            typeof(promoted_points),
             typeof(cart_num_points),
             typeof(lin_num_points),
         }(
-            constituent_points,
+            promoted_points,
             cart_num_points,
             lin_num_points,
             iteration_order,
@@ -81,15 +95,8 @@ struct CartesianPoints{manifold_dim, T, CP, CI, LI} <: AbstractPoints{manifold_d
     end
 end
 
-function CartesianPoints(
-    constituent_points::NTuple{manifold_dim, V};
-    iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
-) where {manifold_dim, V <: AbstractVector{<:Real}}
-    return CartesianPoints(constituent_points...; iteration_order)
-end
-
-function CartesianPoints(constituent_points...; kwargs...)
-    return CartesianPoints(promote(map(collect, constituent_points)...)...; kwargs...)
+function CartesianPoints(constituent_points::Tuple; kwargs...)
+    return CartesianPoints(constituent_points...; kwargs...)
 end
 
 """
