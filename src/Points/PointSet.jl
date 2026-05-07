@@ -13,6 +13,8 @@ struct PointSet{manifold_dim, T, CP} <: AbstractPoints{manifold_dim, T}
     function PointSet(
         constituent_points::Vararg{AbstractVector{T}, manifold_dim}
     ) where {manifold_dim, T <: Real}
+        allequal(length, constituent_points) ||
+            throw(ArgumentError("Number of points in each dimension must match."))
         num_points = length(constituent_points[1])
 
         return new{manifold_dim, T, typeof(constituent_points)}(
