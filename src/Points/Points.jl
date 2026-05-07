@@ -17,7 +17,7 @@ Supertype for all evaluable points.
 
 # Type parameters
 - `manifold_dim`: Dimension of the manifold where the points are evaluated.
-- `T`: The [`eltype`](@ref) of the points.
+- `T`: The `eltype` of the points; see `Base.eltype`.
 """
 abstract type AbstractPoints{manifold_dim, T} end
 
