@@ -1,4 +1,205 @@
 
+"""
+    Lagrange <: AbstractLagrangePolynomials
+
+Lagrange interpolating polynomials.
+
+# Fields
+- `p::Int`: Degree of the Lagrange polynomial.
+- `nodes::NT`: Points at which the polynomial should be interpolating. The length of the
+    `nodes` vector dictates the degree.
+- `barycentric_weights::Vector{T}`: Barycentric weights. `T` is eltype(`nodes`).
+"""
+struct Lagrange{NT, T} <: AbstractLagrangePolynomials
+    p::Int
+    nodes::NT
+    barycentric_weights::Vector{T}
+
+    function Lagrange(nodes::AbstractVector{T}) where {T}
+        if length(nodes) <= 0
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "Lagrange polynomials require at least 1 node. Got ",
+                        length(nodes),
+                        " nodes instead.",
+                    )
+                )
+            )
+        end
+        p, barycentric_weights = compute_barycentric_weights(nodes)
+
+        return new{typeof(nodes), T}(p, nodes, barycentric_weights)
+    end
+end
+
+"""
+    compute_barycentric_weights(nodes)
+
+Compute the barycentric weights for Lagrange interpolation using the given `nodes`.
+
+Based on algorithm 9.2.1 of [Driscoll2022](@cite).
+"""
+function compute_barycentric_weights(nodes)
+    p = length(nodes) - 1
+
+    # Scaling to ensure stability.
+    C = (nodes[p+1] - nodes[1]) / eltype(nodes)(4.0)
+    scaled_nodes = nodes / C
+
+    # Adding one node at a time, compute inverses of the weights.
+    w = ones(eltype(nodes), p+1)
+    for i in 0:p-1
+        for j in 1:i+1
+            # Current node difference.
+            d = scaled_nodes[j] - scaled_nodes[i+2]
+
+            # Update previous.
+            w[j] *= d
+
+            # Compute new w.
+            w[i+2] *= -d
+        end
+    end
+
+    # Go from inverses to weights.
+    for i in eachindex(w)
+        w[i] = one(eltype(w))/w[i]
+    end
+
+    return p, w
+end
+
+function evaluate(
+    polynomial::Lagrange, xi::Points.AbstractPoints{1}, nderivatives::Int=0
+)
+    neval = Points.get_num_points(xi)
+
+    values = Vector{Vector{Matrix{eltype(xi)}}}(undef, nderivatives + 1)
+    for j in 0:nderivatives
+        values[j + 1] = Vector{Matrix{eltype(xi)}}(undef, 1)
+        values[j + 1][1] = zeros(eltype(xi), neval, polynomial.p + 1)
+    end
+
+    nodes = polynomial.nodes
+    weights = polynomial.barycentric_weights
+    # loop over the evaluation points and evaluate all basis functions at each point
+    @inbounds for point in eachindex(xi)
+        _eval_lagrange!(
+            view(values[1][1], point, :), nodes, weights, xi[point][1]
+        )
+    end
+
+    if nderivatives > 0
+        D = _derivative_matrix(nodes)
+
+        # Compute the first derivative
+        derivative_idx = 1
+        values[derivative_idx + 1][1] .= values[derivative_idx][1] * D
+
+        # Loop over the remaining derivatives and compute them
+        if nderivatives > 1
+            # We use a recursive formula, so we need the previous D^{n} derivative to
+            # compute the current one, which will be stored in the same matrix.
+            D_n = copy(D)
+            for derivative_idx in 2:nderivatives
+                D_n = _derivative_matrix_next!(D_n, derivative_idx, D, nodes)
+                values[derivative_idx + 1][1] .= values[derivative_idx][1] * D_n
+            end
+        end
+    end
+
+    return values
+end
+
+function _eval_lagrange!(result, nodes, weights, x::T) where {T <: Number}
+    numerators = similar(weights)
+    sum_terms = zero(T)
+    for i in eachindex(numerators, nodes, weights)
+        diff = x - nodes[i]
+
+        if iszero(diff)
+            # Exactly at a node, so return one at the node and zero elsewhere
+            result .= zero(T)
+            result[i] = one(T)
+            return result
+        else
+            new_term = weights[i] / diff
+            numerators[i] = new_term
+            sum_terms += new_term
+        end
+    end
+
+    for i in eachindex(result, numerators)
+        result[i] = numerators[i] / sum_terms
+    end
+
+    return result
+end
+
+
+
+"""
+    Edge <: AbstractLagrangePolynomials
+
+Edge histapolant polynomials of degree `p`.
+
+The ``j``-th edge basis polynomial, ``e_{j}(\\xi)``, is given by, see
+[Gerritsma2011](@cite),
+```math
+    e_{j}(\\xi) = -\\sum_{k=1}^{j} \\frac{\\mathrm{d} h_{k}(\\xi)}{\\mathrm{d}\\xi}, j = 1 , \\dots, p+1\\,.
+```
+where ``h_{k}(\\xi)`` is the ``k``-th Lagrange polynomial of degree ``(p+1)`` over a given
+set of nodes. If ``\\xi_{i}`` are the given ``(p+1)`` nodes, then
+```math
+\\int_{\\xi_{i}}^{\\xi_{i+1}} e_{j}(\\xi)\\,\\mathrm{d}\\xi = \\delta_{i,j}, \\qquad i,j = 1, \\dots, p\\,,
+```
+i.e., they satisfy an integral Kronecker-``\\delta`` property.
+
+See [Gerritsma2011](@cite) for more details.
+
+# Fields
+- `p::Int`: Degree of the Edge polynomial.
+- `nodes::NT`: Nodes between which the polynomial should be histapolating. The length of
+    the `nodes` vector dictates the degree.
+- `lagrange_polynomial::Lagrange{NT, T}`: The underlying Lagrange polynomial. See
+    [Lagrange](@ref) for the details.
+"""
+struct Edge{NT, T} <: AbstractLagrangePolynomials
+    p::Int
+    nodes::NT
+    lagrange_polynomial::Lagrange{NT, T}
+
+    function Edge(nodes::AbstractVector{T}) where {T}
+        if length(nodes) <= 1
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "Edge polynomials require at least 2 nodes. Got ",
+                        length(nodes),
+                        " nodes instead.",
+                    )
+                )
+            )
+        end
+        lagrange_polynomial = Lagrange(nodes)
+
+        return new{typeof(nodes), T}(lagrange_polynomial.p-1, nodes, lagrange_polynomial)
+    end
+end
+
+function evaluate(
+    polynomials::Edge, xi::Points.AbstractPoints{1}, nderivatives::Int=0
+)
+    edge_eval = evaluate(polynomials.lagrange_polynomial, xi, nderivatives + 1)
+    for i in 0:nderivatives
+        edge_eval[i + 1][1] = -cumsum(edge_eval[i + 2][1][:, 1:(end - 1)]; dims=2)
+    end
+
+    return edge_eval[1:(nderivatives + 1)]
+end
+
+
 struct LobattoLegendre <: AbstractLagrangePolynomials
     p::Int  # Polynomial degree
     nodes::Vector{Float64}  # Polynomial grid nodes, there are p+1 nodes
