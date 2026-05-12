@@ -143,8 +143,6 @@ function solve_maxwell_eig(
     bc = Forms.set_dirichlet_boundary_conditions(X¹, 0.0)
     A, B = assemble(weak_form, bc; lhs_type=Matrix{Float64}, rhs_type=Matrix{Float64})
     non_boundary_rows_cols = setdiff(1:Forms.get_num_basis(X¹), keys(bc))
-    A = A[non_boundary_rows_cols, non_boundary_rows_cols]
-    B = B[non_boundary_rows_cols, non_boundary_rows_cols]
     ωₕ², eig_vecs = LinearAlgebra.eigen(A, B)
     ωₕ² = real.(ωₕ²)
     sort_ids = sortperm(ωₕ²)

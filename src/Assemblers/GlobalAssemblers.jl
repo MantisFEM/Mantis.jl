@@ -4,7 +4,7 @@
         weak_form::WeakForm{manifold_dim, LHS, RHS, I},
         dirichlet_bcs::Dict{Int, Float64}=Dict{Int, Float64}();
         lhs_type::Type=spa.SparseMatrixCSC{Float64, Int},
-        rhs_type::Type=Matrix{Float64},
+        rhs_type::Type=Vector{Float64},
     ) where {
         manifold_dim,
         num_rows,
@@ -27,19 +27,19 @@ weak-formulation and Dirichlet boundary conditions.
 - `dirichlet_bcs::Dict{Int, Float64}`: A dictionary containing the Dirichlet boundary
     conditions, where the key is the index of the boundary condition and the value is the
     boundary condition value.
-- `lhs_type::Type`: The type of the left-hand side matrix. Default is
+- `lhs_type::Type`: The type of the left-hand side array. Default is
     `SparseMatrixCSC{Float64, Int}`.
-- `rhs_type::Type`: The type of the right-hand side matrix. Default is `Matrix{Float64}`.
+- `rhs_type::Type`: The type of the right-hand side array. Default is `Vector{Float64}`.
 
 # Returns
-- `lhs::lhs_type`: The assembled left-hand side matrix.
+- `lhs::lhs_type`: The assembled left-hand side array.
 - `rhs::rhs_type`: The assembled right-hand side vector.
 """
 function assemble(
     weak_form::WeakForm{manifold_dim, LHS, RHS, I},
     dirichlet_bcs::Dict{Int, Float64}=Dict{Int, Float64}();
     lhs_type::Type=spa.SparseMatrixCSC{Float64, Int},
-    rhs_type::Type=Matrix{Float64},
+    rhs_type::Type=Vector{Float64},
 ) where {
     manifold_dim,
     num_rows,
@@ -54,8 +54,8 @@ function assemble(
     lhs_expressions = get_lhs_expressions(weak_form)
     rhs_expressions = get_rhs_expressions(weak_form)
     test_offsets, trial_offsets = get_test_offsets(weak_form), get_trial_offsets(weak_form)
-    lhs_rows, lhs_cols, lhs_vals = get_pre_allocation(weak_form, "lhs")
-    rhs_rows, rhs_cols, rhs_vals = get_pre_allocation(weak_form, "rhs")
+    lhs_rows, lhs_cols, lhs_vals = get_pre_allocation(weak_form, "lhs", lhs_type)
+    rhs_rows, rhs_cols, rhs_vals = get_pre_allocation(weak_form, "rhs", rhs_type)
     lhs_counts, rhs_counts = 0, 0
     # TODO: The loop over elements should also handle boundary integrals.
     # PERF: We might what to make the loop over elements the inner most one; that way we can
@@ -91,14 +91,14 @@ function assemble(
     zero_rows!(lhs_vals, rhs_vals, lhs_rows, rhs_rows, dirichlet_bcs)
     lhs_size = get_lhs_size(weak_form)
     rhs_size = get_rhs_size(weak_form)
-    lhs = build_matrix(
+    lhs = build_array(
         lhs_type,
         lhs_rows[1:lhs_counts],
         lhs_cols[1:lhs_counts],
         lhs_vals[1:lhs_counts],
         lhs_size,
     )
-    rhs = build_matrix(
+    rhs = build_array(
         rhs_type,
         rhs_rows[1:rhs_counts],
         rhs_cols[1:rhs_counts],
@@ -111,21 +111,25 @@ function assemble(
 end
 
 """
-    get_pre_allocation(weak_form::WeakForm, side::String)
+    get_pre_allocation(
+        weak_form::WeakForm, side::String, ::Type{A}
+    ) where {T, A <: AbstractArray{T}}
 
 Returns pre-allocated row, column, and value vectors for the left-hand side (lhs) or
-right-hand side (rhs) matrix.
+right-hand side (rhs) array.
 
 # Arguments
 - `weak_form::WeakForm`: The weak form to use for the pre-allocation.
-- `side::String`: The side of the matrix to pre-allocate. Must be either "lhs" or "rhs".
+- `side::String`: The side of the array to pre-allocate. Must be either "lhs" or "rhs".
 
 # Returns
 - `rows::Vector{Int}`: The pre-allocated row indices.
 - `cols::Vector{Int}`: The pre-allocated column indices.
-- `vals::Vector{Float64}`: The pre-allocated values.
+- `vals::Vector{T}`: The pre-allocated values.
 """
-function get_pre_allocation(weak_form::WeakForm, side::String)
+function get_pre_allocation(
+    weak_form::WeakForm, side::String, ::Type{A}
+) where {T, A <: AbstractArray{T}}
     nnz_elem = get_estimated_nnz_per_elem(weak_form)
     if side == "lhs"
         nvals = nnz_elem[1] * get_num_evaluation_elements(weak_form)
@@ -136,13 +140,13 @@ function get_pre_allocation(weak_form::WeakForm, side::String)
     end
 
     rows = Vector{Int}(undef, nvals)
-    if side == "rhs" && ~isnothing(get_forcing(weak_form))
+    if side == "rhs" && A <: AbstractVector
         cols = ones(Int, nvals)
     else
         cols = Vector{Int}(undef, nvals)
     end
 
-    vals = Vector{Float64}(undef, nvals)
+    vals = Vector{eltype(A)}(undef, nvals)
 
     return rows, cols, vals
 end
@@ -151,7 +155,7 @@ end
     add_expression_contributions!(
         rows::Vector{Int},
         cols::Vector{Int},
-        vals::Vector{Float64},
+        vals::AbstractVector,
         counts::Int,
         expression,
         element_id::Int,
@@ -163,25 +167,25 @@ Updates the row, column, and value vectors with contributions from the specified
 expression at the element given by `element_id`.
 
 # Arguments
-- `rows::Vector{Int}`: The row indices of the matrix.
-- `cols::Vector{Int}`: The column indices of the matrix.
-- `vals::Vector{Float64}`: The values of the matrix.
-- `counts::Int`: The current count of non-zero entries in the matrix.
+- `rows::Vector{Int}`: The row indices of the array.
+- `cols::Vector{Int}`: The column indices of the array.
+- `vals::AbstractVector`: The values of the array.
+- `counts::Int`: The current count of non-zero entries in the array.
 - `expressions`: The expression to evaluate.
 - `element_id::Int`: The identifier of the element.
 - `test_offsets::Int`: The offset for the test function.
 - `trial_offsets::Int`: The offset for the trial function.
 
 # Returns
-- `rows::Vector{Int}`: The updated row indices of the matrix.
-- `cols::Vector{Int}`: The updated column indices of the matrix.
-- `vals::Vector{Float64}`: The updated values of the matrix.
-- `counts::Int`: The updated count of non-zero entries in the matrix.
+- `rows::Vector{Int}`: The updated row indices of the array.
+- `cols::Vector{Int}`: The updated column indices of the array.
+- `vals::AbstractVector`: The updated values of the array.
+- `counts::Int`: The updated count of non-zero entries in the array.
 """
 function add_expression_contributions!(
     rows::Vector{Int},
     cols::Vector{Int},
-    vals::Vector{Float64},
+    vals::AbstractVector,
     counts::Int,
     expression,
     element_id::Int,
@@ -211,8 +215,8 @@ end
 
 """
     zero_rows!(
-        lhs_vals::Vector{Float64},
-        rhs_vals::Vector{Float64},
+        lhs_vals::AbstractVector,
+        rhs_vals::AbstractVector,
         lhs_rows::Vector{Int},
         rhs_rows::Vector{Int},
         dirichlet_bcs::Dict{Int, Float64},
@@ -233,8 +237,8 @@ Assemblers.zero_rows!([1., 1., 1.], [1., 2., 3.], [1, 2, 3], [1, 3, 2], Dict(2 =
 ```
 """
 function zero_rows!(
-    lhs_vals::Vector{Float64},
-    rhs_vals::Vector{Float64},
+    lhs_vals::AbstractVector,
+    rhs_vals::AbstractVector,
     lhs_rows::Vector{Int},
     rhs_rows::Vector{Int},
     dirichlet_bcs::Dict{Int, Float64},
@@ -259,7 +263,7 @@ function zero_rows!(
 end
 
 """
-    add_bc!(lhs::AbstractArray, rhs::AbstractArray, dirichlet_bcs::Dict{Int, Float64})
+    add_bc!(lhs::AbstractArray, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64})
 
 Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
 
@@ -274,7 +278,9 @@ Assemblers.add_bc!([2. 0. 0.; 0. 2. 0.; 0. 0. 2.], zeros(3), Dict(2 => 42.0))
 ([2.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0], [0.0, 42.0, 0.0])
 ```
 """
-function add_bc!(lhs::AbstractArray, rhs::AbstractArray, dirichlet_bcs::Dict{Int, Float64})
+function add_bc!(
+    lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64}
+)
     for i in keys(dirichlet_bcs)
         lhs[i, i] = 1.0
         rhs[i] = dirichlet_bcs[i]
@@ -349,7 +355,7 @@ end
         size::Tuple{Int, Int},
     ) where {A <: AbstractArray}
 
-Returns a matrix of the specified type with the given row and column indices and values.
+Returns a array of the specified type with the given row and column indices and values.
 
 # Arguments
 - `array_type::Type{AbstractArray}`: The type of array to build.
@@ -359,7 +365,7 @@ Returns a matrix of the specified type with the given row and column indices and
 - `size::Tuple{Int, Int}`: The size of the array.
 
 # Returns
-- `::matrix_type`: The constructed matrix of the specified type.
+- `::array_type`: The constructed array of the specified type.
 """
 function build_array(
     array_type::Type{A},
@@ -369,15 +375,15 @@ function build_array(
     size::Tuple{Int, Int},
 ) where {A <: AbstractArray}
     throw(
-        ArgumentError("Assembly of matrix type `$(matrix_type)` not currently implemented.")
+        ArgumentError("Assembly of array type `$(array_type)` not currently implemented.")
     )
 end
 
-function build_matrix(
+function build_array(
     ::Type{SM},
     rows::Vector{Int},
     cols::Vector{Int},
-    vals::Vector{Float64},
+    vals::AbstractVector,
     size::Tuple{Int, Int},
 ) where {SM <: spa.AbstractSparseMatrix}
     return spa.sparse(rows, cols, vals, size...)
@@ -392,7 +398,7 @@ function build_array(
 ) where {T, M <: AbstractMatrix{T}}
     array = zeros(T, size)
     for (row, col, val) in zip(rows, cols, vals)
-        matrix[row, col] += val
+        array[row, col] += val
     end
 
     return array
