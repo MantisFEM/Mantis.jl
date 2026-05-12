@@ -107,6 +107,7 @@ function assemble(
         rhs_vals[1:rhs_counts],
         rhs_size,
     )
+    lhs, rhs = add_bc!(lhs, rhs, dirichlet_bcs)
 
     return lhs, rhs
 end
@@ -277,33 +278,90 @@ function add_bc!(
 end
 
 """
-    build_matrix(
-        matrix_type::Type,
+    add_bc!(lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64})
+
+Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
+
+# Examples
+```jldoctest
+using Mantis
+
+Assemblers.add_bc!([2. 0. 0.; 0. 2. 0.; 0. 0. 2.], zeros(3), Dict(2 => 42.0))
+
+# output
+
+([2.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0], [0.0, 42.0, 0.0])
+```
+"""
+function add_bc!(
+    lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64}
+)
+    for i in keys(dirichlet_bcs)
+        lhs[i, i] = 1.0
+        rhs[i] = dirichlet_bcs[i]
+    end
+
+    return lhs, rhs
+end
+
+"""
+    add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict{Int, Float64})
+
+Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
+
+# Examples
+```jldoctest
+using Mantis
+
+Assemblers.add_bc!(
+    [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], Dict(2 => 42.0)
+)
+
+# output
+
+([2.0 0.0; 0.0 2.0], [2.0 0.0; 0.0 2.0])
+```
+"""
+function add_bc!(
+    lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict{Int, Float64}
+)
+    ks = keys(dirichlet_bcs)
+    lhs_size = size(lhs)
+    rhs_size = size(rhs)
+    lhs = lhs[setdiff(1:lhs_size[1], ks), setdiff(1:lhs_size[2], ks)]
+    rhs = rhs[setdiff(1:rhs_size[1], ks), setdiff(1:rhs_size[2], ks)]
+
+    return lhs, rhs
+end
+
+"""
+    build_array(
+        array_type::Type{A},
         rows::Vector{Int},
         cols::Vector{Int},
-        vals::Vector{Float64},
+        vals::AbstractVector,
         size::Tuple{Int, Int},
-    )
+    ) where {A <: AbstractArray}
 
 Returns a matrix of the specified type with the given row and column indices and values.
 
 # Arguments
-- `matrix_type::Type`: The type of matrix to build.
-- `rows::Vector{Int}`: The row indices of the matrix.
-- `cols::Vector{Int}`: The column indices of the matrix.
-- `vals::Vector{Float64}`: The values of the matrix.
-- `size::Tuple{Int, Int}`: The size of the matrix.
+- `array_type::Type{AbstractArray}`: The type of array to build.
+- `rows::Vector{Int}`: The row indices of the array.
+- `cols::Vector{Int}`: The column indices of the array.
+- `vals::AbstractVector`: The values of the array.
+- `size::Tuple{Int, Int}`: The size of the array.
 
 # Returns
 - `::matrix_type`: The constructed matrix of the specified type.
 """
-function build_matrix(
-    matrix_type::Type,
+function build_array(
+    array_type::Type{A},
     rows::Vector{Int},
     cols::Vector{Int},
-    vals::Vector{Float64},
+    vals::AbstractVector,
     size::Tuple{Int, Int},
-)
+) where {A <: AbstractArray}
     throw(
         ArgumentError("Assembly of matrix type `$(matrix_type)` not currently implemented.")
     )
@@ -319,17 +377,29 @@ function build_matrix(
     return spa.sparse(rows, cols, vals, size...)
 end
 
-function build_matrix(
-    ::Type{Matrix{Float64}},
+function build_array(
+    ::Type{M},
     rows::Vector{Int},
     cols::Vector{Int},
-    vals::Vector{Float64},
+    vals::AbstractVector{T},
     size::Tuple{Int, Int},
-)
-    matrix = zeros(Float64, size)
+) where {T, M <: AbstractMatrix{T}}
+    array = zeros(T, size)
     for (row, col, val) in zip(rows, cols, vals)
         matrix[row, col] += val
     end
 
-    return matrix
+    return array
+end
+
+function build_array(
+    ::Type{V}, rows::Vector{Int}, cols::Vector{Int}, vals::V, size::Tuple{Int, Int}
+) where {T, V <: AbstractVector{T}}
+    any(!=(1), cols) && throw(ArgumentError("`cols` must contain only the value 1."))
+    array = zeros(T, first(size))
+    for (row, val) in zip(rows, vals)
+        array[row] += val
+    end
+
+    return array
 end
