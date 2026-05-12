@@ -88,9 +88,7 @@ function assemble(
         end
     end
 
-    lhs_rows, lhs_cols, lhs_vals, rhs_rows, rhs_cols, rhs_vals = add_bc!(
-        lhs_rows, lhs_cols, lhs_vals, rhs_rows, rhs_cols, rhs_vals, dirichlet_bcs
-    )
+    zero_rows!(lhs_vals, rhs_vals, lhs_rows, rhs_rows, dirichlet_bcs)
     lhs_size = get_lhs_size(weak_form)
     rhs_size = get_rhs_size(weak_form)
     lhs = build_matrix(
@@ -212,69 +210,77 @@ function add_expression_contributions!(
 end
 
 """
-    add_bc!(
-        lhs_rows::Vector{Int},
-        lhs_cols::Vector{Int},
+    zero_rows!(
         lhs_vals::Vector{Float64},
-        rhs_rows::Vector{Int},
-        rhs_cols::Vector{Int},
         rhs_vals::Vector{Float64},
+        lhs_rows::Vector{Int},
+        rhs_rows::Vector{Int},
         dirichlet_bcs::Dict{Int, Float64},
     )
 
-Adds Dirichlet boundary conditions to the left-hand side and right-hand side matrices.
+For each index `i` that is a key of `dirichlet_bcs`, set the corresponding values from that
+row to zero, both in `lhs_vals` and `rhs_vals`.
 
-# Arguments
-- `lhs_rows::Vector{Int}`: The row indices of the left-hand side matrix.
-- `lhs_cols::Vector{Int}`: The column indices of the left-hand side matrix.
-- `lhs_vals::Vector{Float64}`: The values of the left-hand side matrix.
-- `rhs_rows::Vector{Int}`: The row indices of the right-hand side matrix.
-- `rhs_cols::Vector{Int}`: The column indices of the right-hand side matrix.
-- `rhs_vals::Vector{Float64}`: The values of the right-hand side matrix.
-- `dirichlet_bcs::Dict{Int, Float64}`: The Dirichlet boundary conditions, where the key is
-    the index of the boundary condition and the value is the boundary condition value.
+# Examples
+```jldoctest
+using Mantis
 
-# Returns
-- `lhs_rows::Vector{Int}`: The updated row indices of the left-hand side matrix.
-- `lhs_cols::Vector{Int}`: The updated column indices of the left-hand side matrix.
-- `lhs_vals::Vector{Float64}`: The updated values of the left-hand side matrix.
-- `rhs_rows::Vector{Int}`: The updated row indices of the right-hand side matrix.
-- `rhs_cols::Vector{Int}`: The updated column indices of the right-hand side matrix.
-- `rhs_vals::Vector{Float64}`: The updated values of the right-hand side matrix.
+Assemblers.zero_rows!([1., 1., 1.], [1., 2., 3.], [1, 2, 3], [1, 3, 2], Dict(2 => 42.0))
+
+# output
+
+([1.0, 0.0, 1.0], [1.0, 2.0, 0.0])
+```
 """
-function add_bc!(
-    lhs_rows::Vector{Int},
-    lhs_cols::Vector{Int},
+function zero_rows!(
     lhs_vals::Vector{Float64},
-    rhs_rows::Vector{Int},
-    rhs_cols::Vector{Int},
     rhs_vals::Vector{Float64},
+    lhs_rows::Vector{Int},
+    rhs_rows::Vector{Int},
     dirichlet_bcs::Dict{Int, Float64},
 )
-    if ~isempty(dirichlet_bcs)
-        for id in eachindex(lhs_rows, lhs_cols, lhs_vals)
+    if !isempty(dirichlet_bcs)
+        for id in eachindex(lhs_rows, lhs_vals)
             # Check if the row index is also a boundary index.
             if haskey(dirichlet_bcs, lhs_rows[id])
-                if lhs_cols[id] == lhs_rows[id]
-                    # Diagonal term, set to 1.0.
-                    lhs_vals[id] = 1.0
-                else
-                    # Non-diagoal term, set to 0.0.
-                    lhs_vals[id] = 0.0
-                end
+                lhs_vals[id] = 0.0
             end
         end
 
-        for id in eachindex(rhs_rows, rhs_cols, rhs_vals)
+        for id in eachindex(rhs_rows, rhs_vals)
             # Check if the row index is also a boundary index.
             if haskey(dirichlet_bcs, rhs_rows[id])
-                # Set the value to the Dirichlet boundary condition value.
-                rhs_vals[id] = dirichlet_bcs[rhs_rows[id]]
+                rhs_vals[id] = 0.0
             end
         end
     end
 
-    return lhs_rows, lhs_cols, lhs_vals, rhs_rows, rhs_cols, rhs_vals
+    return lhs_vals, rhs_vals
+end
+
+"""
+    add_bc!(lhs::AbstractArray, rhs::AbstractArray, dirichlet_bcs::Dict{Int, Float64})
+
+Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
+
+# Examples
+```jldoctest
+using Mantis
+
+Assemblers.add_bc!([2. 0. 0.; 0. 2. 0.; 0. 0. 2.], zeros(3), Dict(2 => 42.0))
+
+# output
+
+([2.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0], [0.0, 42.0, 0.0])
+```
+"""
+function add_bc!(lhs::AbstractArray, rhs::AbstractArray, dirichlet_bcs::Dict{Int, Float64})
+    for i in keys(dirichlet_bcs)
+        lhs[i, i] = 1.0
+        rhs[i] = dirichlet_bcs[i]
+    end
+
+    return lhs, rhs
 end
 
 """
