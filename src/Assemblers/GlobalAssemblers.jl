@@ -290,33 +290,6 @@ function add_bc!(
 end
 
 """
-    add_bc!(lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64})
-
-Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
-
-# Examples
-```jldoctest
-using Mantis
-
-Assemblers.add_bc!([2. 0. 0.; 0. 2. 0.; 0. 0. 2.], zeros(3), Dict(2 => 42.0))
-
-# output
-
-([2.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0], [0.0, 42.0, 0.0])
-```
-"""
-function add_bc!(
-    lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64}
-)
-    for i in keys(dirichlet_bcs)
-        lhs[i, i] = 1.0
-        rhs[i] = dirichlet_bcs[i]
-    end
-
-    return lhs, rhs
-end
-
-"""
     add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict{Int, Float64})
 
 Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
