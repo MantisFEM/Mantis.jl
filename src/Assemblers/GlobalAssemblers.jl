@@ -275,7 +275,7 @@ the row indices (keys) and values of `dirichlet_bcs`.
 ```jldoctest
 using Mantis
 
-Assemblers.add_bc!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0)
+Assemblers.add_bc!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
 
 # output
 
@@ -319,7 +319,7 @@ indices (keys) and values of `dirichlet_bcs`. See also [`add_bc!`](@ref).
 ```jldoctest
 using Mantis
 
-Assemblers.set_diagonal!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0)
+Assemblers.set_diagonal!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
 
 # output
 
