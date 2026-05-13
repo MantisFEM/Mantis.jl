@@ -325,7 +325,7 @@ Bisect the canonical space by dividing the length in half.
 # Returns
 - `::Tchebycheff`: A Tchebycheff space with the length divided by 2.
 """
-function get_child_canonical_space(ect_space::Tchebycheff)
+function get_bisected_canonical_space(ect_space::Tchebycheff)
     return Tchebycheff(ect_space.p, ect_space.roots, ect_space.l/2, ect_space.root_mult)
 end
 
