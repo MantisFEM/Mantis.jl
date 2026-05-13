@@ -105,7 +105,7 @@ function assemble(
         rhs_vals[1:rhs_counts],
         rhs_size,
     )
-    lhs, rhs = add_bc!(lhs, rhs, dirichlet_bcs)
+    lhs, rhs = set_diagonal!(lhs, rhs, dirichlet_bcs)
 
     return lhs, rhs
 end
@@ -215,12 +215,12 @@ end
 
 """
     zero_rows!(
-        lhs_vals::AbstractVector,
-        rhs_vals::AbstractVector,
+        lhs_vals::AbstractVector{T},
+        rhs_vals::AbstractVector{T},
         lhs_rows::Vector{Int},
         rhs_rows::Vector{Int},
-        dirichlet_bcs::Dict{Int, Float64},
-    )
+        dirichlet_bcs::Dict{Int, T},
+    ) where {T}
 
 For each index `i` that is a key of `dirichlet_bcs`, set the corresponding values from that
 row to zero, both in `lhs_vals` and `rhs_vals`.
@@ -237,24 +237,25 @@ Assemblers.zero_rows!([1., 1., 1.], [1., 2., 3.], [1, 2, 3], [1, 3, 2], Dict(2 =
 ```
 """
 function zero_rows!(
-    lhs_vals::AbstractVector,
-    rhs_vals::AbstractVector,
+    lhs_vals::AbstractVector{T},
+    rhs_vals::AbstractVector{T},
     lhs_rows::Vector{Int},
     rhs_rows::Vector{Int},
-    dirichlet_bcs::Dict{Int, Float64},
-)
+    dirichlet_bcs::Dict{Int, T},
+) where {T}
+    zero = Base.zero(T)
     if !isempty(dirichlet_bcs)
         for id in eachindex(lhs_rows, lhs_vals)
             # Check if the row index is also a boundary index.
             if haskey(dirichlet_bcs, lhs_rows[id])
-                lhs_vals[id] = 0.0
+                lhs_vals[id] = zero
             end
         end
 
         for id in eachindex(rhs_rows, rhs_vals)
             # Check if the row index is also a boundary index.
             if haskey(dirichlet_bcs, rhs_rows[id])
-                rhs_vals[id] = 0.0
+                rhs_vals[id] = zero
             end
         end
     end
@@ -263,26 +264,32 @@ function zero_rows!(
 end
 
 """
-    add_bc!(lhs::AbstractArray, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64})
+    add_bc!(
+        lhs::AbstractMatrix{T}, rhs::AbstractVector{T}, dirichlet_bcs::Dict{Int, T}
+    ) where {T}
 
-Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
+Set the rows to 0 and diagonals to 1 in `lhs`, and rows of `rhs` to a value, as specified by
+the row indices (keys) and values of `dirichlet_bcs`.
 
 # Examples
 ```jldoctest
 using Mantis
 
-Assemblers.add_bc!([2. 0. 0.; 0. 2. 0.; 0. 0. 2.], zeros(3), Dict(2 => 42.0))
+Assemblers.add_bc!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0)
 
 # output
 
-([2.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 2.0], [0.0, 42.0, 0.0])
+([2.0 2.0 2.0; 0.0 1.0 0.0; 2.0 2.0 2.0], [0.0, 42.0, 0.0])
 ```
 """
 function add_bc!(
-    lhs::AbstractMatrix, rhs::AbstractVector, dirichlet_bcs::Dict{Int, Float64}
-)
+    lhs::AbstractMatrix{T}, rhs::AbstractVector{T}, dirichlet_bcs::Dict{Int, T}
+) where {T}
+    one = Base.one(T)
+    zero = Base.zero(T)
     for i in keys(dirichlet_bcs)
-        lhs[i, i] = 1.0
+        view(lhs, i, :) .= zero
+        lhs[i, i] = one
         rhs[i] = dirichlet_bcs[i]
     end
 
@@ -290,15 +297,57 @@ function add_bc!(
 end
 
 """
-    add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict{Int, Float64})
+    add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
 
-Adds Dirichlet boundary conditions to the given `lhs` and `rhs` arrays.
+Remove the rows and columns of `lhs` and `rhs` as specified by the keys of `dirichlet_bcs`.
+See also [`set_diagonal!`](@ref).
+```
+"""
+function add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
+    return set_diagonal!(lhs, rhs, dirichlet_bcs)
+end
+
+"""
+    set_diagonal!(
+        lhs::AbstractMatrix{T}, rhs::AbstractVector{T}, dirichlet_bcs::Dict{Int, T}
+    ) where {T}
+
+Set the diagonals of `lhs` to 1 and rows of `rhs` to a value, as specified by the row
+indices (keys) and values of `dirichlet_bcs`. See also [`add_bc!`](@ref).
 
 # Examples
 ```jldoctest
 using Mantis
 
-Assemblers.add_bc!(
+Assemblers.set_diagonal!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0)
+
+# output
+
+([2.0 2.0 2.0; 2.0 1.0 2.0; 2.0 2.0 2.0], [0.0, 42.0, 0.0])
+```
+"""
+function set_diagonal!(
+    lhs::AbstractMatrix{T}, rhs::AbstractVector{T}, dirichlet_bcs::Dict{Int, T}
+) where {T}
+    one = Base.one(T)
+    for i in keys(dirichlet_bcs)
+        lhs[i, i] = one
+        rhs[i] = dirichlet_bcs[i]
+    end
+
+    return lhs, rhs
+end
+
+"""
+    set_diagonal!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
+
+Remove the rows and columns of `lhs` and `rhs` as specified by the keys of `dirichlet_bcs`.
+
+# Examples
+```jldoctest
+using Mantis
+
+Assemblers.set_diagonal!(
     [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], Dict(2 => 42.0)
 )
 
@@ -307,9 +356,7 @@ Assemblers.add_bc!(
 ([2.0 0.0; 0.0 2.0], [2.0 0.0; 0.0 2.0])
 ```
 """
-function add_bc!(
-    lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict{Int, Float64}
-)
+function set_diagonal!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
     ks = keys(dirichlet_bcs)
     lhs_size = size(lhs)
     rhs_size = size(rhs)

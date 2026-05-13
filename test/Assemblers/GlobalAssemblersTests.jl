@@ -25,16 +25,26 @@ rhs_vec_truth = fill(10.0, 3)
 rhs_vec_truth[bc_id] = bc_value
 lhs_mat_truth = fill(10.0, (2, 2))
 rhs_mat_truth = fill(10.0, (2, 1))
+lhs_diag_truth = fill(10.0, (3, 3))
+lhs_diag_truth[bc_id, bc_id] = 1.0
 Assemblers.zero_rows!(lhs_vals, rhs_vals, lhs_rows, rhs_rows, bc)
 @test lhs_vals == [10.0, 0.0, 10.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0, 0.0]
 @test rhs_vals == [10.0, 0.0, 10.0, 0.0, 0.0]
+lhs_vals = fill(10.0, length(lhs_rows))
+rhs_vals = fill(10.0, length(rhs_rows))
 types = (Matrix{Float64}, sp.SparseMatrixCSC{Float64, Int})
 for T in types
     lhs = Assemblers.build_array(T, lhs_rows, lhs_cols, lhs_vals, (3, 3))
     rhs = Assemblers.build_array(Vector{Float64}, rhs_rows, rhs_cols, rhs_vals, (3, 1))
+    lhs_copy = copy(lhs)
+    rhs_copy = copy(rhs)
     Assemblers.add_bc!(lhs, rhs, bc)
     @test lhs == lhs_vec_truth
     @test rhs == rhs_vec_truth
+    lhs = copy(lhs_copy)
+    Assemblers.set_diagonal!(lhs, rhs, bc)
+    @test lhs == lhs_diag_truth
+    lhs = Assemblers.build_array(T, lhs_rows, lhs_cols, lhs_vals, (3, 3))
     rhs = Assemblers.build_array(Matrix{Float64}, rhs_rows, rhs_cols, rhs_vals, (3, 1))
     lhs_copy = copy(lhs)
     rhs_copy = copy(rhs)
