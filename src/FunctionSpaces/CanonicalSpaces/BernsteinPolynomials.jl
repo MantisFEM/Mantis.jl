@@ -117,19 +117,19 @@ function extract_monomial_to_bernstein(polynomial::Bernstein)
 end
 
 function build_two_scale_matrix(
-    space::Bernstein; num_sub_elements::Int = 2, degree_delta::Int = 0
+    space::Bernstein; num_subdivisions::Int = 2, degree_delta::Int = 0
 )
     # build degree elevation matrix
     D = _build_bernstein_degree_elevation_matrix(get_polynomial_degree(space), degree_delta)
     # breakpoints of the sub-elements
-    breakpoints = LinRange(0.0, 1.0, num_sub_elements + 1)
+    breakpoints = LinRange(0.0, 1.0, num_subdivisions + 1)
     # build subdivision matrix
     return SparseArrays.sparse(
         vcat(
             [
                 D * _build_bernstein_restriction_matrix(
                     get_polynomial_degree(space), breakpoints[i], breakpoints[i + 1]
-                ) for i in 1:num_sub_elements
+                ) for i in 1:num_subdivisions
             ]...
         )
     )

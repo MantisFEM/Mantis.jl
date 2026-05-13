@@ -72,3 +72,56 @@ struct TwoScaleOperator{manifold_dim, num_components, num_patches, PS, CS, R} <:
         )
     end
 end
+
+"""
+    compose(op1::TwoScaleOperator, op2::TwoScaleOperator)
+
+Compose two two-scale operators `op1` (from space A to B) and `op2` (from space B to C)
+to create a new two-scale operator from space A to C.
+"""
+function compose(op1::TwoScaleOperator, op2::TwoScaleOperator)
+    parent_space = op2.parent_space
+    child_space = op1.child_space
+    global_subdiv_matrix = op1.global_subdiv_matrix * op2.global_subdiv_matrix
+    
+    parent_to_child_elements = parent -> begin
+        children_in_B = get_element_children(op2.parent_child_relations, parent)
+        children_in_C = Int[]
+        for cB in children_in_B
+            append!(children_in_C, get_element_children(op1.parent_child_relations, cB))
+        end
+        return unique(children_in_C)
+    end
+    
+    child_to_parent_elements = child -> begin
+        parent_in_B = get_element_parent(op1.parent_child_relations, child)
+        return get_element_parent(op2.parent_child_relations, parent_in_B)
+    end
+
+    return TwoScaleOperator(
+        parent_space,
+        child_space,
+        global_subdiv_matrix,
+        parent_to_child_elements,
+        child_to_parent_elements
+    )
+end
+
+function build_trivial_two_scale_operator(parent_space::AbstractFESpace)
+    parent_to_child_elements = parent -> [parent]
+    child_to_parent_elements = child -> child
+    return TwoScaleOperator(
+        parent_space,
+        parent_space,
+        SparseArrays.sparse(1.0 * LinearAlgebra.I, get_num_basis(parent_space), get_num_basis(parent_space)),
+        parent_to_child_elements,
+        child_to_parent_elements
+    )
+end
+
+"""
+    ∘
+
+Operator for composition. The unicode character command is `\\circ`.
+"""
+const ∘ = compose

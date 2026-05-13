@@ -1,0 +1,52 @@
+Precompiling packages...
+Info Given Mantis was explicitly requested, output will be shown live [0K
+[0KERROR: LoadError: UndefVarError: `UnivariateRefinement` not defined in `Mantis.FunctionSpaces`
+[0KSuggestion: check for spelling errors or missing imports.
+[0KStacktrace:
+[0K [1] top-level scope
+[0K   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/UnivariateBSplineTwoScaleRelations.jl:163
+[0K [2] top-level scope
+[0K   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/AbstractTwoScaleRelations.jl:173
+[0K [3] top-level scope
+[0K   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/FiniteElementSpaces.jl:751
+[0K [4] top-level scope
+[0K   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FunctionSpaces.jl:71
+[0K [5] top-level scope
+[0K   @ ~/Documents/research/code/Mantis.jl/src/Mantis.jl:11
+[0K [6] top-level scope
+[0K   @ stdin:5
+[0Kin expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/UnivariateBSplineTwoScaleRelations.jl:163
+[0Kin expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/AbstractTwoScaleRelations.jl:173
+[0Kin expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/FiniteElementSpaces.jl:751
+[0Kin expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FunctionSpaces.jl:1
+[0Kin expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/Mantis.jl:1
+[0Kin expression starting at stdin:5
+              ✗ Mantis
+  0 dependencies successfully precompiled in 5 seconds. 344 already precompiled.
+
+ERROR: The following 1 direct dependency failed to precompile:
+
+Mantis 
+
+Failed to precompile Mantis [45fd81cf-4570-4cb4-b51d-06adeaefc15d] to "/Users/dtoshniwal1/.julia/compiled/v1.12/Mantis/jl_pQx2J8".
+ERROR: LoadError: UndefVarError: `UnivariateRefinement` not defined in `Mantis.FunctionSpaces`
+Suggestion: check for spelling errors or missing imports.
+Stacktrace:
+ [1] top-level scope
+   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/UnivariateBSplineTwoScaleRelations.jl:163
+ [2] top-level scope
+   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/AbstractTwoScaleRelations.jl:173
+ [3] top-level scope
+   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/FiniteElementSpaces.jl:751
+ [4] top-level scope
+   @ ~/Documents/research/code/Mantis.jl/src/FunctionSpaces/FunctionSpaces.jl:71
+ [5] top-level scope
+   @ ~/Documents/research/code/Mantis.jl/src/Mantis.jl:11
+ [6] top-level scope
+   @ stdin:5
+in expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/UnivariateBSplineTwoScaleRelations.jl:163
+in expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/TwoScaleRelations/AbstractTwoScaleRelations.jl:173
+in expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FiniteElementSpaces/FiniteElementSpaces.jl:751
+in expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/FunctionSpaces/FunctionSpaces.jl:1
+in expression starting at /Users/dtoshniwal1/Documents/research/code/Mantis.jl/src/Mantis.jl:1
+in expression starting at stdin:

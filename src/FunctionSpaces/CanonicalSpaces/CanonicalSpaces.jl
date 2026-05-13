@@ -75,40 +75,40 @@ function _evaluate_all_at_point(
 end
 
 """
-    get_canonical_space_on_subelements(space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0)
+    get_canonical_space_on_subelements(space::AbstractCanonicalSpace; num_subdivisions::Int = 2, degree_delta::Int = 0)
 
-When a canonical element is uniformly subdivided into `num_sub_elements` sub-elements,
+When a canonical element is uniformly subdivided into `num_subdivisions` sub-elements,
 this function returns the canonical space which can be used on all sub-elements. The method
 also increases the polynomial degree of the fine spaces by `degree_delta`.
 
 # Arguments
 - `space::AbstractCanonicalSpace`: A canonical space.
-- `num_sub_elements::Int`: The number of sub-elements to divide the canonical space into.
+- `num_subdivisions::Int`: The number of sub-elements to divide the canonical element into.
 - `degree_delta::Int`: The increase in polynomial degree for the fine spaces.
 
 # Returns
 - `::AbstractCanonicalSpace`: The canonical space on the sub-elements.
 """
 function get_canonical_space_on_subelements(
-    space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0
+    space::AbstractCanonicalSpace; num_subdivisions::Int = 2, degree_delta::Int = 0
 )   
     return typeof(space)(space.p + degree_delta)
 end
 
 """
     build_two_scale_matrix(space::AbstractCanonicalSpace; 
-        num_sub_elements::Int = 2, degree_delta::Int = 0)
+        num_subdivisions::Int = 2, degree_delta::Int = 0)
 
 Returns a global two-scale matrix for a given canonical space. This matrix maps the global 
 coefficients of the parent basis to the global coefficients of the children basis.
 
 The finer spaces are constructed by uniformly subdividing the parametric domain of the 
-parent canonical space into `num_sub_elements` subspaces of equal size and increasing the 
+parent canonical space into `num_subdivisions` subspaces of equal size and increasing the 
 polynomial degree of the fine spaces by `degree_delta`. 
 
 # Arguments
 - `space::AbstractCanonicalSpace`: A canonical space.
-- `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
+- `num_subdivisions::Int`: The number of elements to divide the canonical element into.
 - `degree_delta::Int`: The increase in polynomial degree for the fine spaces.
 
 # Returns
@@ -116,19 +116,19 @@ polynomial degree of the fine spaces by `degree_delta`.
     of the parent basis to the global coefficients of the children basis.
 """
 function build_two_scale_matrix(
-    space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0
+    space::AbstractCanonicalSpace; num_subdivisions::Int = 2, degree_delta::Int = 0
 )
     p = get_polynomial_degree(space)
-    if num_sub_elements == 1 && degree_delta == 0
+    if num_subdivisions == 1 && degree_delta == 0
         return SparseArrays.sparse(Matrix(LinearAlgebra.I, p + 1, p + 1))
     end
 
     # uniform subdivision breakpoints
-    breakpoints = LinRange(0.0, 1.0, num_sub_elements + 1)
+    breakpoints = LinRange(0.0, 1.0, num_subdivisions + 1)
 
     # build all fine spaces
     space_fine = get_canonical_space_on_subelement(
-        space; num_sub_elements = num_sub_elements, degree_delta = degree_delta
+        space; num_subdivisions = num_subdivisions, degree_delta = degree_delta
     )
 
     # evaluation points for the finer spaces w.r.t. each sub-element
@@ -137,16 +137,16 @@ function build_two_scale_matrix(
     # evaluation points for the coarse space w.r.t. entire element
     ξ_coarse = [
         Points.PointSet((LinRange(breakpoints[i], breakpoints[i + 1], p + degree_delta + 1),))
-        for i in 1:num_sub_elements
+        for i in 1:num_subdivisions
     ]
     
     # evaluate all fine basis functions
     fine_eval = evaluate(space_fine, ξ_fine)[1][1]
     # evaluate all coarse basis functions w.r.t. entire element
-    coarse_evals = [evaluate(space, ξ_coarse[i])[1][1] for i in 1:num_sub_elements]
-    # subdivision matrix obtained by solving `num_sub_elements` linear systems
+    coarse_evals = [evaluate(space, ξ_coarse[i])[1][1] for i in 1:num_subdivisions]
+    # subdivision matrix obtained by solving `num_subdivisions` linear systems
     subdivision_matrix = SparseArrays.sparse(
-        vcat([fine_eval \ coarse_evals[i] for i in 1:num_sub_elements]...)
+        vcat([fine_eval \ coarse_evals[i] for i in 1:num_subdivisions]...)
     )
     return subdivision_matrix
 end

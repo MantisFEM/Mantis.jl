@@ -408,32 +408,32 @@ function _derivative_matrix_next!(
 end
 
 """
-    build_two_scale_matrix(ect_space::AbstractLagrangePolynomials, num_sub_elements::Int)
+    build_two_scale_matrix(ect_space::AbstractLagrangePolynomials, num_subdivisions::Int)
 
-Uniformly subdivides the ECT space into `num_sub_elements` sub-elements. It is assumed that
-`num_sub_elements` is a power of 2, else the method throws an argument error. It returns a
+Uniformly subdivides the ECT space into `num_subdivisions` sub-elements. It is assumed that
+`num_subdivisions` is a power of 2, else the method throws an argument error. It returns a
 global subdivision matrix that maps the global basis functions of the ECT space to the
 global basis functions of the subspaces.
 
 # Arguments
 - `ect_space::AbstractECTSpaces`: A ect space.
-- `num_sub_elements::Int`: The number of subspaces to divide the EC T space into.
+- `num_subdivisions::Int`: The number of subspaces to divide the EC T space into.
 
 # Returns
 - `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
 functions of the ECT space to the global basis functions of the subspaces.
 """
 function build_two_scale_matrix(
-    polynomials::AbstractLagrangePolynomials, num_sub_elements::Int
+    polynomials::AbstractLagrangePolynomials, num_subdivisions::Int
 )
     p = get_polynomial_degree(polynomials)
     nodes = polynomials.nodes
 
     # build the global set of nodes on all sub-elements by scaling and translating the original nodes
-    global_nodes = zeros(Float64, num_sub_elements * (p + 1))
-    for i in 1:num_sub_elements
+    global_nodes = zeros(Float64, num_subdivisions * (p + 1))
+    for i in 1:num_subdivisions
         global_nodes[((i - 1) * (p + 1) + 1):(i * (p + 1))] .=
-            ((i - 1) .+ nodes) ./ num_sub_elements
+            ((i - 1) .+ nodes) ./ num_subdivisions
     end
 
     # subdivision matrix is the evaluation of lagrange polynomials at the global nodes

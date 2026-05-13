@@ -190,9 +190,9 @@ function get_derivative_space(ect_space::GeneralizedTrigonometric)
 end
 
 function get_canonical_space_on_subelements(
-    space::GeneralizedTrigonometric; num_sub_elements::Int = 2, degree_delta::Int = 0
+    space::GeneralizedTrigonometric; num_subdivisions::Int = 2, degree_delta::Int = 0
 )   
     return GeneralizedTrigonometric(
-        space.p + degree_delta, space.w, space.l / num_sub_elements, space.m
+        space.p + degree_delta, space.w, space.l / num_subdivisions, space.m
     )
 end

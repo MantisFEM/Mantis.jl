@@ -313,7 +313,7 @@ function get_derivative_space(ect_space::Tchebycheff)
 end
 
 function get_canonical_space_on_subelements(
-    space::Tchebycheff; num_sub_elements::Int = 2, degree_delta::Int = 0
+    space::Tchebycheff; num_subdivisions::Int = 2, degree_delta::Int = 0
 )   
     zero_i = findall(all(space.roots .== 0.0, dims=2))
     if degree_delta == 0
@@ -330,6 +330,6 @@ function get_canonical_space_on_subelements(
         end
     end
     return Tchebycheff(
-        space.p + degree_delta, new_roots, space.l / num_sub_elements, new_root_mult
+        space.p + degree_delta, new_roots, space.l / num_subdivisions, new_root_mult
     )
 end

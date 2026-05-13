@@ -737,6 +737,8 @@ function _compute_parametric_geometry_coeffs(
     return coeffs
 end
 
+include("TwoScaleRelations/RefinementStrategy.jl")
+
 include("ExtractionOperator.jl")
 
 include("OtherSpaces/RationalFESpaces.jl")

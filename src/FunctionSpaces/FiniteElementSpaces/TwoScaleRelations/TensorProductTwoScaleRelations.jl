@@ -227,50 +227,38 @@ function get_basis_parents(operator::TensorProductTwoScaleOperator, basis_id::In
 end
 
 ############################################################################################
-#                                       Subdivision                                        #
+#                                       Refinement                                         #
 ############################################################################################
 
-"""
-    subdivide_space(
-        space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
-        nsubdivisions::NTuple{num_spaces, Int}
-    ) where {
-        manifold_dim,
-        num_components,
-        num_patches,
-        num_spaces,
-        T <: NTuple{num_spaces, AbstractFESpace},
-    }
-
-Subdivide the finite element spaces within a tensor product space and return the resulting
-finer tensor product space.
-
-# Arguments
-- `space::TensorProductSpace`: The tensor product space containing finite
-    element spaces to be subdivided.
-- `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
-    for each finite element space.
-
-# Returns
-- `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
-"""
-function subdivide_space(
-    space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-    num_subdivisions::NTuple{num_spaces, Int},
-) where {manifold_dim, num_components, num_patches, num_spaces}
-    constituent_spaces = get_constituent_spaces(space)
-    subdivided_spaces = ntuple(
-        space -> subdivide_space(constituent_spaces[space], num_subdivisions[space]),
+function refine_space(
+    parent_tensor_product_space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces, T},
+    refinement_strategy::GlobalRefinement{manifold_dim, ref_order}
+) where {manifold_dim, num_components, num_patches, num_spaces, ref_order, T<:NTuple{num_spaces, AbstractFESpace}}
+    # refine constituent spaces
+    const_parent_spaces = get_constituent_spaces(parent_tensor_product_space)
+    const_manifold_indices = get_constituent_manifold_indices(parent_tensor_product_space)
+    const_child_spaces = ntuple(
+        space_id -> refine_space(
+            const_parent_spaces[space_id],
+            get_refinement_strategy(refinement_strategy, const_manifold_indices[space_id]),
+        ),
         num_spaces,
     )
 
-    return TensorProductSpace(subdivided_spaces)
+    # refine geometry - only subdivision, degree-elevation irrelevant for geometry
+    parent_geo = get_geometry(parent_tensor_product_space)
+    parent_parametric_geo = get_parametric_geometry(parent_tensor_product_space)
+    child_geo = subdivide_geometry(parent_geo, get_num_subdivisions(refinement_strategy))
+    child_parametric_geo = subdivide_geometry(parent_parametric_geo, get_num_subdivisions(refinement_strategy))
+
+    # build child tensor product space and return
+    return TensorProductSpace(const_child_spaces, child_geo, child_parametric_geo)
 end
 
 """
     build_two_scale_operator(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
-        nsubdivisions::NTuple{num_spaces, Int}
+        refinement_strategy::GlobalRefinement{manifold_dim, ref_order}
     ) where {
         manifold_dim,
         num_components,
@@ -279,34 +267,46 @@ end
         T <: NTuple{num_spaces, AbstractFESpace},
     }
 
-Build a two-scale operator for a tensor product space by subdividing each constituent
+Build a two-scale operator for a tensor product space by refining each constituent
 finite element space.
 
 # Arguments
-- `space::TensorProductSpace`: The tensor product space to be subdivided.
-- `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
-    for each constituent finite element space.
+- `space::TensorProductSpace`: The tensor product space to be refined.
+- `refinement_strategy::GlobalRefinement{manifold_dim, ref_order}`: The refinement
+    strategy to be used for refining each constituent finite element space.
 
 # Returns
 - `::TensorProductTwoScaleOperator`: The two-scale operator.
-- `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
+- `::TensorProductSpace`: The resulting finer tensor product space after refinement.
 """
 function build_two_scale_operator(
     parent_space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-    num_subdivisions::NTuple{num_spaces, Int},
-) where {manifold_dim, num_components, num_patches, num_spaces}
+    refinement_strategy::GlobalRefinement{manifold_dim, ref_order},
+) where {manifold_dim, num_components, num_patches, num_spaces, ref_order}
+    
+    # get constituent spaces
     const_parent_spaces = get_constituent_spaces(parent_space)
+    const_manifold_indices = get_constituent_manifold_indices(parent_space)
+
+    # build two-scale operators and child spaces for constituent spaces
     twoscale_data = ntuple(
-        space ->
-            build_two_scale_operator(const_parent_spaces[space], num_subdivisions[space]),
+        space_id ->
+            build_two_scale_operator(
+                const_parent_spaces[space_id],
+                get_refinement_strategy(refinement_strategy, const_manifold_indices[space_id]),
+            ),
         num_spaces,
     )
     const_two_scale_operators = ntuple(space -> twoscale_data[space][1], num_spaces)
     const_child_spaces = ntuple(space -> twoscale_data[space][2], num_spaces)
+    
+    # refine geometries
     parent_geo = get_geometry(parent_space)
     parent_parametric_geo = get_parametric_geometry(parent_space)
-    child_geo = subdivide_geometry(parent_geo, num_subdivisions)
-    child_parametric_geo = subdivide_geometry(parent_parametric_geo, num_subdivisions)
+    child_geo = subdivide_geometry(parent_geo, get_num_subdivisions(refinement_strategy))
+    child_parametric_geo = subdivide_geometry(parent_parametric_geo, get_num_subdivisions(refinement_strategy))
+    
+    # build child tensor product space
     child_space = TensorProductSpace(const_child_spaces, child_geo, child_parametric_geo)
 
     return TensorProductTwoScaleOperator(
