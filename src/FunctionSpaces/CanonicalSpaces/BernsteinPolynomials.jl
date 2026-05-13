@@ -136,3 +136,42 @@ function extract_monomial_to_bernstein(polynomial::Bernstein)
 
     return T
 end
+
+"""
+    build_degree_elevation_matrix(canonical_space::Bernstein, degree_delta::Int)
+
+Builds the degree elevation matrix for Bernstein polynomials.
+
+# Arguments
+- `canonical_space::Bernstein`: A Bernstein canonical space.
+- `degree_delta::Int`: The amount to increase the degree of the canonical space by.
+
+# Returns
+- `::SparseMatrixCSC{Float64}`: A matrix mapping coefficients of the canonical space to
+    coefficients of the elevated space.
+"""
+function build_degree_elevation_matrix(canonical_space::Bernstein, degree_delta::Int)
+    if degree_delta < 0
+        throw(ArgumentError("Degree delta must be non-negative. Got $degree_delta."))
+    elseif degree_delta == 0
+        p = get_polynomial_degree(canonical_space)
+        return SparseArrays.sparse(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1))
+    end
+
+    p = get_polynomial_degree(canonical_space)
+    
+    # Elevate by 1 iteratively
+    M = SparseArrays.sparse(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1))
+    current_p = p
+    for _ in 1:degree_delta
+        E = zeros(Float64, current_p + 2, current_p + 1)
+        for k in 1:(current_p + 1)
+            E[k, k] = (current_p + 2 - k) / (current_p + 1)
+            E[k + 1, k] = (k - 1) / (current_p + 1)
+        end
+        M = SparseArrays.sparse(E) * M
+        current_p += 1
+    end
+    SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, M)
+    return M
+end

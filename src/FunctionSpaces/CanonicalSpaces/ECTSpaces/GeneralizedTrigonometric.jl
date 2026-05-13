@@ -233,3 +233,19 @@ function get_child_canonical_space(
         ect_space.p, ect_space.w, ect_space.l / num_sub_elements, ect_space.m
     )
 end
+
+"""
+    get_degree_elevated_canonical_space(ect_space::GeneralizedTrigonometric, degree_delta::Int)
+
+Elevates the degree of the canonical space by `degree_delta`.
+
+# Arguments
+- `ect_space::GeneralizedTrigonometric`: A generalized trigonometric space.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::GeneralizedTrigonometric`: A generalized trigonometric space with the polynomial degree increased.
+"""
+function get_degree_elevated_canonical_space(ect_space::GeneralizedTrigonometric, degree_delta::Int)
+    return GeneralizedTrigonometric(ect_space.p + degree_delta, ect_space.w, ect_space.l, ect_space.t, ect_space.m)
+end

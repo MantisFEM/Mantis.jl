@@ -116,16 +116,16 @@ end
 
 Uniformly subdivides the canonical space into `num_sub_elements` sub-elements. It is
 assumed that `num_sub_elements` is a power of 2, else the method throws an argument error.
-It returns a global subdivision matrix that maps the global basis functions of the
-canonical space to the global basis functions of the subspaces.
+It returns a global subdivision matrix that maps the coefficients of the
+canonical space to the coefficients of the subspace basis functions.
 
 # Arguments
 - `canonical_space::AbstractCanonicalSpace`: A canonical space.
 - `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
-    functions of the canonical space to the global basis functions of the subspaces.
+- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the coefficients
+    of the canonical space to the coefficients of the subspace basis functions.
 """
 function build_two_scale_matrix(
     canonical_space::AbstractCanonicalSpace, num_sub_elements::Int
@@ -166,4 +166,64 @@ function build_two_scale_matrix(
     end
 
     return subdivision_matrix
+end
+
+"""
+    get_degree_elevated_canonical_space(elem_loc_basis::AbstractCanonicalSpace, degree_elevation::Int)
+
+This default method returns the element-local basis of `degree_elevation` higher than the given
+element-local basis. This method should be overloaded for element-local bases that do not
+satisfy this property or those that need additional parameters; e.g., ECT spaces.
+
+# Arguments
+- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
+- `degree_elevation::Int`: The amount to increase the polynomial degree by.
+
+# Returns
+- `::AbstractCanonicalSpace`: The element-local basis of higher degree.
+"""
+function get_degree_elevated_canonical_space(elem_loc_basis::AbstractCanonicalSpace, degree_elevation::Int)
+    return typeof(elem_loc_basis)(elem_loc_basis.p + degree_elevation)
+end
+
+"""
+    build_degree_elevation_matrix(
+        canonical_space::AbstractCanonicalSpace, degree_delta::Int
+    )
+
+Builds the element-local degree elevation matrix for a given canonical space.
+For an arbitrary canonical space, this uses a least-squares projection to find the map
+from polynomials of degree `p` to polynomials of degree `p + degree_delta`.
+
+# Arguments
+- `canonical_space::AbstractCanonicalSpace`: A canonical space.
+- `degree_elevation::Int`: The amount to increase the polynomial degree with.
+
+# Returns
+- `::SparseMatrixCSC{Float64}`: A matrix mapping coefficients of the canonical space to
+    coefficients of the elevated space.
+"""
+function build_degree_elevation_matrix(
+    canonical_space::AbstractCanonicalSpace, degree_delta::Int
+)
+    if degree_delta < 0
+        throw(ArgumentError("Degree delta must be non-negative. Got $degree_delta."))
+    elseif degree_delta == 0
+        p = get_polynomial_degree(canonical_space)
+        return SparseArrays.sparse(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1))
+    end
+    
+    p = get_polynomial_degree(canonical_space)
+    elevated_space = get_degree_elevated_canonical_space(canonical_space, degree_delta)
+    
+    num_points = p + degree_delta + 1
+    ξ = collect(LinRange(0.0, 1.0, num_points))
+    
+    coarse_eval = evaluate(canonical_space, ξ)[1][1]
+    fine_eval = evaluate(elevated_space, ξ)[1][1]
+    
+    elevation_matrix = SparseArrays.sparse(fine_eval \ coarse_eval)
+    SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, elevation_matrix)
+    
+    return elevation_matrix
 end

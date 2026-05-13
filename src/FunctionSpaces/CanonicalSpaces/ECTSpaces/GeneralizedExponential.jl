@@ -212,3 +212,19 @@ function get_child_canonical_space(ect_space::GeneralizedExponential, num_sub_el
         ect_space.p, ect_space.w, ect_space.l / num_sub_elements, ect_space.m
     )
 end
+
+"""
+    get_degree_elevated_canonical_space(ect_space::GeneralizedExponential, degree_delta::Int)
+
+Elevates the degree of the canonical space by `degree_delta`.
+
+# Arguments
+- `ect_space::GeneralizedExponential`: A generalized exponential space.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::GeneralizedExponential`: A generalized exponential space with the polynomial degree increased.
+"""
+function get_degree_elevated_canonical_space(ect_space::GeneralizedExponential, degree_delta::Int)
+    return GeneralizedExponential(ect_space.p + degree_delta, ect_space.w, ect_space.l, ect_space.t, ect_space.m)
+end

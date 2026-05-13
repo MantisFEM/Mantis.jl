@@ -325,12 +325,12 @@ Bisect the canonical space by dividing the length in half.
 # Returns
 - `::Tchebycheff`: A Tchebycheff space with the length divided by 2.
 """
-function get_bisected_canonical_space(ect_space::Tchebycheff)
+function get_child_canonical_space(ect_space::Tchebycheff)
     return Tchebycheff(ect_space.p, ect_space.roots, ect_space.l/2, ect_space.root_mult)
 end
 
 """
-    get_finer_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
+    get_child_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
 
 Bisect the canonical space by dividing the length in half for each power.
 
@@ -341,7 +341,7 @@ Bisect the canonical space by dividing the length in half for each power.
 # Returns
 - `::Tchebycheff`: A Tchebycheff space with the subdivided length.
 """
-function get_finer_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
+function get_child_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
     num_ref = log2(num_sub_elements)
     if num_sub_elements < 2 || !isapprox(num_ref - round(num_ref), 0.0; atol=1e-12)
         throw(
@@ -354,4 +354,20 @@ function get_finer_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int
     return Tchebycheff(
         ect_space.p, ect_space.roots, ect_space.l/num_sub_elements, ect_space.root_mult
     )
+end
+
+"""
+    get_degree_elevated_canonical_space(ect_space::Tchebycheff, degree_delta::Int)
+
+Elevates the degree of the canonical space by `degree_delta`.
+
+# Arguments
+- `ect_space::Tchebycheff`: A Tchebycheff space.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::Tchebycheff`: A Tchebycheff space with the polynomial degree increased.
+"""
+function get_degree_elevated_canonical_space(ect_space::Tchebycheff, degree_delta::Int)
+    return Tchebycheff(ect_space.p + degree_delta, ect_space.roots, ect_space.l, ect_space.root_mult)
 end

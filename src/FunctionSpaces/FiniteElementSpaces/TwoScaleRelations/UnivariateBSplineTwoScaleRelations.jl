@@ -344,3 +344,153 @@ end
 function get_child_to_parent_elements(::BSplineSpace, num_subdivisions::Int)
     return child -> get_element_parent(child, num_subdivisions)
 end
+
+############################################################################################
+#                                   Degree Elevation                                       #
+############################################################################################
+
+"""
+    degree_elevate_knot_vector(
+        parent_knot_vector::KnotVector, degree_delta::Int
+    )
+
+Increases the degree of `parent_knot_vector` by `degree_delta`.
+The multiplicity of each knot is increased by `degree_delta`.
+
+# Arguments
+- `parent_knot_vector::KnotVector`: parent knot vector.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::KnotVector`: child knot vector.
+"""
+function degree_elevate_knot_vector(
+    parent_knot_vector::KnotVector, degree_delta::Int
+)
+    return KnotVector(
+        get_geometry(parent_knot_vector),
+        get_polynomial_degree(parent_knot_vector) + degree_delta,
+        get_multiplicity(parent_knot_vector) .+ degree_delta)
+end
+
+"""
+    degree_elevate_space(
+        parent_bspline::BSplineSpace, degree_delta::Int
+    )
+
+Increases the degree of `parent_bspline` by `degree_delta`.
+The multiplicities of all knots are increased by `degree_delta`.
+
+# Arguments
+- `parent_bspline::BSplineSpace`: parent B-spline.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::BSplineSpace`: degree elevated B-spline space.
+"""
+function degree_elevate_space(
+    parent_bspline::BSplineSpace, degree_delta::Int
+)
+    child_knot_vector = degree_elevate_knot_vector(
+        get_knot_vector(parent_bspline), degree_delta
+    )
+    child_parametric_geometry = get_parametric_geometry(parent_bspline)
+    child_geometry = get_geometry(parent_bspline)
+    child_polynomials = get_degree_elevated_canonical_space(
+        get_polynomials(parent_bspline), degree_delta
+    )
+    dof_partition = get_dof_partition(parent_bspline)
+    
+    n_dofs_left = length(dof_partition[1][1])
+    n_dofs_right = length(dof_partition[1][3])
+    
+    p = get_polynomial_degree(parent_bspline) + degree_delta
+
+    return BSplineSpace(
+        child_geometry,
+        child_parametric_geometry,
+        child_polynomials,
+        p .- get_multiplicity(child_knot_vector),
+        n_dofs_left,
+        n_dofs_right,
+    )
+end
+
+"""
+    build_degree_elevation_operator(
+        parent_bspline::BSplineSpace, degree_delta::Int
+    )
+
+Algorithm for the coefficients of a change of B-spline representation for degree elevation.
+
+# Arguments
+- `parent_bspline::BSplineSpace`: parent B-spline.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
+    twoscale_operator and child B-spline space.
+"""
+function build_degree_elevation_operator(
+    parent_bspline::BSplineSpace, degree_delta::Int
+)
+    if degree_delta < 0
+        throw(ArgumentError("Degree elevation must be greater than or equal to 0.
+                            degree_delta=$degree_delta was given."))
+    end
+
+    child_bspline = degree_elevate_space(parent_bspline, degree_delta)
+
+    return build_degree_elevation_operator(parent_bspline, child_bspline, degree_delta)
+end
+
+"""
+    build_degree_elevation_operator(
+        parent_bspline::BSplineSpace{F}, child_bspline::BSplineSpace{F}, degree_delta::Int
+    ) where {F <: AbstractCanonicalSpace}
+
+Algorithm for the coefficients of a change of B-spline representation for degree elevation.
+The parent knot vector is `parent_bspline.knot_vector` and the child B-spline has degree elevated.
+
+# Arguments
+- `parent_bspline::BSplineSpace`: parent B-spline.
+- `child_bspline::BSplineSpace`: child B-spline, with degree elevated.
+- `degree_delta::Int`: The increase in polynomial degree.
+
+# Returns
+- `::TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
+    twoscale_operator and child B-spline space.
+"""
+function build_degree_elevation_operator(
+    parent_bspline::BSplineSpace{F}, child_bspline::BSplineSpace{F}, degree_delta::Int
+) where {F <: AbstractCanonicalSpace}
+    
+    # build the element degree elevation matrix
+    el_elevation_mat = build_degree_elevation_matrix(
+        parent_bspline.polynomials, degree_delta
+    )
+    # assemble the global extraction operators for the parent and child spaces
+    parent_extraction_mat = assemble_global_extraction_matrix(parent_bspline)
+    child_extraction_mat = assemble_global_extraction_matrix(child_bspline)
+    # concatenate the two_scale_operator subdivision matrices in a block diagonal format
+    discont_elevation_mat = SparseArrays.blockdiag(
+        [el_elevation_mat for i in 1:get_num_elements(parent_bspline)]...
+    )
+    # compute the two-scale matrix by solving a least-squares problem
+    gm = SparseArrays.sparse(
+        child_extraction_mat \ Array(discont_elevation_mat * parent_extraction_mat)
+    )
+    SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, gm)
+    
+    parent_to_child_elements = parent -> [parent]
+    child_to_parent_elements = child -> child
+
+    return TwoScaleOperator(
+        parent_bspline,
+        child_bspline,
+        gm,
+        parent_to_child_elements,
+        child_to_parent_elements,
+    ),
+    child_bspline
+end
