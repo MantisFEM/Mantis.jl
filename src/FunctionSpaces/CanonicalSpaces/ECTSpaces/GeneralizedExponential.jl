@@ -166,49 +166,14 @@ function get_derivative_space(ect_space::GeneralizedExponential)
         throw(ArgumentError("Degree of the space must be at least 2 to get derivative space."))
     end
     return GeneralizedExponential(
-        ect_space.p - 1, ect_space.w, ect_space.l, ect_space.t, ect_space.m
+        ect_space.p - 1, ect_space.w, ect_space.l, ect_space.m
     )
 end
 
-"""
-    get_child_canonical_space(ect_space::GeneralizedExponential)
-
-Bisect the canonical space by dividing the length in half.
-
-# Arguments
-- `ect_space::GeneralizedExponential`: A generalized exponential space.
-
-# Returns
-- `::GeneralizedExponential`: A generalized exponential space with the length divided by 2.
-"""
-function get_bisected_canonical_space(ect_space::GeneralizedExponential)
-    return GeneralizedExponential(ect_space.p, ect_space.w, ect_space.l / 2, ect_space.m)
-end
-
-"""
-    get_child_canonical_space(ect_space::GeneralizedExponential, num_sub_elements::Int)
-
-For number of sub-elements which is powers of 2, bisect the canonical space by dividing the
-length in half for each power.
-
-# Arguments
-- `ect_space::GeneralizedExponential`: A generalized exponential space.
-- `num_sub_elements::Int`: Number of sub-elements to be created.
-
-# Returns
-- `::GeneralizedExponential`: A generalized exponential space with the subdivided length.
-"""
-function get_child_canonical_space(ect_space::GeneralizedExponential, num_sub_elements::Int)
-    num_ref = log2(num_sub_elements)
-    if num_sub_elements < 2 || !isapprox(num_ref - round(num_ref), 0.0; atol=1e-12)
-        throw(
-            ArgumentError(
-                "Number of subdivisions should be a power of 2 and greater than 1"
-            ),
-        )
-    end
-
+function get_canonical_space_on_subelements(
+    space::GeneralizedExponential; num_sub_elements::Int = 2, degree_delta::Int = 0
+)   
     return GeneralizedExponential(
-        ect_space.p, ect_space.w, ect_space.l / num_sub_elements, ect_space.m
+        space.p + degree_delta, space.w, space.l / num_sub_elements, space.m
     )
 end

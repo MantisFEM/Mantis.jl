@@ -37,43 +37,6 @@ function get_derivative_space(elem_loc_basis::AbstractCanonicalSpace)
 end
 
 """
-    get_bisected_canonical_space(elem_loc_basis::AbstractCanonicalSpace)
-
-This default method returns the given element-local basis. This method should be overloaded
-for element-local bases that do not satisfy this property or those that need additional
-parameters; e.g., ECT spaces.
-
-# Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
-
-# Returns
-- `::AbstractCanonicalSpace`: The input element-local basis.
-"""
-function get_bisected_canonical_space(elem_loc_basis::AbstractCanonicalSpace)
-    return elem_loc_basis
-end
-
-"""
-    get_child_canonical_space(elem_loc_basis::AbstractCanonicalSpace, num_sub_elements::Int)
-
-This default method returns the given element-local basis. This method should be overloaded
-for element-local bases that do not satisfy this property or those that need additional
-parameters; e.g., ECT spaces.
-
-# Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
-- `num_sub_elements::Int`: The number of sub-elements to divide the canonical space into.
-
-# Returns
-- `::AbstractCanonicalSpace`: The input element-local basis.
-"""
-function get_child_canonical_space(
-    elem_loc_basis::AbstractCanonicalSpace, num_sub_elements::Int
-)
-    return elem_loc_basis
-end
-
-"""
     _evaluate_all_at_point(
         canonical_space::AbstractCanonicalSpace, xi::Float64, nderivatives::Int
     )
@@ -112,58 +75,78 @@ function _evaluate_all_at_point(
 end
 
 """
-    build_two_scale_matrix(canonical_space::AbstractCanonicalSpace, num_sub_elements::Int)
+    get_canonical_space_on_subelements(space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0)
 
-Uniformly subdivides the canonical space into `num_sub_elements` sub-elements. It is
-assumed that `num_sub_elements` is a power of 2, else the method throws an argument error.
-It returns a global subdivision matrix that maps the global basis functions of the
-canonical space to the global basis functions of the subspaces.
+When a canonical element is uniformly subdivided into `num_sub_elements` sub-elements,
+this function returns the canonical space which can be used on all sub-elements. The method
+also increases the polynomial degree of the fine spaces by `degree_delta`.
 
 # Arguments
-- `canonical_space::AbstractCanonicalSpace`: A canonical space.
-- `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
+- `space::AbstractCanonicalSpace`: A canonical space.
+- `num_sub_elements::Int`: The number of sub-elements to divide the canonical space into.
+- `degree_delta::Int`: The increase in polynomial degree for the fine spaces.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
-    functions of the canonical space to the global basis functions of the subspaces.
+- `::AbstractCanonicalSpace`: The canonical space on the sub-elements.
+"""
+function get_canonical_space_on_subelements(
+    space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0
+)   
+    return typeof(space)(space.p + degree_delta)
+end
+
+"""
+    build_two_scale_matrix(space::AbstractCanonicalSpace; 
+        num_sub_elements::Int = 2, degree_delta::Int = 0)
+
+Returns a global two-scale matrix for a given canonical space. This matrix maps the global 
+coefficients of the parent basis to the global coefficients of the children basis.
+
+The finer spaces are constructed by uniformly subdividing the parametric domain of the 
+parent canonical space into `num_sub_elements` subspaces of equal size and increasing the 
+polynomial degree of the fine spaces by `degree_delta`. 
+
+# Arguments
+- `space::AbstractCanonicalSpace`: A canonical space.
+- `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
+- `degree_delta::Int`: The increase in polynomial degree for the fine spaces.
+
+# Returns
+- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global coefficients
+    of the parent basis to the global coefficients of the children basis.
 """
 function build_two_scale_matrix(
-    canonical_space::AbstractCanonicalSpace, num_sub_elements::Int
+    space::AbstractCanonicalSpace; num_sub_elements::Int = 2, degree_delta::Int = 0
 )
-    num_ref = log2(num_sub_elements)
-    if num_sub_elements < 2 || !isapprox(num_ref - round(num_ref), 0.0; atol=1e-12)
-        throw(
-            ArgumentError(
-                "Number of subdivisions should be a power of 2 and greater than 1"
-            ),
-        )
+    p = get_polynomial_degree(space)
+    if num_sub_elements == 1 && degree_delta == 0
+        return SparseArrays.sparse(Matrix(LinearAlgebra.I, p + 1, p + 1))
     end
-    p = get_polynomial_degree(canonical_space)
-    num_ref = Int(num_ref)
 
-    # get bisected canonical space
-    bisected_canonical_space = get_bisected_canonical_space(canonical_space)
-    # evaluate points on the finer elements
-    ξ = collect(LinRange(0.0, 1.0, p + 1))
-    # evaluate all fine basis functions at the Greville points
-    fine_eval = evaluate(bisected_canonical_space, ξ)[1][1]
-    # evaluate all coarse basis functions on the left and right elements
-    coarse_eval_L = evaluate(canonical_space, ξ ./ 2)[1][1]
-    coarse_eval_R = evaluate(canonical_space, 0.5 .+ (ξ ./ 2))[1][1]
-    # bisection matrix
-    bisection_matrix = SparseArrays.sparse(
-        [
-            fine_eval \ coarse_eval_L
-            fine_eval \ coarse_eval_R
-        ]
+    # uniform subdivision breakpoints
+    breakpoints = LinRange(0.0, 1.0, num_sub_elements + 1)
+
+    # build all fine spaces
+    space_fine = get_canonical_space_on_subelement(
+        space; num_sub_elements = num_sub_elements, degree_delta = degree_delta
     )
 
-    # now, build the subdivision matrix for num_sub_elements > 2
-    subdivision_matrix = SparseArrays.sparse(Matrix(LinearAlgebra.I, p + 1, p + 1))
-    for i in 1:num_ref
-        subdivision_matrix =
-            SparseArrays.blockdiag([bisection_matrix for i in 1:(2^(i - 1))]...) * subdivision_matrix
-    end
+    # evaluation points for the finer spaces w.r.t. each sub-element
+    ξ_fine = Points.PointSet((LinRange(0.0, 1.0, p + degree_delta + 1),))
 
+    # evaluation points for the coarse space w.r.t. entire element
+    ξ_coarse = [
+        Points.PointSet((LinRange(breakpoints[i], breakpoints[i + 1], p + degree_delta + 1),))
+        for i in 1:num_sub_elements
+    ]
+    
+    # evaluate all fine basis functions
+    fine_eval = evaluate(space_fine, ξ_fine)[1][1]
+    # evaluate all coarse basis functions w.r.t. entire element
+    coarse_evals = [evaluate(space, ξ_coarse[i])[1][1] for i in 1:num_sub_elements]
+    # subdivision matrix obtained by solving `num_sub_elements` linear systems
+    subdivision_matrix = SparseArrays.sparse(
+        vcat([fine_eval \ coarse_evals[i] for i in 1:num_sub_elements]...)
+    )
     return subdivision_matrix
 end

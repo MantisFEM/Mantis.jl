@@ -302,56 +302,34 @@ function get_derivative_space(ect_space::Tchebycheff)
         idx = setdiff(1:length(ect_space.root_mult), zero_i)
         new_roots = ect_space.roots[idx, :]
         new_root_mult = ect_space.root_mult[idx]
-        new_root_type = ect_space.root_type[idx]
     else
         new_roots = ect_space.roots
         new_root_mult = copy(ect_space.root_mult)
         new_root_mult[zero_i[1]] -= 1
-        new_root_type = copy(ect_space.root_type)
     end
     return Tchebycheff(
         ect_space.p-1, new_roots, ect_space.l, new_root_mult
     )
 end
 
-"""
-    get_bisected_canonical_space(ect_space::Tchebycheff)
-
-Bisect the canonical space by dividing the length in half.
-
-# Arguments
-- `ect_space::Tchebycheff`: A Tchebycheff space.
-
-# Returns
-- `::Tchebycheff`: A Tchebycheff space with the length divided by 2.
-"""
-function get_bisected_canonical_space(ect_space::Tchebycheff)
-    return Tchebycheff(ect_space.p, ect_space.roots, ect_space.l/2, ect_space.root_mult)
-end
-
-"""
-    get_finer_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
-
-Bisect the canonical space by dividing the length in half for each power.
-
-# Arguments
-- `ect_space::Tchebycheff`: A Tchebycheff space.
-- `num_sub_elements::Int`: Number of sub-elements to be created.
-
-# Returns
-- `::Tchebycheff`: A Tchebycheff space with the subdivided length.
-"""
-function get_finer_canonical_space(ect_space::Tchebycheff, num_sub_elements::Int)
-    num_ref = log2(num_sub_elements)
-    if num_sub_elements < 2 || !isapprox(num_ref - round(num_ref), 0.0; atol=1e-12)
-        throw(
-            ArgumentError(
-                "Number of subdivisions should be a power of 2 and greater than 1"
-            ),
-        )
+function get_canonical_space_on_subelements(
+    space::Tchebycheff; num_sub_elements::Int = 2, degree_delta::Int = 0
+)   
+    zero_i = findall(all(space.roots .== 0.0, dims=2))
+    if degree_delta == 0
+        new_roots = copy(space.roots)
+        new_root_mult = copy(space.root_mult)
+    else
+        if length(zero_i) == 0
+            new_roots = [space.roots; [0.0 0.0]]
+            new_root_mult = [space.root_mult; degree_delta]
+        else
+            new_roots = copy(space.roots)
+            new_root_mult = copy(space.root_mult)
+            new_root_mult[zero_i[1]] += degree_delta
+        end
     end
-
     return Tchebycheff(
-        ect_space.p, ect_space.roots, ect_space.l/num_sub_elements, ect_space.root_mult
+        space.p + degree_delta, new_roots, space.l / num_sub_elements, new_root_mult
     )
 end

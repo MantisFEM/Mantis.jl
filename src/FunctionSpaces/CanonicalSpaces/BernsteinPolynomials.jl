@@ -62,27 +62,6 @@ Memoization.@memoize function evaluate(
     return ders
 end
 
-# function evaluate!(
-#     out::Vector{Vector{Vector{Matrix{T}}}},
-#     polynomials::Bernstein,
-#     xi::Points.AbstractPoints{1},
-# ) where {T <: Number}
-#     p = get_polynomial_degree(polynomials)
-
-#     # loop over the evaluation points and evaluate all derivatives at each point
-#     for derivative in eachindex(out) # from 1 to nderivatives + 1
-#         for basis in 0:p
-#             for point in eachindex(xi)
-#                 out[derivative][1][1][point, basis + 1] = _dbpoly(
-#                     p, basis, derivative - 1, xi[point][1]
-#                 )
-#             end
-#         end
-#     end
-
-#     return out
-# end
-
 function _bpoly(p::Int, i::Int, xi::T) where {T <: Number}
     if i < 0 || i > p
         return 0.0
@@ -135,4 +114,60 @@ function extract_monomial_to_bernstein(polynomial::Bernstein)
     end
 
     return T
+end
+
+function build_two_scale_matrix(
+    space::Bernstein; num_sub_elements::Int = 2, degree_delta::Int = 0
+)
+    # build degree elevation matrix
+    D = _build_bernstein_degree_elevation_matrix(get_polynomial_degree(space), degree_delta)
+    # breakpoints of the sub-elements
+    breakpoints = LinRange(0.0, 1.0, num_sub_elements + 1)
+    # build subdivision matrix
+    return SparseArrays.sparse(
+        vcat(
+            [
+                D * _build_bernstein_restriction_matrix(
+                    get_polynomial_degree(space), breakpoints[i], breakpoints[i + 1]
+                ) for i in 1:num_sub_elements
+            ]...
+        )
+    )
+end
+
+function _build_bernstein_restriction_matrix(p::Int, a::Float64, b::Float64)
+    K = zeros(Float64, p + 1, p + 1)
+    for j in 0:p
+        for i in 0:p
+            val = 0.0
+            k_min = max(0, i + j - p)
+                   k_max = min(i, j)
+                   for k in k_min:k_max
+                       term = binomial(i, k) * binomial(p - i, j - k) *
+                              (b^k) * ((1.0 - b)^(i - k)) *
+                              (a^(j - k)) * ((1.0 - a)^(p - i - j + k))
+                       val += term
+           end
+           K[i + 1, j + 1] = val
+       end
+    end
+    return K
+end
+
+function _build_bernstein_degree_elevation_matrix(p::Int, delta_p::Int)
+    D = SparseArrays.sparse(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1))
+    if delta_p > 0
+        current_p = p
+        for _ in 1:delta_p
+            E = zeros(Float64, current_p + 2, current_p + 1)
+            for k in 1:(current_p + 1)
+                E[k, k] = (current_p + 2 - k) / (current_p + 1)
+                E[k + 1, k] = (k - 1) / (current_p + 1)
+            end
+            D = SparseArrays.sparse(E) * D
+            current_p += 1
+        end
+    end
+    SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, D)
+    return D
 end
