@@ -20,13 +20,16 @@ B1 = FunctionSpaces.BSplineSpace(patch1, deg1, [-1, deg1 - 1, -1])
 B2 = FunctionSpaces.BSplineSpace(patch2, deg2, [-1, min(deg2 - 1, 1), deg2 - 1, -1])
 B3 = FunctionSpaces.BSplineSpace(patch3, deg3, [-1, -1])
 
-nsub1 = 3
-nsub2 = 2
-nsub3 = 4
+nsub1 = (3,)
+nsub2 = (2,)
+nsub3 = (4,)
+RS1 = FunctionSpaces.GlobalRefinement(nsub1, (0,), (deg1-1,), :h_first)
+RS2 = FunctionSpaces.GlobalRefinement(nsub2, (0,), (deg2-1,), :h_first)
+RS3 = FunctionSpaces.GlobalRefinement(nsub3, (0,), (deg3-1,), :h_first)
 
-ts1, BF1 = FunctionSpaces.build_two_scale_operator(B1, nsub1)
-ts2, BF2 = FunctionSpaces.build_two_scale_operator(B2, nsub2)
-ts3, BF3 = FunctionSpaces.build_two_scale_operator(B3, nsub3)
+ts1, BF1 = FunctionSpaces.build_two_scale_operator(B1, RS1)
+ts2, BF2 = FunctionSpaces.build_two_scale_operator(B2, RS2)
+ts3, BF3 = FunctionSpaces.build_two_scale_operator(B3, RS3)
 
 parent_space_1 = FunctionSpaces.TensorProductSpace((
     FunctionSpaces.TensorProductSpace((B1, B2)), B3
