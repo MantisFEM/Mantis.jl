@@ -744,7 +744,7 @@ function compute_dof_partition(spaces, active_basis, L)
         dof_partition[patch] = Vector{Vector{Int}}(undef, n_partitions[patch])
         for level in 1:L
             level_active_basis = Set(Hierarchy.get_level_ids(active_basis, level))
-            for partition in eachindex(dof_partition[n_patches])
+            for partition in eachindex(dof_partition[patch])
                 active_level_dofs = filter(
                     basis -> basis in level_active_basis,
                     level_partition[level][patch][partition],
