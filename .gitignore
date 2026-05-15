@@ -76,3 +76,6 @@ Manifest.toml
 
 # Ignore zed configuration directory
 .zed/
+
+# Ignore jj vcs configuration directory
+.jj/
