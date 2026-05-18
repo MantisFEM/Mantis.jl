@@ -169,7 +169,7 @@ See [Gerritsma2011](@cite) for more details.
 - `lagrange_polynomial::Lagrange{NT, T}`: The underlying Lagrange polynomial. See
     [Lagrange](@ref) for the details.
 """
-struct Edge{NT, T} <: AbstractLagrangePolynomials
+struct Edge{NT, T} <: AbstractEdgePolynomials
     p::Int
     nodes::NT
     lagrange_polynomial::Lagrange{NT, T}
