@@ -20,15 +20,14 @@ B1 = FunctionSpaces.BSplineSpace(
 geometry1multi = Geometry.CartesianGeometry((LinRange(-0.34, 1.56, 26),))
 B1multi = FunctionSpaces.BSplineSpace(geometry1multi, 6, 5)
 # Multi-element, Cartesian, different Section Spaces.
-B1LL = FunctionSpaces.BSplineSpace(
-    geometry1, geometry1multi, FunctionSpaces.LobattoLegendre(1), fill(-1, 26)
-)
-B1GL = FunctionSpaces.BSplineSpace(
-    geometry1, geometry1multi, FunctionSpaces.GaussLegendre(1), fill(-1, 26)
-)
-B1ELL = FunctionSpaces.BSplineSpace(
-    geometry1, geometry1multi, FunctionSpaces.EdgeLobattoLegendre(1), fill(-1, 26)
-)
+nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(2)))[1]
+nodes2 = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(2)))[1]
+ll_poly = FunctionSpaces.Lagrange(nodes)
+gl_poly = FunctionSpaces.Lagrange(nodes2)
+el_poly = FunctionSpaces.Edge(nodes)
+B1LL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, ll_poly, fill(-1, 26))
+B1GL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, gl_poly, fill(-1, 26))
+B1ELL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, el_poly, fill(-1, 26))
 
 # Rational
 R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])

@@ -30,7 +30,7 @@ p⁰ = [3]
 α = 10.0
 section_space_type = [
     FunctionSpaces.Bernstein,
-    FunctionSpaces.LobattoLegendre,
+    FunctionSpaces.Lagrange,
     FunctionSpaces.GeneralizedTrigonometric,
     FunctionSpaces.GeneralizedExponential,
 ]
@@ -107,12 +107,20 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
 
             # function space regularities
             regularities = degree .- 1
-            if section_space == FunctionSpaces.LobattoLegendre
-                regularities = tuple([0 for _ in 1:manifold_dim]...)
-            end
 
             # section spaces
-            if section_space == FunctionSpaces.GeneralizedTrigonometric
+            if section_space == FunctionSpaces.Lagrange
+                nodes = ntuple(manifold_dim) do i
+                    return Points.get_constituent_points(
+                        Quadrature.get_nodes(
+                            Quadrature.gauss_lobatto(degree[i]+1)
+                        )
+                    )[1]
+                end
+                section_spaces = map(section_space, nodes)
+                regularities = tuple([0 for _ in 1:manifold_dim]...)
+                dq⁰ = (2, 2)
+            elseif section_space == FunctionSpaces.GeneralizedTrigonometric
                 section_spaces = map(section_space, degree, (θ, θ), L ./ num_elements)
                 dq⁰ = 2 .* degree
             elseif section_space == FunctionSpaces.GeneralizedExponential
@@ -158,12 +166,20 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             # end
             # display([n_dofs cond_num])
 
-            ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-uh.txt")
+            if section_space == FunctionSpaces.Lagrange
+                ref_coeffs = read_data(sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh-uh.txt")
+            else
+                ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-uh.txt")
+            end
 
             @test all(
                 isapprox.(uₕ.coefficients, ref_coeffs, atol=atol * 50, rtol=rtol * 50)
             )
-            ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-phih.txt")
+            if section_space == FunctionSpaces.Lagrange
+                ref_coeffs = read_data(sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh-phih.txt")
+            else
+                ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-phih.txt")
+            end
             @test all(
                 isapprox.(ϕₕ.coefficients, ref_coeffs, atol=atol * 10, rtol=rtol * 10)
             )

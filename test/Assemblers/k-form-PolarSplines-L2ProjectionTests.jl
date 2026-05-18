@@ -10,8 +10,8 @@ using DelimitedFiles
 include("./AssemblerTestsHelpers.jl")
 
 # PROBLEM PARAMETERS -------------------------------------------------------------------
-# sub-directory for data 
-sub_dir = "k-form-PolarSplines-L2Projection" 
+# sub-directory for data
+sub_dir = "k-form-PolarSplines-L2Projection"
 # manifold dimensions
 manifold_dim = 2
 # number of elements in radial direction
@@ -65,9 +65,6 @@ for (p_idx, p) in enumerate(p⁰)
 
         # function space regularities
         regularities = degree .- 1
-        if section_space == FunctionSpaces.LobattoLegendre
-            regularities = tuple([0 for _ in 1:manifold_dim]...)
-        end
 
         # number of elements at the coarsest refinement level
         num_elements = (num_el_θ, num_el_r)

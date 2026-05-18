@@ -221,8 +221,10 @@ answers_1b = (
 basic_tests(TP_B1_b, answers_1b)
 
 # Reduction test, single-patch, single element, 1D, Cartesian, degree 3 Lagrange.
+nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(4)))[1]
+ll_polynomial = FunctionSpaces.Lagrange(nodes)
 L3 = FunctionSpaces.BSplineSpace(
-    geometry1, geometry1, FunctionSpaces.LobattoLegendre(3), [-1, -1]
+    geometry1, geometry1, ll_polynomial, [-1, -1]
 )
 TP_L3 = FunctionSpaces.TensorProductSpace((L3,))
 answers_L3 = (

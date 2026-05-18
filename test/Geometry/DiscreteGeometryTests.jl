@@ -68,7 +68,8 @@ run_tests(geom, file_name)
 #                          Lagrange-Bernstein (Square with hole)                           #
 ############################################################################################
 deg = 1
-b = FunctionSpaces.LobattoLegendre(deg)
+nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(deg+1)))[1]
+b = FunctionSpaces.Lagrange(nodes)
 B1 = FunctionSpaces.BSplineSpace(
     Geometry.CartesianGeometry(([0.0, 1.0, 2.0, 3.0, 4.0],)), b, [-1, 0, 0, 0, -1]
 )

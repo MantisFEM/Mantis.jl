@@ -137,7 +137,8 @@ ll_evaluation = [
 # Perform the tests
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]  # define the polynomial degree
-    ll_polynomial = FunctionSpaces.LobattoLegendre(p)  # generate the polynomials
+    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    ll_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test that nodes are generated as expected
@@ -158,7 +159,8 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    ll_polynomial = FunctionSpaces.LobattoLegendre(p)  # generate the polynomials
+    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    ll_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test if polynomial basis evaluation at evenly spaced nodes
@@ -328,7 +330,8 @@ gl_evaluation = [
 # Test nodes
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]
-    gl_polynomial = FunctionSpaces.GaussLegendre(p)
+    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    gl_polynomial = FunctionSpaces.Lagrange(nodes)
 
     # Test that nodes are generate as expected
     @test gl_polynomial.nodes ≈ gl_nodes_reference[p_idx] atol = 1e-12
@@ -347,7 +350,8 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    gl_polynomial = FunctionSpaces.GaussLegendre(p)  # generate the polynomials
+    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    gl_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test if polynomial basis evaluation at evenly spaced nodes
@@ -399,7 +403,8 @@ for p in degrees_to_test
     # - Integral Kronecker delta property
 
     # Construct the polynomials
-    ell_poly = FunctionSpaces.EdgeLobattoLegendre(p)
+    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+2)))[1]
+    ell_poly = FunctionSpaces.Edge(nodes)
 
     # Compute the evaluation points (quadrature points)
     quad_rule = Quadrature.gauss_legendre(2 * (p + 1))  # compute the quadrature nodes and weights to compute the integrals

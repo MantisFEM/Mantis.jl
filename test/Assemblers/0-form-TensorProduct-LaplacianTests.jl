@@ -70,12 +70,20 @@ function test_0form_hodge_laplacian(
 
                 # function space regularities
                 regularities = degree .- 1
-                if section_space == FunctionSpaces.LobattoLegendre
-                    regularities = tuple([0 for _ in 1:manifold_dim]...)
-                end
 
                 # section spaces
-                if section_space == FunctionSpaces.GeneralizedTrigonometric
+                if section_space == FunctionSpaces.Lagrange
+                    nodes = ntuple(manifold_dim) do i
+                        return Points.get_constituent_points(
+                            Quadrature.get_nodes(
+                                Quadrature.gauss_lobatto(degree[i]+1)
+                            )
+                        )[1]
+                    end
+                    section_spaces = map(section_space, nodes)
+                    regularities = tuple([0 for _ in 1:manifold_dim]...)
+                    dq⁰ = ntuple(i -> 2, manifold_dim)
+                elseif section_space == FunctionSpaces.GeneralizedTrigonometric
                     section_spaces = map(section_space, degree, (θ, θ), L ./ num_elements)
                     dq⁰ = 2 .* degree
                 elseif section_space == FunctionSpaces.GeneralizedExponential
@@ -117,7 +125,11 @@ function test_0form_hodge_laplacian(
                 # solve the problem
                 uₕ = Assemblers.solve_zero_form_hodge_laplacian(X[1], fₑ, dΩ)
                 if test
-                    ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh.txt")
+                    if section_space == FunctionSpaces.Lagrange
+                        ref_coeffs = read_data(sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh.txt")
+                    else
+                        ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh.txt")
+                    end
                     @test all(
                         isapprox.(
                             uₕ.coefficients, ref_coeffs, atol=atol * 10, rtol=rtol * 10
@@ -160,7 +172,7 @@ const θ = 2 * pi
 const α = 10.0
 section_space_type_2D = (
     FunctionSpaces.Bernstein,
-    FunctionSpaces.LobattoLegendre,
+    FunctionSpaces.Lagrange,
     FunctionSpaces.GeneralizedTrigonometric,
     FunctionSpaces.GeneralizedExponential,
 )
@@ -178,7 +190,7 @@ manifold_dim_3D = 3
 # mesh types to be used
 mesh_type_3D = ["cartesian"]
 # type of section spaces to use
-section_space_type_3D = (FunctionSpaces.Bernstein, FunctionSpaces.LobattoLegendre)
+section_space_type_3D = (FunctionSpaces.Bernstein, FunctionSpaces.Lagrange)
 # number of elements in each direction at the coarsest level of refinement
 num_el_0 = 4
 num_elements_3D = num_el_0 .* tuple([1 for _ in 1:manifold_dim_3D]...)
