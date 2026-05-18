@@ -8,7 +8,6 @@ import Combinatorics
 import Graphs
 import LinearAlgebra
 import Memoization
-import PolynomialBases
 import SparseArrays
 import ToeplitzMatrices
 
