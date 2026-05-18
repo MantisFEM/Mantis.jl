@@ -137,6 +137,10 @@ function _eval_lagrange!(result, nodes, weights, x::T) where {T <: Number}
     return result
 end
 
+function get_derivative_space(elem_loc_basis::Lagrange)
+    return Edge(elem_loc_basis.nodes)
+end
+
 
 
 """
