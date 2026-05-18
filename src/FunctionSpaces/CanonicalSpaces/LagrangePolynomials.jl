@@ -193,14 +193,28 @@ struct Edge{NT, T} <: AbstractLagrangePolynomials
 end
 
 function evaluate(
-    polynomials::Edge, xi::Points.AbstractPoints{1}, nderivatives::Int=0
+    polynomial::Edge, xi::Points.AbstractPoints{1}, nderivatives::Int=0
 )
-    edge_eval = evaluate(polynomials.lagrange_polynomial, xi, nderivatives + 1)
-    for i in 0:nderivatives
-        edge_eval[i + 1][1] = -cumsum(edge_eval[i + 2][1][:, 1:(end - 1)]; dims=2)
+    lagrange_eval = evaluate(polynomial.lagrange_polynomial, xi, nderivatives + 1)
+
+    neval = Points.get_num_points(xi)
+    edge_eval = Vector{Vector{Matrix{eltype(xi)}}}(undef, nderivatives + 1)
+    for j in 0:nderivatives
+        edge_eval[j + 1] = Vector{Matrix{eltype(xi)}}(undef, 1)
+        edge_eval[j + 1][1] = zeros(eltype(xi), neval, polynomial.p + 1)
     end
 
-    return edge_eval[1:(nderivatives + 1)]
+    for i in 0:nderivatives
+        for j in 1:polynomial.p + 1
+            for j2 in 1:j
+                for k in 1:neval
+                    edge_eval[i + 1][1][k, j] += -lagrange_eval[i + 2][1][k, j2]
+                end
+            end
+        end
+    end
+
+    return edge_eval
 end
 
 
