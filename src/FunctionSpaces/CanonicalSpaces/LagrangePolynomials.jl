@@ -70,7 +70,7 @@ function compute_barycentric_weights(nodes)
     return p, w
 end
 
-function evaluate(
+Memoization.@memoize function evaluate(
     polynomial::Lagrange, xi::Points.AbstractPoints{1}, nderivatives::Int=0
 )
     neval = Points.get_num_points(xi)
@@ -192,7 +192,7 @@ struct Edge{NT, T} <: AbstractEdgePolynomials
     end
 end
 
-function evaluate(
+Memoization.@memoize function evaluate(
     polynomial::Edge, xi::Points.AbstractPoints{1}, nderivatives::Int=0
 )
     lagrange_eval = evaluate(polynomial.lagrange_polynomial, xi, nderivatives + 1)
