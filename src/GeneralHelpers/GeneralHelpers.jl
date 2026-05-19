@@ -1,6 +1,6 @@
 module GeneralHelpers
 
-export integer_sums, get_derivative_idx, export_path
+export integer_sums, get_derivative_idx, num_der_indices, export_path
 
 import Combinatorics
 
@@ -130,6 +130,25 @@ function _integer_sums(sum_indices::Int, ::Val{N}) where {N}
 
     return solutions
 end
+
+"""
+    num_der_indices(n, d)
+
+Return the number of partial derivatives of order `d` in an `n`-variate space.
+
+# Examples
+```jldoctest
+using Mantis
+
+julia> Mantis.GeneralHelpers.num_der_indices(1, 2)
+1
+
+julia> Mantis.GeneralHelpers.num_der_indices(3, 2)
+6
+
+```
+"""
+num_der_indices(n, d) = binomial(n + d - 1, n - 1)
 
 ####################################################
 # Export path helper function

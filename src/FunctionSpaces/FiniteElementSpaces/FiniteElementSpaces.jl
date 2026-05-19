@@ -518,7 +518,7 @@ function evaluate(
     evaluations = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for j in 0:nderivatives
         # number of derivatives of order j
-        num_j_ders = binomial(manifold_dim + j - 1, manifold_dim - 1)
+        num_j_ders = GeneralHelpers.num_der_indices(manifold_dim, j)
         evaluations[j + 1] = Vector{Vector{Matrix{Float64}}}(undef, num_j_ders)
         for der_idx in 1:num_j_ders
             evaluations[j + 1][der_idx] = [
@@ -586,7 +586,7 @@ function evaluate(
     evaluations = Vector{Vector{Vector{Vector{Float64}}}}(undef, nderivatives + 1)
     for j in 0:nderivatives
         # number of derivatives of order j
-        num_j_ders = binomial(manifold_dim + j - 1, manifold_dim - 1)
+        num_j_ders = GeneralHelpers.num_der_indices(manifold_dim, j)
         evaluations[j + 1] = Vector{Vector{Vector{Float64}}}(undef, num_j_ders)
         for der_idx in 1:num_j_ders
             for component_idx in 1:num_components

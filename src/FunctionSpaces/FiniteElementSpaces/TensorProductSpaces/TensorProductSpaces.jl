@@ -641,7 +641,7 @@ function get_local_basis(
     num_basis = get_num_basis(space, element_id)
     local_basis = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for der_order in 0:nderivatives
-        num_der_ids = binomial(manifold_dim + der_order - 1, manifold_dim - 1)
+        num_der_ids = GeneralHelpers.num_der_indices(manifold_dim, der_order)
         # We assume that there is only one component.
         local_basis[der_order + 1] = [
             [Matrix{Float64}(undef, (num_points, num_basis))] for _ in 1:num_der_ids
@@ -685,7 +685,7 @@ function evaluate(
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for der_order in 0:nderivatives
-        num_der_ids = binomial(manifold_dim + der_order - 1, manifold_dim - 1)
+        num_der_ids = GeneralHelpers.num_der_indices(manifold_dim, der_order)
         # We assume that there is only one component.
         eval[der_order + 1] = [
             [Matrix{Float64}(undef, (num_points, num_basis))] for _ in 1:num_der_ids
@@ -733,7 +733,7 @@ function evaluate(
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for der_order in 0:nderivatives
-        num_der_ids = binomial(manifold_dim + der_order - 1, manifold_dim - 1)
+        num_der_ids = GeneralHelpers.num_der_indices(manifold_dim, der_order)
         # We assume that there is only one component.
         eval[der_order + 1] = [
             [Matrix{Float64}(undef, (num_points, num_basis))] for _ in 1:num_der_ids
