@@ -39,6 +39,59 @@ function metric(
 end
 
 """
+    metric(geometry::AbstractGeometry, element_id::Int, xi::Points.AbstractPoints, i::Int)
+
+Returns the metric and its determinant.
+
+# Arguments
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
+- `element_id::Int`: Global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
+- `i::Int`: The index of the point being evaluated, as in `xi[i]`.
+
+# Returns
+- `g::SMatrix`: Metric tensor at the given point, of size `{manifold_dim, manifold_dim}`.
+- `sqrt_g::Float64`: Square-root of the determinant of the metric at the given point.
+"""
+function metric(
+    geometry::AbstractGeometry, element_id::Int, xi::Points.AbstractPoints, i::Int
+)
+    J = jacobian(geometry, element_id, xi, i)
+    g = transpose(J) * J
+    sqrt_g = g |> det |> abs |> sqrt
+
+    return g, sqrt_g
+end
+
+"""
+    inv_metric(
+        geometry::AbstractGeometry, element_id::Int, xi::Points.AbstractPoints, i::Int
+    )
+
+Returns the inverse metric, the metric and its determinant, at the point `xi[i]`.
+
+# Arguments
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
+- `element_id::Int`: Global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
+- `i::Int`: The index of the point being evaluated, as in `xi[i]`.
+
+# Returns
+- `::SMatrix`: Inverse metric tensor at the given point, of size `{manifold_dim,
+    manifold_dim}`.
+- `g::SMatrix{manifold_dim, manifold_dim}`: Metric tensor per evaluation point, of size
+    `{manifold_dim, manifold_dim}`.
+- `sqrt_g::Float64`: Square-root of the determinant of the metric at the given point.
+"""
+function inv_metric(
+    geometry::AbstractGeometry, element_id::Int, xi::Points.AbstractPoints, i::Int
+)
+    g, sqrt_g = metric(geometry, element_id, xi, i)
+
+    return inv(g), g, sqrt_g
+end
+
+"""
     inv_metric(
         geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
         element_id::Int,

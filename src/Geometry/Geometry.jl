@@ -516,6 +516,41 @@ function jacobian(
 end
 
 """
+    jacobian(
+        geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
+        element_id::Int,
+        xi::Points.AbstractPoints{manifold_dim},
+        i::Int,
+    ) where {manifold_dim, image_dim, num_patches}
+
+Computes the jacobian at the physical point identified by `xi[i]`, on the element identified
+by `element_id` of a given `geometry`.
+
+# Arguments
+- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry being used.
+- `element_id::Int`: The global element id.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain to evaluate
+    the jacobian at.
+- `i::Int`: The index of the point in `xi`.
+
+# Returns
+- `::SMatrix{image_dim, manifold_dim, Float64}`: The jacobian at the physical point
+    corresponding to the canonical point `xi[i]` on element `element_id`.
+
+# Notes
+There is no generic fallback for this method. It should be implemented for each concrete
+geometry type.
+"""
+function jacobian(
+    geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+    i::Int,
+) where {manifold_dim, image_dim, num_patches}
+    throw(MethodError(jacobian, (geometry, element_id, xi, i)))
+end
+
+"""
     hessian(
         geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},
         element_id::Int,
