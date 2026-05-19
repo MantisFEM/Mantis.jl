@@ -8,7 +8,7 @@ Lagrange interpolating polynomials.
 - `p::Int`: Degree of the Lagrange polynomial.
 - `nodes::NT`: Points at which the polynomial should be interpolating. The length of the
     `nodes` vector dictates the degree.
-- `barycentric_weights::Vector{T}`: Barycentric weights. `T` is eltype(`nodes`).
+- `barycentric_weights::Vector{T}`: Barycentric weights. `T` is `eltype(nodes)`.
 """
 struct Lagrange{NT, T} <: AbstractLagrangePolynomials
     p::Int
