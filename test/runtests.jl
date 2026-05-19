@@ -6,6 +6,9 @@ using Test
 @testset verbose=true "GeneralHelpers" begin
     include("GeneralHelpers/runtests.jl")
 end
+@testset verbose=true "Caching" begin
+    include("Caching/runtests.jl")
+end
 @testset verbose=true "Mesh" begin
     include("Mesh/runtests.jl")
 end
