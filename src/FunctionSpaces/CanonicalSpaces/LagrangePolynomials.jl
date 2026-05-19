@@ -23,8 +23,8 @@ struct Lagrange{NT, T} <: AbstractLagrangePolynomials
                         "Lagrange polynomials require at least 1 node. Got ",
                         length(nodes),
                         " nodes instead.",
-                    )
-                )
+                    ),
+                ),
             )
         end
         p, barycentric_weights = compute_barycentric_weights(nodes)
@@ -42,29 +42,29 @@ Based on algorithm 9.2.1 of [Driscoll2022](@cite).
 """
 function compute_barycentric_weights(nodes)
     p = length(nodes) - 1
+    T = eltype(nodes)
 
     # Scaling to ensure stability.
-    C = (nodes[p+1] - nodes[1]) / eltype(nodes)(4.0)
-    scaled_nodes = nodes / C
+    C = (nodes[p + 1] - nodes[1]) / T(4.0)
 
     # Adding one node at a time, compute inverses of the weights.
-    w = ones(eltype(nodes), p+1)
-    for i in 0:p-1
-        for j in 1:i+1
+    w = ones(T, p + 1)
+    for i in 0:(p - 1)
+        for j in 1:(i + 1)
             # Current node difference.
-            d = scaled_nodes[j] - scaled_nodes[i+2]
+            d = (nodes[j] - nodes[i + 2]) / C
 
             # Update previous.
             w[j] *= d
 
             # Compute new w.
-            w[i+2] *= -d
+            w[i + 2] *= -d
         end
     end
 
     # Go from inverses to weights.
     for i in eachindex(w)
-        w[i] = one(eltype(w))/w[i]
+        w[i] = one(T) / w[i]
     end
 
     return p, w
@@ -85,9 +85,7 @@ Memoization.@memoize function evaluate(
     weights = polynomial.barycentric_weights
     # loop over the evaluation points and evaluate all basis functions at each point
     @inbounds for point in eachindex(xi)
-        _eval_lagrange!(
-            view(values[1][1], point, :), nodes, weights, xi[point][1]
-        )
+        _eval_lagrange!(view(values[1][1], point, :), nodes, weights, xi[point][1])
     end
 
     if nderivatives > 0
@@ -141,8 +139,6 @@ function get_derivative_space(elem_loc_basis::Lagrange)
     return Edge(elem_loc_basis.nodes)
 end
 
-
-
 """
     Edge <: AbstractLagrangePolynomials
 
@@ -182,13 +178,13 @@ struct Edge{NT, T} <: AbstractEdgePolynomials
                         "Edge polynomials require at least 2 nodes. Got ",
                         length(nodes),
                         " nodes instead.",
-                    )
-                )
+                    ),
+                ),
             )
         end
         lagrange_polynomial = Lagrange(nodes)
 
-        return new{typeof(nodes), T}(lagrange_polynomial.p-1, nodes, lagrange_polynomial)
+        return new{typeof(nodes), T}(lagrange_polynomial.p - 1, nodes, lagrange_polynomial)
     end
 end
 
@@ -205,7 +201,7 @@ Memoization.@memoize function evaluate(
     end
 
     for i in 0:nderivatives
-        for j in 1:polynomial.p + 1
+        for j in 1:(polynomial.p + 1)
             for j2 in 1:j
                 for k in 1:neval
                     edge_eval[i + 1][1][k, j] += -lagrange_eval[i + 2][1][k, j2]
