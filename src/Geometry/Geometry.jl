@@ -12,6 +12,7 @@ import ..Points
 import ..GeneralHelpers
 import ..Hierarchy
 using ..TensorProducts
+using ..Caching
 
 """
     AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -677,5 +678,7 @@ include("./GeometryConversions.jl")
 
 # helper functions for convenience
 include("./GeometryHelpers.jl")
+
+include("Caching/Caching.jl")
 
 end
