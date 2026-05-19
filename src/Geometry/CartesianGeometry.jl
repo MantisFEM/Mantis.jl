@@ -253,6 +253,18 @@ function jacobian(
     ]
 end
 
+function jacobian(
+    geometry::CartesianGeometry{manifold_dim, image_dim},
+    element_id::Int,
+    ::Points.AbstractPoints,
+    ::Int,
+) where {manifold_dim, image_dim}
+    scaling = get_element_lengths(geometry, element_id)
+    J = SMatrix{image_dim, manifold_dim}(LinearAlgebra.I) .* scaling
+
+    return J
+end
+
 function hessian(
     geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,
