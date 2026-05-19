@@ -15,7 +15,7 @@ struct Lagrange{NT, T} <: AbstractLagrangePolynomials
     nodes::NT
     barycentric_weights::Vector{T}
 
-    function Lagrange(nodes::AbstractVector{T}) where {T}
+    function Lagrange(nodes::NT) where {T, NT <: AbstractVector{T}}
         if length(nodes) <= 0
             throw(
                 ArgumentError(
@@ -29,7 +29,7 @@ struct Lagrange{NT, T} <: AbstractLagrangePolynomials
         end
         p, barycentric_weights = compute_barycentric_weights(nodes)
 
-        return new{typeof(nodes), T}(p, nodes, barycentric_weights)
+        return new{NT, T}(p, nodes, barycentric_weights)
     end
 end
 
@@ -170,7 +170,7 @@ struct Edge{NT, T} <: AbstractEdgePolynomials
     nodes::NT
     lagrange_polynomial::Lagrange{NT, T}
 
-    function Edge(nodes::AbstractVector{T}) where {T}
+    function Edge(nodes::NT) where {T, NT <: AbstractVector{T}}
         if length(nodes) <= 1
             throw(
                 ArgumentError(
@@ -184,7 +184,7 @@ struct Edge{NT, T} <: AbstractEdgePolynomials
         end
         lagrange_polynomial = Lagrange(nodes)
 
-        return new{typeof(nodes), T}(lagrange_polynomial.p - 1, nodes, lagrange_polynomial)
+        return new{NT, T}(lagrange_polynomial.p - 1, nodes, lagrange_polynomial)
     end
 end
 
