@@ -136,7 +136,7 @@ end
 _integer_sums(sum_indices::Int, ::Val{1}) = [(sum_indices,)]
 
 function _integer_sums(sum_indices::Int, ::Val{N}) where {N}
-    N > 0 || throw(ArgumentError("Number of indices must be greater than 0."))
+    N > 0 || throw(ArgumentError("Number of indices must be greater than 0. Got $(N)."))
     solutions = Vector{NTuple{N, Int}}(undef, 0)
     for combo in Combinatorics.combinations(0:(sum_indices + N - 2), N - 1)
         s = zeros(Int, N)
@@ -180,7 +180,8 @@ end
 """
     num_der_indices(n, d)
 
-Return the number of partial derivatives of order `d` in an `n`-variate space.
+Return the number of distinct partial derivatives of order `d` in an `n`-variate space,
+assuming equality of mixed partial derivatives.
 
 # Examples
 ```jldoctest
