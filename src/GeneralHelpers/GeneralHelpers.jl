@@ -104,8 +104,6 @@ function integer_sums(sum_indices::Int, num_indices::Val{N}) where {N}
     end
 end
 
-integer_sums(sum_indices, num_indices) = integer_sums(sum_indices, Val(num_indices))
-
 @generated function _integer_sums(::Val{N}) where {N}
     cache = Dict{Int, Vector{NTuple{N, Int}}}()
 
@@ -129,6 +127,31 @@ function _integer_sums(sum_indices::Int, ::Val{N}) where {N}
     end
 
     return solutions
+end
+
+"""
+    integer_sums(init_sum::Int, final_sum::Int, num_indices::Val)
+
+Generates all possible combinations of non-negative integers that sum up to `init_sum` until
+`final_sum`, where each combination has `num_indices` length.
+
+# Examples
+```jldoctest
+julia> using Mantis;
+
+julia> Mantis.GeneralHelpers.integer_sums(0, 2, Val(2))
+6-element Vector{Tuple{Int64, Int64}}:
+ (0, 0)
+ (0, 1)
+ (1, 0)
+ (0, 2)
+ (1, 1)
+ (2, 0)
+
+```
+"""
+function integer_sums(init_sum, final_sum, num_indices::Val{N}) where {N}
+    return mapreduce(s -> integer_sums(s, num_indices), vcat, init_sum:final_sum)
 end
 
 """

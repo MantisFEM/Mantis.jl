@@ -93,7 +93,7 @@ function evaluate(
             # Rationalize with the weights
             homog_basis[1][1][1] .= LinearAlgebra.Diagonal(weight) \ temp
         elseif j == 1
-            der_keys = integer_sums(j, manifold_dim)
+            der_keys = integer_sums(j, Val(manifold_dim))
             for key in der_keys
                 # Get the location where the derivative is stored
                 der_idx = get_derivative_idx(key)
