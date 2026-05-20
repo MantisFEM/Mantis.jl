@@ -8,6 +8,55 @@ import Combinatorics
 # Integer sums and derivatives helper functions
 ####################################################
 
+#=
+    The caching we chose here is a compromise between a few things:
+    1. Using Memoize.jl: This does not really handle type stability very well. Most
+        dictionaries are Dict{Any, Any}.
+    2. Previously we were storing the cached helpers in this file as Vector{Int}, because
+        then everything would be type-stable. The problem of course is that we didn't
+        really use all the information we had (the manifold_dim sized tuples).
+    3. Using @generated to create caches at compile time, which are then passed by
+        reference, seems to be the best approach. However, as mentioned in Julia's
+        documentation, it is not guaranteed that the cache is not erased after compilation,
+        so that is the downside.
+=#
+
+"""
+    cache_dict(::Type{K}, ::Type{V}) where {K, V}
+
+Return a `Dict{K,V}` dictionary stored at compile time.
+
+!!! warning
+    This implementation makes it impossible to distinguish to dictionaries with the same
+    type signature. Also, it is not guaranteed that the dictionary is not wiped during
+    runtime.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> dict = Mantis.GeneralHelpers.cache_dict(Int, String)
+Dict{Int64, String}()
+
+julia> dict[42] = "Answer"
+"Answer"
+
+julia> Mantis.GeneralHelpers.cache_dict(Int, String)
+Dict{Int64, String} with 1 entry:
+  42 => "Answer"
+
+julia> not_new_dict = Mantis.GeneralHelpers.cache_dict(Int, String)
+Dict{Int64, String} with 1 entry:
+  42 => "Answer"
+
+```
+"""
+@generated function cache_dict(::Type{K}, ::Type{V}) where {K, V}
+    cache = Dict{K, V}()
+
+    return :($cache)
+end
+
 """
     get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
 
@@ -36,29 +85,10 @@ in 2D, which has key [1, 0]. In 3D, this same derivative has key
     evaluations.
 """
 function get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
-    # First, precompile cache for the given `manifold_dim`. Then, interpolate it.
-    cache = _get_derivative_idx(Val(manifold_dim))
-    get!(cache, der_key) do
+    dict = cache_dict(NTuple{manifold_dim, Int}, Int)
+    get!(dict, der_key) do
         _get_derivative_idx(der_key)
     end
-end
-
-#=
-    The caching we chose here is a compromise between a few things:
-    1. Using Memoize.jl: This does not really handle type stability very well. Most
-        dictionaries are Dict{Any, Any}.
-    2. Previously we were storing the cached helpers in this file as Vector{Int}, because
-        then everything would be type-stable. The problem of course is that we didn't
-        really use all the information we had (the manifold_dim sized tuples).
-    3. Using @generated to create caches at compile time, which are then passed by
-        reference, seems to be the best approach. However, as mentioned in Julia's
-        documentation, it is not guaranteed that the cache is not erased after compilation,
-        so that is the downside.
-=#
-@generated function _get_derivative_idx(::Val{manifold_dim}) where {manifold_dim}
-    cache = Dict{NTuple{manifold_dim, Int}, Int}()
-
-    return :($cache)
 end
 
 function _get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
@@ -97,17 +127,10 @@ where each combination has a specified number of elements.
     sum up to `sum_indices`. If no valid combinations exist, the vectors are empty.
 """
 function integer_sums(sum_indices::Int, num_indices::Val{N}) where {N}
-    # First, precompile cache for the given `num_indices`. Then, interpolate it.
-    cache = _integer_sums(num_indices)
-    get!(cache, sum_indices) do
+    dict = cache_dict(Int, Vector{NTuple{N, Int}})
+    get!(dict, sum_indices) do
         _integer_sums(sum_indices, num_indices)
     end
-end
-
-@generated function _integer_sums(::Val{N}) where {N}
-    cache = Dict{Int, Vector{NTuple{N, Int}}}()
-
-    return :($cache)
 end
 
 _integer_sums(sum_indices::Int, ::Val{1}) = [(sum_indices,)]
