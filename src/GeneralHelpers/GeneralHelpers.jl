@@ -64,7 +64,7 @@ Dict{Int64, String}()
 end
 
 """
-    get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
+    get_derivative_idx(der_key::NTuple{manifold_dim, Int}, id=Val{1}()) where {manifold_dim}
 
 Convert the given derivative key to a linear index corresponding to its storage location.
 
@@ -83,6 +83,9 @@ As an example, consider the first derivative with respect to x₁ (∂/∂x₁)
 in 2D, which has key [1, 0]. In 3D, this same derivative has key
 [1, 0, 0]. In 3D, the derivative ∂³/∂x₁²∂x₂ thus has key [2, 1, 0].
 
+An optional `id` can be given choose the used cache. This is useful to avoid clashes of
+dictionaries using the same types. See also [`cache_dict`](@ref).
+
 # Arguments
 - `der_key::NTuple{manifold_dim, Int}`: A key for the desired derivative order.
 
@@ -90,8 +93,10 @@ in 2D, which has key [1, 0]. In 3D, this same derivative has key
 - `::Int`: The linear index corresponding to the derivative's storage location in basis
     evaluations.
 """
-function get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
-    dict = cache_dict(NTuple{manifold_dim, Int}, Int)
+function get_derivative_idx(
+    der_key::NTuple{manifold_dim, Int}, id=Val{1}()
+) where {manifold_dim}
+    dict = cache_dict(NTuple{manifold_dim, Int}, Int, id)
     get!(dict, der_key) do
         _get_derivative_idx(der_key)
     end
@@ -119,10 +124,13 @@ function _get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold
 end
 
 """
-    integer_sums(sum_indices::Int, num_indices::Val{N}) where {N}
+    integer_sums(sum_indices::Int, num_indices::Val{N}, id=Val{1}()) where {N}
 
 Generates all possible combinations of non-negative integers that sum up to a given value,
 where each combination has a specified number of elements.
+
+An optional `id` can be given choose the used cache. This is useful to avoid clashes of
+dictionaries using the same types. See also [`cache_dict`](@ref).
 
 # Arguments
 - `sum_indices::Int`: The target sum of the integers in each combination.
@@ -132,8 +140,8 @@ where each combination has a specified number of elements.
 - `::Vector{NTuple{N, Int}}`: Each inner vector represents a combination of integers that
     sum up to `sum_indices`. If no valid combinations exist, the vectors are empty.
 """
-function integer_sums(sum_indices::Int, num_indices::Val{N}) where {N}
-    dict = cache_dict(Int, Vector{NTuple{N, Int}})
+function integer_sums(sum_indices::Int, num_indices::Val{N}, id=Val{1}()) where {N}
+    dict = cache_dict(Int, Vector{NTuple{N, Int}}, id)
     get!(dict, sum_indices) do
         _integer_sums(sum_indices, num_indices)
     end
@@ -165,10 +173,13 @@ function _integer_sums(sum_indices::Int, ::Val{N}) where {N}
 end
 
 """
-    integer_sums(init_sum::Int, final_sum::Int, num_indices::Val)
+    integer_sums(init_sum::Int, final_sum::Int, num_indices::Val, id=Val{1}())
 
 Generates all possible combinations of non-negative integers that sum up to `init_sum` until
 `final_sum`, where each combination has `num_indices` length.
+
+An optional `id` can be given choose the used cache. This is useful to avoid clashes of
+dictionaries using the same types. See also [`cache_dict`](@ref).
 
 # Examples
 ```jldoctest
@@ -185,8 +196,8 @@ julia> Mantis.GeneralHelpers.integer_sums(0, 2, Val(2))
 
 ```
 """
-function integer_sums(init_sum, final_sum, num_indices::Val{N}) where {N}
-    return mapreduce(s -> integer_sums(s, num_indices), vcat, init_sum:final_sum)
+function integer_sums(init_sum::Int, final_sum::Int, num_indices::Val, id=Val{1}())
+    return mapreduce(s -> integer_sums(s, num_indices, id), vcat, init_sum:final_sum)
 end
 
 """

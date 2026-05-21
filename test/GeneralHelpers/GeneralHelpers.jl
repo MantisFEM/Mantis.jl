@@ -80,18 +80,19 @@ end
     @test GH._get_derivative_idx((1, 1, 0)) == 5
     @test GH._get_derivative_idx((2, 0, 0)) == 6
 
-    key_dict = GH.cache_dict(NTuple{3, Int}, Int)
+    der_idx_val = Val(7)
+    key_dict = GH.cache_dict(NTuple{3, Int}, Int, der_idx_val)
     @test isa(key_dict, Dict{NTuple{3, Int}, Int})
-    @test GH.get_derivative_idx((0, 0, 0)) == 1
-    @test GH.get_derivative_idx((1, 0, 0)) == 1
-    @test GH.get_derivative_idx((0, 1, 0)) == 2
-    @test GH.get_derivative_idx((0, 0, 1)) == 3
-    @test GH.get_derivative_idx((0, 0, 2)) == 1
-    @test GH.get_derivative_idx((0, 1, 1)) == 2
-    @test GH.get_derivative_idx((0, 2, 0)) == 3
-    @test GH.get_derivative_idx((1, 0, 1)) == 4
-    @test GH.get_derivative_idx((1, 1, 0)) == 5
-    @test GH.get_derivative_idx((2, 0, 0)) == 6
+    @test GH.get_derivative_idx((0, 0, 0), der_idx_val) == 1
+    @test GH.get_derivative_idx((1, 0, 0), der_idx_val) == 1
+    @test GH.get_derivative_idx((0, 1, 0), der_idx_val) == 2
+    @test GH.get_derivative_idx((0, 0, 1), der_idx_val) == 3
+    @test GH.get_derivative_idx((0, 0, 2), der_idx_val) == 1
+    @test GH.get_derivative_idx((0, 1, 1), der_idx_val) == 2
+    @test GH.get_derivative_idx((0, 2, 0), der_idx_val) == 3
+    @test GH.get_derivative_idx((1, 0, 1), der_idx_val) == 4
+    @test GH.get_derivative_idx((1, 1, 0), der_idx_val) == 5
+    @test GH.get_derivative_idx((2, 0, 0), der_idx_val) == 6
     @test key_dict == Dict(
         (0, 0, 0) => 1,
         (1, 0, 0) => 1,
@@ -126,11 +127,12 @@ end
     @test GH._integer_sums(1, Val(3)) == [(0, 0, 1), (0, 1, 0), (1, 0, 0)]
     @test GH._integer_sums(2, Val(3)) ==
         [(0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (1, 1, 0), (2, 0, 0)]
-    key_dict = GH.cache_dict(Int, Vector{NTuple{3, Int}})
+    int_sums_val = Val(8)
+    key_dict = GH.cache_dict(Int, Vector{NTuple{3, Int}}, int_sums_val)
     @test isa(key_dict, Dict{Int, Vector{NTuple{3, Int}}})
-    @test GH.integer_sums(0, Val(3)) == [(0, 0, 0)]
-    @test GH.integer_sums(1, Val(3)) == [(0, 0, 1), (0, 1, 0), (1, 0, 0)]
-    @test GH.integer_sums(2, Val(3)) ==
+    @test GH.integer_sums(0, Val(3), int_sums_val) == [(0, 0, 0)]
+    @test GH.integer_sums(1, Val(3), int_sums_val) == [(0, 0, 1), (0, 1, 0), (1, 0, 0)]
+    @test GH.integer_sums(2, Val(3), int_sums_val) ==
         [(0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (1, 1, 0), (2, 0, 0)]
     @test key_dict == Dict(
         0 => [(0, 0, 0)],
