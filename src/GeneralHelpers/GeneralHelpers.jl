@@ -22,14 +22,17 @@ import Combinatorics
 =#
 
 """
-    cache_dict(::Type{K}, ::Type{V}) where {K, V}
+    cache_dict(::Type{K}, ::Type{V}, id=Val{1}()) where {K, V}
 
 Return a `Dict{K,V}` dictionary stored at compile time.
+An optional `id` can be given to force the compilation of a new cache. This is useful to
+avoid clashes of dictionaries using the same types.
 
 !!! warning
-    This implementation makes it impossible to distinguish to dictionaries with the same
-    type signature. Also, it is not guaranteed that the dictionary is not wiped during
-    runtime.
+    As per Julia's documentation, it is not guaranteed that the dictionary is not wiped
+    during runtime. Read
+    [this](https://docs.julialang.org/en/v1/manual/metaprogramming/#Generated-functions) for
+    more information.
 
 # Examples
 ```jldoctest
@@ -49,9 +52,12 @@ julia> not_new_dict = Mantis.GeneralHelpers.cache_dict(Int, String)
 Dict{Int64, String} with 1 entry:
   42 => "Answer"
 
+julia> new_dict = Mantis.GeneralHelpers.cache_dict(Int, String, Val(2))
+Dict{Int64, String}()
+
 ```
 """
-@generated function cache_dict(::Type{K}, ::Type{V}) where {K, V}
+@generated function cache_dict(::Type{K}, ::Type{V}, id=Val{1}()) where {K, V}
     cache = Dict{K, V}()
 
     return :($cache)
