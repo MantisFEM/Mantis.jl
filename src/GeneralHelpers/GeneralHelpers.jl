@@ -139,7 +139,13 @@ function integer_sums(sum_indices::Int, num_indices::Val{N}) where {N}
     end
 end
 
-_integer_sums(sum_indices::Int, ::Val{1}) = [(sum_indices,)]
+function _integer_sums(sum_indices::Int, ::Val{1})
+    if sum_indices < 0
+        return Tuple{Int}[]
+    end
+
+    return [(sum_indices,)]
+end
 
 function _integer_sums(sum_indices::Int, ::Val{N}) where {N}
     N > 0 || throw(ArgumentError("Number of indices must be greater than 0. Got $(N)."))
