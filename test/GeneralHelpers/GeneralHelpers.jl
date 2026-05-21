@@ -53,6 +53,14 @@ end
     @test !(a === c)
 end
 
+@testset "get_from_cache" begin
+    dict = GH.cache_dict(String, Int, Val(3))
+    @test isa(dict, Dict{String, Int})
+    @test GH.get_from_cache(String, Int, "test", s -> length(s), Val(3)) == 4
+    @test GH.get_from_cache(String, Int, "testing", s -> length(s), Val(3)) == 7
+    @test dict == Dict("test" => 4, "testing" => 7)
+end
+
 @testset "get_derivative_idx" begin
     # 1D
     @test_throws ArgumentError GH._get_derivative_idx((-1,))

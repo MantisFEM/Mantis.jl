@@ -64,6 +64,24 @@ Dict{Int64, String}()
 end
 
 """
+    get_from_cache(::Type{K}, ::Type{V}, key, f, id=Val{1}()) where {K, V}
+
+Call `cache_dict` on the types `K` and `V` with `id` to retrieve a cached dictionary.
+Then, call `get!` on the dictionary with `key` and `f(key)`.
+  
+An optional `id` can be given choose the used cache. This is useful to avoid clashes of
+dictionaries using the same types.
+
+See also [`cache_dict`](@ref) and `get!`.
+"""
+function get_from_cache(::Type{K}, ::Type{V}, key, f, id=Val{1}()) where {K, V}
+    dict = cache_dict(K, V, id)
+    get!(dict, key) do
+        f(key)
+    end
+end
+
+"""
     get_derivative_idx(der_key::NTuple{manifold_dim, Int}, id=Val{1}()) where {manifold_dim}
 
 Convert the given derivative key to a linear index corresponding to its storage location.
@@ -96,10 +114,7 @@ dictionaries using the same types. See also [`cache_dict`](@ref).
 function get_derivative_idx(
     der_key::NTuple{manifold_dim, Int}, id=Val{1}()
 ) where {manifold_dim}
-    dict = cache_dict(NTuple{manifold_dim, Int}, Int, id)
-    get!(dict, der_key) do
-        _get_derivative_idx(der_key)
-    end
+    return get_from_cache(NTuple{manifold_dim, Int}, Int, der_key, _get_derivative_idx, id)
 end
 
 function _get_derivative_idx(der_key::NTuple{manifold_dim, Int}) where {manifold_dim}
@@ -141,10 +156,9 @@ dictionaries using the same types. See also [`cache_dict`](@ref).
     sum up to `sum_indices`. If no valid combinations exist, the vectors are empty.
 """
 function integer_sums(sum_indices::Int, num_indices::Val{N}, id=Val{1}()) where {N}
-    dict = cache_dict(Int, Vector{NTuple{N, Int}}, id)
-    get!(dict, sum_indices) do
-        _integer_sums(sum_indices, num_indices)
-    end
+    return get_from_cache(
+        Int, Vector{NTuple{N, Int}}, sum_indices, s -> _integer_sums(s, num_indices), id
+    )
 end
 
 function _integer_sums(sum_indices::Int, ::Val{1})
