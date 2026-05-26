@@ -162,4 +162,121 @@ end
     ]
 end
 
+@testset "depth" begin
+    # Scalar types have depth 0
+    @test GH.depth(Float64) == 0
+    @test GH.depth(Int) == 0
+    @test GH.depth(String) == 0
+    @test GH.depth(Tuple{Int, Int}) == 0
+    @test GH.depth(Any) == 0
+
+    # Single-level arrays have depth 1
+    @test GH.depth(Vector{Float64}) == 1
+    @test GH.depth(Matrix{Int}) == 1
+    @test GH.depth(Array{String, 3}) == 1
+
+    # Two-level nested arrays have depth 2
+    @test GH.depth(Vector{Vector{Float64}}) == 2
+    @test GH.depth(Vector{Matrix{Float64}}) == 2
+    @test GH.depth(Vector{Array{String, 1}}) == 2
+
+    # Three-level nested arrays have depth 3
+    @test GH.depth(Vector{Vector{Matrix{Float64}}}) == 3
+    @test GH.depth(Vector{Vector{Vector{Int}}}) == 3
+    @test GH.depth(Vector{Matrix{Vector{String}}}) == 3
+end
+
+@testset "matches" begin
+    # Scalar type matches zero sizes
+    @test GH.matches(Float64) == true
+    @test GH.matches(Int, 3) == false
+
+    # Single-level
+    @test GH.matches(Vector{Int}, 5) == true
+    # too many levels
+    @test GH.matches(Vector{String}, 5, 3) == false
+    # inner ndims mismatch
+    @test GH.matches(Vector{Float64}, (2, 3)) == false
+
+    @test GH.matches(Matrix{Int}, (2, 3)) == true
+    # inner ndims mismatch
+    @test GH.matches(Matrix{Float64}, (2,)) == false
+
+    # Two-level
+    @test GH.matches(Vector{Matrix{Float64}}, 2, (2, 4)) == true
+    # inner ndims mismatch
+    @test GH.matches(Vector{Matrix{String}}, 3, 2) == false
+    # missing inner level
+    @test GH.matches(Vector{Matrix{Int}}, 3) == false
+    # too many levels
+    @test GH.matches(Vector{Vector{Int32}}, 5, 3, 1, 4) == false
+
+    # Three-level
+    @test GH.matches(Vector{Vector{Matrix{Float64}}}, 3, 1, (2, 2)) == true
+    @test GH.matches(Vector{Vector{Matrix{Float64}}}, 3, 1) == false
+    @test GH.matches(Vector{Vector{Matrix{Float64}}}, 3, 1, 10, 20) == false
+end
+
+@testset "haszero" begin
+    @test GH.haszero(0) == true
+    @test GH.haszero(1) == false
+    @test GH.haszero(5) == false
+
+    @test GH.haszero((0,)) == true
+    @test GH.haszero((1,)) == false
+    @test GH.haszero((1, 2, 3)) == false
+    @test GH.haszero((1, 0, 3)) == true
+    @test GH.haszero(()) == false
+    @test GH.haszero((1, 2, (1, 0), 3)) == true
+    @test GH.haszero((1, 2, (1, (1, (1, (1, 0)))), 3)) == true
+end
+
+@testset "allocate" begin
+    @testset "Two-level" begin
+        A = Vector{Vector{Float64}}(undef, 3, 4)
+        @test isa(A, Vector{Vector{Float64}})
+        @test length(A) == 3
+        @test all(x -> isa(x, Vector{Float64}) && length(x) == 4, A)
+
+        B = Vector{Matrix{String}}(undef, 3, (2, 2))
+        @test isa(B, Vector{Matrix{String}})
+        @test length(B) == 3
+        @test all(x -> isa(x, Matrix{String}) && size(x) == (2, 2), B)
+    end
+
+    @testset "Three-level" begin
+        A = Vector{Matrix{Vector{Float64}}}(undef, 3, (2, 2), 1)
+        @test isa(A, Vector{Matrix{Vector{Float64}}})
+        @test length(A) == 3
+        @test all(x -> isa(x, Matrix{Vector{Float64}}) && size(x) == (2, 2), A)
+        @test all(M -> all(V -> isa(V, Vector{Float64}) && length(V) == 1, M), A)
+    end
+
+    @testset "Zero length" begin
+        # Zero-length leaf arrays
+        A = Vector{Vector{Float64}}(undef, 2, 0)
+        @test isa(A, Vector{Vector{Float64}})
+        @test length(A) == 2
+        @test all(x -> length(x) == 0, A)
+
+        A = Vector{Matrix{String}}(undef, 2, (0, 3))
+        @test isa(A, Vector{Matrix{String}})
+        @test all(x -> size(x) == (0, 3), A)
+    end
+
+    @testset "errors" begin
+        # Depth mismatch: too many sizes
+        @test_throws DimensionMismatch Vector{Float64}(undef, (3, 4))
+
+        # ndims mismatch: passing a scalar size to a Matrix level
+        @test_throws DimensionMismatch Vector{Matrix{Float64}}(undef, 3, 2)
+
+        # Zero at a non-leaf level is not allowed
+        @test_throws ArgumentError Vector{Vector{Float64}}(undef, 0, 4)
+
+        # Zero at multiple non-leaf levels
+        @test_throws ArgumentError Vector{Matrix{Matrix{Float64}}}(undef, 0, (1, 0), (3, 3))
+    end
+end
+
 end

@@ -4,6 +4,8 @@ export integer_sums, get_derivative_idx, num_der_indices, export_path
 
 import Combinatorics
 
+import Base: Array
+
 ####################################################
 # Integer sums and derivatives helper functions
 ####################################################
@@ -233,6 +235,77 @@ julia> Mantis.GeneralHelpers.num_der_indices(3, 2)
 ```
 """
 num_der_indices(n, d) = binomial(n + d - 1, n - 1)
+
+function Array{T, N}(::UndefInitializer, dims...) where {T, N}
+    if !matches(Array{T, N}, dims...)
+        throw(
+            DimensionMismatch(
+                "$(Array{T, N}) incompatible with number of dimensions $(length.(dims)).",
+            ),
+        )
+    end
+
+    if haszero(Base.front(dims))
+        throw(
+            ArgumentError("Only leaf types are allowed zero-length dimensions. Got $(dims)")
+        )
+    end
+
+    return _allocate(Array{T, N}, dims...)
+end
+
+function matches(::Type{T}, dims...) where {T}
+    # Check for dimension mismatch.
+    if T <: AbstractArray
+        depth(T) != length(dims) && return false
+    end
+
+    return _matches(T, dims...)
+end
+
+function _matches(::Type{T}, dims...) where {T}
+    # T is a scalar type.
+    if !(T <: AbstractArray)
+        # The dimension should be zero.
+        return iszero(length(dims))
+    end
+
+    head, tail = first(dims), Base.tail(dims)
+    # Dimension mismatch.
+    if !(ndims(T) == length(head))
+        return false
+    end
+
+    # Check next level of nesting.
+    return _matches(eltype(T), tail...)
+end
+
+function depth(::Type{T}, n::Int=0) where {T}
+    if T <: AbstractArray
+        return depth(eltype(T), n + 1)
+    end
+
+    return n
+end
+
+haszero(nums::Tuple) = any(haszero, nums)
+haszero(num::Int) = iszero(num)
+
+function _allocate(::Type{A}, dims...) where {A <: AbstractArray}
+    # Split current and next sizes.
+    head, tail = first(dims), Base.tail(dims)
+    # Allocate current level.
+    arr = A(undef, head...)
+    # Recurse into next levels if elements are not scalar types.
+    E = eltype(A)
+    if E <: AbstractArray
+        for i in eachindex(arr)
+            arr[i] = _allocate(E, tail...)
+        end
+    end
+
+    return arr
+end
 
 ####################################################
 # Export path helper function
