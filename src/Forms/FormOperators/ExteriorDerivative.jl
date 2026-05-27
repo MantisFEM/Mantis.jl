@@ -120,7 +120,7 @@ function _evaluate_exterior_derivative(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, FS <: AbstractFormSpace{manifold_dim, form_rank}}
     d_form_basis_eval, form_basis_indices = _evaluate_exterior_derivative(
-        get_form_space(form), element_id, xi
+        get_form(form), element_id, xi
     )
 
     # This is equal to binomial(manifold_dim, form_rank + 1).

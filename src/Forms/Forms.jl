@@ -11,10 +11,38 @@ import LaTeXStrings
 import LinearAlgebra
 import SparseArrays
 
-############################################################################################
-#                                         Exports                                          #
-############################################################################################
-include("FormsExports.jl")
+# These exports make these symbols/functions/etc. available outside the Forms module. Only
+# if they are also exported in the Mantis.jl file will they be available when using Mantis.
+
+# Abstract types
+# The public keyword is only available in Julia 1.11 and up. Since we also support LTS
+# (currently 1.10), we add the following line from the manual:
+# https://docs.julialang.org/en/v1.12/manual/modules/#Export-lists
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public AbstractForm, AbstractFormField, AbstractFormSpace, AbstractRealValuedOperator"))
+
+# Type parameter methods
+export get_manifold_dim, get_form_rank, get_expression_rank
+# Functions dealing with Forms-related quantities
+export evaluate
+export get_label, get_form
+# Functions dealing with Geometry-related quantities
+export get_geometry, get_num_elements
+# Functions dealing with FunctionSpaces-related quantities
+export get_max_local_dim, get_fe_space, get_num_basis
+
+# FormExpressions
+export ConstantFormSpace
+export FormField, AnalyticalFormField, get_coefficients, get_num_coefficients, get_expression
+export FormSpace
+# FormOperators
+export CoDifferential, dstar, δ
+export ExteriorDerivative, d
+export ★, Hodge
+export Integral, ∫, get_quadrature_rule
+export evaluate_pushforward, evaluate_sharp_pushforward
+export ♯, Sharp
+export ∧, Wedge, get_forms
+
 
 ############################################################################################
 #                                      Abstract Types                                      #
@@ -66,7 +94,7 @@ Supertype for all real-valued operators.
 abstract type AbstractRealValuedOperator{manifold_dim} end
 
 ############################################################################################
-#                                     Abstract Methods                                     #
+#                                  Type parameter methods                                  #
 ############################################################################################
 
 """
@@ -108,6 +136,9 @@ end
 
 get_expression_rank(op::AbstractRealValuedOperator) = get_expression_rank(get_form(op))
 
+############################################################################################
+#                                   Getters within Forms                                   #
+############################################################################################
 """
     get_label(form::AbstractForm)
 
@@ -199,15 +230,6 @@ function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm.
 end
 
 """
-    get_form(form::AbstractForm)
-    get_form(op::AbstractRealValuedOperator)
-
-Returns the form underlying the form expression or to which the given operator is applied.
-"""
-get_form(form::AbstractForm) = form.form
-get_form(op::AbstractRealValuedOperator) = op.form
-
-"""
     get_num_elements(form::AbstractForm)
 
 Returns the number of elements in the geometry of the given form expression.
@@ -222,6 +244,9 @@ function get_num_elements(form::AbstractForm)
     return Geometry.get_num_elements(get_geometry(form))
 end
 
+############################################################################################
+#                           Getters dealing with FunctionSpaces                            #
+############################################################################################
 """
     get_estimated_nnz_per_elem(form::AbstractForm)
 
@@ -283,29 +308,6 @@ function get_fe_space(form::FS) where {FS <: AbstractForm}
 end
 
 """
-    get_form_space_tree(form::AbstractFormSpace)
-
-Returns the list of forms of `expression_rank > 0` in the tree of the expression.
-
-For example, if `form` represents `d((α ∧ β) ∧ γ)`, it returns the spaces of `α`, `β`,
-and `γ`, if all have expression_rank > 1. If, e.g., `α` has expression_rank = 0, it only
-returns the spaces of `β` and `γ`.
-
-# Arguments
-- `form_space::AbstractFormSpace`: The AbstractFormSpace structure.
-
-# Returns
-- `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression.
-"""
-function get_form_space_tree(form::AbstractFormSpace)
-    return get_form_space_tree(get_form(form))
-end
-
-function get_form_space_tree(::AbstractFormField)
-    return ()
-end
-
-"""
     get_num_basis(form_space::AbstractFormSpace)
 
 Returns the number of basis functions of the function space associated with the given form
@@ -337,6 +339,9 @@ function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
     return get_num_basis(get_form(form_space), element_id)
 end
 
+############################################################################################
+#                                         Evaluate                                         #
+############################################################################################
 """
     evaluate(
         form::AbstractForm{manifold_dim},

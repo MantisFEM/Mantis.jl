@@ -67,13 +67,6 @@ struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
 end
 
 """
-    codifferential
-
-Symbolic wrapper for the codifferential. See [`CoDifferential`](@ref) for the details.
-"""
-const codifferential = CoDifferential
-
-"""
     dstar
 
 Symbolic wrapper for the codifferential. See [`CoDifferential`](@ref) for the details.

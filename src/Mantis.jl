@@ -18,6 +18,7 @@ include("Plot/Plot.jl")  # Creates Module Plot
 ############################################################################################
 #                                         Exports                                          #
 ############################################################################################
+# Exported modules. Note that GeneralHelpers is not explicitly exported.
 export Mesh,
     Points,
     Quadrature,
@@ -28,6 +29,12 @@ export Mesh,
     Analysis,
     Assemblers,
     Plot
-include("../exports/Exports.jl")
+
+# Exports from Forms.
+using .Forms
+export d, ★, ♯, ∧, ∫, dstar, δ
+export ConstantFormSpace, FormField, AnalyticalFormField, FormSpace
+export evaluate
+export get_label, get_num_basis, get_coefficients
 
 end

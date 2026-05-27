@@ -115,18 +115,6 @@ end
 ############################################################################################
 #                                   Getters and setters                                    #
 ############################################################################################
-"""
-    get_form_space(form_field::FormField)
-
-Returns the form space associated with the form field.
-
-# Arguments
-- `form_field::FormField`: The form field.
-
-# Returns
-- `<:AbstractFormSpace`: The form space associated with the form field.
-"""
-get_form_space(form_field::FormField) = form_field.form_space
 
 get_form(form_field::FormField) = form_field.form_space
 
@@ -182,7 +170,7 @@ function evaluate(
 ) where {manifold_dim, form_rank, FS}
     n_form_components = binomial(manifold_dim, form_rank)
     form_basis_eval, form_basis_indices = evaluate(
-        get_form_space(form_field), element_idx, xi
+        get_form(form_field), element_idx, xi
     )
     form_eval = Vector{Vector{Float64}}(undef, n_form_components)
     form_field_coefficients = get_coefficients(form_field)

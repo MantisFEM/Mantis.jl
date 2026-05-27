@@ -147,7 +147,6 @@ On manifolds without boundaries, it is the ``L^2``-adjoint of the exterior deriv
 That is, ``(\alpha^{k-1}, \delta\beta^k) = (d\alpha^{k-1}, \beta^k)``, where ``(\cdot, \cdot)`` is an ``L^2`` inner-product.
 ```@docs
 CoDifferential
-codifferential
 dstar
 δ
 ```
@@ -232,7 +231,6 @@ To retrieve the underlying form, you can use one of the following functions.
 ```@docs
 get_form
 get_forms
-get_form_space
 get_form_space_tree
 ```
 
