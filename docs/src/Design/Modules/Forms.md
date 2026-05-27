@@ -3,7 +3,7 @@ CurrentModule = Mantis.Forms
 ```
 # Forms
 
-As explained in ..., differential forms provide an elegant and general framework to deal with the discretisation of PDEs.
+As explained on the [differential form theory page](@ref TheoryForms), differential forms provide an elegant and general framework to deal with the discretisation of PDEs.
 One of the most distinguishing features of `Mantis` is its ability to work with these differential forms.
 The `Forms` module provides all the required tools to use differential forms in `Mantis`.
 
@@ -44,7 +44,7 @@ However, it is the `FormSpace` that dicates the behaviour of the form.
 ```@docs
 FormSpace
 ```
-As explained in ..., differential forms are more expressive than functions.
+As explained on the [differential form theory page](@ref TheoryForms), differential forms are more expressive than functions.
 By using a `FormSpace`, this expressiveness becomes available within your code.
 For example, if we start by creating a simple 2D [FunctionSpaces.BSplineSpace](@ref) using the helper [FunctionSpaces.create\_bspline\_space](@ref) (on a unit square with ``4 \times 4`` elements, degree ``3`` and regularity ``2``),
 ```@repl CreatingFormSpaces
