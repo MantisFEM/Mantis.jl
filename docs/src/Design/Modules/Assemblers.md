@@ -1,4 +1,4 @@
-# Assemblers
+# [Assemblers](@id DocAssemblyModule)
 
 ## All docstrings from Mantis.Assemblers
 ```@autodocs
