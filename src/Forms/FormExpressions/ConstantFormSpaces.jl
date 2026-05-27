@@ -73,6 +73,8 @@ get_estimated_nnz_per_elem(::ConstantFormSpace) = 1
 
 get_form(form::ConstantFormSpace) = form
 
+get_form_space_tree(form::ConstantFormSpace) = (get_form(form_space),)
+
 get_geometry(form::ConstantFormSpace) = form.geometry
 
 function get_fe_space(::ConstantFormSpace)

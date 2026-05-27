@@ -87,27 +87,6 @@ the details.
 const d = ExteriorDerivative
 
 ############################################################################################
-#                                         Getters                                          #
-############################################################################################
-
-"""
-    get_form_space_tree(ext_der::ExteriorDerivative)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the exterior derivative, e.g., for
-`d((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1. \
-If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
-
-# Arguments
-- `ext_der::ExteriorDerivative`: The exterior derivative structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of spaces of forms present in the tree of the exterior derivative.
-"""
-function get_form_space_tree(ext_der::ExteriorDerivative)
-    return get_form_space_tree(get_form(ext_der))
-end
-
-############################################################################################
 #                                     Evaluate methods                                     #
 ############################################################################################
 

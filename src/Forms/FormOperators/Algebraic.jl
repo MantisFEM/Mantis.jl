@@ -281,8 +281,14 @@ get_geometry(una_trans::UnaryFormTransformation) = get_geometry(get_form(una_tra
 get_label(una_form::UnaryFormTransformation) = una_form.label
 
 get_transformation(bin_trans::BinaryFormTransformation) = bin_trans.transformation
-get_forms(bin_trans::BinaryFormTransformation) = bin_trans.form_1, bin_trans.form_2
 get_label(bin_form::BinaryFormTransformation) = bin_form.label
+
+"""
+    get_forms(bin_trans::BinaryFormTransformation)
+
+Return both forms to which the binary form transformation is applied.
+"""
+get_forms(bin_trans::BinaryFormTransformation) = bin_trans.form_1, bin_trans.form_2
 
 function get_geometry(bin_trans::BinaryFormTransformation)
     return get_geometry(first(get_forms(bin_trans)))
@@ -312,36 +318,10 @@ function get_num_evaluation_elements(bin_trans::BinaryOperatorTransformation)
     return get_num_evaluation_elements(get_operators(bin_trans)[1])
 end
 
-"""
-    get_form_space_tree(uni_trans::UnaryOperatorTransformation)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the unary transformation, e.g., for
-`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
-If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
-
-# Arguments
-- `uni_trans::UnaryOperatorTransformation`: The unary transformation structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of form spaces present in the tree of the unary transformation.
-"""
 function get_form_space_tree(una_trans::UnaryOperatorTransformation)
     return get_form_space_tree(una_trans.operator)
 end
 
-"""
-    get_form_space_tree(bin_trans::BinaryOperatorTransformation)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the binary transformation, e.g., for
-`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0,
-it returns only the spaces of `β` and `γ`.
-
-# Arguments
-- `bin_trans::BinaryOperatorTransformation`: The binary transformation structure.
-
-# Returns
-- `Tuple(<:AbstractFormSpace)`: The list of FormSpace present in the tree of the binary transformation.
-"""
 function get_form_space_tree(bin_trans::BinaryOperatorTransformation)
     tree_form_1 = get_form_space_tree(bin_trans.operator_1)
     tree_form_2 = get_form_space_tree(bin_trans.operator_2)
@@ -358,36 +338,10 @@ function get_form_space_tree(bin_trans::BinaryOperatorTransformation)
     return tree_form_1
 end
 
-"""
-    get_form_space_tree(uni_trans::UnaryFormTransformation)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the unary transformation, e.g., for
-`c*((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have expression_rank > 1.
-If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
-
-# Arguments
-- `uni_trans::UnaryFormTransformation`: The unary transformation structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of form spaces present in the tree of the unary transformation.
-"""
 function get_form_space_tree(una_trans::UnaryFormTransformation)
     return get_form_space_tree(una_trans.form)
 end
 
-"""
-    get_form_space_tree(bin_trans::BinaryFormTransformation)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the binary transformation, e.g., for
-`(α ∧ β) + γ`, it returns the spaces of `α`, `β`, and `γ`, if all have exprssion_rank > 1. If `α` has expression_rank = 0,
-it returns only the spaces of `β` and `γ`.
-
-# Arguments
-- `bin_trans::BinaryFormTransformation`: The binary transformation structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the binary transformation.
-"""
 function get_form_space_tree(bin_trans::BinaryFormTransformation)
     # Note that here we do not need to check if both trees are the same, since this is already
     # done in the inner constructor of the BinaryFormTransformation struct.

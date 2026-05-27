@@ -67,28 +67,6 @@ See [`Hodge`](@ref) for the details.
 const ★ = Hodge
 
 ############################################################################################
-#                                         Getters                                          #
-############################################################################################
-
-"""
-    get_form_space_tree(hodge::Hodge)
-
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the Hodge,
-e.g., for `★((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all have
-exprssion_rank > 1. If `α` has expression_rank = 0, it returns only the spaces of `β` and
-`γ`.
-
-# Arguments
-- `hodge::Hodge`: The Hodge structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of spaces forms present in the tree of the Hodge.
-"""
-function get_form_space_tree(hodge::Hodge)
-    return get_form_space_tree(get_form(hodge))
-end
-
-############################################################################################
 #                                     Evaluate methods                                     #
 ############################################################################################
 

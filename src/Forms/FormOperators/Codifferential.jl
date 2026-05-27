@@ -88,7 +88,9 @@ Symbolic wrapper for the codifferential. The unicode character command is `\\del
 """
 const δ = CoDifferential
 
-get_geometry(co_der::CoDifferential) = get_geometry(get_form(co_der))
+############################################################################################
+#                                     Evaluate methods                                     #
+############################################################################################
 
 function evaluate(
     form::CoDifferential{manifold_dim},

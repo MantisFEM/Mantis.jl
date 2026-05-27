@@ -82,6 +82,8 @@ end
 
 get_form(form_space::FormSpace) = form_space
 
+get_form_space_tree(form_space::FormSpace) = (get_form(form_space),)
+
 get_estimated_nnz_per_elem(form_space::FormSpace) = get_max_local_dim(form_space)
 
 get_geometry(form_space::FormSpace) = FunctionSpaces.get_geometry(get_fe_space(form_space))

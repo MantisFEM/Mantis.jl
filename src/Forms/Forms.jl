@@ -61,10 +61,7 @@ const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, fo
 """
     AbstractRealValuedOperator{manifold_dim}
 
-Supertype for all real-valued operators defined over a manifold.
-
-# Type parameters
-- `manifold_dim`: Dimension of the manifold.
+Supertype for all real-valued operators.
 """
 abstract type AbstractRealValuedOperator{manifold_dim} end
 
@@ -77,9 +74,7 @@ abstract type AbstractRealValuedOperator{manifold_dim} end
 
 Returns the `manifold_dim` of the given form.
 """
-function get_manifold_dim(::AbstractForm{manifold_dim}) where {manifold_dim}
-    return manifold_dim
-end
+get_manifold_dim(::AbstractForm{manifold_dim}) where {manifold_dim} = manifold_dim
 
 function get_manifold_dim(::AbstractRealValuedOperator{manifold_dim}) where {manifold_dim}
     return manifold_dim
@@ -166,13 +161,7 @@ end
 
 Returns the geometry of the given form expression.
 
-Will recurse to find the geometry.
-
-# Arguments
-- `form::AbstractForm`: The form expression.
-
-# Returns
-- `<:Geometry.AbstractGeometry`: The geometry of the form expression.
+Will recurse using [get_form](@ref) to find the geometry.
 """
 function get_geometry(form::AbstractForm)
     return get_geometry(get_form(form))
@@ -214,10 +203,6 @@ end
     get_form(op::AbstractRealValuedOperator)
 
 Returns the form underlying the form expression or to which the given operator is applied.
-
-# Implementational note
-The default function assumes that the input `form` or `op` has a field called `form`, which
-is returned. Specialise this function if this behaviour needs to be changed.
 """
 get_form(form::AbstractForm) = form.form
 get_form(op::AbstractRealValuedOperator) = op.form
@@ -298,36 +283,25 @@ function get_fe_space(form::FS) where {FS <: AbstractForm}
 end
 
 """
-    get_form_space_tree(form_space::AbstractFormSpace)
+    get_form_space_tree(form::AbstractFormSpace)
 
-Returns the list of spaces of forms of `expression_rank > 0` in the tree of the expression.
-Since `AbstractFormSpace` has a single form of `expression_rank = 1` it returns a `Tuple`
-with the space of the `AbstractFormSpace`.
+Returns the list of forms of `expression_rank > 0` in the tree of the expression.
+
+For example, if `form` represents `d((α ∧ β) ∧ γ)`, it returns the spaces of `α`, `β`,
+and `γ`, if all have expression_rank > 1. If, e.g., `α` has expression_rank = 0, it only
+returns the spaces of `β` and `γ`.
 
 # Arguments
 - `form_space::AbstractFormSpace`: The AbstractFormSpace structure.
 
 # Returns
-- `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression, in
-    this case the form space.
+- `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression.
 """
-function get_form_space_tree(form_space::AbstractFormSpace)
-    return (get_form(form_space),)
+function get_form_space_tree(form::AbstractFormSpace)
+    return get_form_space_tree(get_form(form))
 end
 
-"""
-    get_form_space_tree(form_field::AbstractFormField)
-
-Returns the list of spaces of forms of `expression_rank > 0` in the tree of the expression.
-Since `FormField` has a single form of `expression_rank = 0` it returns an empty `Tuple`.
-
-# Arguments
-- `form_field::AbstractFormField`: The AbstractFormField structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression, in this case empty.
-"""
-function get_form_space_tree(form_field::AbstractFormField)
+function get_form_space_tree(::AbstractFormField)
     return ()
 end
 
