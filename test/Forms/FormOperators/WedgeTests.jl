@@ -59,9 +59,9 @@ function test_combinations_2d(complex, q_rule)
     ϵ² = complex[3]
 
     # Create the form fields.
-    ε⁰ = Forms.FormField(ϵ⁰, "ε⁰")
-    ε¹ = Forms.FormField(ϵ¹, "ε¹")
-    ε² = Forms.FormField(ϵ², "ε²")
+    ε⁰ = Forms.FormField(ϵ⁰)
+    ε¹ = Forms.FormField(ϵ¹)
+    ε² = Forms.FormField(ϵ²)
 
     # Test if different form-/expression-rank combinations don't throw errors
     zero_form_space_wedge = Forms.Wedge(ϵ⁰, ϵ⁰) # 0-form space with 0-form space
@@ -138,10 +138,10 @@ function test_combinations_3d(complex, q_rule)
     ϵ³ = complex[4]
 
     # Create the form fields
-    ε⁰ = Forms.FormField(ϵ⁰, "ε⁰")
-    ε¹ = Forms.FormField(ϵ¹, "ε¹")
-    ε² = Forms.FormField(ϵ², "ε²")
-    ε³ = Forms.FormField(ϵ³, "ε³")
+    ε⁰ = Forms.FormField(ϵ⁰)
+    ε¹ = Forms.FormField(ϵ¹)
+    ε² = Forms.FormField(ϵ²)
+    ε³ = Forms.FormField(ϵ³)
 
     # Test if different form-/expression-rank combinations don't throw errors
     zero_form_space_wedge = Forms.Wedge(ϵ⁰, ϵ⁰) # 0-form space with 0-form space

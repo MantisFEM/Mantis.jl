@@ -76,14 +76,14 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             α⁰.coefficients .= 1.0
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             ζ¹.coefficients .= 1.0
 
-            β¹ = Forms.FormField(one_form_space, "ζ")
+            β¹ = Forms.FormField(one_form_space)
             β¹.coefficients .= 1.0
 
             # Compute exterior derivatives
@@ -119,14 +119,14 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             α⁰.coefficients .= 1.0
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             ζ¹.coefficients .= 1.0
 
-            β¹ = Forms.FormField(one_form_space, "ζ")
+            β¹ = Forms.FormField(one_form_space)
             β¹.coefficients .= 1.0
 
             # Compute exterior derivatives
@@ -200,11 +200,11 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             Random.rand!(α⁰.coefficients)
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             Random.rand!(ζ¹.coefficients)
 
             if TIME_TESTS
@@ -286,11 +286,11 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             Random.rand!(α⁰.coefficients)
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             Random.rand!(ζ¹.coefficients)
 
             if TIME_TESTS
@@ -385,10 +385,10 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             Random.rand!(ζ¹.coefficients)
 
-            β¹ = Forms.FormField(one_form_space, "ζ")
+            β¹ = Forms.FormField(one_form_space)
             Random.rand!(β¹.coefficients)
 
             if TIME_TESTS
@@ -470,7 +470,7 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
 
             # Generate the form expressions
             # 1-form: random
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             Random.rand!(ζ¹.coefficients)
 
             if TIME_TESTS
@@ -584,15 +584,15 @@ const q_rule_3D = Quadrature.tensor_product_rule(
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             α⁰.coefficients .= 1.0
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             ζ¹.coefficients .= 1.0
 
             # 2-form: constant
-            β² = Forms.FormField(two_form_space, "β")
+            β² = Forms.FormField(two_form_space)
             β².coefficients .= 1.0
 
             # Exterior derivative of all forms

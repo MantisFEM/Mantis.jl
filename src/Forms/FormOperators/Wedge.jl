@@ -92,46 +92,32 @@ const ∧ = Wedge
 ############################################################################################
 
 """
-    get_forms(wedge::Wedge)
+    get_forms(form::Wedge)
 
 Returns the forms to which the wedge is applied.
 
 # Arguments
-- `wedge::Wedge`: The wedge structure.
+- `form::Wedge`: The wedge structure.
 
 # Returns
 - `<:AbstractForm`: The first form to which the wedge is applied.
 - `<:AbstractForm`: The second form to which the wedge is applied.
 """
-function get_forms(wedge::Wedge)
-    return wedge.form_1, wedge.form_2
+function get_forms(form::Wedge)
+    return form.form_1, form.form_2
 end
 
-function get_form(wedge::Wedge)
+function get_form(form::Wedge)
     throw(ArgumentError("'get_form' is not defined for Wedges. Use 'get_forms' instead."))
 end
 
-# """
-#     get_form(wedge::Wedge)
+function get_geometry(form::Wedge)
+    return get_geometry(first(get_forms(form)))
+end
 
-# Returns the form with expression rank 1 in the `Wedge` structure.
-
-# # Arguments
-# - `wedge::Wedge`: The wedge structure.
-
-# # Returns
-# - `<:AbstractFormSpace`: The form with expression rank 1.
-# """
-# function get_form(wedge::Wedge)
-#     for form in get_forms(wedge)
-#         if get_expression_rank(form) == 1
-#             return form
-#         end
-#     end
-
-#     throw(ArgumentError("""The Wedge structure does not contain any form with subtype of \
-#                         `AbstractFormSpace`."""))
-# end
+function get_estimated_nnz_per_elem(form::Wedge)
+    return mapreduce(get_estimated_nnz_per_elem, *, get_forms(form))
+end
 
 """
     get_form_space_tree(wedge::Wedge)
@@ -149,10 +135,6 @@ If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 """
 function get_form_space_tree(wedge::Wedge)
     return tuple(get_form_space_tree(wedge.form_1)..., get_form_space_tree(wedge.form_2)...)
-end
-
-function get_geometry(wedge::Wedge)
-    return get_geometry(first(get_forms(wedge)))
 end
 
 ############################################################################################

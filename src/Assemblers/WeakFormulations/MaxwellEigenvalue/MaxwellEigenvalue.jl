@@ -162,7 +162,9 @@ function solve_maxwell_eig(
     pad = ndigits(num_eig)
     for eig_id in 1:num_eig
         subscript_str = join(Char(0x2080 + d) for d in reverse(digits(eig_id; pad=pad)))
-        u¹ₕ[eig_id] = Forms.FormField(X¹, original_label * subscript_str)
+        u¹ₕ[eig_id] = Forms.FormField(
+            X¹, zeros(Forms.get_num_basis(X¹)), original_label * subscript_str
+        )
         u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .=
             real.(eig_vecs[:, nullspace_offset + eig_id])
     end

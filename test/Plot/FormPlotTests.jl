@@ -1,6 +1,6 @@
 module FormPlotTests
 
-import Mantis
+using Mantis
 
 using Test
 
@@ -16,15 +16,11 @@ zero_form_space, one_form_space, top_form_space = Mantis.Forms.create_tensor_pro
 )
 
 # Generate the form expressions
-α⁰ = Mantis.Forms.FormField(zero_form_space, "α")
-ξ¹ = Mantis.Forms.FormField(one_form_space, "ξ")
-β² = Mantis.Forms.FormField(top_form_space, "β")
+α⁰ = Forms.FormField(zero_form_space, rand(Forms.get_num_basis(zero_form_space)), "α")
+ξ¹ = Forms.FormField(one_form_space, rand(Forms.get_num_basis(one_form_space)), "ξ")
+β² = Forms.FormField(top_form_space, rand(Forms.get_num_basis(top_form_space)), "β")
 
 num_basis = Mantis.Forms.get_num_basis(zero_form_space)
-
-α⁰.coefficients .= rand(length(α⁰.coefficients))
-ξ¹.coefficients .= rand(length(ξ¹.coefficients))
-β².coefficients .= rand(length(β².coefficients))
 
 # Compute base directories for data input and output
 output_directory_tree = [dirname(dirname(pathof(Mantis))), "test","data","output","Plot"]

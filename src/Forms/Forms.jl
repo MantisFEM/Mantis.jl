@@ -122,6 +122,45 @@ type can vary. Unicode characters and LaTeX string are allowed.
 get_label(form::AbstractForm) = form.label
 
 """
+    get_form(form::AbstractForm)
+    get_form(op::AbstractRealValuedOperator)
+
+Returns the form underlying the form expression or to which the given operator is applied.
+"""
+get_form(form::AbstractForm) = form.form
+get_form(op::AbstractRealValuedOperator) = op.form
+
+"""
+    get_form_space_tree(form::AbstractFormSpace)
+
+Returns the list of forms of `expression_rank > 0` in the tree of the expression.
+
+For example, if `form` represents `d((α ∧ β) ∧ γ)`, it returns the spaces of `α`, `β`,
+and `γ`, if all have expression_rank > 1. If, e.g., `α` has expression_rank = 0, it only
+returns the spaces of `β` and `γ`.
+
+# Arguments
+- `form_space::AbstractFormSpace`: The AbstractFormSpace structure.
+
+# Returns
+- `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression.
+"""
+function get_form_space_tree(form::AbstractFormSpace)
+    return get_form_space_tree(get_form(form))
+end
+
+function get_form_space_tree(op::AbstractRealValuedOperator)
+    return get_form_space_tree(get_form(op))
+end
+
+function get_form_space_tree(::AbstractFormField)
+    return ()
+end
+
+############################################################################################
+#                              Getters dealing with Geometry                               #
+############################################################################################
+"""
     get_geometry(form::AbstractForm)
     get_geometry(op::AbstractRealValuedOperator)
 

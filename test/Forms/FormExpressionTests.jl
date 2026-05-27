@@ -75,11 +75,11 @@ foreach(geo_2d_cart, tensor_prod_geo, geom_crazy) do geom
 
     # Generate the form expressions
     # 0-form: random form fiel
-    α⁰ = Forms.FormField(zero_form_space, "α")
+    α⁰ = Forms.FormField(zero_form_space)
     α⁰.coefficients .= rand(Forms.get_num_coefficients(α⁰))
 
     # 1-form: random form field
-    ζ¹ = Forms.FormField(one_form_space, "ζ")
+    ζ¹ = Forms.FormField(one_form_space)
     ζ¹.coefficients .= rand(Forms.get_num_coefficients(ζ¹))
 
     # Compute exterior derivatives
@@ -179,15 +179,15 @@ end
 
 #     # Generate the form expressions
 #     # 0-form: constant
-#     α⁰ = Forms.FormField(zero_form_space, "α")
+#     α⁰ = Forms.FormField(zero_form_space)
 #     α⁰.coefficients .= 1.0
 
 #     # 1-form: constant
-#     ζ¹ = Forms.FormField(one_form_space, "ζ")
+#     ζ¹ = Forms.FormField(one_form_space)
 #     ζ¹.coefficients .= 1.0
 
 #     # 2-form: constant
-#     β² = Forms.FormField(two_form_space, "β")
+#     β² = Forms.FormField(two_form_space)
 #     β².coefficients .= 1.0
 
 #     # Exterior derivative of all forms

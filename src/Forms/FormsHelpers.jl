@@ -2,19 +2,21 @@
 #                                    Form construction                                     #
 ############################################################################################
 function build_form_field(
-    form_space::AbstractFormSpace; label::Union{String, Nothing}=nothing
+    form_space::AbstractFormSpace; label::Union{AbstractString, Nothing}=nothing
 )
     if isnothing(label)
-        return FormField(form_space, Forms.get_label(form_space))
+        new_label = Forms.get_label(form_space)
+    else
+        new_label = label
     end
 
-    return FormField(form_space, label)
+    return FormField(form_space, zeros(get_num_basis(form_space)), new_label)
 end
 
 function build_form_field(
     form_space::AbstractFormSpace,
     coeffs::Vector{Float64};
-    label::Union{String, Nothing}=nothing,
+    label::Union{AbstractString, Nothing}=nothing,
 )
     if length(coeffs) != get_num_basis(form_space)
         throw(
@@ -25,16 +27,20 @@ function build_form_field(
                 """)
         )
     end
-    form_field = build_form_field(form_space; label)
-    form_field.coefficients .= coeffs
 
-    return form_field
+    if isnothing(label)
+        new_label = Forms.get_label(form_space)
+    else
+        new_label = label
+    end
+
+    return FormField(form_space, coeffs, new_label)
 end
 
 function build_form_fields(
     form_spaces::FS; labels::Union{L, Nothing}=nothing
 ) where {
-    num_forms, FS <: NTuple{num_forms, AbstractFormSpace}, L <: NTuple{num_forms, String}
+    num_forms, FS <: NTuple{num_forms, AbstractFormSpace}, L <: NTuple{num_forms, AbstractString}
 }
     if isnothing(labels)
         labels = ntuple(num_forms) do _
@@ -407,7 +413,7 @@ Construct a hierarchical discrete de Rham complex of finite element spaces over 
 tensor-product geometry, equivalent to a Cartesian grid, in `manifold_dim` dimensions.
 
 This routine initializes, for each form degree `k = 0,…,manifold_dim`, a hierarchical
-B-spline space of differential `k`‑forms without refinement. 
+B-spline space of differential `k`‑forms without refinement.
 
 See also [`create_tensor_product_bspline_de_rham_complex`](@ref) and
 [`FunctionSpaces.HierarchicalFiniteElementSpace`](@ref).

@@ -30,7 +30,7 @@ julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as bas
 
 julia> dΛ⁰ₕ = d(Λ⁰ₕ);  # Note that this is a 1-form.
 
-julia> isa(dΛ⁰ₕ, Mantis.Forms.ExteriorDerivative{2, 1, 1})
+julia> isa(dΛ⁰ₕ, Forms.ExteriorDerivative{2, 1, 1})
 true
 
 ```

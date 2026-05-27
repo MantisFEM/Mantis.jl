@@ -76,16 +76,16 @@ geometries_2d = [cart_geo_2d, tp_geo_2d, mapp_geo_2d]
         top_form_space = Forms.FormSpace(2, complexes_2d[i][3], "σ")
 
         # Generate the form expressions
-        α⁰ = Forms.FormField(zero_form_space, "α")
+        α⁰ = Forms.FormField(zero_form_space)
         α⁰.coefficients .= 1.0
-        ζ¹ = Forms.FormField(one_form_space, "ζ")
+        ζ¹ = Forms.FormField(one_form_space)
         ζ¹.coefficients .= 1.0
-        constdx = Forms.FormField(one_form_space, "ζ")
+        constdx = Forms.FormField(one_form_space)
         constdx.coefficients[begin:20] .= 1.0
-        constdy = Forms.FormField(one_form_space, "ζ")
+        constdy = Forms.FormField(one_form_space)
         constdy.coefficients[21:end] .= 1.0
         dα⁰ = Forms.ExteriorDerivative(α⁰)
-        γ² = Forms.FormField(top_form_space, "γ")
+        γ² = Forms.FormField(top_form_space)
         γ².coefficients .= 1.0
         dζ¹ = Forms.ExteriorDerivative(ζ¹)
 
@@ -332,43 +332,43 @@ geometries_3d = [geo_3d_cart, tp_geo_3d, crazy_geo_3d_cart]
 
             # Generate the form expressions
             # 0-form: constant
-            α⁰ = Forms.FormField(zero_form_space, "α")
+            α⁰ = Forms.FormField(zero_form_space)
             α⁰.coefficients .= 1.0
 
             # 1-form: constant
-            ζ¹ = Forms.FormField(one_form_space, "ζ")
+            ζ¹ = Forms.FormField(one_form_space)
             ζ¹.coefficients .= 1.0
 
             # 1-form: constant but nonzero only for first component
-            constdx = Forms.FormField(one_form_space, "ζ")
+            constdx = Forms.FormField(one_form_space)
             constdx.coefficients[begin:64] .= 1.0
 
             # 1-form: constant but nonzero only for second component
-            constdy = Forms.FormField(one_form_space, "ζ")
+            constdy = Forms.FormField(one_form_space)
             constdy.coefficients[65:128] .= 1.0
 
             # 1-form: constant but nonzero only for third component
-            constdz = Forms.FormField(one_form_space, "ζ")
+            constdz = Forms.FormField(one_form_space)
             constdz.coefficients[128:end] .= 1.0
 
             # 2-form: constant
-            ζ² = Forms.FormField(two_form_space, "ζ")
+            ζ² = Forms.FormField(two_form_space)
             ζ².coefficients .= 1.0
 
             # 2-form: constant but nonzero only for first component
-            const_dy_dz = Forms.FormField(two_form_space, "ζ")
+            const_dy_dz = Forms.FormField(two_form_space)
             const_dy_dz.coefficients[begin:64] .= 1.0
 
             # 2-form: constant but nonzero only for second component
-            const_dz_dx = Forms.FormField(two_form_space, "ζ")
+            const_dz_dx = Forms.FormField(two_form_space)
             const_dz_dx.coefficients[65:128] .= 1.0
 
             # 2-form: constant but nonzero only for third component
-            const_dx_dy = Forms.FormField(two_form_space, "ζ")
+            const_dx_dy = Forms.FormField(two_form_space)
             const_dx_dy.coefficients[128:end] .= 1.0
 
             # top-form: constant
-            γ³ = Forms.FormField(top_form_space, "γ")
+            γ³ = Forms.FormField(top_form_space)
             γ³.coefficients .= 1.0
 
             # Hodge-⋆ of all forms

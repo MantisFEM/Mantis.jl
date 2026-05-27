@@ -217,7 +217,7 @@ ax = Axis(fig[1, 1],
 
 n_elements = Geometry.get_num_elements(line_geo)
 xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Forms.FormField(BF, " ")
+BFF = Forms.FormField(BF)
 
 dim_V = Forms.get_num_basis(BF)
 colors = [:blue, :green, :red, :purple, :orange]
@@ -274,7 +274,7 @@ ax = Axis(fig[1, 1],
 
 n_elements = Geometry.get_num_elements(line_geo)
 xi = Points.CartesianPoints((LinRange(0.0, 1.0, n_plot_points_per_element),))
-BFF = Forms.FormField(BF, " ")
+BFF = Forms.FormField(BF)
 
 dim_V = Forms.get_num_basis(BF)
 colors = [:blue, :green, :red, :purple, :orange, :black]

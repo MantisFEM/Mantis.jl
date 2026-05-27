@@ -160,9 +160,9 @@ top_sum_space = FunctionSpaces.DirectSumSpace((TP_θrϕ,))
 zero_form_space = Forms.FormSpace(0, zero_sum_space, "ν")
 one_form_space = Forms.FormSpace(1, one_sum_space, "η")
 top_form_space = Forms.FormSpace(3, top_sum_space, "σ")
-α⁰ = Forms.FormField(zero_form_space, "α")
-ξ¹ = Forms.FormField(one_form_space, "ξ")
-β³ = Forms.FormField(top_form_space, "β")
+α⁰ = Forms.FormField(zero_form_space)
+ξ¹ = Forms.FormField(one_form_space)
+β³ = Forms.FormField(top_form_space)
 
 num_basis = FunctionSpaces.get_num_basis(TP_θrϕ)
 

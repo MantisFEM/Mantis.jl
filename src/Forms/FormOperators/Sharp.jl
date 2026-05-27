@@ -46,20 +46,10 @@ const ♯ = Sharp
 #                                         Getters                                          #
 ############################################################################################
 
-"""
-    get_form_space_tree(wedge::Sharp)
+# Since the Sharp is not an AbstractForm, we have to define a few simple method
+# specifically for the Sharp.
+get_form(sharp::Sharp) = sharp.form
 
-Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp
-operator, e.g., for `♯((α ∧ β) + γ)`, it returns the spaces of `α`, `β`, and `γ`, if all
-have exprssion_rank > 1. If `α` has expression_rank = 0, it returns only the spaces of `β`
-and `γ`.
-
-# Arguments
-- `sharp::Sharp`: The sharp structure.
-
-# Returns
-- `Tuple(<:AbstractForm)`: The list of forms present in the tree of the sharp.
-"""
 function get_form_space_tree(sharp::Sharp)
     return get_form_space_tree(get_form(sharp))
 end
