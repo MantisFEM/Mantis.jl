@@ -8,24 +8,46 @@
 
 Represents the exterior derivative of an `AbstractForm`.
 
+The `manifold_dim` and `expression_rank` are inherited from the form to which the exterior
+derivative is applied. The `form_rank` of the exterior derivative is the form rank of the
+input form plus one.
+
+Formally, applying the exterior derivative to a volume form (the rank of the form equals
+the dimension of the manifold) returns zero. However, in `Mantis`, the constructor throws
+an error instead.
+
+# Constructors
+- `ExteriorDerivative(form::F)`: General constructor for any `AbstractForm`.
+
+# Examples
+Creating the exterior derivative of a ``0``-form:
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
+
+julia> dΛ⁰ₕ = d(Λ⁰ₕ);  # Note that this is a 1-form.
+
+julia> isa(dΛ⁰ₕ, Mantis.Forms.ExteriorDerivative{2, 1, 1})
+true
+
+```
+
 # Fields
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
-    which the exterior derivative is applied.
-- `label::AbstractString`: The exterior derivative label. This is a concatenation of `"d"` with the
-    label of `form`.
+- `form::AbstractForm{manifold_dim, form_rank-1, expression_rank}`: The form to
+    which the exterior derivative is applied. Note that the form rank of this form is one
+    lower than the `form_rank` of the exterior derivative.
+- `label::AbstractString`: The exterior derivative label. This is a concatenation of "d"
+    with the label of `form`.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: The form rank of the exterior derivative. If the form rank of `form` is `k`
-    then `form_rank` is `k+1`.
-- `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
-    with one single set of basis forms have rank 1, with two sets of basis forms have rank
-    2. Higher ranks are not possible.
-- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank}`: The
-    type of `form`.
-
-# Inner Constructors
-- `ExteriorDerivative(form::F)`: General constructor.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank}`: The type of
+    `form`.
+- `L <: AbstractString`: The type of the label. Since a "d" is added to the label, this
+    type may differ from the label type of the underlying form.
 """
 struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, F, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
@@ -67,18 +89,6 @@ const d = ExteriorDerivative
 ############################################################################################
 #                                         Getters                                          #
 ############################################################################################
-"""
-    get_form(ext_der::ExteriorDerivative)
-
-Returns the form to which the exterior derivative is applied.
-
-# Arguments
-- `ext_der::ExteriorDerivative`: The exterior derivative.
-
-# Returns
-- `<:AbstractForm`: The form to which the exterior derivative is applied.
-"""
-get_form(ext_der::ExteriorDerivative) = ext_der.form
 
 """
     get_form_space_tree(ext_der::ExteriorDerivative)
@@ -96,19 +106,6 @@ If `α` has expression_rank = 0, it returns only the spaces of `β` and `γ`.
 function get_form_space_tree(ext_der::ExteriorDerivative)
     return get_form_space_tree(get_form(ext_der))
 end
-
-"""
-    get_geometry(ext_der::ExteriorDerivative)
-
-Returns the geometry of the form associated with the exterior derivative.
-
-# Arguments
-- `ext_der::ExteriorDerivative`: The exterior derivative.
-
-# Returns
-- `<:Geometry.AbstractGeometry`: The geometry of the form.
-"""
-get_geometry(ext_der::ExteriorDerivative) = get_geometry(get_form(ext_der))
 
 ############################################################################################
 #                                     Evaluate methods                                     #

@@ -71,19 +71,6 @@ const ★ = Hodge
 ############################################################################################
 
 """
-    get_form(form_expression::Hodge)
-
-Returns the form to which the hodge star is applied.
-
-# Arguments
-- `form_expression::Hodge`: The hodge star structure.
-
-# Returns
-- `<:AbstractForm`: The form to which the hodge star is applied.
-"""
-get_form(form_expression::Hodge) = form_expression.form
-
-"""
     get_form_space_tree(hodge::Hodge)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the Hodge,
@@ -100,19 +87,6 @@ exprssion_rank > 1. If `α` has expression_rank = 0, it returns only the spaces 
 function get_form_space_tree(hodge::Hodge)
     return get_form_space_tree(get_form(hodge))
 end
-
-"""
-    get_geometry(form_expression::Hodge)
-
-Returns the geometry of form expression used in the hodge star.
-
-# Arguments
-- `form_expression::Hodge`: The hodge star structure.
-
-# Returns
-- `<:Geometry.AbstractGeometry`: The geometry of the form expression.
-"""
-get_geometry(form_expression::Hodge) = get_geometry(get_form(form_expression))
 
 ############################################################################################
 #                                     Evaluate methods                                     #

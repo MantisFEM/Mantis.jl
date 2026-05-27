@@ -226,6 +226,22 @@ function evaluate(
     return _evaluate(form_field, element_id, xi)
 end
 
+"""
+    _evaluate(
+        form_field::AnalyticalFormField{manifold_dim, form_rank},
+        element_idx::Int,
+        xi::Points.AbstractPoints{manifold_dim},
+    ) where {manifold_dim}
+
+Internal function to evaluate an analytical form field, by first pulling back the form to
+the canonical domain. The used pull-back is dictated by the `form_rank`.
+
+# Arguments
+- See [evaluate](@ref) for the details.
+
+# Returns
+- See [evaluate](@ref) for the details.
+"""
 function _evaluate(
     form_field::AnalyticalFormField{manifold_dim, 0},
     element_idx::Int,

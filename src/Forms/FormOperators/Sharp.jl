@@ -47,19 +47,6 @@ const ♯ = Sharp
 ############################################################################################
 
 """
-    get_form(sharp::Sharp)
-
-Returns the form to which the sharp is applied.
-
-# Arguments
-- `sharp::Sharp`: The sharp structure.
-
-# Returns
-- `<:AbstractForm`: The form to which the sharp is applied.
-"""
-get_form(sharp::Sharp) = sharp.form
-
-"""
     get_form_space_tree(wedge::Sharp)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the sharp

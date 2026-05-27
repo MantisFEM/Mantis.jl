@@ -166,7 +166,7 @@ At the moment, `Mantis` does not have a type for vectors like it does for forms.
 The result of the operators in this section are thus **not** a subtype of `AbstractForm`.
 
 ### [Sharp](@id FormsSharp)
-The sharp operator takes a `1`-form and returns the proxy vector field.
+The sharp operator takes a ``1``-form and returns the proxy vector field.
 ```@docs
 Sharp
 ♯
@@ -177,7 +177,7 @@ evaluate(::Sharp{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_dim}) wh
 ```
 
 ### [Pushforward](@id Pushforward)
-As explained above, the [Sharp](@ref) turns a `1`-form into a vector field, but its evaluate still returns values in the canonical domain. 
+As explained above, the [Sharp](@ref) turns a ``1``-form into a vector field, but its evaluate still returns values in the canonical domain. 
 To get values in the physical domain, the vector has to be pushforwarded. 
 Note that this is not a structure in `Mantis`, just a function.
 ```@docs

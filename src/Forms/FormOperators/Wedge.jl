@@ -107,44 +107,31 @@ function get_forms(wedge::Wedge)
     return wedge.form_1, wedge.form_2
 end
 
-"""
-    get_forms(wedge::Wedge, id::Int)
-
-Returns the `id`-th form in the `Wedge` structure.
-
-# Arguments
-- `wedge::Wedge`: The wedge structure.
-- `id::Int`: The id of the form to be returned.
-
-# Returns
-- `<:AbstractForm`: The `id`-th form to which the wedge is applied.
-"""
-get_form(wedge::Wedge, id::Int) = get_forms(wedge)[id]
-
-get_form_1(wedge::Wedge) = wedge.form_1
-get_form_2(wedge::Wedge) = wedge.form_2
-
-"""
-    get_form(wedge::Wedge)
-
-Returns the form with expression rank 1 in the `Wedge` structure.
-
-# Arguments
-- `wedge::Wedge`: The wedge structure.
-
-# Returns
-- `<:AbstractFormSpace`: The form with expression rank 1.
-"""
 function get_form(wedge::Wedge)
-    for form in get_forms(wedge)
-        if get_expression_rank(form) == 1
-            return form
-        end
-    end
-
-    throw(ArgumentError("""The Wedge structure does not contain any form with subtype of \
-                        `AbstractFormSpace`."""))
+    throw(ArgumentError("'get_form' is not defined for Wedges. Use 'get_forms' instead."))
 end
+
+# """
+#     get_form(wedge::Wedge)
+
+# Returns the form with expression rank 1 in the `Wedge` structure.
+
+# # Arguments
+# - `wedge::Wedge`: The wedge structure.
+
+# # Returns
+# - `<:AbstractFormSpace`: The form with expression rank 1.
+# """
+# function get_form(wedge::Wedge)
+#     for form in get_forms(wedge)
+#         if get_expression_rank(form) == 1
+#             return form
+#         end
+#     end
+
+#     throw(ArgumentError("""The Wedge structure does not contain any form with subtype of \
+#                         `AbstractFormSpace`."""))
+# end
 
 """
     get_form_space_tree(wedge::Wedge)
@@ -175,7 +162,7 @@ end
 function evaluate(
     wedge::Wedge{manifold_dim}, element_id::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
-    return _evaluate_wedge(get_form_1(wedge), get_form_2(wedge), element_id, xi)
+    return _evaluate_wedge(get_forms(wedge)..., element_id, xi)
 end
 
 ############################################################################################

@@ -58,19 +58,6 @@ const ∫ = Integral
 ############################################################################################
 
 """
-    get_form(integral::Integral)
-
-Returns the form associated with the integral operator.
-
-# Arguments
-- `integral::Integral`: The integral operator.
-
-# Returns
-- `<: AbstractForm`: The form associated with the integral operator.
-"""
-get_form(integral::Integral) = integral.form
-
-"""
     get_form_space_tree(integral::Integral)
 
 Returns the spaces of forms of `expression_rank` > 0 appearing in the tree of the integrand of integral, e.g., for

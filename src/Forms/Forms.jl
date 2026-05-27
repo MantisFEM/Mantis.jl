@@ -30,12 +30,15 @@ Supertype for all form expressions representing differential forms.
     inherited from the underlying function space or geometry.
 - `form_rank`: The rank of the form, i.e. ``0``-form, ``1``-form, ``2``-form, etc.
 - `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
-    present, ``1`` for a single basis, and ``2`` for two bases. If `expression_rank` is
-    larger than ``0``, this means that the expression acts on at least one basis, but not
-    necessarily that there is a basis for the total expression. For example, applying the
-    exterior derivative to a `FormSpace` will results in a form with expression rank ``1``.
-    However, while the `FormSpace` has a basis, this does not generate a basis for the
-    exterior derivative (only a spanning set).
+    present, ``1`` for a single basis, and ``2`` for two bases.
+
+!!! note "Non-zero expression rank does not mean that the full expression has a basis."
+    If `expression_rank` is larger than ``0``, this means that the expression acts on
+    at least one basis, but not necessarily that there is a basis for the total
+    expression. For example, applying the exterior derivative to a `FormSpace` will
+    result in a form with expression rank ``1``. However, while the `FormSpace` has a
+    basis, this does not generate a basis for the exterior derivative (only a spanning
+    set).
 """
 abstract type AbstractForm{manifold_dim, form_rank, expression_rank} end
 
@@ -72,13 +75,7 @@ abstract type AbstractRealValuedOperator{manifold_dim} end
 """
     get_manifold_dim(::AbstractForm{manifold_dim}) where {manifold_dim}
 
-Returns the manifold dimension of the given form.
-
-# Arguments
-- `::AbstractForm{manifold_dim}`: The form.
-
-# Returns
-- `manifold_dim::Int`: The manifold dimension.
+Returns the `manifold_dim` of the given form.
 """
 function get_manifold_dim(::AbstractForm{manifold_dim}) where {manifold_dim}
     return manifold_dim
@@ -90,20 +87,14 @@ end
 
 """
     get_form_rank(
-        ::AbstractForm{manifold_dim, form_rank, expression_rank}
-    ) where {manifold_dim, form_rank, expression_rank}
+        ::AbstractForm{manifold_dim, form_rank}
+    ) where {manifold_dim, form_rank}
 
-Returns the form rank of the given form.
-
-# Arguments
-- `::FE`: The form.
-
-# Returns
-- `::Int`: The form rank of the form.
+Returns the `form_rank` of the given form.
 """
 function get_form_rank(
-    ::AbstractForm{manifold_dim, form_rank, expression_rank}
-) where {manifold_dim, form_rank, expression_rank}
+    ::AbstractForm{manifold_dim, form_rank}
+) where {manifold_dim, form_rank}
     return form_rank
 end
 
@@ -113,12 +104,6 @@ end
     ) where {manifold_dim, form_rank, expression_rank}
 
 Returns the `expression_rank` of the given form.
-
-# Arguments
-- `::FE`: The form expression.
-
-# Returns
-- `::Int`: The expression rank of the form.
 """
 function get_expression_rank(
     ::AbstractForm{manifold_dim, form_rank, expression_rank}
@@ -126,36 +111,23 @@ function get_expression_rank(
     return expression_rank
 end
 
-"""
-    get_expression_rank(op::AbstractRealValuedOperator)
-
-Returns the rank of the expression associated with the given operator.
-
-# Arguments
-- `op::AbstractRealValuedOperator`: The given operator.
-
-# Returns
-- `::Int`: The rank of the expression associated with the given operator.
-"""
 get_expression_rank(op::AbstractRealValuedOperator) = get_expression_rank(get_form(op))
 
 """
     get_label(form::AbstractForm)
 
-Returns the label of the form expression.
-
-# Arguments
-- `form::AbstractForm`: The form expression.
-
-# Returns
-- `AbstractString`: The label of the form expression.
+Returns the label of the form expression. This is some `AbstractString`, but the concrete
+type can vary. Unicode characters and LaTeX string are allowed.
 """
 get_label(form::AbstractForm) = form.label
 
 """
     get_geometry(form::AbstractForm)
+    get_geometry(op::AbstractRealValuedOperator)
 
 Returns the geometry of the given form expression.
+
+Will recurse to find the geometry.
 
 # Arguments
 - `form::AbstractForm`: The form expression.
@@ -166,6 +138,7 @@ Returns the geometry of the given form expression.
 function get_geometry(form::AbstractForm)
     return get_geometry(get_form(form))
 end
+get_geometry(op::AbstractRealValuedOperator) = get_geometry(get_form(op))
 
 """
     get_geometry(
@@ -198,29 +171,16 @@ function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm.
 end
 
 """
-    get_geometry(op::AbstractRealValuedOperator)
-
-Returns the geometry associated to the form to which the given operator is applied.
-
-# Arguments
-- `op::AbstractRealValuedOperator`: The operator to which the form is applied.
-
-# Returns
-- `<:AbstractgeometryExpression`: The geometry where the form in the operator is defined.
-"""
-get_geometry(op::AbstractRealValuedOperator) = get_geometry(get_form(op))
-
-"""
+    get_form(form::AbstractForm)
     get_form(op::AbstractRealValuedOperator)
 
-Returns the form to which the given operator is applied.
+Returns the form underlying the form expression or to which the given operator is applied.
 
-# Arguments
-- `op::AbstractRealValuedOperator`: The operator to which the form is applied.
-
-# Returns
-- `<:AbstractFormExpression`: The form to which the operator is applied.
+# Implementational note
+The default function assumes that the input `form` or `op` has a field called `form`, which
+is returned. Specialise this function if this behaviour needs to be changed.
 """
+get_form(form::AbstractForm) = form.form
 get_form(op::AbstractRealValuedOperator) = op.form
 
 """
@@ -281,8 +241,8 @@ end
     get_fe_space(form::FS) where {FS <: AbstractForm}
 
 Returns the finite element space associated with the given form. Note that this function
-recurses untill it finds a form (usually a `FormSpace`) which has an underlying finite
-element space.
+recurses untill it finds a form (usually a [`FormSpace`](@ref)) which has an underlying
+finite element space.
 
 # Arguments
 - `form_space::AbstractForm`: The form space.

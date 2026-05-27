@@ -277,7 +277,6 @@ function get_operators(bin_trans::BinaryOperatorTransformation)
 end
 
 get_transformation(una_form::UnaryFormTransformation) = una_form.transformation
-get_form(una_form::UnaryFormTransformation) = una_form.form
 get_geometry(una_trans::UnaryFormTransformation) = get_geometry(get_form(una_trans))
 get_label(una_form::UnaryFormTransformation) = una_form.label
 
