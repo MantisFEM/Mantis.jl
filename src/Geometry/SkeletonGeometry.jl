@@ -169,10 +169,16 @@ the element identified by `element_id` of a given `geometry`.
     size of the matrix is `(num_eval_points, image_dim)`.
 """
 function evaluate(
-    geometry::SkeletonGeometry{2, image_dim, num_patches},
+    geometry::SkeletonGeometry{2, image_dim, num_patches, T, PG},
     element_id::Int,
     xi::Points.AbstractPoints{2},
-) where {image_dim, num_patches}
+) where {
+    image_dim, 
+    num_patches, 
+    parent_manifold_dim,
+    parent_num_patches,
+    T,
+    PG <: AbstractGeometry{parent_manifold_dim, image_dim, parent_num_patches}}
     # Identify the parent elements (i.e., in the parent geometry) so that we 
     # know which element to evaluate. Since for evaluation all parents are the same
     # we simply choose the first one. Additionally we also collect the rotation
@@ -191,17 +197,80 @@ function evaluate(
     return eval_geometry
 end
 
+# For skeleton edges
+function skeleton_element_to_parent_element_coords(
+    skeleton_points::P, 
+    local_geometric_object::Int,
+    rotation::Int,  # named, even though unused in this method
+    orientation::Int
+) where {P <: Points.CartesianPoints{1}}
+    manifold_dim = 1
+    parent_manifold = 3
+    # Get the constituent points
+    skeleton_σ = Points.get_constituent_points(skeleton_points)
+   
+    # Step 1: Apply orientation
+    if orientation == -1
+        σ = (1.0 .- skeleton_σ[1],)
+    elseif orientation == 1
+        σ = skeleton_σ
+    else
+        throw(ArgumentError("orientation must be 1 or -1, got $orientation"))
+    end
+
+
+    # Step 2: Apply rotation
+    # no rotation
+    
+    
+    # Step 3: Map 1D edge coords to 2D element coords based on local edge
+    # The logic here is the following
+    # position contains for example (0, 1), this means that in the parent element
+    # the skeleton element spans the ξ axis at the position η = 1.
+    # Hence, a point (σ,) in the skeleton element (after orientation taken
+    # into account) will be evaluated as (σ, 1) in the parent element.
+    position = Topology.id2position(manifold_dim + 1, manifold_dim, local_geometric_object)
+    
+    constituent_points = Vector{eltype(σ)}(undef, manifold_dim + 1)
+
+    skeleton_position_id = 1
+    for position_id in 1:(manifold_dim + 1)
+        if position[position_id] == 0
+            constituent_points[position_id] = σ[skeleton_position_id]
+            skeleton_position_id += 1
+        else 
+            # Rescale to 0 or 1 instead of -1 or 1 as in position
+            constituent_points[position_id] = 
+                single_coordinate_of_type(
+                    (position[position_id] + 1.0)/2.0,
+                    eltype(σ)
+                )
+        end
+    end
+
+    # skeleton_position_id = Ref(0)
+    # constituent_points = ntuple(Val(manifold_dim + 1)) do position_id
+    #     if position[position_id] == 0
+    #         skeleton_position_id[] += 1
+    #         return σ[skeleton_position_id[]]
+    #     else 
+    #         # Rescale to 0 or 1 instead of -1 or 1 as in position
+    #         return [(position[position_id] + 1.0)/2.0]
+    #     end
+    # end
+    
+    # Step 4: Construct new Points of the same type, but evaluatable in parent geometry
+    return Points.CartesianPoints(constituent_points...)
+end
+
+# For skeleton faces
 function skeleton_element_to_parent_element_coords(
     skeleton_points::P, 
     local_geometric_object::Int,
     rotation::Int, 
-    orientation::Int,
+    orientation::Int
 ) where {P <: Points.CartesianPoints{2}}
     manifold_dim = 2
-
-    println(rotation)
-    println(orientation)
-    println("\n\n\n")
 
     # Get the constituent points
     skeleton_σ_τ = Points.get_constituent_points(skeleton_points)
@@ -234,7 +303,7 @@ function skeleton_element_to_parent_element_coords(
     else
         throw(ArgumentError("rotation must be 0, 1, 2, or 3, got $orientation"))
     end
-    display(σ_τ)
+    
     # Step 3: Map 2D surface coords to 3D element coords based on local face
     # The logic here is the following
     # position contains for example (0, 1, 0), this means that in the parent element
@@ -258,7 +327,7 @@ function skeleton_element_to_parent_element_coords(
             constituent_points[position_id] = 
                 single_coordinate_of_type(
                     (position[position_id] + 1.0)/2.0,
-                    σ_τ[1]
+                    eltype(σ_τ)
                 )
         end
     end
@@ -269,13 +338,13 @@ end
 
 
 function single_coordinate_of_type(
-    coordinate::F, object_of_type::LinRange{F, Int}
+    coordinate::F, ::Type{LinRange{F, Int}}
 ) where {F<:AbstractFloat}
     return LinRange(coordinate, coordinate, 1)
 end
 
 function single_coordinate_of_type(
-    coordinate::F, object_of_type::Vector{F}
+    coordinate::F, ::Type{Vector{F}}
 ) where {F<:Real}
     return [coordinate]
 end

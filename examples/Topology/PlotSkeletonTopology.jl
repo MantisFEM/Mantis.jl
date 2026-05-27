@@ -71,19 +71,39 @@ end
 
 # skeleton_topology[3, 1]
 
-# for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
-#     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
-#     plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
-# end
+for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
+    skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
+    plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
+end
 
 # for element_id in 19:27
 #     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
 #     plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
 # end
 
+# 1D skeleton
+# Reference values
+reference_points = Dict{NTuple{2, Int}, Mantis.Points.CartesianPoints}()
+sizehint!(reference_points, 8)
+# local
+constituent_points_edge = tuple(LinRange(0.0, 1.0, 3),)
+points_skeleton_edge = Mantis.Points.CartesianPoints(constituent_points_edge)
+
+
+constituent_points_edge = tuple(LinRange(0.0, 1.0, 3),)
+points_skeleton_edge = Mantis.Points.CartesianPoints(constituent_points_edge)
+local_edge = 2
+rotation = 0
+orientation = 1
+points_parent_edge = Mantis.Geometry.skeleton_element_to_parent_element_coords(
+points_skeleton_edge, local_edge, rotation, orientation)
+
+# 2D skeleton
 parent_elements_ids, patch_parents = Mantis.Geometry.get_parent_elements(skeleton_geometry, 3, 1)
 points_parent = Mantis.Geometry.skeleton_element_to_parent_element_coords(
 points_skeleton, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1])
+
+
 
 # # Oriol Periodic B-Splines
 
