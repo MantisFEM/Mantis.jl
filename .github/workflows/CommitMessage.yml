@@ -1,0 +1,45 @@
+name: Commit Messages
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  validate-commit-messages:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gh CLI and jq
+        run: sudo apt-get update && sudo apt-get install -y jq gh
+
+      - name: Validate commit messages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pr_number="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+
+          # Get commit SHAs from the PR
+          commit_shas="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}/commits" --paginate | jq -r '.[].sha')"
+
+          if [[ -z "$commit_shas" ]]; then
+            echo "No commits found in PR."
+            exit 0
+          fi
+
+          while IFS= read -r sha; do
+            [[ -z "$sha" ]] && continue
+            msg_file="$(mktemp)"
+            git show -s --format=%B "$sha" > "$msg_file"
+            .github/scripts/commit-msg.sh "$msg_file"
+          done <<< "$commit_shas"
