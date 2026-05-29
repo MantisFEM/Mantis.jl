@@ -14,4 +14,8 @@ end
     include("Geometry/runtests.jl")
 end
 
+@testset verbose = true "FunctionSpaces" begin
+    include("FunctionSpaces/runtests.jl")
+end
+
 end
