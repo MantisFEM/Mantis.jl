@@ -16,6 +16,7 @@ using ..Points
 using ..GeneralHelpers
 using ..Hierarchy
 using ..TensorProducts
+using ..Caching
 
 """
     AbstractFunctionSpace
@@ -82,5 +83,7 @@ include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
 # helper functions for convenience
 include("./FunctionSpaceHelpers.jl")
+
+include("Caching/Caching.jl")
 
 end
