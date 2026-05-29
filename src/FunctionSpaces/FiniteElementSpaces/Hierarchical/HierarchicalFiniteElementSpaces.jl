@@ -1062,7 +1062,14 @@ function get_num_basis(space::HierarchicalFiniteElementSpace, hier_id::Int)
 end
 
 function get_max_local_dim(space::HierarchicalFiniteElementSpace)
-    return get_max_local_dim(space.spaces[1]) * 2
+    # Maximum of the maximum local dims of each level
+    max_local_dim_levels = mapreduce(
+        l -> get_max_local_dim(get_space(space, l)), max, 1:get_num_levels(space)
+    )
+    # Maximum number of multilevel basis indices
+    max_multilevel = mapreduce(mlb -> length(mlb), max, get_multilevel_basis_indices(space))
+
+    return max(max_local_dim_levels, max_multilevel)
 end
 
 function get_element_level(space::HierarchicalFiniteElementSpace, hier_id::Int)
@@ -1103,6 +1110,10 @@ end
 
 function get_multilevel_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
     return space.multilevel_elements[hier_id]
+end
+
+function get_multilevel_basis_indices(space::HierarchicalFiniteElementSpace)
+    return space.multilevel_basis_indices
 end
 
 function get_element_active_children(
