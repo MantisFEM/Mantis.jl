@@ -64,6 +64,8 @@ Support = [
 ]
 
 ReleaseHistory = [
+    "v0.6 Acanthops onorei" => joinpath(
+		"ReleaseHistory", "v0-Acanthops", "v0.6-onorei.md"),
     "v0.5 Acanthops godmani" => joinpath(
 		"ReleaseHistory", "v0-Acanthops", "v0.5-godmani.md"),
     "v0.4 Acanthops falcata" => joinpath(
