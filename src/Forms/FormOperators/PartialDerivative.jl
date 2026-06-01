@@ -133,7 +133,7 @@ function evaluate(
     form_eval, form_indices = _evaluate_form_in_canonical_coordinates(
         form, element_id, xi, num_derivatives
     )
-    der_idx = FunctionSpaces.get_derivative_idx([partial_orders...])
+    der_idx = FunctionSpaces.get_derivative_idx(partial_orders)
     partial_der_eval = form_eval[num_derivatives + 1][der_idx]
     partial_der_eval = _add_geometric_scaling!(
         partial_der_eval, partial_der, element_id, xi, partial_orders
@@ -153,7 +153,7 @@ function evaluate(
     form_eval, form_indices = _evaluate_form_in_canonical_coordinates(
         get_form(form), element_id, xi, num_derivatives
     )
-    der_idx = FunctionSpaces.get_derivative_idx([partial_orders...])
+    der_idx = FunctionSpaces.get_derivative_idx(partial_orders)
     partial_der_eval = [
         form_eval[num_derivatives + 1][der_idx][1] *
         view(get_coefficients(form), form_indices[1]),
