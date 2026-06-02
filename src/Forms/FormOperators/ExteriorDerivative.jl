@@ -303,37 +303,6 @@ function _evaluate_exterior_derivative(
     return local_d_form_basis_eval, [[1]]
 end
 
-# #############################################################################################
-# #                                           dd                                              #
-# #############################################################################################
-# function _evaluate_exterior_derivative(
-#     dform::ExteriorDerivative{manifold_dim, form_rank_d, expression_rank, G, F},
-#     element_id::Int,
-#     xi::NTuple{manifold_dim, Vector{Float64}}
-# ) where {
-#     manifold_dim,
-#     form_rank_d,
-#     expression_rank,
-#     form_rank,
-#     G <: Geometry.AbstractGeometry{manifold_dim},
-#     F <: AbstractFormField{manifold_dim, form_rank, G},
-# }
-#     # Determine shape of the output
-#     n_evaluation_points = prod(size.(xi, 1))
-#     n_derivative_components = binomial(manifold_dim, form_rank_d + 1)
-#     n_basis_functions = 1
-
-#     # Generate the zeros output array
-#     ddform_eval = [
-#         zeros(Float64, n_evaluation_points, n_basis_functions) for
-#         _ in 1:n_derivative_components
-#     ]
-
-#     # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-#     # multi-indexed expressions, like wedges.
-#     return ddform_eval, [[1]]
-# end
-
 #############################################################################################
 #                                     Wedge product                                         #
 #############################################################################################
@@ -349,8 +318,8 @@ function _evaluate_exterior_derivative(
     # Extract the forms that compose the wedge product and their exterior derivatives
     α = form.form_1
     β = form.form_2
-    dα = ExteriorDerivative(α)
-    dβ = ExteriorDerivative(β)
+    dα = d(α)
+    dβ = d(β)
 
     # Compute the Leibniz expression components
     dα_wedge_β = Forms.Wedge(dα, β)
@@ -396,5 +365,5 @@ function _evaluate_exterior_derivative(
     binary_transformation = get_transformation(form)
 
     # Evaluate the distributive expression components, sum them, and return
-    return evaluate(binary_transformation(d(forms[1]), d(forms[2])), element_id, xi)
+    return evaluate(binary_transformation(d(first(forms)), d(last(forms))), element_id, xi)
 end
