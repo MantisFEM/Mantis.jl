@@ -130,21 +130,21 @@ ExteriorDerivative
 d
 ```
 
-### [Wedge](@id FormsExteriorDerivative)
+### [Wedge](@id FormsWedge)
 The wedge-operator is a generalisation of products. It takes in two forms (say a `k`-form and an `l`-form) and produces another form (a `k+l`-form).
 ```@docs
 Wedge
 ∧
 ```
 
-### [Hodge](@id FormsExteriorDerivative)
+### [Hodge](@id FormsHodge)
 The Hodge-star operator is a metric-dependent operator, which maps `k`-forms to `manifold_dim-k` forms.
 ```@docs
 Hodge
 ★
 ```
 
-### [Codifferential](@id FormsExteriorDerivative)
+### [Codifferential](@id FormsCodifferential)
 The codifferential, often denoted ``d^{\star}`` or ``\delta``, is a differential operator mapping ``k``-forms to ``k-1``-forms. 
 On manifolds without boundaries, it is the ``L^2``-adjoint of the exterior derivative. 
 That is, ``(\alpha^{k-1}, \delta\beta^k) = (d\alpha^{k-1}, \beta^k)``, where ``(\cdot, \cdot)`` is an ``L^2`` inner-product.
@@ -178,7 +178,7 @@ The sharp operator also has its own evaluate function, which, like the [evaluate
 evaluate(::Sharp{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_dim}) where {manifold_dim}
 ```
 
-### [Pushforward](@id Pushforward)
+### [Pushforward](@id FormsPushforward)
 As explained above, the [Sharp](@ref) turns a ``1``-form into a vector field, but its evaluate still returns values in the canonical domain. 
 To get values in the physical domain, the vector has to be pushforwarded. 
 Note that this is not a structure in `Mantis`, just a function.
@@ -284,9 +284,3 @@ trace_basis_idxs
 ```@docs
 get_basis_index_combinations
 ```
-
-## [Creating your own](@id FormsUserCreation)
-
-### Form Operations
-
-### Form Objects
