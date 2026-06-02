@@ -199,9 +199,9 @@ function get_constituent_hessians(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
     const_geometries = get_constituent_geometries(geometry)
-    const_element_id = get_constituent_element_id(geometry, element_id)
+    const_element_id, patch_id = get_constituent_element_id(geometry, element_id)
     const_xi = get_constituent_evaluation_points(geometry, xi)
-    const_jac = map(hessian, const_geometries, const_element_id, const_xi)
+    const_jac = map(hessian, const_geometries, Tuple(const_element_id), const_xi)
 
     return const_jac
 end
