@@ -3,28 +3,27 @@
 ############################################################################################
 
 """
-  UnaryOperatorTransformation{manifold_dim, O, T} <:
-  AbstractRealValuedOperator{manifold_dim}
+    UnaryOperatorTransformation{manifold_dim, O, T} <:
+    AbstractRealValuedOperator{manifold_dim}
 
-Structure holding the necessary information to evaluate a unary, algebraic transformation
-of a `AbstractRealValuedOperator`.
+Unary, algebraic transformation of an `AbstractRealValuedOperator`.
+
+# Constructors
+- `UnaryOperatorTransformation(operator::O, transformation::T)`: General constructor.
+- `Base.:*(factor::Number, operator::AbstractRealValuedOperator)`: Point-wise
+    multiplication of an operator with a number.
+- `Base.:-(operator::AbstractRealValuedOperator)`: Point-wise additive inverse of an
+    operator.
 
 # Fields
 - `operator::O`: The operator to which the transformation is applied.
 - `transformation::T`: The transformation to apply to the operator.
 
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the operator is defined.
+- `manifold_dim`: See [AbstractRealValuedOperator](@ref) for the details.
 - `O <: AbstractRealValuedOperator{manifold_dim}`: Type of the original real-valued
   operator.
 - `T <: Function`: Function defining the algebraic transformation.
-
-# Inner constructors
-- `UnaryOperatorTransformation(operator::O, transformation::T)`: General constructor.
-- `Base.:*(factor::Number, operator::AbstractRealValuedOperator)`: Alias for the
-  multiplication of a real-valued operator with a constant factor.
-- `Base.:-(operator::AbstractRealValuedOperator)`: Alias for the additive inverse of a
-  real-valued operator.
 """
 struct UnaryOperatorTransformation{manifold_dim, O, T} <:
        AbstractRealValuedOperator{manifold_dim}
@@ -45,15 +44,20 @@ struct UnaryOperatorTransformation{manifold_dim, O, T} <:
 end
 
 """
-  BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
-  AbstractRealValuedOperator{manifold_dim}
+   BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
+   AbstractRealValuedOperator{manifold_dim}
 
-Structure holding the necessary information to evaluate a binary, algebraic transformation
-acting on two real-valued operators.
+Binary, algebraic transformation acting on two real-valued operators.
 
 !!! warning
     The basis underlying each operator must compatible, this is checked. If not compatible
     an ArgumentError is thrown.
+
+# Constructors
+- `BinaryOperatorTransformation(operator_1::O1, operator_2::O2, transformation::T )`:
+    General constructor.
+- `Base.:+(operator_1::O1, operator_1::O2)`: Point-wise sum of two operators.
+- `Base.:-(operator_1::O1, operator_2::O2)`: Point-wise difference of two operators.
 
 # Fields
 - `operator_1::O1`: The first real-valued operator.
@@ -61,16 +65,10 @@ acting on two real-valued operators.
 - `transformation::T`: The transformation to apply to the operators.
 
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the operators are defined.
+- `manifold_dim`: See [AbstractRealValuedOperator](@ref) for the details.
 - `O1 <: AbstractRealValuedOperator{manifold_dim}`: The type of the first operator.
 - `O2 <: AbstractRealValuedOperator{manifold_dim}`: The type of the second operator.
 - `T <: Function`: The type of the algebraic transformation.
-
-# Inner constructors
-- `BinaryOperatorTransformation(operator_1::O1, operator_2::O2, transformation::T )`:
-  General constructor.
-- `Base.:+(operator_1::O1, operator_1::O2)`: Alias for the sum of two operators.
-- `Base.:-(operator_1::O1, operator_2::O2)`: Alias for the difference of two operators.
 """
 struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
        AbstractRealValuedOperator{manifold_dim}
@@ -115,32 +113,31 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
 end
 
 """
-  UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T} <:
-  AbstractForm{manifold_dim, form_rank, expression_rank}
+    UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
-Structure holding the necessary information to evaluate a unary, algebraic transformation
-of a differential form expression.
+Unary, algebraic transformation of a differential form expression.
+
+# Constructors
+- `UnaryFormTransformation(form::F, transformation::T, label::String)`:
+    General constructor.
+- `Base.:-(form::AbstractForm)`: Point-wise additive inverse of a form.
+- `Base.:*(factor::Number, form::AbstractForm)`: Point-wise multiplication of a form with a
+    number.
+- `Base.:*(form::AbstractForm, factor::Number)`: Point-wise multiplication of a form with a
+    number.
 
 # Fields
 - `form::F`: The differential form expression to which the transformation is applied.
 - `transformation::T`: The transformation function to apply to the form.
-- `label::AbstractString`: The label to associate with the resulting transformed form.
+- `label::L`: The label to associate with the resulting transformed form.
 
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the form is defined.
-- `form_rank::Int`: The rank of the differential form.
-- `expression_rank::Int`: The rank of the expression.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
 - `F <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the original
     form expression .
 - `T <: Function`: The type of the algebraic transformation.
-
-# Inner constructors
-- `UnaryFormTransformation(form::F, transformation::T, label::String)`:
-    General constructor.
-- `Base.:-(form::AbstractForm)`: Alias for the additive inverse of a
-differential form expression .
-- `Base.:*(factor::Number, form::AbstractForm)`: Alias for the
-    multiplication of a differential form expression with a constant factor.
+- `L <: AbstractString`: The type of the label.
 """
 struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}
@@ -178,31 +175,51 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L
 end
 
 """
-  BinaryFormTransformation{manifold_dim, form_rank, F1, F2, T} <:
-  AbstractForm{manifold_dim, form_rank}
+    BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T, L} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
 
-Structure holding the necessary information to evaluate a binary, algebraic transformation
-acting on two differential form expressions.
+Binary, algebraic transformation acting on two differential form expressions.
+
+!!! warning "Compatibility of forms"
+    When using these binary operations, you have to ensure that the operation makes sense
+    for the given input. This is **not** checked!
+
+# Constructors
+- `BinaryFormTransformation(form_1::F1, form_2::F2, transformation::T, label::AbstractString)`: General
+    constructor.
+- `Base.:+(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise sum of two forms.
+- `Base.:-(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise difference of two froms.
+- `Base.:*(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise product of two forms.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form 1");  # 0-form space with B as basis.
+
+julia> sum_example = Λ⁰ₕ + Λ⁰ₕ;
+
+julia> isa(sum_example, Forms.BinaryFormTransformation{2, 0, 1})
+true
+
+```
 
 # Fields
 - `form_1::F1`: The first differential form expression.
 - `form_2::F2`: The second differential form expression.
 - `transformation::T`: The transformation to apply to the differential forms.
-- `label::AbstractString`: The label to associate to the resulting differential form.
+- `label::L`: The label to associate to the resulting differential form.
 
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the form expressions are defined.
-- `form_rank::Int`: The rank of both differential form expressions.
-- `expression_rank::Int`: The expression rank of both differential form expressions.
-- `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the first form expression.
-- `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the second form expression.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the first
+    form expression.
+- `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the second
+    form expression.
 - `T <: Function`: The type of the algebraic transformation.
-
-# Inner constructors
-- `BinaryFormTransformation(form_1::F1, form_2::F2, transformation::T, label::AbstractString)`: General
-  constructor.
-- `Base.:+(form_1::F1, form_2::F2)`: Alias for the sum of two differential form expressions.
-- `Base.:-(form_1::F1, form_2::F2)`: Alias for the difference of two differential form expressions.
+- `L <: AbstractString`: The type of the label.
 """
 struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}

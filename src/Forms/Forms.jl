@@ -58,7 +58,8 @@ Supertype for all form expressions representing differential forms.
     inherited from the underlying function space or geometry.
 - `form_rank`: The rank of the form, i.e. ``0``-form, ``1``-form, ``2``-form, etc.
 - `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
-    present, ``1`` for a single basis, and ``2`` for two bases.
+    present, ``1`` for a single basis, and ``2`` for two bases. Expression ranks larger
+    than ``2`` are not allowed.
 
 !!! note "Non-zero expression rank does not mean that the full expression has a basis."
     If `expression_rank` is larger than ``0``, this means that the expression acts on
@@ -73,7 +74,7 @@ abstract type AbstractForm{manifold_dim, form_rank, expression_rank} end
 """
     AbstractFormField{manifold_dim, form_rank}
 
-Alias for `AbstractForm`s with expression rank 0, that is, a form expression without a
+Alias for an `AbstractForm` with expression rank 0, that is, a form expression without a
 basis. See [`AbstractForm`](@ref) for more details.
 """
 const AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
@@ -81,7 +82,7 @@ const AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, fo
 """
     AbstractFormSpace{manifold_dim, form_rank}
 
-Alias for `AbstractForm`s with expression rank 1, that is, a form expression involving one
+Alias for an `AbstractForm` with expression rank 1, that is, a form expression involving one
 basis. See [`AbstractForm`](@ref) for more details.
 """
 const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
@@ -151,7 +152,8 @@ get_label(form::AbstractForm) = form.label
     get_form(form::AbstractForm)
     get_form(op::AbstractRealValuedOperator)
 
-Returns the form underlying the form expression or to which the given operator is applied.
+Returns the form underlying the form expression or real-valued operator to which the given
+operator is applied.
 """
 get_form(form::AbstractForm) = form.form
 get_form(op::AbstractRealValuedOperator) = op.form
@@ -206,14 +208,7 @@ get_geometry(op::AbstractRealValuedOperator) = get_geometry(get_form(op))
 
 If a single form is given, returns the geometry of that form. If additional forms are
 given, checks if all the geometries of the different forms refer to the same object in
-memory, and then returns it.
-
-# Arguments
-- `single_form::AbstractForm`: The first form.
-- `additional_forms::AbstractForm...`: Arbitrary number of additional forms.
-
-# Returns
-- `<:Geometry.AbstractGeometry`: The geometry of the given form(s).
+memory, and then returns it. Throws a warning if not.
 """
 function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm...)
     all_forms = tuple(single_form, additional_forms...)

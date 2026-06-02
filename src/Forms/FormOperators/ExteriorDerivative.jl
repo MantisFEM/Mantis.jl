@@ -28,7 +28,7 @@ julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (
 
 julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
 
-julia> dΛ⁰ₕ = d(Λ⁰ₕ);  # Note that this is a 1-form.
+julia> dΛ⁰ₕ = d(Λ⁰ₕ);  # Note that dΛ⁰ₕ is a 1-form.
 
 julia> isa(dΛ⁰ₕ, Forms.ExteriorDerivative{2, 1, 1})
 true
@@ -36,11 +36,10 @@ true
 ```
 
 # Fields
-- `form::AbstractForm{manifold_dim, form_rank-1, expression_rank}`: The form to
-    which the exterior derivative is applied. Note that the form rank of this form is one
-    lower than the `form_rank` of the exterior derivative.
-- `label::AbstractString`: The exterior derivative label. This is a concatenation of "d"
-    with the label of `form`.
+- `form::F`: The form to which the exterior derivative is applied. Note that the form rank
+    of this form is one lower than the `form_rank` of the exterior derivative.
+- `label::L`: The exterior derivative label. This is a concatenation of "d" with the label
+    of `form`.
 
 # Type parameters
 - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.

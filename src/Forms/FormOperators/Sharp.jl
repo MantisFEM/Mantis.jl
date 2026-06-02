@@ -7,15 +7,36 @@
 
 Represents the sharp operator, which converts a differential 1-form into a vector field.
 
+# Constructors
+- `Sharp(form::F)`: General constructor.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> Bx = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 1), (1, 0));
+
+julia> By = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (1, 2), (0, 1));
+
+julia> B = FunctionSpaces.DirectSumSpace((Bx, By)); # A FunctionSpace with 2 components.
+
+julia> Λ¹ₕ = Forms.FormSpace(1, B, "1-form");  # 1-form space with B as basis.
+
+julia> β¹ₕ = Forms.FormField(Λ¹ₕ);
+
+julia> ♯β¹ₕ = ♯(β¹ₕ); # This is no longer a form!
+
+julia> isa(♯β¹ₕ, Forms.Sharp)
+true
+
+```
+
 # Fields
 - `form::F`: The differential 1-form to be converted into a vector field.
 
 # Type Parameters
 - `manifold_dim`: The dimension of the manifold.
 - `F`: The type of the differential 1-form.
-
-# Inner Constructors
-- `Sharp(form::F)`: General constructor.
 """
 struct Sharp{manifold_dim, F}
     form::F
@@ -70,9 +91,9 @@ vector-field are defined in reference, curvilinear coordinates.
 # Arguments
 - `sharp::Sharp{manifold_dim}`: The sharp structure containing the form to be evaluated.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
-- `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point
-	numbers representing the coordinates at which the 1-form is evaluated. Each vector
-	within the tuple corresponds to a dimension of the manifold.
+- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
+    evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
+    canonical domain and point structure.
 
 # Returns
 - `::Vector{Matrix{Float64}}`: Each component of the vector, corresponding to each ∂ᵢ,

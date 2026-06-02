@@ -3,29 +3,47 @@
 ############################################################################################
 
 """
-    Wedge{manifold_dim, form_rank, expression_rank, F1, F2} <:
+    Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
     AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Represents the wedge between two differential forms.
 
+The `manifold_dim` of the `Wedge` is inherited from the input forms (which have the same
+`manifold_dim`). The `form_rank` and `expression_rank` of the `Wedge` are the sums of the
+respective ranks of the input forms. If the `expression_rank` of the `Wedge` would become
+larger than 2, an error is thrown.
+
+# Constructors
+- `Wedge(form_1::F1, form_2::F2)`: General constructor.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
+
+julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form space with B as basis.
+
+julia> wedged = Λ⁰ₕ ∧ Λ²ₕ;  # Wedge operator between the two spaces.
+
+julia> isa(wedged, Forms.Wedge{2, 2, 2})
+true
+
+```
+
 # Fields
-- `form_1 <: AbstractForm{manifold_dim, form_rank_1, expression_rank_1, G}`: The
-    first form.
-- `form_2 <: AbstractForm{manifold_dim, form_rank_2, expression_rank_2, G}`: The
-    second form.
-- `label :: AbstractString`: A label for the wedge.
+- `form_1::F1`: The first form.
+- `form_2::F2`: The second form.
+- `label::L`: A label for the wedge.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: The form rank of the wedge: equal to `form_rank_1 + form_rank_2`.
-- `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
-    with one single set of basis forms have rank 1, with two sets of basis forms have rank
-    2. Higher ranks are not possible.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
 - `F1 <: Forms.AbstractForm`: The type of `form_1`.
 - `F2 <: Forms.AbstractForm`: The type of `form_2`.
-
-# Inner Constructors
-- `Wedge(form_1::F1, form_2::F2)`: General constructor.
+- `L <: AbstractString`: The type of the label. Since a "∧" is added to the label, this
+    type may differ from the label type of the underlying form.
 """
 struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}

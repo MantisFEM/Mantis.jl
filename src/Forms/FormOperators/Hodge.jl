@@ -8,24 +8,44 @@
 
 Represents the hodge star of an `AbstractForm`.
 
-# Fields
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank}`: The form to
-    which the hodge star is applied.
-- `label::AbstractString`: The hodge star label. This is a concatenation of `"★"` with the
-    label of `form`.
-
-# Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: The form rank of the hodge star. If the form rank of `form` is `k`
-    then `form_rank` is `manifold_dim - k`.
-- `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
-    with one single set of basis forms have rank 1, with two sets of basis forms have rank
-    2. Higher ranks are not possible.
-- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank,}`: The
-    type of `form`.
+The `manifold_dim` of the `Hodge` is inherited from the input form, while the `form_rank`
+is the `manifold_dim` minus the form rank of the input form.
 
 # Inner Constructors
 - `Hodge(form::F)`: General constructor.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
+
+julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form space with B as basis.
+
+julia> starΛ⁰ₕ = ★(Λ⁰ₕ);
+
+julia> isa(starΛ⁰ₕ, Forms.Hodge{2, 2, 1})
+true
+
+julia> ★Λ²ₕ = ★(Λ²ₕ);
+
+julia> isa(★Λ²ₕ, Forms.Hodge{2, 0, 1})
+true
+
+```
+
+# Fields
+- `form::F`: The form to which the hodge star is applied.
+- `label::L`: The hodge star label. This is a concatenation of "★" with the label of `form`.
+
+# Type parameters
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank}`: The
+    type of `form`.
+- `L <: AbstractString`: The type of the label. Since a "★" is added to the label, this
+    type may differ from the label type of the underlying form.
 """
 struct Hodge{manifold_dim, form_rank, expression_rank, F, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}

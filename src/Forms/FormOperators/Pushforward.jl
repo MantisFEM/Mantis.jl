@@ -1,16 +1,21 @@
 """
-    evaluate_pushforward(vfield::Vector{Matrix{Float64}},
-                         jacobian::Array{Float64,3})
+    evaluate_pushforward(
+        vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
+    )
 
-Evaluate the pushforward of the vector field at the discrete points where it has been evaluated. The pushforward is the action of the Jacobian of the field on the field itself.
+Evaluate the pushforward of the vector field from the canonical to the physical domain.
+
+The pushforward is the action of the Jacobian of the field on the field itself.
 
 # Arguments
-- `vfield::Vector{Matrix{Float64}}`: The pointwise evaluated vector field to evaluate the pushforward for.
-- `jacobian::Array{Float64,3}`: The Jacobian of the vector field evaluated at the discrete points.
+- `vfield::Vector{Matrix{Float64}}`: A pointwise evaluated vector field.
+- `jacobian::AbstractVector`: The Jacobian of the vector field evaluated at the same points
+    as `vfield`. Each entry in the vector should contain the evaluated Jacobian at that
+    point. This is also the default output of [Geometry.jacobian](@ref).
 - `manifold_dim::Int`: The dimension of the embedding manifold.
 
 # Returns
-- `::Vector{Matrix{Float64}}`: The evaluated pushforward of the vector field at the discrete points.
+- `::Vector{Matrix{Float64}}`: The evaluated pushforward of the vector field.
 """
 function evaluate_pushforward(
     vfield::Vector{Matrix{Float64}}, jacobian::AbstractVector, manifold_dim::Int
@@ -40,17 +45,14 @@ end
         xi::Points.AbstractPoints{manifold_dim},
     ) where {manifold_dim}
 
-Compute the pushforward of the sharp of a differential 1-form over a specified element of a
-manifold, converting the form into a vector field. Note that the output vector-field is
-defined in physical coordinates.
+Compute the pushforward of the sharp of a differential 1-form. Note that the output vector-
+field is defined in physical coordinates. See [Sharp](@ref) and
+[evaluate_pushforward](@ref) for the details.
 
 # Arguments
-- `form_expression::AbstractForm{manifold_dim, 1, G}`: An expression representing
+- `form::AbstractForm{manifold_dim, 1, 0}`: An expression representing
     the 1-form on the manifold.
-- `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
-- `xi::Points.AbstractPoints{manifold_dim}`: A tuple containing vectors of floating-point
-    numbers representing the coordinates at which the 1-form is evaluated. Each vector within
-    the tuple corresponds to a dimension of the manifold.
+- `element_id::Int`, `xi::Points.AbstractPoints{manifold_dim}`: See [evaluate](@ref).
 
 # Returns
 - `evaluated_pushforward::Vector{Matrix{Float64}}`: Each component of the vector, stores the
@@ -60,15 +62,15 @@ defined in physical coordinates.
     the evaluated basis functions.
 """
 function evaluate_sharp_pushforward(
-    form_expression::AbstractForm{manifold_dim, 1, 0},
+    form::AbstractForm{manifold_dim, 1, 0},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    sharp = Sharp(form_expression)
+    sharp = Sharp(form)
     sharp_eval, sharp_indices = evaluate(sharp, element_id, xi)
 
     # dξⁱ ↦ G∘♯ (dξⁱ)
-    jacobian = Geometry.jacobian(get_geometry(form_expression), element_id, xi)
+    jacobian = Geometry.jacobian(get_geometry(form), element_id, xi)
     evaluated_pushforward = evaluate_pushforward(sharp_eval, jacobian, manifold_dim)
 
     return evaluated_pushforward, sharp_indices

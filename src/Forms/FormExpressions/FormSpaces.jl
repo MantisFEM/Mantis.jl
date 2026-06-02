@@ -3,9 +3,9 @@
 ############################################################################################
 
 """
-    FormSpace{manifold_dim, form_rank, F} <: AbstractFormSpace{manifold_dim, form_rank}
+    FormSpace{manifold_dim, form_rank, F, L} <: AbstractFormSpace{manifold_dim, form_rank}
 
-Differential forms with a bases.
+Differential forms with a basis.
 
 A `FormSpace` relies on a [FunctionSpaces.AbstractFESpace](@ref) to represent a
 differential form with the function space as basis. While the function space provides a
@@ -36,8 +36,7 @@ julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
     plotting functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: Rank of the differential form.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
 - `F`: Type of the finite element space (a [FunctionSpaces.AbstractFESpace](@ref)).
 - `L`: Type of the label (an `AbstractString`).
 """

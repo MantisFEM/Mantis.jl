@@ -3,30 +3,45 @@
 ############################################################################################
 
 """
-    CoDifferential{manifold_dim, form_rank, expression_rank, F} <:
+    CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
     AbstractForm{manifold_dim, form_rank, expression_rank}
 
 Represents the codifferential of an `AbstractForm`.
 
+The `manifold_dim` of the `CoDifferential` is inherited from the input form, while the
+`form_rank` is the form rank of the input form minus 1.
+
+# Constructors
+- `CoDifferential(form::F)`: General constructor.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> Bx = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 1), (1, 0));
+
+julia> By = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (1, 2), (0, 1));
+
+julia> B = FunctionSpaces.DirectSumSpace((Bx, By)); # A FunctionSpace with 2 components.
+
+julia> Λ¹ₕ = Forms.FormSpace(1, B, "1-form");  # 1-form space with B as basis.
+
+julia> δΛ¹ₕ = δ(Λ¹ₕ);
+
+julia> isa(δΛ¹ₕ, Forms.CoDifferential{2, 0, 1})
+true
+
+```
+
 # Fields
-- `form::AbstractForm{manifold_dim, form_rank, expression_rank, G}`: The form to
-    which the codifferential is applied.
-- `label::AbstractString`: The codifferential label. This is a concatenation of `"d*"` with the
-    label of `form`.
+- `form::F`: The form to which the codifferential is applied.
+- `label::L`: The codifferential label. Adds "δ" to the label of `form`.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: The form rank of the codifferential. If the form rank of `form` is `k`
-    then `form_rank` is `k-1`.
-- `expression_rank`: Rank of the expression. Expressions without basis forms have rank 0,
-    with one single set of basis forms have rank 1, with two sets of basis forms have rank
-    2. Higher ranks are not possible.
-- `G <: Geometry.AbstractGeometry{manifold_dim}`: Type of the underlying geometry.
-- `F <: Forms.AbstractForm{manifold_dim, form_rank+1, expression_rank, G}`: The
-    type of `form`.
-
-# Inner Constructors
-- `CoDifferential(form::F)`: General constructor.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `F <: Forms.AbstractForm{manifold_dim, form_rank+1, expression_rank}`: The type of `form`.
+- `L <: AbstractString`: The type of the label. Since a "δ" is added to the label, this
+    type may differ from the label type of the underlying form.
 """
 struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
        AbstractForm{manifold_dim, form_rank, expression_rank}

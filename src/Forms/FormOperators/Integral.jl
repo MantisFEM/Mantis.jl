@@ -4,7 +4,62 @@
 """
     Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
 
-Structure representing the integral of a form over a manifold.
+Integral of a form over a manifold.
+
+# Constructors
+- `Integral(
+        form::F, quad_rule::Q
+    ) where {
+        manifold_dim,
+        F <: AbstractForm{manifold_dim, manifold_dim},
+        Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
+    }`: General constructor.
+
+# Examples
+Basic syntax:
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form space with B as basis.
+
+julia> canonical_qrule = Quadrature.tensor_product_rule((3, 3), Quadrature.gauss_legendre);
+
+julia> dΩ = Quadrature.StandardQuadrature(canonical_qrule, 4);
+
+julia> integral = ∫(Λ²ₕ, dΩ);
+
+julia> isa(integral, Forms.Integral{2})
+true
+
+julia> isa(Forms.get_form(integral), Forms.FormSpace{2, 2})
+true
+
+```
+
+The `Integral` is more commonly used to represent inner products in combination with the
+[Wedge](@ref) and [Hodge](@ref) operators:
+```jldoctest
+julia> using Mantis
+
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
+
+julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
+
+julia> canonical_qrule = Quadrature.tensor_product_rule((3, 3), Quadrature.gauss_legendre);
+
+julia> dΩ = Quadrature.StandardQuadrature(canonical_qrule, 4);
+
+julia> integral = ∫(Λ⁰ₕ ∧ ★(Λ⁰ₕ), dΩ);
+
+julia> isa(integral, Forms.Integral{2})
+true
+
+julia> isa(Forms.get_form(integral), Forms.Wedge{2, 2})
+true
+
+```
 
 # Fields
 - `form::F`: The form expression to be integrated.
@@ -14,10 +69,7 @@ Structure representing the integral of a form over a manifold.
 # Type Parameters
 - `manifold_dim::Int`: The dimension of the manifold.
 - `F`: The type of the form expression.
-# Inner Constructors
-- `Integral(form::AbstractForm{manifold_dim})`: General constructor.
-# Outer Constructors
-- `∫`: Symbolic wrapper for the integral operator.
+- `Q`: The type of the quadrature expression.
 """
 struct Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
     form::F

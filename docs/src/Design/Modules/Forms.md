@@ -8,10 +8,10 @@ One of the most distinguishing features of `Mantis` is its ability to work with 
 The `Forms` module provides all the required tools to use differential forms in `Mantis`.
 
 ## What is a differential form in `Mantis`?
-The top-level type within the `Forms` module is the `AbstractForm{manifold_dim, form_rank, expression_rank}` type. Every expression involving forms (see [Creating Forms](@ref FormsCreation)) and operations on forms (see [Operations on Forms](@ref FormsOperations)) will be `AbstractForm`s. 
-Their are two exceptions to this rule. 
-The first exception is an operation that return a real value, such as integrals, see [Operators returning a real value](@ref FormsRealValuedOperators).
-The second exception is an operation that return a vector, such as the sharp, see [Operators returning a vector](@ref FormsOperationsToVectors)
+The top-level type within the `Forms` module is the `AbstractForm{manifold_dim, form_rank, expression_rank}` type. Every expression involving forms (see [Creating Forms](@ref FormsCreation)) and operations on forms (see [Operations on Forms](@ref FormsOperations)) will be an `AbstractForm`. 
+There are two exceptions to this rule. 
+The first exception is an operation that returns a real value, such as an integral, see [Operators returning a real value](@ref FormsRealValuedOperators).
+The second exception is an operation that returns a vector, such as the sharp, see [Operators returning a vector](@ref FormsOperationsToVectors)
 ```@docs
 AbstractForm
 ```
@@ -21,9 +21,9 @@ There are two aliases for `AbstractForm`, which are `AbstractFormField` and `Abs
 AbstractFormField
 AbstractFormSpace
 ```
-These are the most common types of `AbstractForm`s.
 
-You can always call the following three methods on any `AbstractForm` to get the type parameters.
+Every `AbstractForm` has three type parameters which say something about the form. 
+You can always call the following three methods on any `AbstractForm` to get these type parameters.
 ```@docs
 get_manifold_dim
 get_form_rank
@@ -38,9 +38,9 @@ The concrete types that can be instantiated are discussed next.
 You can create two main types of `Forms`: [FormSpaces](@ref FormsSpaces) and [FormFields](@ref FormsFields).
 
 ### [FormSpaces](@id FormsSpaces)
-`FormSpace`s allow you to distinguish between functions and forms. 
+A `FormSpace` allows you to distinguish between functions and forms. 
 A `FormSpace` is build on top of a [FunctionSpaces.AbstractFESpace](@ref), which acts as its basis.
-However, it is the `FormSpace` that dicates the behaviour of the form.
+However, it is the `FormSpace` that dictates the behaviour of the form.
 ```@docs
 FormSpace
 ```
@@ -51,7 +51,7 @@ For example, if we start by creating a simple 2D [FunctionSpaces.BSplineSpace](@
 using Mantis
 B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2, 2))
 ```
-we can use this function space to create two different `FormSpace`s: one for a ``0``-form ``\Lambda^0_h`` and one for a ``2``-form ``\Lambda^2_h`` (a top form in 2D).
+we can use this function space to create two different spaces: one for a ``0``-form ``\Lambda^0_h`` and one for a ``2``-form ``\Lambda^2_h`` (a top form in 2D).
 ```@repl CreatingFormSpaces
 Λ⁰ₕ = Forms.FormSpace(0, B, "0-form")
 Λ²ₕ = Forms.FormSpace(2, B, "2-form")
@@ -61,21 +61,22 @@ This will result in the use of different pullbacks (see [How `FormSpaces` are ev
 
 ### [ConstantFormSpaces](@id FormsConstantSpaces)
 Next to the conventional `FormSpace`, `Mantis` also provides a `ConstantFormSpace`. 
-A `ConstantFormSpace` can be instantiated as ``0``- of ``manifold\_dim``-form (so a top form), and will always evaluate to ``1``. 
-This is often usefull as Lagrange multiplier, where a `ConstantFormSpace` can act as the form basis for the real numbers ``\mathbb{R}``. 
+A `ConstantFormSpace` can be instantiated as a ``0``- or `manifold_dim`-form (so a top form), and will always evaluate to ``1``. 
+This is often useful as Lagrange multiplier, where a `ConstantFormSpace` can act as the form basis for the real numbers ``\mathbb{R}``. 
 Note that, compared to the [FormSpaces](@ref FormsSpaces), the `ConstantFormSpace` does not require a function space but only the geometry.
 ```@docs
 ConstantFormSpace
 ```
 
 ### [FormFields](@id FormsFields)
-A `FormField` can be used to represent a differential forms field (a combination of a basis with coefficients) or forms without an underlying basis. 
+A `FormField` can be used to represent a differential form field (a combination of a basis with coefficients) or forms without an underlying basis. 
 The former is, for example, useful to represent solution fields or right hand sides, while the latter can be used with analytical expressions to, for example, represent exact solutions or forcings.
 ```@docs
 FormField
 AnalyticalFormField
 ```
 
+Since a `FormField` has coefficients and an `AnalyticalFormField` has an analytical expression, you can inspect them using the following functions.
 ```@docs
 get_coefficients
 get_num_coefficients
@@ -89,9 +90,9 @@ evaluate(::AbstractForm{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_d
 ```
 
 
-### [Internals: How `FormSpace`s are evaluated](@id FormsInternalEvaluateFormSpace)
+### [Internals: How a `FormSpace` is evaluated](@id FormsInternalEvaluateFormSpace)
 !!! note "Internal behaviour"
-    We explain how `FormSpace`s are evaluated. However, this is considered an implementational detail.
+    We explain how a `FormSpace` is evaluated. However, this is considered an implementational detail.
 
 The evaluation of a `FormSpace` happens in the canonical domain and is done in two steps.
 Firstly, the underlying function space is evaluated. 
@@ -105,18 +106,20 @@ _evaluate_form_in_canonical_coordinates
 _pullback_to_canonical_coordinates
 ```
 
-### [Internals: How `AnalyticalFormField`s are evaluated](@id FormsInternalEvaluateAnalyticalFormField)
+### [Internals: How an `AnalyticalFormField` is evaluated](@id FormsInternalEvaluateAnalyticalFormField)
 !!! note "Internal behaviour"
     We explain how an `AnalyticalFormField` is evaluated. However, this is considered an implementational detail.
 
-A user has to define the expression used in the `AnalyticalFormField` in the physical domain. However, in `Mantis`, forms are always evaluated in the canonical domain. This means that any `AnalyticalFormField` must always be pulled-back before the result can be used in other computations. These pull-backs are determined by the `form_rank` of the `AnalyticalFormField`. 
+A user has to define the expression used in the `AnalyticalFormField` in the physical domain. However, in `Mantis`, forms are always evaluated in the canonical domain. This means that any `AnalyticalFormField` must always be pulled-back before the result can be used in other computations. 
+These pull-backs are determined by the `form_rank` of the `AnalyticalFormField`. 
 ```@docs
 _evaluate(::AnalyticalFormField{manifold_dim, 0}, ::Int, ::Points.AbstractPoints{manifold_dim}) where {manifold_dim}
 ```
 
 
 ## [Operations on Forms](@id FormsOperations)
-Now that we know how to create forms, we can look into the operators that we can use on these form objects. We first look at operators that map forms to froms.
+Now that we know how to create forms, we can look into the operators that we can use on these form objects. 
+We first look at operators that map forms to forms.
 
 ### [Exterior Derivative](@id FormsExteriorDerivative)
 The exterior derivative is a generalised derivative, which maps `k`-forms to `k+1` forms, and is known by its alias `d`. 
@@ -151,8 +154,8 @@ dstar
 δ
 ```
 
-### [Algebraic](@id FormsExteriorDerivative)
-The algebraic operators allow you to use operators like addition, substraction, and multiplication by a scalar on any form. 
+### [Algebraic](@id FormsAlgebraic)
+The algebraic operators allow you to use operators like addition, subtraction, and multiplication by a scalar on any form. 
 These operations are implemented as `UnaryFormTransformation` or `BinaryFormTransformation`, depending on whether the operator is a unary or binary operator, respectively.
 ```@docs
 UnaryFormTransformation
@@ -199,12 +202,12 @@ The most important `AbstractRealValuedOperator` is the integral.
 Integral
 ∫
 ```
-The integral has its own evaluate function, which only take the integral and an `element_id` as input, since the integral operator already stores a quadrature rule and thus the evaluation points.
+The integral has its own evaluate function, which only takes the integral and an `element_id` as input, since the integral operator already stores a quadrature rule and thus the evaluation points.
 ```@docs
 evaluate(::Integral{manifold_dim, F, Q}, ::Int) where {manifold_dim, form_rank, expression_rank, F <: AbstractForm{manifold_dim, form_rank, expression_rank}, Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim}}
 ```
 
-You can retrieve the underlying quadrature rules and the underlying number of evaluation elements (see the docs page of [Quadrature](@ref) for this terminology) with the following functions.
+You can retrieve the underlying quadrature rule and the underlying number of evaluation elements (see the docs page of [Quadrature](@ref) for this terminology) with the following functions.
 ```@docs
 get_quadrature_rule
 get_num_evaluation_elements
@@ -239,7 +242,7 @@ While this geometry is not stored in every form explicitly, it can always be ret
 ```@docs
 get_geometry
 ```
-It is also possible to immediately obtained the number of elements in the underlying geometry using the following method.
+It is also possible to immediately obtain the number of elements in the underlying geometry using the following method.
 ```@docs
 get_num_elements
 ```
