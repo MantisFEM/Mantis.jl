@@ -262,7 +262,7 @@ end
 
 # To study the effect of introducing a different spacing of the elements in the grid, we can
 # introduce a mapping. Here, we pick the mapping from the
-# [One-dimensional mapped geometry](@ref) example. Do note that this will lead to a nearly
+# [One-dimensional mapped geometry](@ref Mapped-Geometry-1D) example. Do note that this will lead to a nearly
 # singular system.
 const exponent = 3
 mapping(ξ̂) = ξ̂^exponent
