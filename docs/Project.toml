@@ -1,8 +1,10 @@
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
+FFMPEG_jll = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 Git_jll = "f8c6e375-362e-5223-8a59-34ff63f689eb"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
