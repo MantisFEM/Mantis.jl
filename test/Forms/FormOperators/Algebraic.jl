@@ -168,6 +168,32 @@ end
     @test isapprox(
         Forms.evaluate(nested2, 1, xi)[1][2], w1_val[2] + (x1_val[2] - w1_val[2])
     )
+    # Multiplication
+    w0_times_x0 = w0 * x0
+    w1_times_x1 = w1 * x1
+    w2_times_x2 = w2 * x2
+    @test isapprox(Forms.evaluate(w0_times_x0, 1, xi)[1][1], w0_val .* x0_val)
+    @test isapprox(Forms.evaluate(w1_times_x1, 1, xi)[1][1], w1_val[1] .* x1_val[1])
+    @test isapprox(Forms.evaluate(w1_times_x1, 1, xi)[1][2], w1_val[2] .* x1_val[2])
+    @test isapprox(Forms.evaluate(w2_times_x2, 1, xi)[1][1], w2_val .* x2_val)
+    # Coefficient and multiplication
+    expr4 = (c1 * w0) * x0
+    expr5 = w1 * (c2 * x1)
+    expr6 = (c1 * w2) * (c2 * x2)
+    @test isapprox(Forms.evaluate(expr4, 1, xi)[1][1], c1 * w0_val .* x0_val)
+    @test isapprox(Forms.evaluate(expr5, 1, xi)[1][1], w1_val[1] .* (c2 * x1_val[1]))
+    @test isapprox(Forms.evaluate(expr5, 1, xi)[1][2], w1_val[2] .* (c2 * x1_val[2]))
+    @test isapprox(Forms.evaluate(expr6, 1, xi)[1][1], (c1 * w2_val) .* (c2 * x2_val))
+    # Nested binary operations with multiplication
+    nested3 = (w0 + x0) * w0
+    nested4 = w1 * (x1 - w1)
+    @test isapprox(Forms.evaluate(nested3, 1, xi)[1][1], (w0_val + x0_val) .* w0_val)
+    @test isapprox(
+        Forms.evaluate(nested4, 1, xi)[1][1], w1_val[1] .* (x1_val[1] - w1_val[1])
+    )
+    @test isapprox(
+        Forms.evaluate(nested4, 1, xi)[1][2], w1_val[2] .* (x1_val[2] - w1_val[2])
+    )
 end
 
 end

@@ -253,6 +253,10 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
     function Base.:-(form_1::AbstractForm, form_2::AbstractForm)
         return BinaryFormTransformation(form_1, form_2, (x, y) -> x - y, "-")
     end
+
+    function Base.:*(form_1::AbstractForm, form_2::AbstractForm)
+        return BinaryFormTransformation(form_1, form_2, (x, y) -> x * y, "*")
+    end
 end
 
 ############################################################################################
@@ -438,8 +442,14 @@ function evaluate(
 
     form_1_eval, indices = evaluate(forms[1], element_id, xi)
     form_2_eval, indices = evaluate(forms[2], element_id, xi)
-    form_1_eval .= transformation.(form_1_eval, form_2_eval)  # we store the output in form_eval_1 to avoid extra
-    # allocations, the same reason for using .= and
-    # transformation.()
+    foreach(
+        c -> map!(
+            i -> transformation(form_1_eval[c][i], form_2_eval[c][i]),
+            form_1_eval[c],
+            eachindex(form_1_eval[c], form_2_eval[c]),
+        ),
+        eachindex(form_1_eval, form_2_eval),
+    )
+
     return form_1_eval, indices
 end
