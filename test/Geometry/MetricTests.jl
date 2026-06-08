@@ -632,5 +632,386 @@ end
 # ------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------
 
+# TensorProductGeometry --------------------------------------------------------------------
+# TensorProductGeometry: TensorProduct equivalent of Cartesian Box -------------------------
+tp_cart_box = Geometry.TensorProductGeometry(
+    (
+        Geometry.CartesianGeometry((LinRange(0.0, 1.0, 7))),
+        Geometry.CartesianGeometry((LinRange(0.0, 1.0, 8))),
+    )
+)
+Jans_tp_cart_box(u, v) = [1.0/7.0 0.0; 0.0 1.0/8.0]
+gans_tp_cart_box(u, v) = [1.0/49.0 0.0; 0.0 1.0/64.0]
+sqrtgans_tp_cart_box(u, v) = sqrt((1.0 / 49.0) * (1.0 / 64.0))
+ginvans_tp_cart_box(u, v) = [49.0 0.0; 0.0 64.0]
+Hans_tp_cart_box(u, v) = ([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0])
+dgduans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
+dgdvans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
+dginvgduans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
+dginvgdvans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
+
+xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+    cart_box, 1, xi
+)
+J_test_tpcb = true
+g_test_tpcb = true
+sqrt_test_tpcb = true
+inv_g_test_tpcb = true
+H1_test_tpcb = true
+H2_test_tpcb = true
+dgdx1_test_tpcb = true
+dgdx2_test_tpcb = true
+dinvg1_test_tpcb = true
+dinvg2_test_tpcb = true
+for p in eachindex(xi)
+    if !all(isapprox.(J[p], Jans_tp_cart_box(xi[p]...), rtol=1e-14))
+        J_test_tpcb = false
+    end
+    if !all(isapprox.(g[p], gans_tp_cart_box(xi[p]...), rtol=1e-14))
+        g_test_tpcb = false
+    end
+    if !all(isapprox.(sqrt_g[p], sqrtgans_tp_cart_box(xi[p]...), rtol=1e-14))
+        sqrt_test_tpcb = false
+    end
+    if !all(isapprox.(inv_g[p], ginvans_tp_cart_box(xi[p]...), rtol=1e-14))
+        inv_g_test_tpcb = false
+    end
+    if !all(isapprox.(Hs[p][1], Hans_tp_cart_box(xi[p]...)[1], rtol=1e-14))
+        H1_test_tpcb = false
+    end
+    if !all(isapprox.(Hs[p][2], Hans_tp_cart_box(xi[p]...)[2], rtol=1e-14))
+        H2_test_tpcb = false
+    end
+    if !all(isapprox.(dgdxs[1][p], dgduans_tp_cart_box(xi[p]...), rtol=1e-14))
+        dgdx1_test_tpcb = false
+    end
+    if !all(isapprox.(dgdxs[2][p], dgdvans_tp_cart_box(xi[p]...), rtol=1e-14))
+        dgdx2_test_tpcb = false
+    end
+    if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_tp_cart_box(xi[p]...), rtol=1e-12))
+        dinvg1_test_tpcb = false
+    end
+    if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_tp_cart_box(xi[p]...), rtol=1e-12))
+        dinvg2_test_tpcb = false
+    end
+end
+@test J_test_tpcb
+@test g_test_tpcb
+@test sqrt_test_tpcb
+@test inv_g_test_tpcb
+@test H1_test_tpcb
+@test H2_test_tpcb
+@test dgdx1_test_tpcb
+@test dgdx2_test_tpcb
+@test dinvg1_test_tpcb
+@test dinvg2_test_tpcb
+# ------------------------------------------------------------------------------------------
+
+# TensorProductGeometry: TensorProduct cylinder --------------------------------------------
+const R = 2.0
+const H = 3.0
+const n_theta = 4
+const n_z = 5
+const dtheta = 2π / n_theta
+const dz = H / n_z
+
+circle_cart = Geometry.CartesianGeometry((LinRange(0.0, 2*π, n_theta + 1),))
+circle_map_geo(theta) = [R * cos(theta[1]), R * sin(theta[1])]
+circle_map_dgeo(theta) = [-R * sin(theta[1]) R * cos(theta[1])]
+circle_map_d2geo(theta) = (
+    [-R * cos(theta[1]);;],
+    [-R * sin(theta[1]);;],
+)
+circle_mapping = Geometry.Mapping((1, 2), circle_map_geo, circle_map_dgeo, circle_map_d2geo)
+geo_circle = Geometry.MappedGeometry(circle_cart, circle_mapping)
+
+geo_z = Geometry.CartesianGeometry((LinRange(0.0, H, n_z + 1),))
+
+cyl_uv_domain = Geometry.CartesianGeometry(
+    (LinRange(0.0, 2*π, n_theta + 1), LinRange(0.0, H, n_z + 1))
+)
+
+cylinder = Geometry.TensorProductGeometry((geo_circle, geo_z))
+
+Jans_tp_cyl(u, v) = SMatrix{3,2}(
+    -R * sin(u) * dtheta, R * cos(u) * dtheta, 0.0, 0.0, 0.0, dz
+)
+gans_tp_cyl(u, v) = SMatrix{2,2}(R^2 * dtheta^2, 0.0, 0.0, dz^2)
+sqrtgans_tp_cyl(u, v) = R * dtheta * dz
+ginvans_tp_cyl(u, v) = SMatrix{2,2}(1.0/(R^2 * dtheta^2), 0.0, 0.0, 1.0/dz^2)
+Hans_tp_cyl(u, v) = (
+    SMatrix{2,2}(-R * cos(u) * dtheta^2, 0.0, 0.0, 0.0),
+    SMatrix{2,2}(-R * sin(u) * dtheta^2, 0.0, 0.0, 0.0),
+    SMatrix{2,2}(0.0, 0.0, 0.0, 0.0),
+)
+dgduans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
+dgdvans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
+dginvgduans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
+dginvgdvans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
+
+xi_cyl = Points.CartesianPoints((LinRange(0.0, 1.0, 6), LinRange(0.0, 1.0, 7)))
+J_test_tpcyl = true
+g_test_tpcyl = true
+sqrt_test_tpcyl = true
+inv_g_test_tpcyl = true
+H1_test_tpcyl = true
+H2_test_tpcyl = true
+H3_test_tpcyl = true
+dgdx1_test_tpcyl = true
+dgdx2_test_tpcyl = true
+dinvg1_test_tpcyl = true
+dinvg2_test_tpcyl = true
+for (k, IJ) in enumerate(CartesianIndices((n_theta, n_z)))
+    J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+        cylinder, k, xi_cyl
+    )
+    uv = Geometry.evaluate(cyl_uv_domain, k, xi_cyl)
+    for p in eachindex(xi_cyl)
+        u, v = uv[p, :]
+        if !all(isapprox.(J[p], Jans_tp_cyl(u, v), rtol=1e-14))
+            J_test_tpcyl = false
+        end
+        if !all(isapprox.(g[p], gans_tp_cyl(u, v), rtol=1e-14))
+            g_test_tpcyl = false
+        end
+        if !all(isapprox.(sqrt_g[p], sqrtgans_tp_cyl(u, v), rtol=1e-14))
+            sqrt_test_tpcyl = false
+        end
+        if !all(isapprox.(inv_g[p], ginvans_tp_cyl(u, v), rtol=1e-14))
+            inv_g_test_tpcyl = false
+        end
+        if !all(isapprox.(Hs[p][1], Hans_tp_cyl(u, v)[1], rtol=1e-14))
+            H1_test_tpcyl = false
+        end
+        if !all(isapprox.(Hs[p][2], Hans_tp_cyl(u, v)[2], rtol=1e-14))
+            H2_test_tpcyl = false
+        end
+        if !all(isapprox.(Hs[p][3], Hans_tp_cyl(u, v)[3], rtol=1e-14))
+            H3_test_tpcyl = false
+        end
+        if !all(isapprox.(dgdxs[1][p], dgduans_tp_cyl(u, v), atol=1e-14))
+            dgdx1_test_tpcyl = false
+        end
+        if !all(isapprox.(dgdxs[2][p], dgdvans_tp_cyl(u, v), atol=1e-14))
+            dgdx2_test_tpcyl = false
+        end
+        if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_tp_cyl(u, v), atol=1e-14))
+            dinvg1_test_tpcyl = false
+        end
+        if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_tp_cyl(u, v), atol=1e-14))
+            dinvg2_test_tpcyl = false
+        end
+    end
+end
+@test J_test_tpcyl
+@test g_test_tpcyl
+@test sqrt_test_tpcyl
+@test inv_g_test_tpcyl
+@test H1_test_tpcyl
+@test H2_test_tpcyl
+@test H3_test_tpcyl
+@test dgdx1_test_tpcyl
+@test dgdx2_test_tpcyl
+@test dinvg1_test_tpcyl
+@test dinvg2_test_tpcyl
+# ------------------------------------------------------------------------------------------
+
+# TensorProductGeometry: TensorProduct full 3D cylinder ------------------------------------
+const R_cyl = 2.0
+const H_cyl = 3.0
+const n_r = 3
+const n_theta_cyl = 4
+const n_z_cyl = 5
+const dr = R_cyl / n_r
+const dtheta_cyl = 2π / n_theta_cyl
+const dz_cyl = H_cyl / n_z_cyl
+
+disk_cart = Geometry.CartesianGeometry(
+    (LinRange(0.0, R_cyl, n_r + 1), LinRange(0.0, 2π, n_theta_cyl + 1))
+)
+disk_map_geo(x) = [x[1] * cos(x[2]), x[1] * sin(x[2])]
+disk_map_dgeo(x) = [cos(x[2])  -x[1]*sin(x[2]);
+                    sin(x[2])   x[1]*cos(x[2])]
+disk_map_d2geo(x) = (
+    [0.0         -sin(x[2]);
+    -sin(x[2])  -x[1]*cos(x[2])],
+    [0.0          cos(x[2]);
+     cos(x[2])  -x[1]*sin(x[2])],
+)
+disk_mapping = Geometry.Mapping((2, 2), disk_map_geo, disk_map_dgeo, disk_map_d2geo)
+geo_disk = Geometry.MappedGeometry(disk_cart, disk_mapping)
+
+geo_z_cyl = Geometry.CartesianGeometry((LinRange(0.0, H_cyl, n_z_cyl + 1),))
+
+solid_cyl_uvw_domain = Geometry.CartesianGeometry((
+    LinRange(0.0, R_cyl, n_r + 1),
+    LinRange(0.0, 2π, n_theta_cyl + 1),
+    LinRange(0.0, H_cyl, n_z_cyl + 1),
+))
+
+solid_cylinder = Geometry.TensorProductGeometry((geo_disk, geo_z_cyl))
+
+
+Jans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    cos(theta)*dr,
+    sin(theta)*dr,
+    0.0,
+    -r*sin(theta)*dtheta_cyl,
+    r*cos(theta)*dtheta_cyl,
+    0.0,
+    0.0,
+    0.0,
+    dz_cyl,
+)
+gans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    dr^2, 0.0, 0.0, 0.0, r^2 * dtheta_cyl^2, 0.0, 0.0, 0.0, dz_cyl^2
+)
+sqrtgans_solid_cyl(r, theta, z) = r * dr * dtheta_cyl * dz_cyl
+ginvans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    1.0/dr^2, 0.0, 0.0, 0.0, 1.0/(r^2 * dtheta_cyl^2), 0.0, 0.0, 0.0, 1.0/dz_cyl^2
+)
+Hans_solid_cyl(r, theta, z) = (
+    SMatrix{3,3}(
+         0.0,
+         -sin(theta)*dr*dtheta_cyl,
+         0.0,
+         -sin(theta)*dr*dtheta_cyl,
+         -r*cos(theta)*dtheta_cyl^2,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+    ),
+    SMatrix{3,3}(
+         0.0,
+         cos(theta)*dr*dtheta_cyl,
+         0.0,
+         cos(theta)*dr*dtheta_cyl,
+         -r*sin(theta)*dtheta_cyl^2,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+    ),
+    SMatrix{3,3}(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+)
+dgduans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    0.0, 0.0, 0.0, 0.0, 2.0 * r * dtheta_cyl^2 * dr, 0.0, 0.0, 0.0, 0.0
+)
+dgdvans_solid_cyl(r, theta, z) = SMatrix{3,3}(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+dgdwans_solid_cyl(r, theta, z) = SMatrix{3,3}(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+dginvgduans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    0.0, 0.0, 0.0, 0.0, -2.0 * dr / (r^3 * dtheta_cyl^2), 0.0, 0.0, 0.0, 0.0
+)
+dginvgdvans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+)
+dginvgdwans_solid_cyl(r, theta, z) = SMatrix{3,3}(
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+)
+
+xi_solid_cyl = Points.CartesianPoints(
+    (LinRange(0.1, 1.0, 4), LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 3))
+)
+
+J_test_scyl = true
+g_test_scyl = true
+sqrt_test_scyl = true
+inv_g_test_scyl = true
+H1_test_scyl = true
+H2_test_scyl = true
+H3_test_scyl = true
+dgdx1_test_scyl = true
+dgdx2_test_scyl = true
+dgdx3_test_scyl = true
+dinvg1_test_scyl = true
+dinvg2_test_scyl = true
+dinvg3_test_scyl = true
+for (k, IJK) in enumerate(CartesianIndices((n_r, n_theta_cyl, n_z_cyl)))
+    J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
+        solid_cylinder, k, xi_solid_cyl
+    )
+    uvw = Geometry.evaluate(solid_cyl_uvw_domain, k, xi_solid_cyl)
+    for p in eachindex(xi_solid_cyl)
+        r, theta, z = uvw[p, 1], uvw[p, 2], uvw[p, 3]
+        if !all(isapprox.(J[p], Jans_solid_cyl(r, theta, z), rtol=1e-14))
+            J_test_scyl = false
+        end
+        if !all(isapprox.(g[p], gans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14))
+            g_test_scyl = false
+        end
+        if !all(isapprox.(sqrt_g[p], sqrtgans_solid_cyl(r, theta, z), rtol=1e-14))
+            sqrt_test_scyl = false
+        end
+        if !all(
+            isapprox.(inv_g[p], ginvans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
+        )
+            inv_g_test_scyl = false
+        end
+        if !all(
+            isapprox.(Hs[p][1], Hans_solid_cyl(r, theta, z)[1], rtol=1e-14, atol=1e-14)
+        )
+            H1_test_scyl = false
+        end
+        if !all(
+            isapprox.(Hs[p][2], Hans_solid_cyl(r, theta, z)[2], rtol=1e-14, atol=1e-14)
+        )
+            H2_test_scyl = false
+        end
+        if !all(
+            isapprox.(Hs[p][3], Hans_solid_cyl(r, theta, z)[3], rtol=1e-14, atol=1e-14)
+        )
+            H3_test_scyl = false
+        end
+        if !all(
+            isapprox.(dgdxs[1][p], dgduans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
+        )
+            dgdx1_test_scyl = false
+        end
+        if !all(
+            isapprox.(dgdxs[2][p], dgdvans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
+        )
+            dgdx2_test_scyl = false
+        end
+        if !all(
+            isapprox.(dgdxs[3][p], dgdwans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
+        )
+            dgdx3_test_scyl = false
+        end
+        if !all(
+            isapprox.(
+                dinv_g_dxs[1][p], dginvgduans_solid_cyl(r, theta, z), rtol=1e-12, atol=1e-12
+            )
+        )
+            dinvg1_test_scyl = false
+        end
+        if !all(
+            isapprox.(dinv_g_dxs[2][p], dginvgdvans_solid_cyl(r, theta, z), atol=1e-12)
+        )
+            dinvg2_test_scyl = false
+        end
+        if !all(
+            isapprox.(dinv_g_dxs[3][p], dginvgdwans_solid_cyl(r, theta, z), atol=1e-12)
+        )
+            dinvg3_test_scyl = false
+        end
+    end
+end
+@test J_test_scyl
+@test g_test_scyl
+@test sqrt_test_scyl
+@test inv_g_test_scyl
+@test H1_test_scyl
+@test H2_test_scyl
+@test H3_test_scyl
+@test dgdx1_test_scyl
+@test dgdx2_test_scyl
+@test dgdx3_test_scyl
+@test dinvg1_test_scyl
+@test dinvg2_test_scyl
+@test dinvg3_test_scyl
+# ------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 
 end
