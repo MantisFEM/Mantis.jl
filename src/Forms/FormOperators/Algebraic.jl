@@ -171,6 +171,10 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L
     function Base.:*(factor::Number, form::AbstractForm)
         return UnaryFormTransformation(form, x -> factor * x, "$(factor)*")
     end
+
+    function Base.:*(form::AbstractForm, factor::Number)
+        return factor * form
+    end
 end
 
 """
