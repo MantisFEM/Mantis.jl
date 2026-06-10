@@ -1,6 +1,4 @@
 ############################################################################################
 #                                         include                                          #
 ############################################################################################
-
-include("CanonicalSpaces/CanonicalSpaces.jl")
-include("FiniteElementSpaces/FiniteElementSpaces.jl")
+include("BSplines.jl")
