@@ -71,10 +71,14 @@ end
 
 # skeleton_topology[3, 1]
 
-for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
-    skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
-    plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
-end
+# Plots the geometry and the points in sequence
+# ----------------------->
+# for element_id in 1:Mantis.Geometry.get_num_elements(skeleton_geometry)
+#     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
+#     plot_points_sequential(geo3d2, skeleton_geo_eval, 0.2)
+# end
+
+#  <-----------------------
 
 # for element_id in 19:27
 #     skeleton_geo_eval = Mantis.Geometry.evaluate(skeleton_geometry, element_id, points_skeleton)
@@ -103,7 +107,8 @@ parent_elements_ids, patch_parents = Mantis.Geometry.get_parent_elements(skeleto
 points_parent = Mantis.Geometry.skeleton_element_to_parent_element_coords(
 points_skeleton, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1])
 
-
+# ======================================
+# You can ignore/delete this part below
 
 # # Oriol Periodic B-Splines
 

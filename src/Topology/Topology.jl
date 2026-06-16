@@ -12,7 +12,7 @@ end
 # struct TensorProductMeshTopology end
 
 """
-    AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
+    AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, patch_type}
 
 Abstract type of all topologies that represent the topological structure of a collection of
 patches (of equal shape) forming a mesh. This includes the skeleton mesh.
@@ -156,13 +156,13 @@ Edges (arrows indicate orientation):
 - Edge 11: 1 → 5
 - Edge 12: 2 → 6
 
-Faces (cyclic vertex order indicates orientation):
+Faces (cyclic vertex order indicates orientation, pointing outwards):
 
-- Face 1 (f1, back face, not visible): 1 → 4 → 8 → 5 (ξ = min)
+- Face 1 (f1, back face, not visible): 1 → 5 → 8 → 4 (ξ = min)
 - Face 2 (f2, front face): 2 → 3 → 7 → 6 (ξ = max)
 - Face 3 (f3, left face): 1 → 2 → 6 → 5 (η = min)
-- Face 4 (f4, right face): 4 → 3 → 7 → 8 (η = max)
-- Face 5 (f5, bottom face): 1 → 2 → 3 → 4 (ζ = min)
+- Face 4 (f4, right face): 4 → 8 → 7 → 3 (η = max)
+- Face 5 (f5, bottom face): 1 → 4 → 3 → 2 (ζ = min)
 - Face 6 (f6, top face): 5 → 6 → 7 → 8 (ζ = max)
 
 ---
@@ -235,11 +235,17 @@ function get_local_incidence_relations(num_patch_vertices::Int)
 
         # Store the local face to vertex incidence relation for hexahedra
         # local_facet2vertex[i, j]: the i-th vertex of the j-th face
+        # local_face2vertex = [
+        #     1 2 1 4 1 5
+        #     4 3 2 3 2 6
+        #     8 7 6 7 3 7
+        #     5 6 5 8 4 8
+        # ]
         local_face2vertex = [
             1 2 1 4 1 5
-            4 3 2 3 2 6
+            5 3 2 8 4 6
             8 7 6 7 3 7
-            5 6 5 8 4 8
+            4 6 5 3 2 8
         ]
 
     else
@@ -1647,9 +1653,8 @@ function compute_neighbours(
     return local_object_neighbours
 end
 
-
+include("Patches.jl")
 include("MeshTopology.jl")
 include("SkeletonTopology.jl")
-
 
 end
