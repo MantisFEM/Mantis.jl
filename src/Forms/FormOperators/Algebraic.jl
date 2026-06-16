@@ -238,14 +238,7 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         F2 <: AbstractForm{manifold_dim, form_rank, expression_rank},
         T <: Function,
     }
-        if !(get_geometry(form_1) == get_geometry(form_2))
-            @warn(
-                "Trying to create a binary transformation on two forms " *
-                    "whose geometries don't point to the same object in memory. " *
-                    "The geometries might not be compatible."
-            )
-        end
-
+        check_geometry(form_1, form_2)
         # Check if both forms contain the same forms in their tree
         tree_form_1 = get_form_space_tree(form_1)
         tree_form_2 = get_form_space_tree(form_2)

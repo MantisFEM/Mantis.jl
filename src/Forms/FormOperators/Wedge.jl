@@ -77,14 +77,7 @@ struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
                 """))
         end
 
-        if !(get_geometry(form_1) == get_geometry(form_2))
-            @warn(
-                "Trying to create a `Wedge` where the two forms' geometries" *
-                    " don't point to the same object in memory. " *
-                    "The geometries might not be compatible."
-            )
-        end
-
+        check_geometry(form_1, form_2)
         new_label_type = promote_type(typeof(get_label(form_1)), typeof(get_label(form_2)))
         new_label = convert(
             new_label_type,

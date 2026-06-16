@@ -67,6 +67,12 @@ function get_num_patches(
     return num_patches
 end
 
+function check_geometry(space_1::AbstractFunctionSpace, space_2::AbstractFunctionSpace)
+    if get_num_elements(space_1) != get_num_elements(space_2)
+        throw(ArgumentError("The given spaces have different number of elements."))
+    end
+end
+
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
 include("AdaptiveRefinement/AdaptiveRefinement.jl")
 

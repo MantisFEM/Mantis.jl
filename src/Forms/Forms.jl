@@ -18,7 +18,11 @@ import SparseArrays
 # The public keyword is only available in Julia 1.11 and up. Since we also support LTS
 # (currently 1.10), we add the following line from the manual:
 # https://docs.julialang.org/en/v1.12/manual/modules/#Export-lists
-VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public AbstractForm, AbstractFormField, AbstractFormSpace, AbstractRealValuedOperator"))
+VERSION >= v"1.11.0-DEV.469" && eval(
+    Meta.parse(
+        "public AbstractForm, AbstractFormField, AbstractFormSpace, AbstractRealValuedOperator",
+    ),
+)
 
 # Type parameter methods
 export get_manifold_dim, get_form_rank, get_expression_rank
@@ -32,7 +36,8 @@ export get_max_local_dim, get_fe_space, get_num_basis
 
 # FormExpressions
 export ConstantFormSpace
-export FormField, AnalyticalFormField, get_coefficients, get_num_coefficients, get_expression
+export FormField,
+    AnalyticalFormField, get_coefficients, get_num_coefficients, get_expression
 export FormSpace
 # FormOperators
 export CoDifferential, dstar, δ
@@ -42,7 +47,6 @@ export Integral, ∫, get_quadrature_rule
 export evaluate_pushforward, evaluate_sharp_pushforward
 export ♯, Sharp
 export ∧, Wedge, get_forms
-
 
 ############################################################################################
 #                                      Abstract Types                                      #
@@ -206,22 +210,22 @@ get_geometry(op::AbstractRealValuedOperator) = get_geometry(get_form(op))
         single_form::AbstractForm, additional_forms::AbstractForm...
     )
 
-If a single form is given, returns the geometry of that form. If additional forms are
-given, checks if all the geometries of the different forms refer to the same object in
-memory, and then returns it. Throws a warning if not.
+If a single form is given, returns the geometry of that form. If additional forms are given,
+checks if the number of elements is the same between them; throws an error if not.
+
+!!! warning
+    Even if the number of elements is the same, the geometries might be incompatible.
 """
 function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm...)
-    all_forms = tuple(single_form, additional_forms...)
-
-    for i in 1:(length(all_forms) - 1)
-        if !(get_geometry(all_forms[i]) == get_geometry(all_forms[i + 1]))
-            msg1 = "Not all forms share a common geometry. "
-            msg2 = "The geometries of form number $(i) and form number $(i+1) differ."
-            @warn(msg1 * msg2)
-        end
-    end
+    foreach(form -> check_geometry(single_form, form), additional_forms)
 
     return get_geometry(single_form)
+end
+
+function check_geometry(form_1::AbstractForm, form_2::AbstractForm)
+    if get_num_elements(form_1) != get_num_elements(form_2)
+        throw(ArgumentError("The given forms have a different number of elements."))
+    end
 end
 
 """

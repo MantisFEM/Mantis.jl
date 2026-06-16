@@ -29,16 +29,8 @@ struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
         num_patches,
         F <: NTuple{num_components, AbstractFESpace{manifold_dim, 1, num_patches}},
     }
-        foreach(component_spaces) do component_space
-            if !(get_geometry(component_space) === get_geometry(component_spaces[1]))
-                @warn(
-                    "Trying to create a `DirectSumSpace` where the component-spaces' " *
-                        "geometries do not point to the same object in memory. " *
-                        "The geometries might not be compatible."
-                )
-            end
-        end
-
+        first_space = first(component_spaces)
+        foreach(space -> check_geometry(first_space, space), Base.tail(component_spaces))
         # Since each component in a direct sum space only contributes to its own component,
         # the number of global d.o.f.s is the sum of the number of d.o.f.s in each component
         # space.

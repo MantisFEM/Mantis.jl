@@ -66,14 +66,7 @@ function compute_error_per_element(
     TF2 <: Forms.AbstractForm{manifold_dim, form_rank, expression_rank_2},
     Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
 }
-    if !(Forms.get_geometry(computed_sol) == Forms.get_geometry(exact_sol))
-        @warn(
-            "Trying to compute the error between two forms " *
-                "whose geometries don't point to the same object in memory. " *
-                "The geometries might not be compatible."
-        )
-    end
-
+    Forms.check_geometry(computed_sol, exact_sol)
     partial_result = _compute_square_error_per_element(
         computed_sol, exact_sol, quad_rule, norm
     )
