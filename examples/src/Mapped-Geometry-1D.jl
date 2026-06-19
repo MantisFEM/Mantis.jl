@@ -3,10 +3,10 @@
 # This example will guide through the process of defining a one-dimensional mapped geometry
 # in *Mantis.jl*.
 #
-# ### Background
+# ### [Background](@id Mapped-Geometry-1D-Background)
 #
 # A *mapped geometry* has two essential ingredients: an original geometry and a mapping. For
-# our purposes, we can consider the original geometry as a Cartesian geometry — although
+# our purposes, we can consider the original geometry as a Cartesian geometry, although
 # this might not be the case.
 #
 # Associated with each element ``e_i`` of a Cartesian geometry is an implicit map ``\varphi_i``,
@@ -62,7 +62,7 @@ starting_point = (1.0,)
 box_size = (3.0,)
 num_elements = (3,)
 original_geo = Geometry.create_cartesian_box(starting_point, box_size, num_elements)
-# For a quick sanity check, we can evaluate the endpoints of our 1D geometry. These should
+# To check the construction, we can evaluate the endpoints of our 1D geometry. These should
 # be equal to `starting_point` and `starting_point + box_size`, respectively.
 fp, lp = starting_point[1], (starting_point[1] + box_size[1]) # First and last point.
 fe, le = 1, num_elements[1] # First and last element.
@@ -92,9 +92,9 @@ d2ϕ_map(ξ̂) = exponent * (exponent - 1) * ξ̂^(exponent - 2)
 )
 # We can now put both pieces together and define our mapped geometry.
 geo = Geometry.MappedGeometry(original_geo, ϕ)
-# We can repeat the sanity check we previously did, where we now expect that evaluating the
+# We can repeat the check from before, where we now expect that evaluating the
 # endpoints gives us `ϕ(starting_point)` and `ϕ(starting_point + box_size)`, and the
-# derivatives are as in [`Background`](@ref).
+# derivatives are as in [Background](@ref Mapped-Geometry-1D-Background).
 Geometry.evaluate(geo, 1, Points.PointSet(([0.0],)))[1] == ϕ_map(fp)
 Geometry.evaluate(geo, le, Points.PointSet(([1.0],)))[1] == ϕ_map(lp)
 Geometry.jacobian(geo, 1, Points.PointSet(([0.0],)))[1][1] == dϕ_map(fp) * dφᵢ

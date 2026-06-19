@@ -10,12 +10,12 @@ using DocumenterVitepress
 mantis_dir = dirname(dirname(pathof(Mantis)))
 examples_dir = joinpath(mantis_dir, "examples", "src")
 
-example_names = String[]
+# Generate the markdown for every example `.jl`. The generated pages are then organised by
+# hand into the thematic sections of `Examples` below, so a new example must be both added to
+# `examples/src` *and* listed in the appropriate section here for it to appear in the nav.
 for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
-
-        push!(example_names, example[1:(end-3)])  # Remove the file extension from the name.
 
         # Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -29,13 +29,41 @@ end
 
 Examples = [
     joinpath("Examples", "Introduction.md"),
-    map(example_name -> joinpath("Examples", "$example_name.md"), example_names)...,
+    # Building blocks: one concept at a time, ordered from geometry up to integration.
+    "First steps" => joinpath.(
+        "Examples",
+        [
+            "Geometry-Cartesian.md",
+            "Mapped-Geometry-1D.md",
+            "Mapped-Geometry-2D.md",
+            "Tensor-Product-Geometry.md",
+            "Geometry-Inspect.md",
+            "FunctionSpaces-BSplines.md",
+            "Forms-Spaces-Fields.md",
+            "Forms-Operators.md",
+            "Quadrature-Integration.md",
+        ],
+    ),
+    # End-to-end PDE solves, ordered by increasing complexity.
+    "Solving PDEs" => joinpath.(
+        "Examples",
+        [
+            "L2Projection.md",
+            "HodgeLaplacian.md",
+            "HeatEquation.md",
+            "Biharmonic.md",
+            "MaxwellEigenvalue.md",
+        ],
+    ),
+    # The features that set Mantis apart.
+    "Advanced features" =>
+        joinpath.("Examples", ["NonPolynomialSpaces.md", "AdaptiveRefinement.md"]),
 ]
 
 Design = [
     joinpath("Design", "DesignIntroduction.md"),
     "Philosophy" => [joinpath("Design", "Philosophy", "WhyMantis.md")],
-    "Theory" => joinpath.("Design", "Theory", ["FEM.md", "DifferentialForms.md"]),
+    "Theory" => joinpath.("Design", "Theory", ["FEM.md", "FEEC.md", "DifferentialForms.md"]),
     "Modules" =>
         joinpath.(
             "Design",
@@ -82,6 +110,7 @@ Pages = [
 	"Getting Started" => "GettingStarted.md",
 	"Examples" => Examples,
     "Design" => Design,
+    "API Index" => joinpath("Reference", "APIIndex.md"),
     "Support(ing)" => Support,
     "Releases" => ReleaseHistory,
     "Bibliography" => [
