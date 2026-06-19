@@ -1,14 +1,70 @@
+```@meta
+CurrentModule = Mantis.Geometry
+```
 # [Geometry](@id DocGeometryModule)
 
-Mantis' `Geometry` module contains all functionality related to geometry.
+Mantis' `Geometry` module describes the *domain* a problem is posed on. A geometry is a
+collection of mappings from the canonical element ``[0, 1]^n`` into physical space, and every
+`evaluate` call elsewhere in `Mantis` (on a function space, a form, a quadrature rule) is
+ultimately referred back to one of these mappings. The formal definition is given below, after
+a short tour of the geometry types.
 
-## Geometry
+## Geometry types
+
+All geometries are subtypes of [`AbstractGeometry`](@ref), parametrised by the manifold
+dimension `n`, the image (embedding) dimension `m`, and the number of patches. The concrete
+types fall into a few groups:
+
+- **Base geometries** describe a domain directly.
+  [`CartesianGeometry`](@ref) is an axis-aligned box mesh defined by per-direction
+  breakpoints, and is the usual starting point. [`UnstructuredGeometry`](@ref) and
+  [`DiscreteGeometry`](@ref) describe more general meshes.
+- **Tensor-product geometries** ([`TensorProductGeometry`](@ref)) build a higher-dimensional
+  geometry from lower-dimensional factors; the construction and its Jacobian are derived in
+  detail [below](@ref GeometryTensorProduct).
+- **Derived geometries** wrap another geometry to transform it.
+  `MappedGeometry` composes a base geometry with a user-supplied `Mapping` to produce curved
+  domains (see the [One-dimensional mapped geometry](@ref) example);
+  [`HierarchicalGeometry`](@ref) carries the active-element structure needed for adaptive
+  refinement; and [`MaskedGeometry`](@ref) restricts a geometry to a subset of its elements.
+
+A geometry is created either directly or through a convenience helper. The most common is
+[`create_cartesian_box`](@ref):
+
+```julia
+using Mantis
+
+# A unit square with 4×4 elements:
+geometry = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (4, 4))
+
+# A curved version of the same domain:
+mapping     = Geometry.create_curvilinear_mapping((0.0, 0.0), (1.0, 1.0))
+curved_geo  = Geometry.MappedGeometry(geometry, mapping)
+```
+
+## Evaluation, Jacobian and Hessian
+
+Because integrals are pulled back to the canonical element, `Mantis` needs not only the
+mapping but also its derivatives. Every geometry therefore supports three evaluation routines,
+each taking an `element_idx` and a set of [Points](@ref):
+
+- [`evaluate`](@ref) returns the physical coordinates ``\Phi_i(\xi)``;
+- [`jacobian`](@ref) returns the first derivatives ``\partial \Phi_i / \partial \xi``;
+- [`hessian`](@ref) returns the second derivatives, needed for higher-order operators such as
+  the Laplacian in the [Biharmonic](@ref) example.
+
+The metric tensor ``g`` and its determinant (see `metric`/`inv_metric` below) are assembled
+from the Jacobian and are what make metric-dependent operators such as the
+[Hodge star](@ref FormsHodge) and [codifferential](@ref FormsCodifferential) work on curved
+geometries.
+
+## [Geometry: formal definition](@id GeometryDefinition)
 
 An ``(n, m)`` geometry ``\Phi`` is a collection of ``L`` mappings
 ``\left\{\Phi_{i}\right\}_{i=1}^{L}`` that map the canonical ``n``-dimensional domain,
 ``\Omega^{0} := [0, 1]^{n}`` into ``L`` ``n``-dimensional simply connected subdomains,
 ``\Omega^{1}_{i}`` with ``i = 1, \dots, L``, of ``\mathbb{R}^{m}``. Moreover,
-``\bigcap_{i=1}^{L}\Omega^{1}_{i} = \emptyset`` and using Core: Argument
+``\bigcap_{i=1}^{L}\Omega^{1}_{i} = \emptyset`` and
 ``\overline{\Omega}^{1}_{i} \cap \overline{\Omega}^{1}_{j} \subset \partial\Omega^{1}_{i}
 \cup \partial\Omega^{1}_{j}`` with ``i,j = 1, \dots, L``.
 
@@ -20,7 +76,7 @@ Note that
 and we use ``\Phi_{i, j} = x_{j}`` to mean the ``j``-th component of the mapping ``\Phi`` of
 element ``i``.
 
-## Tensor Product Geometry
+## [Tensor Product Geometry](@id GeometryTensorProduct)
 
 Given an ``(n_{1}, m_{1})`` geometry ``\Phi^{1}`` of ``L_{1}`` mappings and an ``(n_{2},
 m_{2})`` geometry ``\Phi^{2}`` of ``L_{2}`` mappings, i.e.,
@@ -108,5 +164,5 @@ where ``r = \mathtt{element\_idx}``, and ``k = j_{1} + \sum_{i=2}^{n} (j_{i} -
 
 ## All docstrings from Mantis.Geometry
 ```@autodocs
-Modules = [Mantis.Geometry]
+Modules = [Main.Mantis.Geometry]
 ```
