@@ -119,13 +119,13 @@ makedocs(;
     pages=Pages,
     plugins=[bib],
     format=DocumenterVitepress.MarkdownVitepress(;
-        repo="github.com/MantisFEM/Mantis.jl", devbranch = "main", devurl = "dev"
+        repo="github.com/MantisFEM/Mantis.jl", devbranch = "dev", devurl = "dev"
     ),
 )
 DocumenterVitepress.deploydocs(;
     repo="github.com/MantisFEM/Mantis.jl",
     target="build", # this is where Vitepress stores its output
-    devbranch="main",
+    devbranch="dev",
     devurl = "dev",
     branch="gh-pages",
     push_preview=true,
