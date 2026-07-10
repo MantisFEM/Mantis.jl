@@ -4,16 +4,16 @@
 # The [three-body problem](https://en.wikipedia.org/wiki/Three-body_problem) is a classical
 # physics problem where three bodies are orbiting each other and are thus interacting based
 # on Newton's law of universal gravitation. From a computational point of view, the goal is
-# to compute the trajecteries of all three bodies given the initial position and velocity
+# to compute the trajectories of all three bodies given the initial position and velocity
 # of each body.
 #
 # The problem is an application of the Newton's second law and Newton's law of universal
 # gravitation, that is, we can define the following system of equations:
 # ```math
 # \begin{cases}
-#   \frac{\partial^2 x_1}{\partial t^2} = -Gm_2 \frac{\mathbf{x}_1 - \mathbf{x}_2}{||\mathbf{x}_1 - \mathbf{x}_2||^3} -Gm_3 \frac{\mathbf{x}_1 - \mathbf{x}_3}{||\mathbf{x}_1 - \mathbf{x}_3||^3}\;, \\
-#   \frac{\partial^2 x_2}{\partial t^2} = -Gm_3 \frac{\mathbf{x}_2 - \mathbf{x}_3}{||\mathbf{x}_1 - \mathbf{x}_3||^3} -Gm_1 \frac{\mathbf{x}_2 - \mathbf{x}_1}{||\mathbf{x}_2 - \mathbf{x}_1||^3}\;, \\
-#   \frac{\partial^2 x_3}{\partial t^2} = -Gm_1 \frac{\mathbf{x}_3 - \mathbf{x}_1}{||\mathbf{x}_1 - \mathbf{x}_1||^3} -Gm_2 \frac{\mathbf{x}_3 - \mathbf{x}_2}{||\mathbf{x}_3 - \mathbf{x}_2||^3}\;,
+#   \frac{\mathrm{d}^2 x_1}{\mathrm{d} t^2} = -Gm_2 \frac{\mathbf{x}_1 - \mathbf{x}_2}{||\mathbf{x}_1 - \mathbf{x}_2||^3} -Gm_3 \frac{\mathbf{x}_1 - \mathbf{x}_3}{||\mathbf{x}_1 - \mathbf{x}_3||^3}\;, \\
+#   \frac{\mathrm{d}^2 x_2}{\mathrm{d} t^2} = -Gm_3 \frac{\mathbf{x}_2 - \mathbf{x}_3}{||\mathbf{x}_1 - \mathbf{x}_3||^3} -Gm_1 \frac{\mathbf{x}_2 - \mathbf{x}_1}{||\mathbf{x}_2 - \mathbf{x}_1||^3}\;, \\
+#   \frac{\mathrm{d}^2 x_3}{\mathrm{d} t^2} = -Gm_1 \frac{\mathbf{x}_3 - \mathbf{x}_1}{||\mathbf{x}_1 - \mathbf{x}_1||^3} -Gm_2 \frac{\mathbf{x}_3 - \mathbf{x}_2}{||\mathbf{x}_3 - \mathbf{x}_2||^3}\;,
 # \end{cases}
 # ```
 # where ``\mathbf{x}_i`` is the position of the ``i``-th body, and G is the gravitational
@@ -23,8 +23,8 @@
 # terms of two ODEs for each body as
 # ```math
 # \begin{cases}
-#   \frac{\partial v_i}{\partial t} = -G \sum_{j=1, j \neq i}^3 \frac{\mathbf{x}_i - \mathbf{x}_j}{||\mathbf{x}_i - \mathbf{x}_j||^3}\; \\
-#   \frac{\partial x_i}{\partial t} = v_i\;.
+#   \frac{\mathrm{d} v_i}{\mathrm{d} t} = -G \sum_{j=1, j \neq i}^3 m_j \frac{\mathbf{x}_i - \mathbf{x}_j}{||\mathbf{x}_i - \mathbf{x}_j||^3}\; \\
+#   \frac{\mathrm{d} x_i}{\mathrm{d} t} = v_i\;.
 # \end{cases}
 # ```
 # This system of two ODEs will be used in the implementation below. In this example, we
@@ -103,8 +103,8 @@ ode_position = TimeIntegrators.define_explicit_ode(f_position)
 #
 # To make this work in `Mantis`, we setup the two solutions `x_n` and `v_n` using the
 # previously defined initial conditions and using the forward Euler method in each.
-const x_n_E = TimeIntegrators.initialize_scheme(x₀, TimeIntegrators.FORWARD_EULER)
-const v_n_E = TimeIntegrators.initialize_scheme(v₀, TimeIntegrators.FORWARD_EULER)
+const x_n_E = TimeIntegrators.initialise_scheme(x₀, TimeIntegrators.FORWARD_EULER)
+const v_n_E = TimeIntegrators.initialise_scheme(v₀, TimeIntegrators.FORWARD_EULER)
 
 function integrate_sym_Euler!(x_n, v_n, t)
     ## Advance both ODEs. Note that the velocity must be updated first, to ensure that the
@@ -122,8 +122,8 @@ end
 
 # Alternatively, we can also use a Störmer-Verlet type scheme, by combining the same
 # integrators in a different way.
-const x_n_S = TimeIntegrators.initialize_scheme(x₀, TimeIntegrators.FORWARD_EULER)
-const v_n_S = TimeIntegrators.initialize_scheme(v₀, TimeIntegrators.FORWARD_EULER)
+const x_n_S = TimeIntegrators.initialise_scheme(x₀, TimeIntegrators.FORWARD_EULER)
+const v_n_S = TimeIntegrators.initialise_scheme(v₀, TimeIntegrators.FORWARD_EULER)
 
 function integrate_Stormer_Verlet!(x_n, v_n, t)
     ## Advance both ODEs. By first updating the velocity with a half time-step, followed by
@@ -146,8 +146,8 @@ end
 # conserve the Hamiltonian. Note that the scheme used for both ODEs is a higher-order
 # integrator. However, since the coupling between the ODEs is poor, this still does not
 # provide accurate results.
-const x_n_R = TimeIntegrators.initialize_scheme(x₀, TimeIntegrators.RK4)
-const v_n_R = TimeIntegrators.initialize_scheme(v₀, TimeIntegrators.RK4)
+const x_n_R = TimeIntegrators.initialise_scheme(x₀, TimeIntegrators.RK4)
+const v_n_R = TimeIntegrators.initialise_scheme(v₀, TimeIntegrators.RK4)
 
 function integrate_RK4!(x_n, v_n, t)
     ## Advance both ODEs. Here, we use the current velocity and position in both cases.

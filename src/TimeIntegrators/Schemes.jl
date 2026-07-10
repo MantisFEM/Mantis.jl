@@ -31,13 +31,17 @@ function butcher_tableau_to_glm(
     )
 
     if is_implicit
-        return Implicit(A, SMatrix{1, num_stages}(B'), U, V, C, time_levels, order)
+        return Implicit(
+            A, SMatrix{1, num_stages}(transpose(B)), U, V, C, time_levels, order
+        )
     elseif is_diagonally_implicit
         return DiagonallyImplicit(
-            A, SMatrix{1, num_stages}(B'), U, V, C, time_levels, order
+            A, SMatrix{1, num_stages}(transpose(B)), U, V, C, time_levels, order
         )
     else
-        return Explicit(A, SMatrix{1, num_stages}(B'), U, V, C, time_levels, order)
+        return Explicit(
+            A, SMatrix{1, num_stages}(transpose(B)), U, V, C, time_levels, order
+        )
     end
 end
 
@@ -49,7 +53,7 @@ end
 """
     FORWARD_EULER
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const FORWARD_EULER = butcher_tableau_to_glm(
     SMatrix{1, 1}(0.0), SVector(1.0), SVector(0.0), 1
@@ -58,7 +62,7 @@ const FORWARD_EULER = butcher_tableau_to_glm(
 """
     EXPLICIT_MIDPOINT
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const EXPLICIT_MIDPOINT = butcher_tableau_to_glm(
     SMatrix{2, 2}(0.0, 1/2, 0.0, 0.0), SVector(0.0, 1.0), SVector(0.0, 1 / 2), 2
@@ -67,7 +71,7 @@ const EXPLICIT_MIDPOINT = butcher_tableau_to_glm(
 """
     HEUN2
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const HEUN2 = butcher_tableau_to_glm(
     SMatrix{2, 2}(0.0, 1.0, 0.0, 0.0), SVector(1 / 2, 1 / 2), SVector(0.0, 1.0), 2
@@ -76,7 +80,7 @@ const HEUN2 = butcher_tableau_to_glm(
 """
     RALSTON2
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RALSTON2 = butcher_tableau_to_glm(
     SMatrix{2, 2}(0.0, 2/3, 0.0, 0.0), SVector(1 / 4, 3 / 4), SVector(0.0, 2 / 3), 2
@@ -86,7 +90,7 @@ const RALSTON2 = butcher_tableau_to_glm(
 """
     HEUN3
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const HEUN3 = butcher_tableau_to_glm(
     SMatrix{3, 3}(0.0, 1/3, 0.0, 0.0, 0.0, 2/3, 0.0, 0.0, 0.0),
@@ -98,7 +102,7 @@ const HEUN3 = butcher_tableau_to_glm(
 """
     RK3
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RK3 = butcher_tableau_to_glm(
     SMatrix{3, 3}(0.0, 1/2, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0),
@@ -110,7 +114,7 @@ const RK3 = butcher_tableau_to_glm(
 """
     RALSTON3
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RALSTON3 = butcher_tableau_to_glm(
     SMatrix{3, 3}(0.0, 1/2, 0.0, 0.0, 0.0, 3/4, 0.0, 0.0, 0.0),
@@ -124,7 +128,7 @@ const RALSTON3 = butcher_tableau_to_glm(
 
 Van der Houwen's/Wray's third-order method
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const VDHW3 = butcher_tableau_to_glm(
     SMatrix{3, 3}(0.0, 8/15, 1/4, 0.0, 0.0, 5/12, 0.0, 0.0, 0.0),
@@ -138,7 +142,7 @@ const VDHW3 = butcher_tableau_to_glm(
 
 Third-order Strong Stability Preserving Runge-Kutta.
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const SSPRK3 = butcher_tableau_to_glm(
     SMatrix{3, 3}(0.0, 1.0, 1/4, 0.0, 0.0, 1/4, 0.0, 0.0, 0.0),
@@ -151,7 +155,7 @@ const SSPRK3 = butcher_tableau_to_glm(
 """
     RK4
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RK4 = butcher_tableau_to_glm(
     SMatrix{4, 4}(
@@ -167,7 +171,7 @@ const RK4 = butcher_tableau_to_glm(
 
 3/8-rule fourth-order method.
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RK4_3_8 = butcher_tableau_to_glm(
     SMatrix{4, 4}(
@@ -181,7 +185,7 @@ const RK4_3_8 = butcher_tableau_to_glm(
 """
     RALSTON4
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RALSTON4 = butcher_tableau_to_glm(
     SMatrix{4, 4}(
@@ -218,7 +222,7 @@ const RALSTON4 = butcher_tableau_to_glm(
 """
     BACKWARD_EULER
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const BACKWARD_EULER = butcher_tableau_to_glm(
     SMatrix{1, 1}(1.0), SVector(1.0), SVector(1.0), 1
@@ -227,7 +231,7 @@ const BACKWARD_EULER = butcher_tableau_to_glm(
 """
     RADAU_IA_1
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RADAU_IA_1 = butcher_tableau_to_glm(SMatrix{1, 1}(1.0), SVector(1.0), SVector(1.0), 1)
 
@@ -235,10 +239,20 @@ const RADAU_IA_1 = butcher_tableau_to_glm(SMatrix{1, 1}(1.0), SVector(1.0), SVec
 """
     IMPLICIT_MIDPOINT
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const IMPLICIT_MIDPOINT = butcher_tableau_to_glm(
     SMatrix{1, 1}(0.5), SVector(1.0), SVector(1 / 2), 2
+)
+
+"""
+    CRANK_NICOLSON
+
+Crank-Nicolson method of order 2. From
+[Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
+"""
+const CRANK_NICOLSON = butcher_tableau_to_glm(
+    SMatrix{2, 2}(0.0, 0.5, 0.0, 0.5), SVector(0.5, 0.5), SVector(0.0, 1.0), 2
 )
 
 const _α_DIRK2 = 1 - sqrt(2)/2
@@ -268,10 +282,46 @@ const DIRK3 = butcher_tableau_to_glm(
     3,
 )
 
+const _ESDIRK32_g = 0.4358665215
+"""
+    ESDIRK32
+
+Four-stage, 3rd order, stiffly accurate, A- and L-stable ESDIRK scheme. See
+[Kvaerno2004](@cite) page 497.
+"""
+const ESDIRK32 = butcher_tableau_to_glm(
+    SMatrix{4, 4}(
+        0.0,
+        _ESDIRK32_g,
+        (-4.0*_ESDIRK32_g^2 + 6*_ESDIRK32_g - 1.0)/(4.0 * _ESDIRK32_g),
+        (6.0*_ESDIRK32_g - 1.0)/(12.0 * _ESDIRK32_g),
+        0.0,
+        _ESDIRK32_g,
+        (-2.0*_ESDIRK32_g+1.0)/(4.0*_ESDIRK32_g),
+        -1.0/((24.0*_ESDIRK32_g-12.0)*_ESDIRK32_g),
+        0.0,
+        0.0,
+        _ESDIRK32_g,
+        (-6.0*_ESDIRK32_g^2 + 6*_ESDIRK32_g - 1.0)/(6.0*_ESDIRK32_g - 3.0),
+        0.0,
+        0.0,
+        0.0,
+        _ESDIRK32_g,
+    ),
+    SVector(
+        (6.0*_ESDIRK32_g - 1.0)/(12.0 * _ESDIRK32_g),
+        -1.0/((24.0*_ESDIRK32_g-12.0)*_ESDIRK32_g),
+        (-6.0*_ESDIRK32_g^2 + 6*_ESDIRK32_g - 1.0)/(6.0*_ESDIRK32_g - 3.0),
+        _ESDIRK32_g,
+    ),
+    SVector(0.0, 2.0*_ESDIRK32_g, 1.0, 1.0),
+    3,
+)
+
 """
     RADAU_IA_3
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const RADAU_IA_3 = butcher_tableau_to_glm(
     SMatrix{2, 2}(1/4, 1/4, -1/4, 5/12), SVector(1 / 4, 3 / 4), SVector(0, 2 / 3), 3
@@ -305,7 +355,7 @@ const DIRK4 = butcher_tableau_to_glm(
 """
     GAUSS_LEGENDRE_4
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const GAUSS_LEGENDRE_4 = butcher_tableau_to_glm(
     SMatrix{2, 2}(1/4, 1/4+sqrt(3)/6, 1/4-sqrt(3)/6, 1/4),
@@ -318,7 +368,7 @@ const GAUSS_LEGENDRE_4 = butcher_tableau_to_glm(
 """
     GAUSS_LEGENDRE_6
 
-From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods)
+From [Wikipedia's list of Runge-Kutta methods](https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods).
 """
 const GAUSS_LEGENDRE_6 = butcher_tableau_to_glm(
     SMatrix{3, 3}(
@@ -721,6 +771,9 @@ const BACKWARD_FORWARD_EULER = IMEX(
 
 """
     MIDPOINT_IMEX
+
+IMEX combination of the implicit and explicit midpoint rules. See equation 4.14 in
+[Ern2023](@cite).
 """
 const MIDPOINT_IMEX = IMEX(
     SMatrix{2, 2}(0.0, 0.0, 0.0, 1/2), # A Implicit
@@ -754,6 +807,30 @@ const RK3_IMEX = IMEX(
     SMatrix{1, 1}(1.0), # V
     SVector(0.0, _γ, 1 - _γ), # C Implicit
     SVector(0.0, _γ, 1 - _γ), # C Explicit
+    TimeLevels(
+        [0], # y
+        Int[], # Δt G
+        Int[],  # Δt F
+    ),
+    3,
+)
+
+const _γ331 = 0.5 + 1/(2*sqrt(3))
+"""
+    IMEX331
+
+3-stage, 3rd order, A-stable IMEX scheme with optimal efficiency. See equation 4.18 in
+[Ern2023](@cite).
+"""
+const IMEX331 = IMEX(
+    SMatrix{3, 3}(0.0, 1/3-_γ331, _γ331, 0.0, _γ331, 2/3-2.0*_γ, 0.0, 0.0, _γ), # A Implicit
+    SMatrix{3, 3}(0.0, 1/3, 0.0, 0.0, 0.0, 2.0/3.0, 0.0, 0.0, 0.0), # A Explicit
+    SMatrix{1, 3}(0.25, 0.0, 0.75), # B Implicit
+    SMatrix{1, 3}(0.25, 0.0, 0.75), # B Explicit
+    SMatrix{3, 1}(1.0, 1.0, 1.0), # U
+    SMatrix{1, 1}(1.0), # V
+    SVector(0.0, 1/3, 2/3), # C Implicit
+    SVector(0.0, 1/3, 2/3), # C Explicit
     TimeLevels(
         [0], # y
         Int[], # Δt G

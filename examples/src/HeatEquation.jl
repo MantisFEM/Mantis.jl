@@ -148,7 +148,7 @@
 # ##### Defining ``V_n``
 
 # The space ``V_n`` is defined as the space of functions ``v_n`` such that:
-# * on any element (i.e., on the interval ``(x_{i}, x_{i+1})`` ``with i = 1, \dots, N``) it
+# * on any element (i.e., on the interval ``(x_{i}, x_{i+1})`` with ``i = 1, \dots, N``) it
 #   is a polynomial of degree ``p``,
 # * at each ``x_i``, ``i = 2, \dots, N``, the function ``v_n`` is ``C^k`` smooth for some
 #   ``k \geq 0``.
@@ -468,7 +468,7 @@ const dt = 0.001
 const num_time_steps = 501
 
 ## Here, we encode the ODE information for the time integrator. We are using LinearSolve's
-## ability to cachee the factorised M matrix. Since this matrix does not change per
+## ability to cache the factorised M matrix. Since this matrix does not change per
 ## timestep, we can reuse the factorisation. This is more efficient than refactorising every
 ## step.
 import LinearSolve as LS
@@ -512,13 +512,14 @@ u_hi.coefficients[1] = u_0
 u_hi.coefficients[end] = u_L
 
 ## Initialise the time scheme
-const u_h_n = TimeIntegrators.initialize_scheme(u_hi.coefficients[2:(end - 1)], scheme)
+const u_h_n = TimeIntegrators.initialise_scheme(u_hi.coefficients[2:(end - 1)], scheme)
 
 # Now we are set to march our equation in time. We will also create a video, which is why
 # we set up the time `Observable`. The `all_y` variable is a lift, which is `Makie`'s way
-# of expressing a depency. That is, as soon as we update `time`, `Makie` will automatically
-# update all other variables in the plot that depend on `time`. In our case, this is the
-# `all_y` variable, which calls `TimeIntegrators.time_integrate!` to advance our solution.
+# of expressing a dependency. That is, as soon as we update `time`, `Makie` will
+# automatically update all other variables in the plot that depend on `time`. In our case,
+# this is the `all_y` variable, which calls `TimeIntegrators.time_integrate!` to advance
+# our solution.
 
 ## We use Printf to print the time in our animation.
 using Printf
@@ -555,7 +556,7 @@ record(
     LinRange(dt, dt*num_time_steps, num_time_steps);
     framerate=30,
 ) do t
-    time[] = t
+    return time[] = t
 end
 
 # ```@raw html

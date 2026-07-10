@@ -5,9 +5,9 @@
 # three non-linear ODEs. It is defined by the following system of equations
 # ```math
 # \begin{cases}
-#   \frac{\partial x}{\partial t} = \sigma (y - x) \;, \\
-#   \frac{\partial y}{\partial t} = x (\rho - z) \;, \\
-#   \frac{\partial z}{\partial t} = x y - \beta z\;,
+#   \frac{\mathrm{d} x}{\mathrm{d} t} = \sigma (y - x) \;, \\
+#   \frac{\mathrm{d} y}{\mathrm{d} t} = x (\rho - z) - y \;, \\
+#   \frac{\mathrm{d} z}{\mathrm{d} t} = x y - \beta z\;,
 # \end{cases}
 # ```
 # where ``x``, ``y``, and ``z`` are the coordinates in 3D space, ``t`` is the time, and
@@ -23,8 +23,8 @@
 # ### [Packages](@id ThreeBodyPackages)
 # In this example, we will use `Mantis` for the integration, `GLMakie` to create an
 # animation, `Printf` to easily create a nicely formatted title for the animation,
-# `StaticArrays` for efficiently storing small arrays, and LinearAlgebra to make use of the
-# identity matrix. So, we are `using` these five packages.
+# `StaticArrays` for efficiently storing small arrays, and `LinearAlgebra` to make use of
+# the identity matrix. So, we are `using` these five packages.
 
 using Mantis
 using GLMakie
@@ -57,12 +57,10 @@ function J(sol)
     x, y, z = sol
 
     ## Note that SMatrix creates a matrix per column.
-    return SMatrix{3,3}(-σ, ρ-z, y, σ, -1.0, x, 0.0, -x, -β)
+    return SMatrix{3, 3}(-σ, ρ-z, y, σ, -1.0, x, 0.0, -x, -β)
 end
 
-function newton_rhapson(
-    output, x, h, g, jacobian, t; eps=1e-14, iter=10,
-)
+function newton_rhapson(output, x, h, g, jacobian, t; eps=1e-14, iter=10)
     for i in eachindex(output, x)
         output[i] = x[i]
     end
@@ -92,7 +90,7 @@ const ode = TimeIntegrators.define_implicit_ode(
 const method = TimeIntegrators.DIRK3
 
 y₀ = [0.1, 0.0, 0.0]
-const y_n = TimeIntegrators.initialize_scheme(y₀, method)
+const y_n = TimeIntegrators.initialise_scheme(y₀, method)
 const dt = 1e-2
 const n_steps = 10000
 
@@ -108,35 +106,30 @@ colours = lift(steps) do step
 end
 integrator = lift(steps) do step
     ## Here we advance our solution.
-    TimeIntegrators.time_integrate!(
-        y_n, ode, (step-1)*dt, dt
-    )
+    TimeIntegrators.time_integrate!(y_n, ode, (step-1)*dt, dt)
     push!(position_vec, Point3f(vec(TimeIntegrators.get_solution(y_n))))
 
     return position_vec[1:step]
 end
 
-
 fig, ax, line = lines(
-    integrator,
-    color = colours,
-    colormap = Reverse(:copper),
-    transparency = true,
-    axis = (;
-        type = Axis3,
-        protrusions = (0, 0, 0, 0),
+    integrator;
+    color=colours,
+    colormap=Reverse(:copper),
+    transparency=true,
+    axis=(;
+        type=Axis3,
+        protrusions=(0, 0, 0, 0),
         title=@lift("t = $(@sprintf("%0.2f", round(($steps-1)*dt, digits = 2)))"),
-        viewmode = :fit,
-        limits = (-30, 30, -30, 30, 0, 50),
-        azimuth = 1.7pi,
+        viewmode=:fit,
+        limits=(-30, 30, -30, 30, 0, 50),
+        azimuth=1.7pi,
     ),
 )
 line.colorrange = (0, n_steps)
 
-record(
-    fig, "lorenz_attractor.mp4", 1:n_steps; framerate=144
-) do step
-    steps[] = step
+record(fig, "lorenz_attractor.mp4", 1:n_steps; framerate=144) do step
+    return steps[] = step
 end
 
 # ```@raw html

@@ -7,10 +7,12 @@ The exported names are:
 module Plot
 
 import WriteVTK
+import LaTeXStrings
 
 using ..GeneralHelpers
 using ..Points
 using ..Geometry
+using ..FunctionSpaces
 using ..Forms
 
 # core functionality

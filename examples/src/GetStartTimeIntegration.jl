@@ -8,7 +8,7 @@
 # ```math
 #   \frac{dy}{dt} = \lambda y, \quad y(t=0) = 1.0\;,
 # ```
-# which has exact solution ``y(t) = \exp{\lambda t}``.
+# which has exact solution ``y(t) = e^{\lambda t}``.
 # We will set ``\lambda`` as
 
 const lambda = -4
@@ -24,7 +24,6 @@ using Mantis
 # an [`TimeIntegrators.Explicit`](@ref) integrator. We will go through the setup
 # step-by-step.
 
-
 # ### [Step 1: Defining an explicit ODE](@id GSTIExplicit_1)
 # For an explicit integrator, we need to provide a function that provides the explicit part
 # of the ODE. In the terminology of the [TimeIntegrators](@ref)-module, this is the
@@ -38,7 +37,7 @@ using Mantis
 #     first one must be overwritten. Not overwriting the first argument will lead to
 #     incorrect results.
 
-function ode_explicit_function(output, yn, t)
+function ode_explicit_function!(output, yn, t)
     for n in eachindex(output)
         output[n] = lambda * yn[n]
     end
@@ -49,7 +48,7 @@ end
 # [`TimeIntegrators.define_explicit_ode`](@ref)-function, which will create the required
 # [`TimeIntegrators.TimeIntegrationOperators`](@ref) object.
 
-ode_explicit = TimeIntegrators.define_explicit_ode(ode_explicit_function)
+ode_explicit = TimeIntegrators.define_explicit_ode(ode_explicit_function!)
 
 # ### [Step 2: Picking and initialising a scheme](@id GSTIExplicit_2)
 # Now we can pick an [`TimeIntegrators.Explicit`](@ref) integrator and initialise it. We
@@ -59,7 +58,7 @@ ode_explicit = TimeIntegrators.define_explicit_ode(ode_explicit_function)
 const method_ex = TimeIntegrators.RK4
 
 const y₀_ex = [1.0]
-const y_n_ex = TimeIntegrators.initialize_scheme(y₀_ex, method_ex)
+const y_n_ex = TimeIntegrators.initialise_scheme(y₀_ex, method_ex)
 
 # ### [Step 3: Integrating the ODE](@id GSTIExplicit_3)
 # Now we can integrate our ODE. Say we want to integrate for 100 time steps with a time
@@ -76,7 +75,6 @@ for step in 1:100
     t_ex += dt_ex
 end
 
-
 # ### [Step 2 take 2: Picking and initialising a scheme](@id GSTIExplicit_2v2)
 # If we instead want to use a multi-step method, we will need to be a little more careful
 # when initialising the scheme. Say we pick the provided [`TimeIntegrators.AB2`](@ref)
@@ -89,10 +87,7 @@ const method_ex2 = TimeIntegrators.AB2
 const startup_method_ex2 = TimeIntegrators.HEUN2
 
 const y₀_ex2 = [1.0]
-const y_n_ex2 = TimeIntegrators.initialize_scheme(y₀_ex2, method_ex2, startup_method_ex2)
-
-
-
+const y_n_ex2 = TimeIntegrators.initialise_scheme(y₀_ex2, method_ex2, startup_method_ex2)
 
 # ## [Diagonally Implicit Integrators](@id GSTIDiagImplicit)
 # In this section, we will treat the [previously introduced ODE](@ref GSTIBackground) with
@@ -117,11 +112,11 @@ const y_n_ex2 = TimeIntegrators.initialize_scheme(y₀_ex2, method_ex2, startup_
 #
 # !!! note "An implicit evaluate function may be needed."
 #     As explained in the [`TimeIntegrators.define_diagonally_implicit_ode`](@ref)
-#     docstring, if you use a multi-step scheme, you will also have to provide an implicit
-#     evaluate function.
+#     docstring, if you use a multi-step scheme or a scheme with zeros on the diagonal, you
+#     will also have to provide an implicit evaluate function.
 
 import LinearAlgebra
-function implicit_solve(output, x, h, t)
+function implicit_solve!(output, x, h, t)
     output .= (LinearAlgebra.I - h * lambda) \ x
     return nothing
 end
@@ -130,7 +125,7 @@ end
 # [`TimeIntegrators.define_diagonally_implicit_ode`](@ref)-function, which will create the
 # required [`TimeIntegrators.TimeIntegrationOperators`](@ref) object.
 
-ode_diag_implicit = TimeIntegrators.define_diagonally_implicit_ode(implicit_solve)
+ode_diag_implicit = TimeIntegrators.define_diagonally_implicit_ode(implicit_solve!)
 
 # ### [Step 2: Picking and initialising a scheme](@id GSTIDiagImplicit_2)
 # Now we can pick a [`TimeIntegrators.DiagonallyImplicit`](@ref) integrator and initialise
@@ -141,7 +136,7 @@ ode_diag_implicit = TimeIntegrators.define_diagonally_implicit_ode(implicit_solv
 const method_di = TimeIntegrators.DIRK3
 
 const y₀_di = [1.0]
-const y_n_di = TimeIntegrators.initialize_scheme(y₀_di, method_di)
+const y_n_di = TimeIntegrators.initialise_scheme(y₀_di, method_di)
 
 # ### [Step 3: Integrating the ODE](@id GSTIDiagImplicit_3)
 # Now we can integrate our ODE. Say we want to integrate for 100 time steps with a time
@@ -159,9 +154,6 @@ for step in 1:100
     t_di += dt_di
 end
 
-
-
-
 # ## [Fully Implicit Integrators](@id GSTIImplicit)
 # In this section, we will treat the [previously introduced ODE](@ref GSTIBackground) with
 # an [`TimeIntegrators.Implicit`](@ref) integrator. We will go through the setup
@@ -174,7 +166,7 @@ end
 # ``\mathbf{Y} - h \mathbf{g}(\mathbf{Y}) = \mathbf{x}``. If
 # ``\mathbf{g}(\mathbf{Y})`` is linear, as it is in this example, we can use a direct
 # solver. Note that, for efficiency reasons, you may want
-# to use solver that directly overwrite the output argument. For simplicity, that is not
+# to use a solver that directly overwrites the output argument. For simplicity, that is not
 # done here. Additionally, we need to define the function ``G(y, t) = \lambda y``. This is
 # implemented as follows.
 #
@@ -185,12 +177,12 @@ end
 #     results. The evaluate function should have three argument, and the first one must
 #     also be overwritten.
 
-function implicit_solve(output, x, h, t)
+function implicit_solve!(output, x, h, t)
     output .= (LinearAlgebra.I - h * lambda) \ x
     return nothing
 end
 
-function implicit_evaluate(output, y, t)
+function implicit_evaluate!(output, y, t)
     for n in eachindex(output, y)
         output[n] = lambda * y[n]
     end
@@ -201,7 +193,7 @@ end
 # [`TimeIntegrators.define_implicit_ode`](@ref)-function, which will create the required
 # [`TimeIntegrators.TimeIntegrationOperators`](@ref) object.
 
-ode_implicit = TimeIntegrators.define_implicit_ode(implicit_solve, implicit_evaluate)
+ode_implicit = TimeIntegrators.define_implicit_ode(implicit_solve!, implicit_evaluate!)
 
 # ### [Step 2: Picking and initialising a scheme](@id GSTIImplicit_2)
 # Now we can pick an [`TimeIntegrators.Implicit`](@ref) integrator and initialise it. We
@@ -212,7 +204,7 @@ ode_implicit = TimeIntegrators.define_implicit_ode(implicit_solve, implicit_eval
 const method_impl = TimeIntegrators.GAUSS_LEGENDRE_4
 
 const y₀_impl = [1.0]
-const y_n_impl = TimeIntegrators.initialize_scheme(y₀_impl, method_impl)
+const y_n_impl = TimeIntegrators.initialise_scheme(y₀_impl, method_impl)
 
 # ### [Step 3: Integrating the ODE](@id GSTIImplicit_3)
 # Now we can integrate our ODE. Say we want to integrate for 100 time steps with a time
@@ -230,17 +222,14 @@ for step in 1:100
     t_impl += dt_impl
 end
 
-
-
-
 # ## [IMEX Integrators](@id GSTIIMEX)
 # In this section, we will treat the [previously introduced ODE](@ref GSTIBackground) with
 # an [`TimeIntegrators.IMEX`](@ref) integrator. We will go through the setup step-by-step.
 
 # ### [Step 1: Defining an IMEX ODE](@id GSTIIMEX_1)
-# IMEX integrators can treat one part of the ODE with an implicit step, while it treat the
-# other part with an explicit step. The stiffness of the terms in your ODE often influence
-# this split. In this simple example, we introduce the following split:
+# IMEX integrators can treat one part of the ODE with an implicit step, while treating the
+# rest with an explicit step. The stiffness of the terms in your ODE often influences this
+# split. In this simple example, we introduce the following split:
 # ```math
 #     \frac{dy}{dt} = 0.5 \lambda y + 0.5 \lambda y\;.
 # ```
@@ -257,19 +246,26 @@ end
 #     correct results.
 #
 # !!! note "An implicit evaluate function may be needed."
-#     As explained in the [`TimeIntegrators.define_diagonally_implicit_ode`](@ref)
-#     docstring, if you use a multi-step scheme, you will also have to provide an implicit
-#     evaluate function.
+#     As explained in the [`TimeIntegrators.define_imex_ode`](@ref) docstring, if you use a
+#     multi-step scheme or a scheme with zeros on the diagonal (as done here), you will
+#     also have to provide an implicit evaluate function.
 
-function explicit_imex_function(output, yn, t)
+function explicit_imex_function!(output, yn, t)
     for n in axes(output, 1)
         output[n] = 0.5 * lambda * yn[n]
     end
     return nothing
 end
 
-function implicit_imex_solver(output, x, h, t)
+function implicit_imex_solver!(output, x, h, t)
     LinearAlgebra.ldiv!(output, LinearAlgebra.lu(LinearAlgebra.I - 0.5 * h * lambda), x)
+    return nothing
+end
+
+function implicit_imex_function!(output, yn, t)
+    for n in axes(output, 1)
+        output[n] = 0.5 * lambda * yn[n]
+    end
     return nothing
 end
 
@@ -278,7 +274,7 @@ end
 # [`TimeIntegrators.TimeIntegrationOperators`](@ref) object.
 
 ode_imex = TimeIntegrators.define_imex_ode(
-    explicit_imex_function, implicit_imex_solver
+    explicit_imex_function!, implicit_imex_solver!, implicit_imex_function!
 )
 
 # ### [Step 2: Picking and initialising a scheme](@id GSTIIMEX_2)
@@ -289,7 +285,7 @@ ode_imex = TimeIntegrators.define_imex_ode(
 const method_imex = TimeIntegrators.RK3_IMEX
 
 const y₀_imex = [1.0]
-const y_n_imex = TimeIntegrators.initialize_scheme(y₀_imex, method_imex)
+const y_n_imex = TimeIntegrators.initialise_scheme(y₀_imex, method_imex)
 
 # ### [Step 3: Integrating the ODE](@id GSTIIMEX_3)
 # Now we can integrate our ODE. Say we want to integrate for 100 time steps with a time

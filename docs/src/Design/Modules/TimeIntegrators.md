@@ -91,8 +91,8 @@ methods.
 
 ### [GLMs: Characterising a GLM](@id TIGLMCharacter)
 Any time integrator that fits in the above framework can thus be characterised by the four matrices ``A``, ``B``, ``U``, ``V``, and the layout of the in- and output vectors ``\mathbf{y}``. 
-In addition, evey time integrator will also need a vector ``C``, which keeps track of the time at which the stages are evaluated.
-In `Mantis`, the ``A``, ``B``, ``U``, ``V`` are stored in the time integrator structs (see [this section below](@ref TIwhatareTIs)).
+In addition, every time integrator will also need a vector ``C``, which keeps track of the time at which the stages are evaluated.
+In `Mantis`, ``A``, ``B``, ``U``, ``V``, and ``C`` are stored in the time integrator structs (see [this section below](@ref TIwhatareTIs)).
 The matrices have the following sizes:
 
 | Matrix        | Size          |
@@ -101,7 +101,7 @@ The matrices have the following sizes:
 | ``B``         | `num_steps` x `num_stages`  |
 | ``U``         | `num_stages` x `num_steps`  |
 | ``V``         | `num_steps` x `num_steps`   |
-| ``C``         | `num_stages` |
+| ``C``         | `num_stages` x `1` |
 
 
 ### GLMs: Extension to IMEX Schemes
@@ -183,14 +183,15 @@ get_remaining_startup_steps
 ::: details Internals: solution objects
 
 We explain some internals related to the solution objects. 
-However, this is considered an implementational detail.
+However, this is considered an implementation detail.
 
-Next to the information just mentioned, a `TimeIntegrationSolution` also stored the pre-allocated arrays, which can be obtained with the following getters.
+Next to the information just mentioned, a `TimeIntegrationSolution` also stores the pre-allocated arrays and the solution object for the startup scheme (if present), which can be obtained with the following getters.
 
 ```@docs
 get_solution_allocated
 get_F_allocated
 get_G_allocated
+get_startup_solution
 get_stage_allocated
 get_temp_var
 ```
@@ -241,7 +242,7 @@ time_integrate!
 ::: details Internals: time integration
 
 We explain how the time integration is performed. 
-However, this is considered an implementational detail.
+However, this is considered an implementation detail.
 
 The integration functions from [Time Integrate](@ref TIintegrate) end up calling the following internal integrator.
 This integrator function is specialised for different integrators and encodes how the time stepping is actually performed.
@@ -261,22 +262,30 @@ Every time integrator has a `TimeLevels` struct to define what information is ne
 TimeLevels
 ```
 
+In general, the length of the arrays in the `TimeLevels` object is required.
+These lengths can be easily obtained using the following getters.
+```@docs
+get_num_step_values
+get_num_implicit_derivatives
+get_num_explicit_derivatives
+```
+
 The actual initialisation step(s) can be performed by calling the following function.
 ```@docs
-initialize_scheme
+initialise_scheme
 ```
 
 ::: tip Other initialisation procedures
 
 `Mantis` does not provide an exhaustive set of initialisation procedures. 
-Some GLM schemes may require a different quantity to be initialised than what the `initialize_scheme`-method provides.
+Some GLM schemes may require a different quantity to be initialised than what the `initialise_scheme`-method provides.
 If this is the case, you can always perform the initialisation manually.
 See [Adding your own scheme](@ref TimeIntegratorsAddYourOwn) for the details.
 
 :::
 
 ## [Pre-implemented schemes](@id TIschemes)
-`Mantis` provides a few pre-implemented schemes for convience. 
+`Mantis` provides a few pre-implemented schemes for convenience. 
 
 ::: details Pre-implemented explicit integrators in the Runge-Kutta family.
 ```@docs
@@ -300,8 +309,10 @@ RALSTON4
 BACKWARD_EULER
 RADAU_IA_1
 IMPLICIT_MIDPOINT
+CRANK_NICOLSON
 DIRK2
 DIRK3
+ESDIRK32
 RADAU_IA_3
 DIRK4
 GAUSS_LEGENDRE_4
@@ -337,6 +348,7 @@ BDF4
 BACKWARD_FORWARD_EULER
 MIDPOINT_IMEX
 RK3_IMEX
+IMEX331
 CNAB2
 SSSS2
 ```
@@ -350,7 +362,7 @@ butcher_tableau_to_glm
 ```
 
 ## [Adding your own scheme](@id TimeIntegratorsAddYourOwn)
-As an example of how to add your own time integrator, we look at how to implement an Almost Runge Kutta (ARK) scheme.
+As an example of how to add your own time integrator, we look at how to implement an Almost Runge-Kutta (ARK) scheme.
 We use a specific scheme introduced in [Rattenbury2005](@cite).
 
 This scheme requires a specialised initialisation, since it needs an estimate of the second derivative which is not accounted for in the available initialisations. 

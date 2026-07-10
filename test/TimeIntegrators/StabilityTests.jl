@@ -2,6 +2,7 @@ module TimeIntegrationStabilityTests
 
 import SparseArrays
 import LinearAlgebra
+import StaticArrays
 using Mantis
 using Test
 
@@ -81,7 +82,7 @@ const integrators = (
 
 @testset "Single-Step Multi-Stage Explicit Integrators" verbose = true begin
     foreach(integrators) do scheme
-        ck_n = TimeIntegrators.initialize_scheme(ck_0, scheme)
+        ck_n = TimeIntegrators.initialise_scheme(ck_0, scheme)
         TimeIntegrators.time_integrate!(ck_n, linear_advection_ode, 0.0, dt)
 
         # Pick just one factor to test (away from the boundary condition).
@@ -96,39 +97,23 @@ end
 
 # Known stability functions for diagonally implicit schemes. Here, the stability functions
 # are usually not the same per order, so we specify them per integrator.
+function rk_stability(A, b, z)
+    A = Matrix(A)
+    b = vec(Matrix(b))
+    s = size(A, 1)
+    e = ones(ComplexF64, s)
+    return 1 + z * LinearAlgebra.dot(b, (LinearAlgebra.I - z*A) \ e)
+end
 const gamma4 = (1 + TimeIntegrators._α_DIRK4) / 2
 const diagonally_implicit_integrators = (
-    (TimeIntegrators.BACKWARD_EULER, z -> 1 / (1-z)),
-    (TimeIntegrators.RADAU_IA_1, z -> 1 / (1-z)),
-    (TimeIntegrators.IMPLICIT_MIDPOINT, z -> (1 + 1/2 * z) / (1 - 1/2*z)),
-    (
-        TimeIntegrators.DIRK2,
-        z ->
-            (
-                1 +
-                (1 - 2*TimeIntegrators._α_DIRK2)z +
-                (TimeIntegrators._α_DIRK2^2 - 2*TimeIntegrators._α_DIRK2 + 1/2) * z^2
-            ) / (1 - TimeIntegrators._α_DIRK2*z)^2,
-    ),
-    (
-        TimeIntegrators.DIRK3,
-        z ->
-            (
-                1 +
-                (1 - 2*(1/2 + sqrt(3)/6))z +
-                ((1/2 + sqrt(3)/6)^2 - 2*(1/2 + sqrt(3)/6) + 1/2) * z^2
-            ) / (1 - (1/2 + sqrt(3)/6)*z)^2,
-    ),
-    (
-        TimeIntegrators.DIRK4,
-        z ->
-            (
-                1 +
-                (1 - 3*gamma4)z +
-                (3*gamma4^2 - 3*gamma4 + 1/2) * z^2 +
-                (-gamma4^3 + 3*gamma4^2 - 3/2*gamma4 + 1/6) * z^3
-            ) / (1 - gamma4*z)^3,
-    ),
+    TimeIntegrators.BACKWARD_EULER,
+    TimeIntegrators.RADAU_IA_1,
+    TimeIntegrators.IMPLICIT_MIDPOINT,
+    TimeIntegrators.CRANK_NICOLSON,
+    TimeIntegrators.DIRK2,
+    TimeIntegrators.DIRK3,
+    TimeIntegrators.ESDIRK32,
+    TimeIntegrators.DIRK4,
 )
 
 function implicitSolve(output, x, h, t)
@@ -138,16 +123,67 @@ end
 dimplicit_linear_advection_ode = TimeIntegrators.define_diagonally_implicit_ode(
     implicitSolve
 )
+function implicitEval(output, c, t)
+    LinearAlgebra.mul!(output, -A, c)
+    return nothing
+end
+dimplicit_linear_advection_ode2 = TimeIntegrators.define_diagonally_implicit_ode(
+    implicitSolve, implicitEval
+)
 
 @testset "Single-Step Multi-Stage Diagonally Implicit Integrators" verbose = true begin
-    foreach(diagonally_implicit_integrators) do (scheme, exact_stability_function)
-        ck_n = TimeIntegrators.initialize_scheme(ck_0, scheme)
-        TimeIntegrators.time_integrate!(ck_n, dimplicit_linear_advection_ode, 0.0, dt)
+    foreach(diagonally_implicit_integrators) do scheme
+        ck_n = TimeIntegrators.initialise_scheme(ck_0, scheme)
+
+        if size(scheme.A) == (2, 2) &&
+            all(isequal.(scheme.A, StaticArrays.SMatrix{2, 2}(0.0, 0.5, 0.0, 0.5)))
+            # CN also needs the implicit evaluate
+            TimeIntegrators.time_integrate!(ck_n, dimplicit_linear_advection_ode2, 0.0, dt)
+        elseif size(scheme.A) == (4, 4) && all(
+            isequal.(
+                scheme.A,
+                StaticArrays.SMatrix{4, 4}(
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (
+                        -4.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
+                        1.0
+                    )/(4.0 * TimeIntegrators._ESDIRK32_g),
+                    (6.0*TimeIntegrators._ESDIRK32_g - 1.0)/(
+                        12.0 * TimeIntegrators._ESDIRK32_g
+                    ),
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (-2.0*TimeIntegrators._ESDIRK32_g+1.0)/(
+                        4.0*TimeIntegrators._ESDIRK32_g
+                    ),
+                    -1.0/(
+                        (24.0*TimeIntegrators._ESDIRK32_g-12.0)*TimeIntegrators._ESDIRK32_g
+                    ),
+                    0.0,
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (
+                        -6.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
+                        1.0
+                    )/(6.0*TimeIntegrators._ESDIRK32_g - 3.0),
+                    0.0,
+                    0.0,
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                ),
+            ),
+        )
+            # ESDIRK32 also needs the implicit evaluate
+            TimeIntegrators.time_integrate!(ck_n, dimplicit_linear_advection_ode2, 0.0, dt)
+        else
+            TimeIntegrators.time_integrate!(ck_n, dimplicit_linear_advection_ode, 0.0, dt)
+        end
 
         # Pick just one factor to test (away from the boundary condition).
         amplification_factor_scheme = (TimeIntegrators.get_solution(ck_n) ./ ck_0)[84]
         @test isapprox(
-            exact_stability_function(z_k), amplification_factor_scheme, rtol=1e-15
+            rk_stability(scheme.A, scheme.B, z_k), amplification_factor_scheme, rtol=1e-15
         )
     end
 end
@@ -157,13 +193,6 @@ const implicit_integrators = (
     TimeIntegrators.GAUSS_LEGENDRE_4,
     TimeIntegrators.GAUSS_LEGENDRE_6,
 )
-function rk_stability(A, b, z)
-    A = Matrix(A)
-    b = vec(Matrix(b))
-    s = size(A, 1)
-    e = ones(ComplexF64, s)
-    return 1 + z * LinearAlgebra.dot(b, (LinearAlgebra.I - z*A) \ e)
-end
 function large_solve(output, x, h, t; num_stages)
     # Julia's kron is column major, so we have to reverse the arguments.
     output .= (LinearAlgebra.I - kron(h, -A)) \ x
@@ -178,13 +207,13 @@ implicit_linear_advection_ode = TimeIntegrators.define_implicit_ode(large_solve,
 
 @testset "Single-Step Multi-Stage Implicit Integrators" verbose = true begin
     foreach(implicit_integrators) do scheme
-        ck_n = TimeIntegrators.initialize_scheme(ck_0, scheme)
+        ck_n = TimeIntegrators.initialise_scheme(ck_0, scheme)
         TimeIntegrators.time_integrate!(
             ck_n,
             implicit_linear_advection_ode,
             0.0,
             dt;
-            num_stages=TimeIntegrators.get_num_stages(scheme)
+            num_stages=TimeIntegrators.get_num_stages(scheme),
         )
 
         # Pick just one factor to test (away from the boundary condition).
@@ -195,16 +224,13 @@ implicit_linear_advection_ode = TimeIntegrators.define_implicit_ode(large_solve,
     end
 end
 
-
-
 function glm_amplification(scheme, z)
-
     A = Matrix(scheme.A)
     B = Matrix(scheme.B)
     U = Matrix(scheme.U)
     V = Matrix(scheme.V)
 
-    s = size(A,1)
+    s = size(A, 1)
 
     M = V + z * B * ((LinearAlgebra.I - z*A) \ U)
 
@@ -219,24 +245,26 @@ function create_history(scheme, z)
     history = zeros(
         ComplexF64,
         length(grid),
-        length(scheme.time_levels.step_values) + length(scheme.time_levels.step_derivatives_implicit) + length(scheme.time_levels.step_derivatives_explicit)
+        length(scheme.time_levels.step_values) +
+        length(scheme.time_levels.step_derivatives_implicit) +
+        length(scheme.time_levels.step_derivatives_explicit),
     )
 
-    history[:,1] .= ck_0
+    history[:, 1] .= ck_0
     idx = 1
 
     for lag in scheme.time_levels.step_values
-        history[:,idx] .= ξ^(-lag) .* ck_0
+        history[:, idx] .= ξ^(-lag) .* ck_0
         idx += 1
     end
 
     for lag in scheme.time_levels.step_derivatives_implicit
-        history[:,idx] .= z_k * ξ^(-lag) .* ck_0
+        history[:, idx] .= z_k * ξ^(-lag) .* ck_0
         idx += 1
     end
 
     for lag in scheme.time_levels.step_derivatives_explicit
-        history[:,idx] .= z_k * ξ^(-lag) .* ck_0
+        history[:, idx] .= z_k * ξ^(-lag) .* ck_0
         idx += 1
     end
 
@@ -244,10 +272,7 @@ function create_history(scheme, z)
 end
 
 multistep_integrators_explicit = (
-    TimeIntegrators.AB1,
-    TimeIntegrators.AB2,
-    TimeIntegrators.AB3,
-    TimeIntegrators.AB4,
+    TimeIntegrators.AB1, TimeIntegrators.AB2, TimeIntegrators.AB3, TimeIntegrators.AB4
 )
 
 @testset "Multi-Step Single-Stage Explicit Integrators" verbose=true begin
@@ -256,19 +281,13 @@ multistep_integrators_explicit = (
 
         yn = TimeIntegrators.TimeIntegrationSolution(history, scheme, nothing, 0)
 
-        TimeIntegrators.time_integrate!(
-            yn,
-            linear_advection_ode,
-            0.0,
-            dt,
-        )
+        TimeIntegrators.time_integrate!(yn, linear_advection_ode, 0.0, dt)
 
         amplification = TimeIntegrators.get_solution(yn) ./ history
 
-        @test maximum(abs.(amplification[84,:] .- ξ)) < 1e-14
+        @test maximum(abs.(amplification[84, :] .- ξ)) < 1e-14
     end
 end
-
 
 multistep_integrators_diag_impl = (
     TimeIntegrators.AM0,
@@ -293,18 +312,18 @@ multistep_integrators_diag_impl = (
             implicit_linear_advection_ode,
             0.0,
             dt;
-            num_stages=TimeIntegrators.get_num_stages(scheme)
+            num_stages=TimeIntegrators.get_num_stages(scheme),
         )
 
         amplification = TimeIntegrators.get_solution(yn) ./ history
 
-        @test maximum(abs.(amplification[84,:] .- ξ)) < 2e-14
+        @test maximum(abs.(amplification[84, :] .- ξ)) < 2e-14
     end
 end
 
 # IMEX -------------------------------------------------------------------------------------
 function imex_solve(output, x, h, t; num_stages)
-    output .= (LinearAlgebra.I - (h* -0.8*A)) \ x
+    output .= (LinearAlgebra.I - (h * -0.8 * A)) \ x
     return nothing
 end
 function imex_eval(output, c, t; num_stages)
@@ -320,7 +339,6 @@ imex_linear_advection_ode = TimeIntegrators.define_imex_ode(
 )
 
 function glm_amplification_imex(scheme, ze, zi)
-
     AE = Matrix(scheme.A_EX)
     AI = Matrix(scheme.A_IM)
 
@@ -330,7 +348,7 @@ function glm_amplification_imex(scheme, ze, zi)
     U = Matrix(scheme.U)
     V = Matrix(scheme.V)
 
-    M =V + (ze*BE + zi*BI) * ((LinearAlgebra.I - ze*AE - zi*AI) \ U)
+    M = V + (ze*BE + zi*BI) * ((LinearAlgebra.I - ze*AE - zi*AI) \ U)
 
     λ = LinearAlgebra.eigvals(M)
 
@@ -343,24 +361,26 @@ function create_history_imex(scheme, ze, zi)
     history = zeros(
         ComplexF64,
         length(grid),
-        length(scheme.time_levels.step_values) + length(scheme.time_levels.step_derivatives_implicit) + length(scheme.time_levels.step_derivatives_explicit)
+        length(scheme.time_levels.step_values) +
+        length(scheme.time_levels.step_derivatives_implicit) +
+        length(scheme.time_levels.step_derivatives_explicit),
     )
 
-    history[:,1] .= ck_0
+    history[:, 1] .= ck_0
     idx = 1
 
     for lag in scheme.time_levels.step_values
-        history[:,idx] .= ξ^(-lag) .* ck_0
+        history[:, idx] .= ξ^(-lag) .* ck_0
         idx += 1
     end
 
     for lag in scheme.time_levels.step_derivatives_implicit
-        history[:,idx] .= zi * ξ^(-lag) .* ck_0
+        history[:, idx] .= zi * ξ^(-lag) .* ck_0
         idx += 1
     end
 
     for lag in scheme.time_levels.step_derivatives_explicit
-        history[:,idx] .= ze * ξ^(-lag) .* ck_0
+        history[:, idx] .= ze * ξ^(-lag) .* ck_0
         idx += 1
     end
 
@@ -372,6 +392,7 @@ const one_step_imex_integrators = (
     TimeIntegrators.BACKWARD_FORWARD_EULER,
     TimeIntegrators.MIDPOINT_IMEX,
     TimeIntegrators.RK3_IMEX,
+    TimeIntegrators.IMEX331,
 )
 @testset "Single-Step Multi-Stage IMEX Integrators" verbose=true begin
     foreach(one_step_imex_integrators) do scheme
@@ -384,12 +405,12 @@ const one_step_imex_integrators = (
             imex_linear_advection_ode,
             0.0,
             dt;
-            num_stages=TimeIntegrators.get_num_stages(scheme)
+            num_stages=TimeIntegrators.get_num_stages(scheme),
         )
 
         amplification = TimeIntegrators.get_solution(yn) ./ history
 
-        @test maximum(abs.(amplification[84,:] .- ξ)) < 1e-14
+        @test maximum(abs.(amplification[84, :] .- ξ)) < 1e-14
     end
 end
 
@@ -410,12 +431,12 @@ const multi_step_imex_integrators = (
             imex_linear_advection_ode,
             0.0,
             dt;
-            num_stages=TimeIntegrators.get_num_stages(scheme)
+            num_stages=TimeIntegrators.get_num_stages(scheme),
         )
 
         amplification = TimeIntegrators.get_solution(yn) ./ history
 
-        @test maximum(abs.(amplification[84,:] .- ξ)) < 1e-14
+        @test maximum(abs.(amplification[84, :] .- ξ)) < 1e-14
     end
 end
 

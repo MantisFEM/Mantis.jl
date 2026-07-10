@@ -30,10 +30,6 @@ function test_ode_explicit_func!(output, yn, t)
 end
 test_ode_explicit = TimeIntegrators.define_explicit_ode(test_ode_explicit_func!)
 
-# function implicitSolve(output, x::Vector, h, t)
-#     LinearAlgebra.ldiv!(output, LinearAlgebra.I - h * lambda, x)
-#     return nothing
-# end
 function implicitSolve(output, x, h, t)
     output .= (LinearAlgebra.I - h * lambda) \ x
     return nothing
@@ -89,7 +85,7 @@ const explicit_integrators = (
         dts = zeros(length(errors))
         dt = 0.2
         for i in eachindex(errors)
-            y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+            y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             dt = dt / 2
             dts[i] = dt
             for t in 0.0:dt:(t_final - dt)
@@ -122,9 +118,9 @@ const explicit_multi_step_integrators = (
         dt = 0.2
         for i in eachindex(errors)
             if !isnothing(startup_scheme)
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme, startup_scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme, startup_scheme)
             else
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             end
             dt = dt / 2
             dts[i] = dt
@@ -150,9 +146,11 @@ const implicit_integrators = (
     TimeIntegrators.BACKWARD_EULER,
     TimeIntegrators.RADAU_IA_1,
     TimeIntegrators.IMPLICIT_MIDPOINT,
+    TimeIntegrators.CRANK_NICOLSON,
     TimeIntegrators.DIRK2,
-    TimeIntegrators.RADAU_IA_3,
     TimeIntegrators.DIRK3,
+    TimeIntegrators.ESDIRK32,
+    TimeIntegrators.RADAU_IA_3,
     TimeIntegrators.DIRK4,
     TimeIntegrators.GAUSS_LEGENDRE_4,
     TimeIntegrators.GAUSS_LEGENDRE_6,
@@ -160,12 +158,59 @@ const implicit_integrators = (
 
 @testset "Single-Step Multi-Stage Implicit Integrators" verbose = true begin
     foreach(implicit_integrators) do scheme
-        ode = scheme isa TimeIntegrators.DiagonallyImplicit ? test_ode_dimplicit : test_ode_implicit
+        ode = if scheme isa TimeIntegrators.DiagonallyImplicit
+            test_ode_dimplicit
+        else
+            test_ode_implicit
+        end
+        if size(scheme.A) == (2, 2) &&
+            all(isequal.(scheme.A, StaticArrays.SMatrix{2, 2}(0.0, 0.5, 0.0, 0.5)))
+            # CN also needs the implicit evaluate
+            ode = test_ode_implicit
+        end
+        if size(scheme.A) == (4, 4) && all(
+            isequal.(
+                scheme.A,
+                StaticArrays.SMatrix{4, 4}(
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (
+                        -4.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
+                        1.0
+                    )/(4.0 * TimeIntegrators._ESDIRK32_g),
+                    (6.0*TimeIntegrators._ESDIRK32_g - 1.0)/(
+                        12.0 * TimeIntegrators._ESDIRK32_g
+                    ),
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (-2.0*TimeIntegrators._ESDIRK32_g+1.0)/(
+                        4.0*TimeIntegrators._ESDIRK32_g
+                    ),
+                    -1.0/(
+                        (24.0*TimeIntegrators._ESDIRK32_g-12.0)*TimeIntegrators._ESDIRK32_g
+                    ),
+                    0.0,
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                    (
+                        -6.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
+                        1.0
+                    )/(6.0*TimeIntegrators._ESDIRK32_g - 3.0),
+                    0.0,
+                    0.0,
+                    0.0,
+                    TimeIntegrators._ESDIRK32_g,
+                ),
+            ),
+        )
+            # ESDIRK32 also needs the implicit evaluate
+            ode = test_ode_implicit
+        end
         errors = zeros(8)
         dts = zeros(length(errors))
         dt = 0.2
         for i in eachindex(errors)
-            y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+            y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             dt = dt / 2
             dts[i] = dt
             for t in 0.0:dt:(t_final - dt)
@@ -210,16 +255,20 @@ const implicit_multi_step_integrators = (
 )
 @testset "Multi-Step Single-Stage Implicit Integrators" verbose = true begin
     foreach(implicit_multi_step_integrators) do (scheme, startup_scheme)
-        ode = scheme isa TimeIntegrators.DiagonallyImplicit ? test_ode_dimplicit : test_ode_implicit
+        ode = if scheme isa TimeIntegrators.DiagonallyImplicit
+            test_ode_dimplicit
+        else
+            test_ode_implicit
+        end
         errors = zeros(8)
         dts = zeros(length(errors))
         dt = 0.2
         for i in eachindex(errors)
             dt = dt / 2
             if !isnothing(startup_scheme)
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme, startup_scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme, startup_scheme)
             else
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             end
 
             dts[i] = dt
@@ -252,6 +301,7 @@ const one_step_imex_integrators = (
     TimeIntegrators.BACKWARD_FORWARD_EULER,
     TimeIntegrators.MIDPOINT_IMEX,
     TimeIntegrators.RK3_IMEX,
+    TimeIntegrators.IMEX331,
 )
 
 @testset "Single-Step Multi-Stage IMEX Integrators" verbose = true begin
@@ -260,7 +310,7 @@ const one_step_imex_integrators = (
         dts = zeros(length(errors))
         dt = 0.2
         for i in eachindex(errors)
-            y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+            y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             dt = dt / 2
             dts[i] = dt
             for t in 0.0:dt:(t_final - dt)
@@ -293,9 +343,9 @@ const multi_step_imex_integrators = (
         dt = 0.2
         for i in eachindex(errors)
             if !isnothing(startup_scheme)
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme, startup_scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme, startup_scheme)
             else
-                y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+                y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
             end
 
             dt = dt / 2

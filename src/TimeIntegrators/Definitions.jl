@@ -42,13 +42,13 @@ end
 ############################################################################################
 
 """
-    TimeIntegrationOperators{EF, IF, IE}
+    TimeIntegrationOperators{EE, IS, IE}
 
 Defines the ODE-specific operators used in the time integration.
 
-Makes a distiction between the explicit and implicit operators. `EF`, `IF`, and `IE` are
-the types the explicit and implicit functions, which are `Nothing` if not defined. Note
-that at least `EF` or `IF` and `IE` must be a function.
+Makes a distiction between the explicit and implicit operators. `EE`, `IS`, and `IE` are
+the types of the explicit and implicit functions, which are `Nothing` if not defined. Note
+that at least `EE` or `IS` must be a function.
 
 # Constructors
 - `define_explicit_ode(explicit_evaluate::Function)`: For fully explicit ODEs.
@@ -63,13 +63,13 @@ that at least `EF` or `IF` and `IE` must be a function.
     )`: Generic constructor.
 
 # Fields
-- `explicitEvaluate!::EF`: A function that evaluates the explicit part of the ODE, that is,
+- `explicitEvaluate!::EE`: A function that evaluates the explicit part of the ODE, that is,
     the function that evaluates ``F = f(y, t)``. See the manual section on
     [TimeIntegrators](@ref) for the terminology. **This function must have the following
     inputs: (output, yn, t). It must also overwrite the output argument.** The output
     argument will be a vector-like object of length N (the number of variables), as will
     yn. The argument t will be a number indicating the current time.
-- `implicitSolve!::IF`: A function that solves the implicit part of the ODE, that is, the
+- `implicitSolve!::IS`: A function that solves the implicit part of the ODE, that is, the
     function that solves the equation
     ``\\mathbf{Y} - h \\mathbf{g}(\\mathbf{Y}) = \\mathbf{x}``, with
     ``h = a^{IM}_{ii} \\Delta t``. See the manual section on [TimeIntegrators](@ref) for
@@ -78,9 +78,10 @@ that at least `EF` or `IF` and `IE` must be a function.
     ``I`` is the identity function. **This function must have the following inputs:
     (output, x, h, t). It must also overwrite the output argument.** The output argument
     will be a matrix-like object of size (N, num_stages), as will yn. The arguments h will
-    be either a number (for DiagonallyImplicit integrators) or a SMatrix (for Implicit
-    integrators) and t will be a number (for DiagonallyImplicit integrators) or an SVector
-    (for Implicit integrators) indicating the current time(s).
+    be either a number (for DiagonallyImplicit integrators) or a SMatrix of size
+    (num_stages, num_stages) (for Implicit integrators) and t will be a number (for
+    DiagonallyImplicit integrators) or an SVector of length num_stages (for Implicit
+    integrators) indicating the current time(s).
 - `implicitEvaluate!::IE`: A function that evaluates the implicit part of the ODE, that is,
     the function that evaluates ``G = g(y, t)``. See the manual section on
     [TimeIntegrators](@ref) for the terminology. **This function must have the following
@@ -89,13 +90,13 @@ that at least `EF` or `IF` and `IE` must be a function.
     yn, and t will be a number indicating the current time.
 
 # Type parameters
-- `EF`: `typeof(explicitEvaluate!)` if initialised, `Nothing` otherwise.
-- `IF`: `typeof(implicitSolve!)` if initialised, `Nothing` otherwise.
+- `EE`: `typeof(explicitEvaluate!)` if initialised, `Nothing` otherwise.
+- `IS`: `typeof(implicitSolve!)` if initialised, `Nothing` otherwise.
 - `IE`: `typeof(implicitEvaluate!)` if initialised, `Nothing` otherwise.
 """
-struct TimeIntegrationOperators{EF, IF, IE}
-    explicitEvaluate!::EF
-    implicitSolve!::IF
+struct TimeIntegrationOperators{EE, IS, IE}
+    explicitEvaluate!::EE
+    implicitSolve!::IS
     implicitEvaluate!::IE
 
     function TimeIntegrationOperators(
@@ -103,11 +104,25 @@ struct TimeIntegrationOperators{EF, IF, IE}
         implicit_solve::Union{Nothing, Function},
         implicit_evaluate::Union{Nothing, Function},
     )
-        if !(explicit_evaluate isa Function || implicit_solve isa Function || implicit_evaluate isa Function)
+        if !(
+            explicit_evaluate isa Function ||
+            implicit_solve isa Function ||
+            implicit_evaluate isa Function
+        )
             throw(ArgumentError("At least one of the inputs must be a Function."))
         end
 
-        new{typeof(explicit_evaluate), typeof(implicit_solve), typeof(implicit_evaluate)}(
+        if isnothing(explicit_evaluate) && isnothing(implicit_solve)
+            throw(
+                ArgumentError(
+                    "Only implicit_evaluate is given, but implicit_solve is also required."
+                ),
+            )
+        end
+
+        return new{
+            typeof(explicit_evaluate), typeof(implicit_solve), typeof(implicit_evaluate)
+        }(
             explicit_evaluate, implicit_solve, implicit_evaluate
         )
     end
@@ -127,7 +142,9 @@ end
     )
 
 Creates a [`TimeIntegrationOperators`](@ref) object for a diagonally implicit ODE. The
-`implicit_evaluate` argument is only needed when using a multi-step scheme.
+`implicit_evaluate` argument is needed when:
+- using a multi-step scheme (for the initialisation process).
+- using a diagonally implicit scheme that has at least one zero on the diagonal.
 """
 function define_diagonally_implicit_ode(
     implicit_solve::Function, implicit_evaluate::Union{Nothing, Function}=nothing
@@ -150,12 +167,14 @@ end
     )
 
 Creates a [`TimeIntegrationOperators`](@ref) object for an IMEX ODE. The
-`implicit_evaluate` argument is only needed when using a multi-step scheme.
+`implicit_evaluate` argument is needed when:
+- using a multi-step scheme (for the initialisation process).
+- using a diagonally implicit scheme that has at least one zero on the diagonal.
 """
 function define_imex_ode(
     explicit_evaluate::Function,
     implicit_solve::Function,
-    implicit_evaluate::Union{Nothing, Function}=nothing
+    implicit_evaluate::Union{Nothing, Function}=nothing,
 )
     return TimeIntegrationOperators(explicit_evaluate, implicit_solve, implicit_evaluate)
 end
@@ -167,14 +186,43 @@ end
 """
     TimeLevels
 
-The length of the fields of the `TimeLevels` object descibe the structure of the input and
-output vectors for an integrator. The initialisation procedure uses this information to
-determine what needs to be initialised. Note that the vectors may be empty.
+The length of the fields defines the structure of the input and output vectors for an
+integrator. The initialisation procedure uses this information to determine what needs to
+be initialised. Note that the vectors may be empty.
+
+# Constructors
+- `TimeLevels(
+        step_values::Vector{Int}
+        step_derivatives_implicit::Vector{Int}
+        step_derivatives_explicit::Vector{Int}
+    )`: Generic constructor.
+
+# Examples
+Consider the [`CNAB2`](@ref) scheme, which defines the input vector as
+```math
+\\begin{bmatrix}
+\\mathbf{y}^n \\\\
+\\Delta t \\mathbf{G}^n \\\\
+\\Delta t \\mathbf{F}^n \\\\
+\\Delta t \\mathbf{F}^{n-1}
+\\end{bmatrix} \\;,
+```
+so, the `TimeLevels` input for this scheme is `TimeLevels([0], [0], [0, 1])`.
+
+Consider the [`BDF3`](@ref) scheme, which defines the input vector as
+```math
+\\begin{bmatrix}
+\\mathbf{y}^{n} \\\\
+\\mathbf{y}^{n-1} \\\\
+\\mathbf{y}^{n-2} \\\\
+\\end{bmatrix} \\;,
+```
+so, the `TimeLevels` input for this scheme is `TimeLevels([0, 1, 2], Int[], Int[])`.
 
 # Fields
 - `step_values::Vector{Int}`: The length of this vector determines how many previous
-    solutions. For multi-stage methods, this is often just `[0]`. For multi-step methods,
-    this may include a longer history.
+    solutions are needed. For multi-stage methods, this is often just `[0]`. For multi-step
+    methods, this may include a longer history.
 - `step_derivatives_implicit::Vector{Int}`: Required implicit step derivatives from
     previous steps. Note that this is ``\\Delta t G``. This is, for example, used in the
     Adams-Moulton schemes.
@@ -188,6 +236,40 @@ struct TimeLevels
     step_derivatives_explicit::Vector{Int}
 end
 
+"""
+    get_num_step_values(tl::TimeLevels)
+
+Return the number of step values that `tl` encodes.
+"""
+function get_num_step_values(tl::TimeLevels)
+    return length(tl.step_values)
+end
+
+"""
+    get_num_implicit_derivatives(tl::TimeLevels)
+
+Return the number of implicit derivatives that `tl` encodes.
+"""
+function get_num_implicit_derivatives(tl::TimeLevels)
+    return length(tl.step_derivatives_implicit)
+end
+
+"""
+    get_num_explicit_derivatives(tl::TimeLevels)
+
+Return the number of explicit derivatives that `tl` encodes.
+"""
+function get_num_explicit_derivatives(tl::TimeLevels)
+    return length(tl.step_derivatives_explicit)
+end
+
+# return a scalar max of all elements in the TimeLevels struct
+Base.maximum(tl::TimeLevels) = max(
+    maximum(tl.step_values; init=0),
+    maximum(tl.step_derivatives_implicit; init=0),
+    maximum(tl.step_derivatives_explicit; init=0),
+)
+
 ############################################################################################
 ##                                      Integrators                                       ##
 ############################################################################################
@@ -195,18 +277,22 @@ end
 """
     check_implicit(A::AbstractMatrix)
 
-Check if the GLM matrix `A` belongs to an implicit or diagonally implicit scheme. Returns
-two booleans; the first indicates if the scheme is fully implicit, the second if the scheme
-is diagonally implicit.
+Check if the GLM matrix `A` belongs to an implicit or diagonally implicit scheme.
+
+# Returns
+- `is_implicit::Bool`: whether the scheme is fully implicit or not
+- `is_diagonally_implicit::Bool`: whether the scheme is diagonally implicit. Note that both
+    outputs are true for a fully implicit scheme, and that only this argument is true for a
+    diagonally implicit scheme.
 """
 function check_implicit(A::AbstractMatrix)
     is_implicit = false
     is_diagonally_implicit = false
     for j in axes(A, 2)
-        for i in axes(A, 1)
-            if i == j && A[i, j] != zero(eltype(A))
+        for i in firstindex(axes(A, 1)):j
+            if i == j && !iszero(A[i, j])
                 is_diagonally_implicit = true
-            elseif j > i && A[i, j] != zero(eltype(A))
+            elseif j > i && !iszero(A[i, j])
                 is_implicit = true
             end
         end
@@ -228,18 +314,16 @@ Explicit time integration scheme.
     indirect explicit method in this case.
 
 # Fields
-- `A`, `B`, `U`, `V`: See the [GLM characterisation](@ref TIGLMCharacter) for more details,
-    including the matrix sizes. All matrices are of type `SMatrix` with the appropriate
-    size and `NT` as eltype.
-- `C::SVector{num_stages, NT}`: Time Vector C of length `num_stages`. Indicates at what
-    time each stage is evaluated.
+- `A`, `B`, `U`, `V`, `C`: See the [GLM characterisation](@ref TIGLMCharacter) for more
+    details, including the matrix sizes. All matrices (and vector) are of type `SMatrix`
+    (or `SVector`, respectively) with the appropriate size and `NT` as eltype.
 - `time_levels::TimeLevels`: Required information from previous steps. See
     [`TimeLevels`](@ref) for the details.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
 - `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
-- `NT`: Element type of the `A`, `B`, `U`, `V` matrices.
+- `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
 struct Explicit{num_stages, num_steps, NT, AA, AE, EE} <:
@@ -281,21 +365,19 @@ end
     DiagonallyImplicit{num_stages, num_steps, NT, AA, AE, EE} <:
         AbstractTimeIntegrator{num_stages, num_steps}
 
-DiagonallyImplicit time integration scheme.
+Diagonally implicit time integration scheme.
 
 # Fields
-- `A`, `B`, `U`, `V`: See the [GLM characterisation](@ref TIGLMCharacter) for more details,
-    including the matrix sizes. All matrices are of type `SMatrix` with the appropriate
-    size and `NT` as eltype.
-- `C::SVector{num_stages, NT}`: Time Vector C of length `num_stages`. Indicates at what
-    time each stage is evaluated.
+- `A`, `B`, `U`, `V`, `C`: See the [GLM characterisation](@ref TIGLMCharacter) for more
+    details, including the matrix sizes. All matrices (and vector) are of type `SMatrix`
+    (or `SVector`, respectively) with the appropriate size and `NT` as eltype.
 - `time_levels::TimeLevels`: Required information from previous steps. See
     [`TimeLevels`](@ref) for the details.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
 - `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
-- `NT`: Element type of the `A`, `B`, `U`, `V` matrices.
+- `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
 struct DiagonallyImplicit{num_stages, num_steps, NT, AA, AE, EE} <:
@@ -317,7 +399,7 @@ struct DiagonallyImplicit{num_stages, num_steps, NT, AA, AE, EE} <:
         time_levels::TimeLevels,
         order::Int,
     ) where {num_stages, num_steps, NT, AA, AE, EE}
-        is_implicit, is_diagonally_implicit = check_implicit(A)
+        is_implicit, _ = check_implicit(A)
         if is_implicit
             throw(
                 ArgumentError(
@@ -340,18 +422,16 @@ end
 Implicit time integration scheme
 
 # Fields
-- `A`, `B`, `U`, `V`: See the [GLM characterisation](@ref TIGLMCharacter) for more details,
-    including the matrix sizes. All matrices are of type `SMatrix` with the appropriate
-    size and `NT` as eltype.
-- `C::SVector{num_stages, NT}`: Time Vector C of length `num_stages`. Indicates at what
-    time each stage is evaluated.
+- `A`, `B`, `U`, `V`, `C`: See the [GLM characterisation](@ref TIGLMCharacter) for more
+    details, including the matrix sizes. All matrices (and vector) are of type `SMatrix`
+    (or `SVector`, respectively) with the appropriate size and `NT` as eltype.
 - `time_levels::TimeLevels`: Required information from previous steps. See
     [`TimeLevels`](@ref) for the details.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
 - `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
-- `NT`: Element type of the `A`, `B`, `U`, `V` matrices.
+- `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
 struct Implicit{num_stages, num_steps, NT, AA, AE, EE} <:
@@ -385,20 +465,18 @@ Implicit-Explicit (IMEX) time integration scheme. Currently only supportes impli
 which are diagonally implicit.
 
 # Fields
-- `A_IM`, `A_EX`, `B_IM`, `B_EX`, `U`, `V`: See the
+- `A_IM`, `A_EX`, `B_IM` `B_EX`, `U`, `V`, `C_IM`, `C_EX`: See the
     [GLM characterisation](@ref TIGLMCharacter) for more details, including the matrix
-    sizes. All matrices are of type `SMatrix` with the appropriate size and `NT` as eltype.
-- `C_IM::SVector{num_stages, NT}`: Time Vector C of length `num_stages`. Indicates at
-    what time each implicit stage is evaluated.
-- `C_EX::SVector{num_stages, NT}`: Time Vector C of length `num_stages`. Indicates at
-    what time each explicit stage is evaluated.
+    sizes. All matrices (and vector) are of type `SMatrix` (or `SVector`, respectively)
+    with the appropriate size and `NT` as eltype.
 - `time_levels::TimeLevels`: Required information from previous steps. See
     [`TimeLevels`](@ref) for the details.
-- `order::Int`: order of the scheme
+- `order::Int`: Order of the scheme.
 
 # Type parameters
 - `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
-- `NT`: Element type of the `A`, `B`, `U`, `V` matrices.
+- `NT`: Element type of the `A_IM`, `A_EX`, `B_IM` `B_EX`, `U`, and `V` matrices, and
+    `C_IM`, and `C_EX` vectors.
 - `AA`, `AE`, `EE`: Number of entries in (`A_IM` and `A_EX`), (`B_IM`, `B_EX` and `U`),
     and `V`, respectively.
 """
@@ -427,7 +505,7 @@ struct IMEX{num_stages, num_steps, NT, AA, AE, EE} <:
         time_levels::TimeLevels,
         order::Int,
     ) where {num_stages, num_steps, NT, AA, AE, EE}
-        is_implicit, is_diagonally_implicit = check_implicit(A_IM)
+        is_implicit, _ = check_implicit(A_IM)
         if is_implicit
             throw(
                 ArgumentError(
@@ -452,6 +530,10 @@ Return the order of the time integration scheme
 """
 function get_order(scheme::AbstractTimeIntegrator)
     return scheme.order
+end
+
+function get_time_levels(scheme::AbstractTimeIntegrator)
+    return scheme.time_levels
 end
 
 ############################################################################################
@@ -484,15 +566,15 @@ Solution and current state of the time integration problem.
 - `N::Int`: Number varables in the system.
 - `solution::Matrix{NT}`: Of size (`N`, num_steps).
 - `scheme::T`: The time integration scheme.
-- `startup_scheme::S`: The startup scheme, if desired. Will be `nothing` if there is no
-    startup scheme.
-- `remaining_startup_steps::Int`: remaining startup steps
-- `solution_alocated::Matrix{NT}`: Pre-allocated memory for calculations.
-- `F_alocated::Matrix{NT}`: Pre-allocated memory for calculations.
-- `G_alocated::Matrix{NT}`: Pre-allocated memory for calculations.
+- `startup_scheme::S`: The startup scheme, if provided. Will be `nothing` if not provided.
+    Defaults to `nothing`.
+- `remaining_startup_steps::Int`: Remaining startup steps.
+- `solution_allocated::Matrix{NT}`: Pre-allocated memory for calculations.
+- `F_alLocated::Matrix{NT}`: Pre-allocated memory for calculations.
+- `G_alLocated::Matrix{NT}`: Pre-allocated memory for calculations.
 - `startup_solution::ST`: The `TimeIntegrationSolution` object used for the startup
     procedure. This will contain information specific to the startup scheme and its current
-    state. Will be `nothing` if there is no startup scheme.
+    state. Will be `nothing` if not provided. Defaults to `nothing`.
 - `stage_values::Vector{NT}`: Pre-allocated memory for calculations.
 - `temp_var::Vector{NT}`: Pre-allocated memory for calculations.
 
@@ -555,7 +637,7 @@ end
 Return the current solution values. This is a Matrix{NT} of size (`N`, num_steps), where
 `N` is the number of variables in the system.
 """
-function get_solution(sol::TimeIntegrationSolution{T, S, NT}) where {T, S, NT}
+function get_solution(sol::TimeIntegrationSolution)
     return sol.solution
 end
 
@@ -617,6 +699,15 @@ function get_G_allocated(sol::TimeIntegrationSolution)
 end
 
 """
+    get_startup_solution(sol::TimeIntegrationSolution)
+
+Return the solution object corresponding to the startup scheme.
+"""
+function get_startup_solution(sol::TimeIntegrationSolution)
+    return sol.startup_solution
+end
+
+"""
     get_stage_allocated(sol::TimeIntegrationSolution)
 
 Return the pre-allocated vector for the stage values.
@@ -633,10 +724,3 @@ Return the pre-allocated vector for the temporary variable for the implicit sche
 function get_temp_var(sol::TimeIntegrationSolution)
     return sol.temp_var
 end
-
-# return a scalar max of all elements in the TimeLevels struct
-Base.maximum(tl::TimeLevels) = maximum([
-    maximum(tl.step_values; init=0),
-    maximum(tl.step_derivatives_implicit; init=0),
-    maximum(tl.step_derivatives_explicit; init=0),
-])

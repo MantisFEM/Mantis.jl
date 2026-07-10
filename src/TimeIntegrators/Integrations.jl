@@ -69,39 +69,57 @@ function time_integrate!(
 ) where {T, S <: AbstractTimeIntegrator}
     remaining_startup_steps = get_remaining_startup_steps(y_n)
     if remaining_startup_steps > 0
-        num_steps = length(y_n.scheme.time_levels.step_values)
-        num_G = length(y_n.scheme.time_levels.step_derivatives_implicit)
-        num_F = length(y_n.scheme.time_levels.step_derivatives_explicit)
+        scheme = get_scheme(y_n)
+        tl = get_time_levels(scheme)
+        num_steps = get_num_step_values(tl)
+        num_G = get_num_implicit_derivatives(tl)
+        num_F = get_num_explicit_derivatives(tl)
 
-        y_n_startup = y_n.startup_solution
+        startup_scheme = get_startup_scheme(y_n)
+        y_n_startup = get_startup_solution(y_n)
 
         # We do have to advance the solution using the startup scheme, to ensure that the
         # solution remains at the expected time level, even if some of the startup steps
         # are only needed to initialise the step derivatives.
         ynm1 = get_solution(y_n_startup)
-        _time_integrate!(y_n_startup, y_n.startup_scheme, ode, t, dt; kwargs...)
+        _time_integrate!(y_n_startup, startup_scheme, ode, t, dt; kwargs...)
 
-        # Then we initialise the required solutions and stage derivatives. Note these are
-        # all if statements, as we may need all of them at the same time. The first
-        # condition in the if statements always check if we ever need the specific type of
-        # initialisation, while the second condition ensures that we are at the correct
-        # time to initialise the solution or stage derivatives.
-        if num_steps > 0 && remaining_startup_steps - num_steps <= 0
-            index_steps = num_steps + (remaining_startup_steps - num_steps)
+        # Then we initialise the required solutions and stage derivatives.
+        #
+        # Note that the layout of y_n.solution should be
+        # [
+        # y_n,
+        # y_{n-1},
+        # ...,
+        # y_{n-num_steps+1}
+        # \Delta t G_n,
+        # \Delta t G_{n-1},
+        # ...,
+        # \Delta t G_{n-num_G+1},
+        # \Delta t F_n,
+        # \Delta t F_{n-1},
+        # ...,
+        # \Delta t F_{n-num_F+1},
+        # ]
+        #
+        # The solution vector is filled from the back (remaining_startup_steps is
+        # decreasing) to comply with this layout.
+        if num_steps > 0 && num_steps >= remaining_startup_steps
+            index_steps = remaining_startup_steps
             y_n.solution[:, index_steps] = get_solution(y_n_startup)
         end
-        if num_G > 0 && remaining_startup_steps - num_G <= 0
-            index_implicit = num_steps + num_G + (remaining_startup_steps - num_G)
+        if num_G > 0 && num_G >= remaining_startup_steps
+            index_implicit = num_steps + remaining_startup_steps
             ode.implicitEvaluate!(
                 view(y_n.solution, :, index_implicit),
                 get_solution(y_n_startup),
                 t+dt;
-                kwargs...
+                kwargs...,
             )
             y_n.solution[:, index_implicit] .*= dt
         end
-        if num_F > 0 && remaining_startup_steps - num_F <= 0
-            index_explicit = num_steps + num_G + num_F + (remaining_startup_steps - num_F)
+        if num_F > 0 && num_F >= remaining_startup_steps
+            index_explicit = num_steps + num_G + remaining_startup_steps
             ode.explicitEvaluate!(view(y_n.solution, :, index_explicit), ynm1, t; kwargs...)
             y_n.solution[:, index_explicit] .*= dt
         end
@@ -136,152 +154,133 @@ end
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::Explicit{num_stages, num_steps},
-    ode::TimeIntegrationOperators{Nothing, IF, IE},
+    ode::TimeIntegrationOperators{Nothing, IS, IE},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, IF, IE}
-    throw(
+) where {num_steps, num_stages, IS, IE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an Explicit scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "explicitEvaluate! function."
-            )
-        )
+                "explicitEvaluate! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::DiagonallyImplicit{num_stages, num_steps},
-    ode::TimeIntegrationOperators{EF, Nothing, IE},
+    ode::TimeIntegrationOperators{EE, Nothing, IE},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, EF, IE}
-    throw(
+) where {num_steps, num_stages, EE, IE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use a DiagonallyImplicit scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "implicitSolve! function."
-            )
-        )
+                "implicitSolve! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::Implicit{num_stages, num_steps},
-    ode::TimeIntegrationOperators{EF, Nothing, IE},
+    ode::TimeIntegrationOperators{EE, Nothing, IE},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, EF, IE}
-    throw(
+) where {num_steps, num_stages, EE, IE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an Implicit scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "implicitSolve! function."
-            )
-        )
+                "implicitSolve! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::Implicit{num_stages, num_steps},
-    ode::TimeIntegrationOperators{EF, IF, Nothing},
+    ode::TimeIntegrationOperators{EE, IS, Nothing},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, EF, IF}
-    throw(
+) where {num_steps, num_stages, EE, IS}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an Implicit scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "implicitEvaluate! function."
-            )
-        )
+                "implicitEvaluate! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::Implicit{num_stages, num_steps},
-    ode::TimeIntegrationOperators{EF, Nothing, Nothing},
+    ode::TimeIntegrationOperators{EE, Nothing, Nothing},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, EF}
-    throw(
+) where {num_steps, num_stages, EE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an Implicit scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "implicitSolve! nor an implicitEvaluate! function."
-            )
-        )
+                "implicitSolve! nor an implicitEvaluate! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::IMEX{num_stages, num_steps},
-    ode::TimeIntegrationOperators{Nothing, IF, IE},
+    ode::TimeIntegrationOperators{Nothing, IS, IE},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, IF, IE}
-    throw(
+) where {num_steps, num_stages, IS, IE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an IMEX scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "explicitEvaluate! function."
-            )
-        )
+                "explicitEvaluate! function.",
+            ),
+        ),
     )
 end
 
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
     scheme::IMEX{num_stages, num_steps},
-    ode::TimeIntegrationOperators{EF, Nothing, IE},
+    ode::TimeIntegrationOperators{EE, Nothing, IE},
     t::Float64,
     dt::Float64;
     kwargs...,
-) where {num_steps, num_stages, EF, IE}
-    throw(
+) where {num_steps, num_stages, EE, IE}
+    return throw(
         ArgumentError(
             LazyString(
                 "You are trying to use an IMEX scheme but have provided an ",
                 "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "implicitSolve! function."
-            )
-        )
-    )
-end
-
-function _time_integrate!(
-    y_n::TimeIntegrationSolution,
-    scheme::IMEX{num_stages, num_steps},
-    ode::TimeIntegrationOperators{Nothing, Nothing, IE},
-    t::Float64,
-    dt::Float64;
-    kwargs...,
-) where {num_steps, num_stages, IE}
-    throw(
-        ArgumentError(
-            LazyString(
-                "You are trying to use an IMEX scheme but have provided an ",
-                "ode (in a TimeIntegrationOperators struct) which does not have an ",
-                "explicitEvaluate! nor an implicitSolve! function."
-            )
-        )
+                "implicitSolve! function.",
+            ),
+        ),
     )
 end
 
@@ -335,7 +334,7 @@ function _time_integrate!(
     @inbounds for i in 1:num_stages
         stage_values .= zero(T)
         # Calculate the stage value Yi
-        for k in 1:i
+        for k in 1:(i - 1)
             for n in 1:N
                 stage_values[n] += F_allocated[n, k] * scheme.A[i, k] * dt
             end
@@ -428,7 +427,7 @@ function _time_integrate!(
     @inbounds for i in 1:num_stages
         # calculate the temporary value xᵢ
         temp_var .= zero(T)
-        for k in 1:i
+        for k in 1:(i - 1)
             for n in 1:N
                 temp_var[n] += G[n, k] * scheme.A[i, k] * dt
             end
@@ -451,9 +450,9 @@ function _time_integrate!(
                     G[n, i] = (y_n.stage_values[n] - temp_var[n]) / (a_ii * dt)
                 end
             else
-                for n in 1:N
-                    G[n, i] = zero(T)
-                end
+                ode.implicitEvaluate!(
+                    view(G, :, i), y_n.stage_values, t + scheme.C[i] * dt; kwargs...
+                )
             end
         end
     end
@@ -602,7 +601,7 @@ function _time_integrate!(
     @inbounds for i in 1:num_stages
         # calculate the temporary value xᵢ
         temp_var .= zero(T)
-        for k in 1:i
+        for k in 1:(i - 1)
             for n in 1:N
                 temp_var[n] += G[n, k] * scheme.A_IM[i, k] * dt
                 temp_var[n] += F_allocated[n, k] * scheme.A_EX[i, k] * dt
@@ -636,9 +635,9 @@ function _time_integrate!(
                     G[n, i] = (stage_values[n] - temp_var[n]) / (a_ii * dt)
                 end
             else
-                for n in 1:N
-                    G[n, i] = zero(T)
-                end
+                ode.implicitEvaluate!(
+                    view(G, :, i), stage_values, t + scheme.C_IM[i] * dt; kwargs...
+                )
             end
         end
     end

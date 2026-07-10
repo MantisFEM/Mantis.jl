@@ -23,8 +23,6 @@ function test_ode_explicit_func(output, yn, t)
     end
     return nothing
 end
-@test_opt TimeIntegrators.define_explicit_ode(test_ode_explicit_func)
-test_ode_explicit = TimeIntegrators.define_explicit_ode(test_ode_explicit_func)
 
 function implicitSolve(output, x, h, t)
     output .= (LinearAlgebra.I - h * lambda) \ x
@@ -36,12 +34,6 @@ function implicitEvaluate(output, yn, t)
     end
     return nothing
 end
-@test_opt TimeIntegrators.define_diagonally_implicit_ode(implicitSolve, implicitEvaluate)
-test_ode_dimplicit = TimeIntegrators.define_diagonally_implicit_ode(
-    implicitSolve, implicitEvaluate
-)
-@test_opt TimeIntegrators.define_implicit_ode(implicitSolve, implicitEvaluate)
-test_ode_implicit = TimeIntegrators.define_implicit_ode(implicitSolve, implicitEvaluate)
 
 function test_ode_explicit_imex_func(output, yn, t)
     for n in eachindex(output)
@@ -49,17 +41,37 @@ function test_ode_explicit_imex_func(output, yn, t)
     end
     return nothing
 end
+
+# Test functions defining the odes.
+@test_opt TimeIntegrators.define_explicit_ode(test_ode_explicit_func)
+@test_opt TimeIntegrators.define_diagonally_implicit_ode(implicitSolve)
+@test_opt TimeIntegrators.define_diagonally_implicit_ode(implicitSolve, implicitEvaluate)
+@test_opt TimeIntegrators.define_implicit_ode(implicitSolve, implicitEvaluate)
 @test_opt TimeIntegrators.define_imex_ode(
-    test_ode_explicit_imex_func,  # Explcit evaluation
+    test_ode_explicit_imex_func,
     (output, x, h, t) -> LinearAlgebra.ldiv!(
         output, LinearAlgebra.lu(LinearAlgebra.I - 0.5 * h * lambda), x
-    ),  # Implicit solver
+    ),
 )
+@test_opt TimeIntegrators.define_imex_ode(
+    test_ode_explicit_imex_func,
+    (output, x, h, t) -> LinearAlgebra.ldiv!(
+        output, LinearAlgebra.lu(LinearAlgebra.I - 0.5 * h * lambda), x
+    ),
+    test_ode_explicit_imex_func,  # Implicit evaluate is the same as the explicit one here.
+)
+
+test_ode_explicit = TimeIntegrators.define_explicit_ode(test_ode_explicit_func)
+test_ode_dimplicit = TimeIntegrators.define_diagonally_implicit_ode(
+    implicitSolve, implicitEvaluate
+)
+test_ode_implicit = TimeIntegrators.define_implicit_ode(implicitSolve, implicitEvaluate)
 test_ode_imex = TimeIntegrators.define_imex_ode(
     test_ode_explicit_imex_func,  # Explcit evaluation
     (output, x, h, t) -> LinearAlgebra.ldiv!(
         output, LinearAlgebra.lu(LinearAlgebra.I - 0.5 * h * lambda), x
     ),  # Implicit solver
+    test_ode_explicit_imex_func,
 )
 
 const schemes = (
@@ -85,9 +97,11 @@ const schemes = (
     (TimeIntegrators.BACKWARD_EULER, nothing),
     (TimeIntegrators.RADAU_IA_1, nothing),
     (TimeIntegrators.IMPLICIT_MIDPOINT, nothing),
+    (TimeIntegrators.CRANK_NICOLSON, nothing),
     (TimeIntegrators.DIRK2, nothing),
     (TimeIntegrators.RADAU_IA_3, nothing),
     (TimeIntegrators.DIRK3, nothing),
+    (TimeIntegrators.ESDIRK32, nothing),
     (TimeIntegrators.DIRK4, nothing),
     (TimeIntegrators.GAUSS_LEGENDRE_4, nothing),
     (TimeIntegrators.GAUSS_LEGENDRE_6, nothing),
@@ -96,7 +110,7 @@ const schemes = (
     (TimeIntegrators.AM1, TimeIntegrators.BACKWARD_EULER),
     (TimeIntegrators.AM2, TimeIntegrators.DIRK2),
     (TimeIntegrators.AM3, TimeIntegrators.DIRK3),
-    (TimeIntegrators.AM4, TimeIntegrators.GAUSS_LEGENDRE_6),
+    (TimeIntegrators.AM4, TimeIntegrators.DIRK4),
     (TimeIntegrators.BDF1, nothing),
     (TimeIntegrators.BDF2, TimeIntegrators.BACKWARD_EULER),
     (TimeIntegrators.BDF3, TimeIntegrators.DIRK2),
@@ -105,6 +119,7 @@ const schemes = (
     (TimeIntegrators.BACKWARD_FORWARD_EULER, nothing),
     (TimeIntegrators.MIDPOINT_IMEX, nothing),
     (TimeIntegrators.RK3_IMEX, nothing),
+    (TimeIntegrators.IMEX331, nothing),
     # Multi-step, single-stage, IMEX
     (TimeIntegrators.CNAB2, TimeIntegrators.MIDPOINT_IMEX),
     (TimeIntegrators.SSSS2, TimeIntegrators.MIDPOINT_IMEX),
@@ -135,24 +150,13 @@ const t = 0.0
     4,
 )
 
-# Test functions defining the odes.
-@test_opt TimeIntegrators.define_explicit_ode(test_ode_explicit_func)
-@test_opt TimeIntegrators.define_implicit_ode(implicitSolve, x -> lambda * x)
-@test_opt TimeIntegrators.define_imex_ode(
-    (yn, t) -> 0.5 * lambda * yn,  # Explcit evaluation
-    (x, h, t) -> (LinearAlgebra.I - 0.5 * h * lambda) \ x,  # Implicit solver
-    x -> 0.5 * lambda * x,  # Implicit evaluate
-)
-
 foreach(schemes) do (scheme, startup_scheme)
-    #@show scheme
-
     if isnothing(startup_scheme)
-        @test_opt TimeIntegrators.initialize_scheme([y_0], scheme)
-        y_n = TimeIntegrators.initialize_scheme([y_0], scheme)
+        @test_opt TimeIntegrators.initialise_scheme([y_0], scheme)
+        y_n = TimeIntegrators.initialise_scheme([y_0], scheme)
     else
-        @test_opt TimeIntegrators.initialize_scheme([y_0], scheme, startup_scheme)
-        y_n = TimeIntegrators.initialize_scheme([y_0], scheme, startup_scheme)
+        @test_opt TimeIntegrators.initialise_scheme([y_0], scheme, startup_scheme)
+        y_n = TimeIntegrators.initialise_scheme([y_0], scheme, startup_scheme)
     end
 
     if isa(scheme, TimeIntegrators.Explicit)
