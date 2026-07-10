@@ -85,3 +85,10 @@ Manifest.toml
 
 # Ignore jj vcs configuration directory
 .jj/
+
+# Ignore direnv config
+*.direnv/
+*.envrc
+
+# Ignore local preferences
+*LocalPreferences.toml
