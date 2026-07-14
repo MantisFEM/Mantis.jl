@@ -589,7 +589,7 @@ function get_multilevel_information(
         level_active_elements = Set(Hierarchy.get_level_ids(active_elements, level))
         level_active_basis = Hierarchy.get_level_ids(active_basis, level)
         for basis in level_active_basis
-            support = get_support(spaces[level], basis)
+            support = collect(get_support(spaces[level], basis))
             inactive_elements = [!(element ∈ level_active_elements) for element in support]
             for inactive_element in support[inactive_elements]
                 active_children = get_element_active_children(
@@ -996,7 +996,7 @@ end
 Refines `domains` in-place, by extracting the children of the `marked_elements` using
 `two_scale_operators` at the given `level`.
 """
-function refine_domains!(domains, two_scale_operators, marked_elements, level)
+function refine_domains!(domains, two_scale_operators, marked_elements::Vector{Int}, level)
     if isempty(marked_elements)
         return domains
     end

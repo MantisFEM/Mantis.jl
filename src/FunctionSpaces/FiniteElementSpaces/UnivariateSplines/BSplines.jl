@@ -319,7 +319,7 @@ function get_support(space::BSplineSpace, basis_id::Int)
         convert_knot_to_breakpoint_idx(
             get_knot_vector(space), basis_id + get_knot_vector(space).polynomial_degree + 1
         ) - 1
-    return collect(first_element:last_element)
+    return first_element:last_element
 end
 
 function get_local_knot_vector(space::BSplineSpace, basis_id::Int)

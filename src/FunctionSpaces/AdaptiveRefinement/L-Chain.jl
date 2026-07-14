@@ -59,7 +59,7 @@ function update_domains_with_lchains!(
             end
 
             corner_elements = mapreduce(
-                c -> get_support(level_space, c), union, current_corners
+                c -> collect(get_support(level_space, c)), union, current_corners
             )
             intersect!(corner_elements, get_level_element_ids(space, level))
             refine_domains!(domains, two_scale_operators, corner_elements, level)
@@ -80,7 +80,7 @@ function update_domains_with_lchains!(
             if !isempty(get_support(level_space, βᵢ) ∩ refined_elements)
                 parent = get_parent_function(space, level, βᵢ)
                 push!(previous_parents, parent)
-                union!(marked_els[level - 1], get_support(pl_space, parent))
+                union!(marked_els[level - 1], collect(get_support(pl_space, parent)))
             end
         end
 
@@ -113,7 +113,7 @@ function get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
     Ωₖ = get_level_domain(space, k)
     ops = ntuple(lvl -> get_twoscale_operator(space, l - 1 + lvl), (k - l))
     for βᵢ in 1:get_num_basis(get_space(space, l))
-        supp_βᵢ = get_support(get_space(space, l), βᵢ)
+        supp_βᵢ = collect(get_support(get_space(space, l), βᵢ))
         for lvl in 1:(k - l)
             supp_βᵢ = mapreduce(e -> get_element_children(ops[lvl], e), vcat, supp_βᵢ)
         end

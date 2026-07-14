@@ -28,7 +28,9 @@ lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
 input_i = (3, 4)
 input_j = (8, 6)
 βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
-marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), vcat, (βᵢ, βⱼ))]
+marked_elements = [
+    mapreduce(β -> collect(FunctionSpaces.get_support(B0, β)), vcat, (βᵢ, βⱼ))
+]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
 Blk = FunctionSpaces.get_Blk(H, 1)
@@ -47,7 +49,7 @@ input_t2 = (5, 4)
 βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
 βₜ₁, βₜ₂ = lin_num_basis[input_t1...], lin_num_basis[input_t2...]
 marked_elements = [
-    mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ₁, βₜ₂))
+    mapreduce(β -> collect(FunctionSpaces.get_support(B0, β)), union, (βᵢ, βⱼ, βₜ₁, βₜ₂))
 ]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
@@ -85,7 +87,9 @@ input_j = (6, 6)
 input_t = (7, 4)
 βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
 βₜ = lin_num_basis[input_t...]
-marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ))]
+marked_elements = [
+    mapreduce(β -> collect(FunctionSpaces.get_support(B0, β)), union, (βᵢ, βⱼ, βₜ))
+]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
 Blk = FunctionSpaces.get_Blk(H, 1)
@@ -120,7 +124,7 @@ t1 = lin_num_basis[input_t1...]
 t2 = lin_num_basis[input_t2...]
 t3 = lin_num_basis[input_t3...]
 marked_elements = [
-    mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (t1, t2, t3)), Int[]
+    mapreduce(β -> collect(FunctionSpaces.get_support(B0, β)), union, (t1, t2, t3)), Int[]
 ]
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
 Blk = FunctionSpaces.get_Blk(H, 1)
