@@ -521,12 +521,9 @@ function get_support(
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     factor_supports = get_factor_supports(space, basis_id)
-    iterator = Iterators.product(factor_supports...)
+    product = Iterators.product(factor_supports...)
     lin_num_elements = get_lin_num_elements(space)
-    support = Vector{Int}(undef, length(iterator))
-    for (i, el) in enumerate(iterator)
-        support[i] = lin_num_elements[el...]
-    end
+    support = Iterators.flatten(Iterators.map(e -> lin_num_elements[e...], product))
 
     return support
 end
