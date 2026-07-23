@@ -17,10 +17,13 @@ the dimension of the manifold) returns zero. However, in `Mantis`, the construct
 an error instead.
 
 # Constructors
-- `ExteriorDerivative(form::F)`: General constructor for any `AbstractForm`.
+
+  - `ExteriorDerivative(form::F)`: General constructor for any `AbstractForm`.
 
 # Examples
+
 Creating the exterior derivative of a ``0``-form:
+
 ```jldoctest
 julia> using Mantis
 
@@ -32,20 +35,21 @@ julia> dΛ⁰ₕ = d(Λ⁰ₕ);  # Note that dΛ⁰ₕ is a 1-form.
 
 julia> isa(dΛ⁰ₕ, Forms.ExteriorDerivative{2, 1, 1})
 true
-
 ```
 
 # Fields
-- `form::F`: The form to which the exterior derivative is applied. Note that the form rank
+
+  - `form::F`: The form to which the exterior derivative is applied. Note that the form rank
     of this form is one lower than the `form_rank` of the exterior derivative.
-- `label::L`: The exterior derivative label. This is a concatenation of "d" with the label
+  - `label::L`: The exterior derivative label. This is a concatenation of "d" with the label
     of `form`.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank}`: The type of
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `F <: Forms.AbstractForm{manifold_dim, form_rank - 1, expression_rank}`: The type of
     `form`.
-- `L <: AbstractString`: The type of the label. Since a "d" is added to the label, this
+  - `L <: AbstractString`: The type of the label. Since a "d" is added to the label, this
     type may differ from the label type of the underlying form.
 """
 struct ExteriorDerivative{manifold_dim, form_rank, expression_rank, F, L} <:
@@ -106,7 +110,7 @@ function _evaluate_exterior_derivative(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    throw(ArgumentError("Method not implement for type $(typeof(form))."))
+    return throw(ArgumentError("Method not implement for type $(typeof(form))."))
 end
 
 ############################################################################################
@@ -287,9 +291,7 @@ end
 ############################################################################################
 
 function _evaluate_exterior_derivative(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
+    ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     # Preallocate memory for output array
     n_derivative_form_components = manifold_dim

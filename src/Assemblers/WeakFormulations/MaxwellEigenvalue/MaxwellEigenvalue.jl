@@ -8,16 +8,18 @@
 Function for assembling the weak form of the Maxwell eigenvalue problem.
 
 # Arguments
-- `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test and trial
+
+  - `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test and trial
     spaces.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
+  - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
+
+  - `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
     The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the left-hand side matrix.
-- `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
+  - `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
     The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the right-hand side matrix.
 """
@@ -42,13 +44,15 @@ end
 Evaluates the analytical Maxwell eigenfunction for the eigenmode `(m, n)` at points `x`.
 
 # Arguments
-- `m::Int`: Eigenmode component x.
-- `n::Int`: Eigenmode component y.
-- `scale_factors::NTuple{2, Int}`: Scaling factors based on the size of the domain.
-- `x::Matrix{Float64}`: Evaluation points.
+
+  - `m::Int`: Eigenmode component x.
+  - `n::Int`: Eigenmode component y.
+  - `scale_factors::NTuple{2, Int}`: Scaling factors based on the size of the domain.
+  - `x::Matrix{Float64}`: Evaluation points.
 
 # Returns
-- `NTuple{2, Vector{Float64}}`: The evaluated Maxwell eigenfunction at points `x`.
+
+  - `NTuple{2, Vector{Float64}}`: The evaluated Maxwell eigenfunction at points `x`.
 """
 function analytical_maxwell_eigenfunction(
     m::Int, n::Int, scale_factors::NTuple{2, Float64}, x::Matrix{Float64}
@@ -74,12 +78,14 @@ end
 Returns the first `num_eig` eigenvalues and 1-form eigenfunctions on the geometry `geom`.
 
 # Arguments
-- `num_eig::Int`: Number of eigenvalues and eigenfunctions to compute.
-- `geom::Geometry.AbstractGeometry{2}`: The two-dimensional geometry.
+
+  - `num_eig::Int`: Number of eigenvalues and eigenfunctions to compute.
+  - `geom::Geometry.AbstractGeometry{2}`: The two-dimensional geometry.
 
 # Returns
-- `Vector{Float64}`: The first `num_eig` analytical eigenvalues.
-- `Vector{Forms.AnalyticalFormField{2, 1, G}`: The first `num_eig` analytical
+
+  - `Vector{Float64}`: The first `num_eig` analytical eigenvalues.
+  - `Vector{Forms.AnalyticalFormField{2, 1, G}`: The first `num_eig` analytical
     eigenfunctions.
 """
 function get_analytical_maxwell_eig(
@@ -120,15 +126,17 @@ Returns the first `num_eig` eigenvalues and 1-form eigenfunctions of the Maxwell
 problem.
 
 # Arguments
-- `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to use as trial and test space.
-- `X¹::Forms.AbstractFormSpace{2, 1}`: The 1-form space to use as trial and test space.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the assembly.
-- `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
-- `verbose::Bool=false`: Whether to print the nullspace offset.
+
+  - `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to use as trial and test space.
+  - `X¹::Forms.AbstractFormSpace{2, 1}`: The 1-form space to use as trial and test space.
+  - `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the assembly.
+  - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
+  - `verbose::Bool=false`: Whether to print the nullspace offset.
 
 # Returns
-- `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
-- `u¹ₕ::Vector{Forms.FormField{2, 1}}`: The first `num_eig` eigenfunctions.
+
+  - `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
+  - `u¹ₕ::Vector{Forms.FormField{2, 1}}`: The first `num_eig` eigenfunctions.
 """
 function solve_maxwell_eig(
     X⁰::Forms.AbstractFormSpace{2, 0},
@@ -165,8 +173,9 @@ function solve_maxwell_eig(
         u¹ₕ[eig_id] = Forms.FormField(
             X¹, zeros(Forms.get_num_basis(X¹)), original_label * subscript_str
         )
-        u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .=
-            real.(eig_vecs[:, nullspace_offset + eig_id])
+        u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .= real.(
+            eig_vecs[:, nullspace_offset + eig_id]
+        )
     end
 
     return ωₕ², u¹ₕ
@@ -190,22 +199,24 @@ Returns the first `num_eig` eigenvalues and 1-form eigenfunctions of the Maxwell
 problem for an adaptive loop.
 
 # Arguments
-- `complex::C`: The initial de Rham complex to use for the problem.
-- `dΩₐ::Quadrature.StandardQuadrature{manifold_dim}`: The quadrature rule to use for the
+
+  - `complex::C`: The initial de Rham complex to use for the problem.
+  - `dΩₐ::Quadrature.StandardQuadrature{manifold_dim}`: The quadrature rule to use for the
     assembly.
-- `num_steps::Int`: The number of adaptive steps to perform.
-- `dorfler_parameter::Float64`: The Dörfler marking parameter.
-- `dΩₑ::Quadrature.StandardQuadrature{manifold_dim}`: The quadrature rule to use for the
+  - `num_steps::Int`: The number of adaptive steps to perform.
+  - `dorfler_parameter::Float64`: The Dörfler marking parameter.
+  - `dΩₑ::Quadrature.StandardQuadrature{manifold_dim}`: The quadrature rule to use for the
     error estimation.
-- `Lchains::Bool`: Whether to use L-chains for the refinement.
-- `eigenfunction::Int`: The index of the eigenfunction to use for the error estimation.
-- `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
-- `scale_factors::NTuple{manifold_dim, Float64}`: The scaling factors for the geometry.
-- `verbose::Bool=false`: Whether to print the progress of the adaptive loop.
+  - `Lchains::Bool`: Whether to use L-chains for the refinement.
+  - `eigenfunction::Int`: The index of the eigenfunction to use for the error estimation.
+  - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
+  - `scale_factors::NTuple{manifold_dim, Float64}`: The scaling factors for the geometry.
+  - `verbose::Bool=false`: Whether to print the progress of the adaptive loop.
 
 # Returns
-- `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
-- `u¹ₕ::Vector{Forms.FormField{manifold_dim, 1, G}}`: The first `num_eig` eigenfunctions.
+
+  - `ω²ₕ::Vector{Float64}`: The first `num_eig` eigenvalues.
+  - `u¹ₕ::Vector{Forms.FormField{manifold_dim, 1, G}}`: The first `num_eig` eigenfunctions.
 """
 function solve_maxwell_eig(
     complex::C,
@@ -244,7 +255,9 @@ function solve_maxwell_eig(
             H⁰, dorfler_marking
         )
         if Lchains
-            domains = FunctionSpaces.update_domains_with_lchains!(H⁰, marked_elements_per_level)
+            domains = FunctionSpaces.update_domains_with_lchains!(
+                H⁰, marked_elements_per_level
+            )
             complex = Forms.update_hierarchical_de_rham_complex(complex, domains)
         else
             complex = Forms.update_hierarchical_de_rham_complex(

@@ -11,18 +11,20 @@ A geometry defined in terms of an `evaluable_function` over a given number of el
 manifold dimension.
 
 # Fields
-- `evaluable_function::F`: Function that, given an `element_id` and local coordinates `xi`,
+
+  - `evaluable_function::F`: Function that, given an `element_id` and local coordinates `xi`,
     returns values and derivatives in the same nested format as a finite element space
     (see [FunctionSpaces](@ref)). In particular, the output structure must be compatible
     with `FunctionSpaces.AbstractFESpace` so that geometry evaluations and Jacobians can be
     computed element-wise.
-- `num_elements::Int`: Total number of elements in the discrete geometry.
+  - `num_elements::Int`: Total number of elements in the discrete geometry.
 
 # Type parameters
-- `manifold_dim`: Dimension of the reference (parametric) domain.
-- `image_dim`: Dimension of the physical embedding space.
-- `num_patches`: Number of patches of the geometry.
-- `F`: The type of the evaluable function.
+
+  - `manifold_dim`: Dimension of the reference (parametric) domain.
+  - `image_dim`: Dimension of the physical embedding space.
+  - `num_patches`: Number of patches of the geometry.
+  - `F`: The type of the evaluable function.
 """
 struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, L, NP} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}

@@ -396,6 +396,7 @@ const GAUSS_LEGENDRE_6 = butcher_tableau_to_glm(
     AB1
 
 Adams-Bashforth 1:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t f(y_{n})\\;.
 ```
@@ -418,6 +419,7 @@ const AB1 = Explicit(
     AB2
 
 Adams-Bashforth 2:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{3}{2} f(y_{n}) - \\frac{1}{2} f(y_{n-1}))\\;.
 ```
@@ -440,6 +442,7 @@ const AB2 = Explicit(
     AB3
 
 Adams-Bashforth 3:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{23}{12} f(y_{n}) - \\frac{4}{3} f(y_{n-1}) + \\frac{5}{12} f(y_{n-2}))\\;.
 ```
@@ -462,6 +465,7 @@ const AB3 = Explicit(
     AB4
 
 Adams-Bashforth 4:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{55}{24} f(y_{n}) - \\frac{59}{24} f(y_{n-1}) + \\frac{37}{24} f(y_{n-2}) - \\frac{9}{24} f(y_{n-3}))\\;.
 ```
@@ -504,6 +508,7 @@ const AB4 = Explicit(
     AM0
 
 Adams-Moulton 0:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t g(y_{n})\\;.
 ```
@@ -526,6 +531,7 @@ const AM0 = DiagonallyImplicit(
     AM1
 
 Adams-Moulton 1:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{1}{2} g(y_{n+1}) + \\frac{1}{2} g(y_{n}))\\;.
 ```
@@ -548,6 +554,7 @@ const AM1 = DiagonallyImplicit(
     AM2
 
 Adams-Moulton 2:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{5}{12} g(y_{n+1}) + \\frac{8}{12} g(y_{n}) - \\frac{1}{12} g(y_{n-1})\\;.
 ```
@@ -570,6 +577,7 @@ const AM2 = DiagonallyImplicit(
     AM3
 
 Adams-Moulton 3:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{9}{24} g(y_{n+1}) + \\frac{19}{24} g(y_{n}) - \\frac{5}{24} g(y_{n-1}) + \\frac{1}{24} g(y_{n-2}))\\;.
 ```
@@ -594,6 +602,7 @@ const AM3 = DiagonallyImplicit(
     AM4
 
 Adams-Moulton 4:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t (\\frac{251}{720} g(y_{n+1}) + \\frac{646}{720} g(y_{n}) - \\frac{264}{720} g(y_{n-1}) + \\frac{106}{720} g(y_{n-2}) - \\frac{19}{720} g(y_{n-3}))\\;.
 ```
@@ -643,6 +652,7 @@ const AM4 = DiagonallyImplicit(
     BDF1
 
 Backward differentiation formula 1:
+
 ```math
 y_{n+1} = y_{n} + \\Delta t f(y_n)\\;.
 ```
@@ -665,6 +675,7 @@ const BDF1 = DiagonallyImplicit(
     BDF2
 
 Backward differentiation formula 2:
+
 ```math
 y_{n+1} = \\frac{4}{3} y_{n} - \\frac{1}{3} y_{n-1} + \\frac{2}{3} \\Delta t f(y_{n})\\;.
 ```
@@ -687,6 +698,7 @@ const BDF2 = DiagonallyImplicit(
     BDF3
 
 Backward differentiation formula 3:
+
 ```math
 y_{n+1} = \\frac{18}{11} y_{n} - \\frac{9}{11} y_{n-1} + \\frac{2}{11} y_{n-2} + \\frac{6}{11} \\Delta t f(y_{n})\\;.
 ```
@@ -709,6 +721,7 @@ const BDF3 = DiagonallyImplicit(
     BDF4
 
 Backward differentiation formula 4:
+
 ```math
 y_{n+1} = \\frac{48}{25} y_{n} - \\frac{36}{25} y_{n-1} + \\frac{16}{25} y_{n-2} - \\frac{3}{25} y_{n-3} + \\frac{12}{25} \\Delta t f(y_{n})\\;.
 ```

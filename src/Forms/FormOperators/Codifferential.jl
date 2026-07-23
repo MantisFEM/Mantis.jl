@@ -12,9 +12,11 @@ The `manifold_dim` of the `CoDifferential` is inherited from the input form, whi
 `form_rank` is the form rank of the input form minus 1.
 
 # Constructors
-- `CoDifferential(form::F)`: General constructor.
+
+  - `CoDifferential(form::F)`: General constructor.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -30,17 +32,18 @@ julia> δΛ¹ₕ = δ(Λ¹ₕ);
 
 julia> isa(δΛ¹ₕ, Forms.CoDifferential{2, 0, 1})
 true
-
 ```
 
 # Fields
-- `form::F`: The form to which the codifferential is applied.
-- `label::L`: The codifferential label. Adds "δ" to the label of `form`.
+
+  - `form::F`: The form to which the codifferential is applied.
+  - `label::L`: The codifferential label. Adds "δ" to the label of `form`.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F <: Forms.AbstractForm{manifold_dim, form_rank+1, expression_rank}`: The type of `form`.
-- `L <: AbstractString`: The type of the label. Since a "δ" is added to the label, this
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `F <: Forms.AbstractForm{manifold_dim, form_rank+1, expression_rank}`: The type of `form`.
+  - `L <: AbstractString`: The type of the label. Since a "δ" is added to the label, this
     type may differ from the label type of the underlying form.
 """
 struct CoDifferential{manifold_dim, form_rank, expression_rank, F, L} <:
@@ -111,7 +114,7 @@ end
 function _evaluate_codifferential(
     form::AbstractForm{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
-    throw(ArgumentError("Method not implement for type $(typeof(form))."))
+    return throw(ArgumentError("Method not implement for type $(typeof(form))."))
 end
 
 ############################################################################################

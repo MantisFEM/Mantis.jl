@@ -6,14 +6,16 @@
 A geometry consisting of multiple patches, each with its own geometry.
 
 !!! warning "Avoid heterogeneous inputs."
+
     While the constructors allow different types of geometries, it is strongly recommended
     to use only a few different types. Failing to do so can cause type instabilities and
     therefore a significant performance penalty.
 
 # Fields
-- `geometry_per_patch::NTuple{GP, num_patches}`: The geometries for each patch.
-- `num_elements::Int`: The total number of elements in the geometry.
-- `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elments per patch.
+
+  - `geometry_per_patch::NTuple{GP, num_patches}`: The geometries for each patch.
+  - `num_elements::Int`: The total number of elements in the geometry.
+  - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elments per patch.
 """
 struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -30,7 +32,7 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
         GT <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}},
     }
         num_elements_per_patch = ntuple(num_patches) do i
-            get_num_elements(geometry_per_patch[i])
+            return get_num_elements(geometry_per_patch[i])
         end
         num_elements = sum(num_elements_per_patch)
 

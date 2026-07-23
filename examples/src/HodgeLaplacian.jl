@@ -154,4 +154,3 @@ weak_form_3D = Assemblers.WeakForm(lhs_expressions_3D, rhs_expressions_3D, wfi_3
 A_3D, b_3D = Assemblers.assemble(weak_form_3D, bc_3D)
 sol_3D = vec(A_3D \ b_3D)
 ϕ⁰_3D = Forms.build_form_field(Λ⁰_3D, sol_3D)
-

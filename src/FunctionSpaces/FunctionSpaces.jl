@@ -44,9 +44,10 @@ Supertype for all finite element spaces. These can be of any dimension, with any
 components, and on any number of patches.
 
 # Type parameters
-- `manifold_dim::Int`: Dimension of the manifold.
-- `num_components::Int`: Number of (output) components of the function space.
-- `num_patches::Int`: Number of patches over which the function space is defined.
+
+  - `manifold_dim::Int`: Dimension of the manifold.
+  - `num_components::Int`: Number of (output) components of the function space.
+  - `num_patches::Int`: Number of patches over which the function space is defined.
 """
 abstract type AbstractFESpace{manifold_dim, num_components, num_patches} <:
               AbstractFunctionSpace end

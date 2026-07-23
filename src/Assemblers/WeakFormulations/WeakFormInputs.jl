@@ -4,37 +4,42 @@
 Container for test and trial spaces, and forcing terms to be used in a weak-formulation.
 
 # Fields
-- `test_forms::TeF`: The test forms for the weak-formulation.
-- `trial_forms::TrF`: The trial forms for the weak-formulation.
-- `forcings::F`: The forcing terms for the weak-formulation, possibly nothing.
+
+  - `test_forms::TeF`: The test forms for the weak-formulation.
+  - `trial_forms::TrF`: The trial forms for the weak-formulation.
+  - `forcings::F`: The forcing terms for the weak-formulation, possibly nothing.
+
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the weak-formulation is defined.
-- `TeF`: The type of the tupe of test forms. Each entry should be a subtype of
+
+  - `manifold_dim::Int`: The dimension of the manifold where the weak-formulation is defined.
+  - `TeF`: The type of the tupe of test forms. Each entry should be a subtype of
     `Forms.AbstractFormSpace`.
-- `TrF`: The type of the tupe of trial forms. Each entry should be a subtype of
+  - `TrF`: The type of the tupe of trial forms. Each entry should be a subtype of
     `Forms.AbstractFormSpace`.
-- `F`: The type of the tupe of forcing terms. Each entry should be a subtype of
+  - `F`: The type of the tupe of forcing terms. Each entry should be a subtype of
     `Forms.AbstractFormField`.
+
 # Inner constructors
-- `WeakFormInputs(test_forms::TeF, trial_forms::TrF, forcings::F)`: Creates a new
+
+  - `WeakFormInputs(test_forms::TeF, trial_forms::TrF, forcings::F)`: Creates a new
     `WeakFormInputs` instance with the given test forms, trial forms, and forcing terms.
-- `WeakFormInputs(test_forms::TeF, trial_forms::TrF)`: Creates a new `WeakFormInputs`
+  - `WeakFormInputs(test_forms::TeF, trial_forms::TrF)`: Creates a new `WeakFormInputs`
     instance with the given test forms and trial forms. The forcing terms are set to
     nothing.
-- `WeakFormInputs(test_forms::TeF, trial_forms::TrF, forcing::F)`: Creates a new
-    `WeakFormInputs` instance from a single test and trial space and a forcing term. 
-- `WeakFormInputs(test_forms::TeF, trial_forms::TrF)`: Creates a new `WeakFormInputs`
+  - `WeakFormInputs(test_forms::TeF, trial_forms::TrF, forcing::F)`: Creates a new
+    `WeakFormInputs` instance from a single test and trial space and a forcing term.
+  - `WeakFormInputs(test_forms::TeF, trial_forms::TrF)`: Creates a new `WeakFormInputs`
     instance from a single test and trial space. The forcing terms are set to nothing.
-- `WeakFormInputs(forms::TrF, forcing::F)`: Creates a new `WeakFormInputs` instance with the
+  - `WeakFormInputs(forms::TrF, forcing::F)`: Creates a new `WeakFormInputs` instance with the
     given trial spaces and forcing terms. The test spaces are set to the same as the trial
     spaces.
-- `WeakFormInputs(forms::TrF)`: Creates a new `WeakFormInputs` instance with the given trial
+  - `WeakFormInputs(forms::TrF)`: Creates a new `WeakFormInputs` instance with the given trial
     spaces. The test spaces are set to the same as the trial spaces and the forcing terms
     are set to nothing.
-- `WeakFormInputs(forms::TrF, forcing::F)`: Creates a new `WeakFormInputs` instance with a
+  - `WeakFormInputs(forms::TrF, forcing::F)`: Creates a new `WeakFormInputs` instance with a
     single trial space and forcing term. The test space is set to the same as the trial
     space.
-- `WeakFormInputs(forms::TrF)`: Creates a new `WeakFormInputs` instance with a single trial
+  - `WeakFormInputs(forms::TrF)`: Creates a new `WeakFormInputs` instance with a single trial
     space. The test space is set to the same as the trial space and the forcing term is set
     to nothing.
 """

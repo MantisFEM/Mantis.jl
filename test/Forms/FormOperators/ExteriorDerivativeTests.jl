@@ -33,7 +33,9 @@ function dmapping_ed_test(x::Vector{Float64})
     x2_new = (2.0 / (Ltop - Lbottom)) * x[2] - 2.0 * Lbottom / (Ltop - Lbottom) - 1.0
 
     return [
-        1.0+pi * c * cospi(x1_new) * sinpi(x2_new) ((Lright - Lleft)/(Ltop - Lbottom))*pi*c*sinpi(x1_new)*cospi(x2_new)
+        1.0+pi * c * cospi(x1_new) * sinpi(x2_new) ((Lright - Lleft)/(Ltop - Lbottom))*pi*c*sinpi(
+            x1_new
+        )*cospi(x2_new)
         ((Ltop - Lbottom)/(Lright - Lleft))*pi*c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * c * sinpi(x1_new) * cospi(x2_new)
     ]
 end
@@ -144,7 +146,7 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
                             abs.(
                                 Forms.evaluate(
                                     dα⁰, elem_id, Quadrature.get_nodes(q_rule)
-                                )[1][1]
+                                )[1][1],
                             ),
                         ),
                         0.0;
@@ -157,7 +159,7 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
                             abs.(
                                 Forms.evaluate(
                                     dα⁰, elem_id, Quadrature.get_nodes(q_rule)
-                                )[1][2]
+                                )[1][2],
                             ),
                         ),
                         0.0;
@@ -178,7 +180,7 @@ const q_rule = Quadrature.tensor_product_rule((deg + 1, deg + 1), Quadrature.gau
                             abs.(
                                 Forms.evaluate(
                                     dζ¹, elem_id, Quadrature.get_nodes(q_rule)
-                                )[1][1]
+                                )[1][1],
                             ),
                         ),
                         0.0;
@@ -609,7 +611,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dα⁰, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][1]
+                                )[1][1],
                             ),
                         ),
                         0.0;
@@ -622,7 +624,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dα⁰, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][2]
+                                )[1][2],
                             ),
                         ),
                         0.0;
@@ -635,7 +637,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dα⁰, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][3]
+                                )[1][3],
                             ),
                         ),
                         0.0;
@@ -651,7 +653,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dζ¹, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][1]
+                                )[1][1],
                             ),
                         ),
                         0.0;
@@ -664,7 +666,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dζ¹, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][2]
+                                )[1][2],
                             ),
                         ),
                         0.0;
@@ -677,7 +679,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dζ¹, elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][3]
+                                )[1][3],
                             ),
                         ),
                         0.0;
@@ -693,7 +695,7 @@ const q_rule_3D = Quadrature.tensor_product_rule(
                             abs.(
                                 Forms.evaluate(
                                     dβ², elem_id, Quadrature.get_nodes(q_rule_3D)
-                                )[1][1]
+                                )[1][1],
                             ),
                         ),
                         0.0;

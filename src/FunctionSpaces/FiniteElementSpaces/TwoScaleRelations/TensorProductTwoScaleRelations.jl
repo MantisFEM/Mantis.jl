@@ -5,11 +5,12 @@ A structure representing a two-scale operator for tensor product spaces, definin
 relationships between coarse and fine tensor product spaces.
 
 # Fields
-- `coarse_space::TP`: The coarse tensor product space.
-- `fine_space::TP`: The fine tensor product space.
-- `global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global
+
+  - `coarse_space::TP`: The coarse tensor product space.
+  - `fine_space::TP`: The fine tensor product space.
+  - `global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global
     subdivision matrix for the tensor product space.
-- `twoscale_operators::TS`: A tuple of two-scale operators for each constituent space.
+  - `twoscale_operators::TS`: A tuple of two-scale operators for each constituent space.
 """
 struct TensorProductTwoScaleOperator{
     manifold_dim, num_components, num_patches, num_spaces, PTP, CTP, TS, R
@@ -134,12 +135,14 @@ Retrieve and return the child element IDs for a given element ID within a tensor
 two-scale operator.
 
 # Arguments
-- `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
+
+  - `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
     that defines the parent-child relationships between elements.
-- `element_id::Int`: The identifier of the element whose children are to be retrieved.
+  - `element_id::Int`: The identifier of the element whose children are to be retrieved.
 
 # Returns
-- `::Vector{Int}`: A vector containing the identifiers of the child elements.
+
+  - `::Vector{Int}`: A vector containing the identifiers of the child elements.
 """
 function get_element_children(operator::TensorProductTwoScaleOperator, element_id::Int)
     const_element_children = get_constituent_element_children(operator, element_id)
@@ -160,12 +163,14 @@ Retrieve and return the parent element ID for a given element ID within a tensor
 two-scale operator.
 
 # Arguments
-- `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
+
+  - `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
     that defines the parent-child relationships between elements.
-- `element_id::Int`: The identifier of the element whose parent is to be retrieved.
+  - `element_id::Int`: The identifier of the element whose parent is to be retrieved.
 
 # Returns
-- `::Int`: The identifier of the parent element.
+
+  - `::Int`: The identifier of the parent element.
 """
 function get_element_parent(operator::TensorProductTwoScaleOperator, element_id::Int)
     const_element_parent = get_constituent_element_parent(operator, element_id)
@@ -181,12 +186,14 @@ Retrieve and return the child basis function IDs for a given basis function ID w
 tensor product two-scale operator.
 
 # Arguments
-- `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
+
+  - `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
     that defines the parent-child relationships between basis functions.
-- `basis_id::Int`: The identifier of the basis function whose children are to be retrieved.
+  - `basis_id::Int`: The identifier of the basis function whose children are to be retrieved.
 
 # Returns
-- `::Vector{Int}`: A vector containing the identifiers of the child basis functions.
+
+  - `::Vector{Int}`: A vector containing the identifiers of the child basis functions.
 """
 function get_basis_children(operator::TensorProductTwoScaleOperator, basis_id::Int)
     const_basis_children = get_constituent_basis_children(operator, basis_id)
@@ -207,12 +214,14 @@ Retrieve and return the parent basis functions for a given basis function ID wit
 tensor product two-scale operator.
 
 # Arguments
-- `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
+
+  - `operator::TensorProductTwoScaleOperator`: The tensor product two-scale operator
     that defines the parent-child relationships between basis functions.
-- `basis_id::Int`: The identifier of the basis function whose parent is to be retrieved.
+  - `basis_id::Int`: The identifier of the basis function whose parent is to be retrieved.
 
 # Returns
-- `::Vector{Int}`: The identifier of the parent basis functions.
+
+  - `::Vector{Int}`: The identifier of the parent basis functions.
 """
 function get_basis_parents(operator::TensorProductTwoScaleOperator, basis_id::Int)
     const_basis_parents = get_constituent_basis_parent(operator, basis_id)
@@ -246,13 +255,15 @@ Subdivide the finite element spaces within a tensor product space and return the
 finer tensor product space.
 
 # Arguments
-- `space::TensorProductSpace`: The tensor product space containing finite
+
+  - `space::TensorProductSpace`: The tensor product space containing finite
     element spaces to be subdivided.
-- `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
+  - `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
     for each finite element space.
 
 # Returns
-- `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
+
+  - `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
 """
 function subdivide_space(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
@@ -283,13 +294,15 @@ Build a two-scale operator for a tensor product space by subdividing each consti
 finite element space.
 
 # Arguments
-- `space::TensorProductSpace`: The tensor product space to be subdivided.
-- `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
+
+  - `space::TensorProductSpace`: The tensor product space to be subdivided.
+  - `nsubdivisions::NTuple{num_spaces, Int}`: A tuple specifying the number of subdivisions
     for each constituent finite element space.
 
 # Returns
-- `::TensorProductTwoScaleOperator`: The two-scale operator.
-- `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
+
+  - `::TensorProductTwoScaleOperator`: The two-scale operator.
+  - `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
 """
 function build_two_scale_operator(
     parent_space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},

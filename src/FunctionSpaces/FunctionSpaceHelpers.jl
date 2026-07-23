@@ -21,19 +21,22 @@ open knot vector, and returns the corresponding `BSplineSpace`. Optional argumen
 the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
-- `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
-- `box_size::Float64`: The size of the space along the single dimension.
-- `num_elements::Int`: The number of elements along the dimension.
-- `section_space::F`: The section space to use for the B-spline basis functions.
-- `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
+
+  - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
+  - `box_size::Float64`: The size of the space along the single dimension.
+  - `num_elements::Int`: The number of elements along the dimension.
+  - `section_space::F`: The section space to use for the B-spline basis functions.
+  - `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
     functions, typically between 0 and `degree - 1`.
-- `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
-- `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
+  - `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
+  - `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
 
 # Returns
-- `::BSplineSpace`: The generated B-spline space.
+
+  - `::BSplineSpace`: The generated B-spline space.
 
 # Examples
+
 ```julia
 # Create a 1D B-spline space
 start_1d = 0.0
@@ -42,7 +45,9 @@ elements_1d = 100
 degree = 3
 regularity = 2
 section_space = Bernstein(degree)
-bspline_space_1d = create_bspline_space(start_1d, size_1d, elements_1d, section_space, regularity)
+bspline_space_1d = create_bspline_space(
+    start_1d, size_1d, elements_1d, section_space, regularity
+)
 ```
 """
 function create_bspline_space(
@@ -89,17 +94,19 @@ ensure an open knot vector, and returns the corresponding `BSplineSpace`. Option
 arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
-- `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
-- `box_size::Float64`: The size of the space along the single dimension.
-- `num_elements::Int`: The number of elements along the dimension.
-- `degree::Int`: The polynomial degree on each element.
-- `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
+
+  - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
+  - `box_size::Float64`: The size of the space along the single dimension.
+  - `num_elements::Int`: The number of elements along the dimension.
+  - `degree::Int`: The polynomial degree on each element.
+  - `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
     functions, typically between 0 and `degree - 1`.
-- `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
-- `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
+  - `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
+  - `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
 
 # Returns
-- `::BSplineSpace`: The generated B-spline space.
+
+  - `::BSplineSpace`: The generated B-spline space.
 """
 function create_bspline_space(
     starting_point::Float64,
@@ -140,20 +147,23 @@ open knot vector, and returns the corresponding `BSplineSpace`. Optional argumen
 the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
-- `starting_point::NTuple{1, Float64}`: The coordinate of the starting point of the
+
+  - `starting_point::NTuple{1, Float64}`: The coordinate of the starting point of the
     B-spline space.
-- `box_size::NTuple{1, Float64}`: The size of the space along the single dimension.
-- `num_elements::NTuple{1, Int}`: The number of elements along the dimension.
-- `section_space::NTuple{1,F}`: The section space to use for the B-spline basis functions.
-- `regularity::NTuple{1, Int}`: The regularity (smoothness) between consecutive B-spline
+  - `box_size::NTuple{1, Float64}`: The size of the space along the single dimension.
+  - `num_elements::NTuple{1, Int}`: The number of elements along the dimension.
+  - `section_space::NTuple{1,F}`: The section space to use for the B-spline basis functions.
+  - `regularity::NTuple{1, Int}`: The regularity (smoothness) between consecutive B-spline
     basis functions, typically between 0 and `degree - 1`.
-- `n_dofs_left::NTuple{1,Int}`: The number of degrees of freedom on the left boundary.
-- `n_dofs_right::NTuple{1,Int}`: The number of degrees of freedom on the right boundary.
+  - `n_dofs_left::NTuple{1,Int}`: The number of degrees of freedom on the left boundary.
+  - `n_dofs_right::NTuple{1,Int}`: The number of degrees of freedom on the right boundary.
 
 # Returns
-- `::BSplineSpace`: The generated B-spline space.
+
+  - `::BSplineSpace`: The generated B-spline space.
 
 # Examples
+
 ```julia
 # Create a 1D B-spline space
 start_1d = 0.0
@@ -162,7 +172,9 @@ elements_1d = 100
 degree = 3
 regularity = 2
 section_space = Bernstein(degree)
-bspline_space_1d = create_bspline_space((start_1d,), (size_1d,), (elements_1d,), (section_space,), (regularity,))
+bspline_space_1d = create_bspline_space(
+    (start_1d,), (size_1d,), (elements_1d,), (section_space,), (regularity,)
+)
 ```
 """
 function create_bspline_space(
@@ -204,17 +216,19 @@ ensure an open knot vector, and returns the corresponding `BSplineSpace`. Option
 arguments include the number of degrees of freedom on the left and right boundaries.
 
 # Arguments
-- `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
-- `box_size::Float64`: The size of the space along the single dimension.
-- `num_elements::Int`: The number of elements along the dimension.
-- `degree::Int`: The polynomial degree on each element.
-- `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
+
+  - `starting_point::Float64`: The coordinate of the starting point of the B-spline space.
+  - `box_size::Float64`: The size of the space along the single dimension.
+  - `num_elements::Int`: The number of elements along the dimension.
+  - `degree::Int`: The polynomial degree on each element.
+  - `regularity::Int`: The regularity (smoothness) between consecutive B-spline basis
     functions, typically between 0 and `degree - 1`.
-- `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
-- `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
+  - `n_dofs_left::Int`: The number of degrees of freedom on the left boundary.
+  - `n_dofs_right::Int`: The number of degrees of freedom on the right boundary.
 
 # Returns
-- `::BSplineSpace`: The generated B-spline space.
+
+  - `::BSplineSpace`: The generated B-spline space.
 """
 function create_bspline_space(
     starting_point::NTuple{1, Float64},
@@ -250,17 +264,19 @@ end
 Create a tensor product B-spline space based on the specified parameters for each dimension.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
     space in each dimension.
-- `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
-- `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
-- `section_spaces::NTuple{manifold_dim, AbstractCanonicalSpace}`: The section spaces for
+  - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
+  - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
+  - `section_spaces::NTuple{manifold_dim, AbstractCanonicalSpace}`: The section spaces for
     each dimension.
-- `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
+  - `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
     dimension.
 
 # Returns
-- `::TensorProductSpace`: The resulting tensor product B-spline space.
+
+  - `::TensorProductSpace`: The resulting tensor product B-spline space.
 """
 function create_bspline_space(
     starting_points::NTuple{manifold_dim, Float64},
@@ -299,16 +315,18 @@ Create `manifold_dim` univariate B-spline spaces based on the specified paramete
 dimension.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
     space in each dimension.
-- `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
-- `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
-- `section_spaces::NTuple{manifold_dim, F}`: The section spaces for each dimension.
-- `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
+  - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
+  - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
+  - `section_spaces::NTuple{manifold_dim, F}`: The section spaces for each dimension.
+  - `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
     dimension.
 
 # Returns
-- `::Tuple{BSplineSpace}`: The resulting univariate B-spline spaces.
+
+  - `::Tuple{BSplineSpace}`: The resulting univariate B-spline spaces.
 """
 function create_dim_wise_bspline_spaces(
     starting_points::NTuple{manifold_dim, Float64},
@@ -320,7 +338,7 @@ function create_dim_wise_bspline_spaces(
     n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
     return ntuple(manifold_dim) do i
-        create_bspline_space(
+        return create_bspline_space(
             starting_points[i],
             box_sizes[i],
             num_elements[i],
@@ -346,16 +364,18 @@ end
 Create a tensor product B-spline space based on the specified parameters for each dimension.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
     space in each dimension.
-- `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
-- `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
-- `degrees::NTuple{manifold_dim, Int}`: The polynomial degree in each dimension.
-- `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
+  - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
+  - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
+  - `degrees::NTuple{manifold_dim, Int}`: The polynomial degree in each dimension.
+  - `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
     dimension.
 
 # Returns
-- `::TensorProductSpace`: The resulting tensor product B-spline space.
+
+  - `::TensorProductSpace`: The resulting tensor product B-spline space.
 """
 function create_bspline_space(
     starting_points::NTuple{manifold_dim, Float64},
@@ -402,16 +422,18 @@ Create `manifold_dim` univariate B-spline spaces based on the specified paramete
 each dimension.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: The starting point of the B-spline
     space in each dimension.
-- `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
-- `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
-- `degrees::NTuple{manifold_dim, Int}`: The polynomial degree in each dimension.
-- `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
+  - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box in each dimension.
+  - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
+  - `degrees::NTuple{manifold_dim, Int}`: The polynomial degree in each dimension.
+  - `regularities::NTuple{manifold_dim, Int}`: The regularities of the B-spline in each
     dimension.
 
 # Returns
-- `::Tuple{BSplineSpace}`: The resulting univariate B-spline spaces.
+
+  - `::Tuple{BSplineSpace}`: The resulting univariate B-spline spaces.
 """
 function create_dim_wise_bspline_spaces(
     starting_points::NTuple{manifold_dim, Float64},
@@ -423,7 +445,7 @@ function create_dim_wise_bspline_spaces(
     n_dofs_right::NTuple{manifold_dim, Int},
 ) where {manifold_dim}
     return ntuple(manifold_dim) do i
-        create_bspline_space(
+        return create_bspline_space(
             starting_points[i],
             box_sizes[i],
             num_elements[i],
@@ -457,16 +479,18 @@ directions. Optional arguments include a flag to refine the geometry, the geomet
 coefficients, and whether the scalars are constrained to zero at poles.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: The number of elements in the angular and radial directions.
-- `degrees::NTuple{2, Int}`: The polynomial degrees in the angular and radial directions.
-- `regularities::NTuple{2, Int}`: The regularities of the B-spline in the angular and radial directions.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing`: The geometry coefficients for the polar spline space.
-- `R::Float64=1.0`: The radius of the polar spline space.
-- `two_poles::Bool=false`: Whether the polar spline space has two poles.
-- `zero_at_poles::Bool=false`: Whether the scalars are constrained to zero at the poles.
+
+  - `num_elements::NTuple{2, Int}`: The number of elements in the angular and radial directions.
+  - `degrees::NTuple{2, Int}`: The polynomial degrees in the angular and radial directions.
+  - `regularities::NTuple{2, Int}`: The regularities of the B-spline in the angular and radial directions.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing`: The geometry coefficients for the polar spline space.
+  - `R::Float64=1.0`: The radius of the polar spline space.
+  - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+  - `zero_at_poles::Bool=false`: Whether the scalars are constrained to zero at the poles.
 
 # Returns
-- `::PolarSplineSpace`: The resulting scalar polar spline space.
+
+  - `::PolarSplineSpace`: The resulting scalar polar spline space.
 """
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
@@ -509,16 +533,18 @@ directions. Optional arguments include the geometry coefficients, whether there 
 and whether the scalars are constrained to zero at the poles.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: The number of elements in the angular and radial directions.
-- `section_spaces::F`: The section spaces for the angular and radial directions.
-- `regularities::NTuple{2, Int}`: The regularities of the B-spline in the angular and radial directions.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing`: The geometry coefficients for the polar spline space.
-- `R::Float64=1.0`: The radius of the polar spline space.
-- `two_poles::Bool=false`: Whether the polar spline space has two poles.
-- `zero_at_poles::Bool=false`: Whether the scalars are constrained to zero at the poles.
+
+  - `num_elements::NTuple{2, Int}`: The number of elements in the angular and radial directions.
+  - `section_spaces::F`: The section spaces for the angular and radial directions.
+  - `regularities::NTuple{2, Int}`: The regularities of the B-spline in the angular and radial directions.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}=nothing`: The geometry coefficients for the polar spline space.
+  - `R::Float64=1.0`: The radius of the polar spline space.
+  - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+  - `zero_at_poles::Bool=false`: Whether the scalars are constrained to zero at the poles.
 
 # Returns
-- `::PolarSplineSpace`: The resulting scalar polar spline space.
+
+  - `::PolarSplineSpace`: The resulting scalar polar spline space.
 """
 function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
@@ -586,14 +612,16 @@ and the number of elements in the angular and radial directions. Optional argume
 the geometry coefficients, and whether there are two poles.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: The number of elements in each direction.
-- `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
-- `regularities::NTuple{2, Int}`: The regularities in each direction.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
-- `R::Float64`: The radius of the domain.
+
+  - `num_elements::NTuple{2, Int}`: The number of elements in each direction.
+  - `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
+  - `regularities::NTuple{2, Int}`: The regularities in each direction.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
+  - `R::Float64`: The radius of the domain.
 
 # Returns
-- `::PolarSplineSpace`: The resulting vector polar spline space.
+
+  - `::PolarSplineSpace`: The resulting vector polar spline space.
 """
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
@@ -632,14 +660,16 @@ and the number of elements in the angular and radial directions. Optional argume
 the geometry coefficients, and whether there are two poles.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: The number of elements in each direction.
-- `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
-- `regularities::NTuple{2, Int}`: The regularities in each direction.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
-- `R::Float64`: The radius of the domain.
+
+  - `num_elements::NTuple{2, Int}`: The number of elements in each direction.
+  - `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
+  - `regularities::NTuple{2, Int}`: The regularities in each direction.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
+  - `R::Float64`: The radius of the domain.
 
 # Returns
-- `::PolarSplineSpace`: The resulting vector polar spline space.
+
+  - `::PolarSplineSpace`: The resulting vector polar spline space.
 """
 function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
@@ -682,15 +712,17 @@ end
 Create all data required for creating a polar spline geometry.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: The number of elements in each direction.
-- `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
-- `regularities::NTuple{2, Int}`: The regularities in each direction.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
-- `R::Float64`: The radius of the domain.
+
+  - `num_elements::NTuple{2, Int}`: The number of elements in each direction.
+  - `degrees::NTuple{2, Int}`: The polynomial degrees in each direction.
+  - `regularities::NTuple{2, Int}`: The regularities in each direction.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64, 3}}`: The geometry coefficients.
+  - `R::Float64`: The radius of the domain.
 
 # Returns
-- `P_geom`: The polar spline geometry space.
-- `geom_coeffs_polar`: The polar geometry coefficients.
+
+  - `P_geom`: The polar spline geometry space.
+  - `geom_coeffs_polar`: The polar geometry coefficients.
 """
 function create_polar_geometry_data(
     num_elements::NTuple{2, Int},
@@ -732,13 +764,15 @@ end
 Refine the polar geometry data.
 
 # Arguments
-- `P_geom`: The polar spline geometry space.
-- `geom_coeffs_polar`: The polar geometry coefficients.
-- `two_poles`: Whether the polar geometry contains two poles.
+
+  - `P_geom`: The polar spline geometry space.
+  - `geom_coeffs_polar`: The polar geometry coefficients.
+  - `two_poles`: Whether the polar geometry contains two poles.
 
 # Returns
-- `P_geom_ref`: The refined polar spline geometry space.
-- `geom_coeffs_polar_tp_ref`: The refined polar geometry coefficients.
+
+  - `P_geom_ref`: The refined polar spline geometry space.
+  - `geom_coeffs_polar_tp_ref`: The refined polar geometry coefficients.
 """
 function refine_polar_geometry_data(P_geom, geom_coeffs_polar; two_poles=false)
     # refine the space and build two-scale operator
@@ -758,14 +792,16 @@ end
 Generate degenerate control points for a given number of poloidal and radial divisions.
 
 # Arguments
-- n_p::Int: Number of poloidal divisions.
-- n_r::Int: Number of radial divisions.
-- R::Float64: Radius of the polar domain.
+
+  - n_p::Int: Number of poloidal divisions.
+  - n_r::Int: Number of radial divisions.
+  - R::Float64: Radius of the polar domain.
 
 # Returns
-- degenerate_control_points::Array{Float64,3}: The degenerate control points.
-- radii::Vector{Float64}: The radii values.
-- theta::Vector{Float64}: The theta values.
+
+  - degenerate_control_points::Array{Float64,3}: The degenerate control points.
+  - radii::Vector{Float64}: The radii values.
+  - theta::Vector{Float64}: The theta values.
 """
 function _build_standard_degenerate_control_points(n_p::Int, n_r::Int, R::Float64)
     radii = LinRange(0.0, R, n_r)

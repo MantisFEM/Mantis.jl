@@ -12,12 +12,14 @@
 Build the extraction operator and dof partitioning for the polar spline space.
 
 # Arguments
-- `tp_space::TensorProductSpace`: The tensor product space.
-- `E::SparseMatrixCSC{Float64,Int}`: The extraction operator.
-- `two_poles::Bool`: Whether the polar spline space has two poles.
+
+  - `tp_space::TensorProductSpace`: The tensor product space.
+  - `E::SparseMatrixCSC{Float64,Int}`: The extraction operator.
+  - `two_poles::Bool`: Whether the polar spline space has two poles.
 
 # Returns
-- `::Tuple{ExtractionOperator, Vector{Vector{Vector{Int}}}}`: The extraction operator and dof partitioning.
+
+  - `::Tuple{ExtractionOperator, Vector{Vector{Vector{Int}}}}`: The extraction operator and dof partitioning.
 """
 function _build_polar_extraction_and_dof_partition(
     tp_space::NTuple{num_components, TP}, E::NTuple{num_components, TE}, two_poles::Bool
@@ -115,11 +117,13 @@ end
 Build a standard triangle that contains the input points.
 
 # Arguments
-- `points::Matrix{Float64}`: The input points, where each row corresponds to a point.
-- `origin::Vector{Float64}`: The point which is translated to the origin.
+
+  - `points::Matrix{Float64}`: The input points, where each row corresponds to a point.
+  - `origin::Vector{Float64}`: The point which is translated to the origin.
 
 # Returns
-- `::Matrix{Float64}`: The circumscribing triangle.
+
+  - `::Matrix{Float64}`: The circumscribing triangle.
 """
 function _get_circumscribing_triangle(
     points::Matrix{Float64}, origin::Vector{Float64}=[0.0, 0.0]
@@ -138,13 +142,15 @@ Compute the barycentric coordinates of the input points w.r.t. the control trian
 points are translated by the offset before computing the barycentric coordinates.
 
 # Arguments
-- `points::Matrix{Float64}`: The input points, where each row corresponds to a point.
-- `tri::Matrix{Float64}`: Matrix with the coordinates of the `i`-th vertex of the control
+
+  - `points::Matrix{Float64}`: The input points, where each row corresponds to a point.
+  - `tri::Matrix{Float64}`: Matrix with the coordinates of the `i`-th vertex of the control
     triangle in the `i`-th row.
-- `origin::Vector{Float64}`: The point which is translated to the origin.
+  - `origin::Vector{Float64}`: The point which is translated to the origin.
 
 # Returns
-- `::Matrix{Float64}`: The barycentric coordinates.
+
+  - `::Matrix{Float64}`: The barycentric coordinates.
 """
 function _get_barycentric_coordinates(
     points::Matrix{Float64}, tri::Matrix{Float64}, origin::Vector{Float64}=[0.0, 0.0]
@@ -188,15 +194,17 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
     define the polar parametric domain); see [Toshniwal2017](@cite).
 
     # Arguments
-    - `patch_spaces::NTuple{1, TensorProductSpace{2, 1}}`: The tensor-product space defining
+
+      - `patch_spaces::NTuple{1, TensorProductSpace{2, 1}}`: The tensor-product space defining
         the polar spline space.
-    - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-    - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
-    - `two_poles::Bool=false`: Whether the polar spline space has two poles.
-    - `zero_at_poles::Bool=false`: Whether functions are constrained to zero at poles.
+      - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+      - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
+      - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+      - `zero_at_poles::Bool=false`: Whether functions are constrained to zero at poles.
 
     # Returns
-    - `::PolarSplineSpace{1, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
+
+      - `::PolarSplineSpace{1, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
         The scalar polar spline space.
     """
     function PolarSplineSpace(
@@ -314,15 +322,17 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
     define the polar parametric domain); see [Toshniwal2021](@cite).
 
     # Arguments
-    - `patch_spaces::NTuple{2, TensorProductSpace{2, 1}}`: The tensor-product spaces defining
+
+      - `patch_spaces::NTuple{2, TensorProductSpace{2, 1}}`: The tensor-product spaces defining
         the polar spline space.
-    - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-    - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
-    - `two_poles::Bool=false`: Whether the polar spline space has two poles.
-    - `::Bool=false`: Dummy argument to have a uniform constructor as the scalar case.
+      - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+      - `degenerate_space::TensorProductSpace{2, 1}`: The degenerate tensor-product space.
+      - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+      - `::Bool=false`: Dummy argument to have a uniform constructor as the scalar case.
 
     # Returns
-    - `::PolarSplineSpace{2, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
+
+      - `::PolarSplineSpace{2, typeof(patch_spaces), typeof(degenerate_space), TE..., TI..., TJ...}`:
         The vector polar spline space.
     """
     function PolarSplineSpace(
@@ -490,14 +500,16 @@ Build the extraction operator to extract the polar spline basis functions from t
 product space.
 
 # Arguments
-- `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-- `num_basis_r::Int`: Number of radial basis functions.
-- `two_poles::Bool=false`: Whether the polar spline space has two poles.
-- `zero_at_poles::Bool=nothing`: Whether functions are constrained to zero at poles.
+
+  - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+  - `num_basis_r::Int`: Number of radial basis functions.
+  - `two_poles::Bool=false`: Whether the polar spline space has two poles.
+  - `zero_at_poles::Bool=nothing`: Whether functions are constrained to zero at poles.
 
 # Returns
-- `E::SparseMatrixCSC{Float64,Int}`: The extraction operator.
-- `tri::Matrix{Float64}`: The control triangle.
+
+  - `E::SparseMatrixCSC{Float64,Int}`: The extraction operator.
+  - `tri::Matrix{Float64}`: The control triangle.
 """
 function extract_scalar_polar_splines_to_tensorproduct(
     degenerate_control_points::Array{Float64, 3},
@@ -515,7 +527,7 @@ function extract_scalar_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )
@@ -591,14 +603,16 @@ build the scalar polar spline extraction operator, as well as the vector polar s
 extraction operator.
 
 # Arguments
-- `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-- `tri::Matrix{Float64}`: The control triangle.
-- `origin::Vector{Float64}=[0.0, 0.0]`: The origin.
-- `two_poles::Bool=false`: Whether the polar spline space has two poles.
+
+  - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+  - `tri::Matrix{Float64}`: The control triangle.
+  - `origin::Vector{Float64}=[0.0, 0.0]`: The origin.
+  - `two_poles::Bool=false`: Whether the polar spline space has two poles.
 
 # Returns
-- `E0_1::SparseMatrixCSC{Float64,Int}`: The extraction sub-matrix for the first pole.
-- `E0_2::SparseMatrixCSC{Float64,Int}`: The extraction sub-matrix for the second pole.
+
+  - `E0_1::SparseMatrixCSC{Float64,Int}`: The extraction sub-matrix for the first pole.
+  - `E0_2::SparseMatrixCSC{Float64,Int}`: The extraction sub-matrix for the second pole.
 """
 function _get_scalar_polar_extraction_submatrix(
     degenerate_control_points::Array{Float64, 3},
@@ -636,14 +650,16 @@ Build the extraction operator to extract the vector polar spline basis functions
 the tensor product basis functions.
 
 # Arguments
-- `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
-- `num_basis_r::Int`: Number of radial basis functions.
-- `two_poles::Bool=false`: Whether the polar spline space has two poles.
+
+  - `degenerate_control_points::Array{Float64, 3}`: The degenerate control points.
+  - `num_basis_r::Int`: Number of radial basis functions.
+  - `two_poles::Bool=false`: Whether the polar spline space has two poles.
 
 # Returns
-- `E::Tuple{SparseMatrixCSC{Float64,Int},SparseMatrixCSC{Float64,Int}}`: The extraction operators.
-The first element corresponds to the horizontal edges and the second element to the vertical edges.
-- `tri::Matrix{Float64}`: The control triangle.
+
+  - `E::Tuple{SparseMatrixCSC{Float64,Int},SparseMatrixCSC{Float64,Int}}`: The extraction operators.
+    The first element corresponds to the horizontal edges and the second element to the vertical edges.
+  - `tri::Matrix{Float64}`: The control triangle.
 """
 function extract_vector_polar_splines_to_tensorproduct(
     degenerate_control_points::Array{Float64, 3}, num_basis_r::Int, two_poles::Bool=false
@@ -658,7 +674,7 @@ function extract_vector_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )

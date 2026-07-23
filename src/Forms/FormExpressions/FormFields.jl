@@ -9,18 +9,16 @@ Represents a differential form field, i.e., a differential form with `coefficien
 `form_space`. Note that this is considered a field, and thus to **not** have a basis.
 
 # Constructors
-- `FormField(
-        form_space::FS,
-        coefficients::Vector{Float64}=zeros(get_num_basis(form_space)),
-        label::AbstractString=get_label(form_space),
-    )`: General constructor for form fields. Note that the coefficients default to zero if
+
+  - `FormField( form_space::FS, coefficients::Vector{Float64}=zeros(get_num_basis(form_space)), label::AbstractString=get_label(form_space), )`: General constructor for form fields. Note that the coefficients default to zero if
     not given, and that the label also has a default.
 
 # Example
+
 ```jldoctest
 julia> using Mantis
 
-julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2,2));
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2, 2));
 
 julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form space with B as basis.
 
@@ -29,18 +27,21 @@ julia> coefficients = ones(Forms.get_num_basis(Λ⁰ₕ)); # Create some coeffic
 julia> α⁰ₕ = Forms.FormField(Λ⁰ₕ, coefficients, "0-form-field");  # 0-form field with Λ⁰ₕ as basis and all ones as coefficients.
 
 julia> β⁰ₕ = Forms.FormField(Λ⁰ₕ);  # 0-form field with Λ⁰ₕ as basis and all zero coefficients.
+
 ```
 
 # Fields
-- `form_space::FS`: The form space associated with this field.
-- `coefficients::Vector{Float64}`: Coefficients of the form field.
-- `label::AbstractString`: Label for the form field.
+
+  - `form_space::FS`: The form space associated with this field.
+  - `coefficients::Vector{Float64}`: Coefficients of the form field.
+  - `label::AbstractString`: Label for the form field.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: Rank of the differential form.
-- `FS`: Type of the form space.
-- `L`: Type of the label (an `AbstractString`).
+
+  - `manifold_dim`: Dimension of the manifold.
+  - `form_rank`: Rank of the differential form.
+  - `FS`: Type of the form space.
+  - `L`: Type of the label (an `AbstractString`).
 """
 struct FormField{manifold_dim, form_rank, FS, L} <:
        AbstractFormField{manifold_dim, form_rank}
@@ -62,8 +63,8 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
                         ") must match the number of basis functions (",
                         get_num_basis(form_space),
                         ") in the space, but doesn't.",
-                    )
-                )
+                    ),
+                ),
             )
         end
 
@@ -84,10 +85,12 @@ domain. See the [documentation on the Geometry module](@ref DocGeometryModule) f
 difference between the domains used in `Mantis`.
 
 # Constructors
-- `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::AbstractString)`:
+
+  - `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::AbstractString)`:
     General constructor for analytical form fields.
 
 # Example
+
 ```jldoctest
 julia> using Mantis
 
@@ -102,18 +105,21 @@ julia> geometry = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (4, 4));
 julia> α⁰ₕ = Forms.AnalyticalFormField(0, my_form_expression, geometry, "Analytical 0-form");
 
 julia> α²ₕ = Forms.AnalyticalFormField(2, my_form_expression, geometry, "Analytical 2-form");
+
 ```
 
 # Fields
-- `geometry::G`: The geometry associated with this field.
-- `expression::E`: The expression defining the form field.
-- `label::AbstractString`: Label for the form field.
+
+  - `geometry::G`: The geometry associated with this field.
+  - `expression::E`: The expression defining the form field.
+  - `label::AbstractString`: Label for the form field.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `G`: Type of the geometry.
-- `E`: Type of the expression.
-- `L`: Type of the label (an `AbstractString`).
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `G`: Type of the geometry.
+  - `E`: Type of the expression.
+  - `L`: Type of the label (an `AbstractString`).
 """
 struct AnalyticalFormField{manifold_dim, form_rank, G, E, L} <:
        AbstractFormField{manifold_dim, form_rank}
@@ -142,10 +148,12 @@ get_form(form_field::FormField) = form_field.form_space
 Returns the coefficients of the form field.
 
 # Arguments
-- `form_field::FormField`: The form field.
+
+  - `form_field::FormField`: The form field.
 
 # Returns
-- `Vector{Float64}`: The coefficients of the form field.
+
+  - `Vector{Float64}`: The coefficients of the form field.
 """
 get_coefficients(form_field::FormField) = form_field.coefficients
 
@@ -155,10 +163,12 @@ get_coefficients(form_field::FormField) = form_field.coefficients
 Returns the number of coefficients of the form field.
 
 # Arguments
-- `form_field::FormField`: The form field.
+
+  - `form_field::FormField`: The form field.
 
 # Returns
-- `Int`: The number of coefficients (dofs) of the form field.
+
+  - `Int`: The number of coefficients (dofs) of the form field.
 """
 get_num_coefficients(form_field::FormField) = size(form_field.coefficients, 1)
 
@@ -169,10 +179,12 @@ Returns the expression of the analytical form field. Remember that the expressio
 defined in the physical domain. See [`AnalyticalFormField`](@ref) for the details.
 
 # Arguments
-- `form_field::AnalyticalFormField`: The analytical form field.
+
+  - `form_field::AnalyticalFormField`: The analytical form field.
 
 # Returns
-- `<:Function`: The expression of the analytical form field.
+
+  - `<:Function`: The expression of the analytical form field.
 """
 get_expression(form_field::AnalyticalFormField) = form_field.expression
 
@@ -188,9 +200,7 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, FS}
     n_form_components = binomial(manifold_dim, form_rank)
-    form_basis_eval, form_basis_indices = evaluate(
-        get_form(form_field), element_idx, xi
-    )
+    form_basis_eval, form_basis_indices = evaluate(get_form(form_field), element_idx, xi)
     form_eval = Vector{Vector{Float64}}(undef, n_form_components)
     form_field_coefficients = get_coefficients(form_field)
     for form_component_idx in 1:n_form_components
@@ -223,10 +233,12 @@ Internal function to evaluate an analytical form field, by first pulling back th
 the canonical domain. The used pull-back is dictated by the `form_rank`.
 
 # Arguments
-- See [evaluate](@ref) for the details.
+
+  - See [evaluate](@ref) for the details.
 
 # Returns
-- See [evaluate](@ref) for the details.
+
+  - See [evaluate](@ref) for the details.
 """
 function _evaluate(
     form_field::AnalyticalFormField{manifold_dim, 0},

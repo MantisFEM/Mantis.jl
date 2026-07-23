@@ -1,18 +1,19 @@
 """
-	TensorProductGeometry{
-		manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
-	} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
+    TensorProductGeometry{
+    	manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
+    } <: AbstractGeometry{manifold_dim, image_dim, num_patches}
 
 A geometry build by tensoring multiple constituent geometries.
 
 # Fields
-- `geometries::T`: Tuple of constituent geometries.
-- `cart_num_elements::CI`: A collection of Cartesian indices representing the
-	multi-dimensional positions of each tensor product element. Useful to convert from
-	linear to Cartesian indexing.
-- `lin_num_elements::LI`: A collection of linear indices representing the global indexing of
-	each tensor product element. Useful to convert from Cartesian to linear indexing.
-- `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elements on each patch.
+
+  - `geometries::T`: Tuple of constituent geometries.
+  - `cart_num_elements::CI`: A collection of Cartesian indices representing the
+    multi-dimensional positions of each tensor product element. Useful to convert from
+    linear to Cartesian indexing.
+  - `lin_num_elements::LI`: A collection of linear indices representing the global indexing of
+    each tensor product element. Useful to convert from Cartesian to linear indexing.
+  - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elements on each patch.
 """
 struct TensorProductGeometry{
     manifold_dim, image_dim, num_patches, num_geometries, T, CI, LI
@@ -40,7 +41,9 @@ struct TensorProductGeometry{
         const_num_patches = map(get_num_patches, geometries)
         cart_num_patches = CartesianIndices(const_num_patches)
         num_elements_per_patch = ntuple(num_patches) do patch_id
-            return prod(map(get_num_elements, geometries, Tuple(cart_num_patches[patch_id])))
+            return prod(
+                map(get_num_elements, geometries, Tuple(cart_num_patches[patch_id]))
+            )
         end
 
         return new{
@@ -59,14 +62,14 @@ end
 
 # Get properties.
 """
-	get_cart_num_elements(geometry::TensorProductGeometry)
+    get_cart_num_elements(geometry::TensorProductGeometry)
 
 Returns a CartesianIndices iterator of all elements in the geometry.
 """
 get_cart_num_elements(geometry::TensorProductGeometry) = geometry.cart_num_elements
 
 """
-	get_lin_num_elements(geometry::TensorProductGeometry)
+    get_lin_num_elements(geometry::TensorProductGeometry)
 
 Returns a LinearIndices iterator of all elements in the geometry.
 """
@@ -315,7 +318,7 @@ function jacobian(
             setindex!(
                 Jp[], jac_i, const_image_indices[geo_id[]], const_manifold_indices[geo_id[]]
             )
-            geo_id[] += 1
+            return geo_id[] += 1
         end
         J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
         geo_id[] = 1
@@ -344,7 +347,7 @@ function jacobian(
             setindex!(
                 Jp[], jac_i, const_image_indices[geo_id[]], const_manifold_indices[geo_id[]]
             )
-            geo_id[] += 1
+            return geo_id[] += 1
         end
         J[point] = SMatrix{image_dim, manifold_dim}(Jp[])
         geo_id[] = 1
@@ -433,7 +436,7 @@ function _hessian_per_point(
                     const_manifold_indices[geo_id[]],
                 )
             end
-            geo_id[] += 1
+            return geo_id[] += 1
         end
         geo_id[] = 1
 

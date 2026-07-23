@@ -12,9 +12,11 @@ The `manifold_dim` of the `Hodge` is inherited from the input form, while the `f
 is the `manifold_dim` minus the form rank of the input form.
 
 # Inner Constructors
-- `Hodge(form::F)`: General constructor.
+
+  - `Hodge(form::F)`: General constructor.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -33,18 +35,19 @@ julia> ★Λ²ₕ = ★(Λ²ₕ);
 
 julia> isa(★Λ²ₕ, Forms.Hodge{2, 0, 1})
 true
-
 ```
 
 # Fields
-- `form::F`: The form to which the hodge star is applied.
-- `label::L`: The hodge star label. This is a concatenation of "★" with the label of `form`.
+
+  - `form::F`: The form to which the hodge star is applied.
+  - `label::L`: The hodge star label. This is a concatenation of "★" with the label of `form`.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank}`: The
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank}`: The
     type of `form`.
-- `L <: AbstractString`: The type of the label. Since a "★" is added to the label, this
+  - `L <: AbstractString`: The type of the label. Since a "★" is added to the label, this
     type may differ from the label type of the underlying form.
 """
 struct Hodge{manifold_dim, form_rank, expression_rank, F, L} <:
@@ -105,7 +108,7 @@ function _evaluate_hodge(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, expression_rank}
-    throw(ArgumentError("Method not implement for type $(typeof(form))."))
+    return throw(ArgumentError("Method not implement for type $(typeof(form))."))
 end
 
 ############################################################################################

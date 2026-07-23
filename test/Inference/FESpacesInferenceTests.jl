@@ -31,9 +31,7 @@ B1ELL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, el_poly, fill(-1,
 
 # Rational
 R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])
-R1m = FunctionSpaces.RationalFESpace(
-    B1multi, rand(FunctionSpaces.get_num_basis(B1multi))
-)
+R1m = FunctionSpaces.RationalFESpace(B1multi, rand(FunctionSpaces.get_num_basis(B1multi)))
 
 # Multi-variate and multi-component ---
 # TensorProduct
@@ -62,9 +60,7 @@ DS_TP1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_B1mB1m))
 # 3-component, two distinct spaces, 2D, multi-element, single-patch
 DS_TP1mTPR1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mB1m))
 # 3-component, three distinct spaces, 2D, multi-element, single-patch
-DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((
-    TP_B1mB1m, TP_R1mR1m, TP_B1mR1m
-))
+DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mR1m))
 
 const spaces = (
     B1,
@@ -109,9 +105,7 @@ foreach(spaces) do space
     @test_opt FunctionSpaces.get_component_spaces(space)
     @test_opt FunctionSpaces.get_extraction_operator(space)
     @test_opt FunctionSpaces.get_extraction(space, element_id, component_id)
-    @test_opt FunctionSpaces.get_extraction_coefficients(
-        space, element_id, component_id
-    )
+    @test_opt FunctionSpaces.get_extraction_coefficients(space, element_id, component_id)
     @test_opt FunctionSpaces.get_basis_indices(space, element_id)
     @test_opt FunctionSpaces.get_basis_permutation(space, element_id, component_id)
     @test_opt FunctionSpaces.get_num_basis(space)

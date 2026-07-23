@@ -6,7 +6,8 @@ Contains all assembly-related structs and functions.
 module Assemblers
 
 import LinearAlgebra
-import SparseArrays; const spa = SparseArrays
+import SparseArrays;
+const spa = SparseArrays
 
 using ..Geometry
 using ..Forms

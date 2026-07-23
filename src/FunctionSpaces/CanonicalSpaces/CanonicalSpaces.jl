@@ -9,10 +9,12 @@ include("ECTSpaces/ECTSpaces.jl")
 Returns the polynomial degree of the element-local basis.
 
 # Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
+
+  - `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
 
 # Returns
-- `::Int`: The polynomial degree of the element-local basis.
+
+  - `::Int`: The polynomial degree of the element-local basis.
 """
 function get_polynomial_degree(elem_loc_basis::AbstractCanonicalSpace)
     return elem_loc_basis.p
@@ -26,10 +28,12 @@ element-local basis. This method should be overloaded for element-local bases th
 satisfy this property or those that need additional parameters; e.g., ECT spaces.
 
 # Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
+
+  - `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
 
 # Returns
-- `::AbstractCanonicalSpace`: The element-local basis of one degree lower than the given
+
+  - `::AbstractCanonicalSpace`: The element-local basis of one degree lower than the given
     element-local basis.
 """
 function get_derivative_space(elem_loc_basis::AbstractCanonicalSpace)
@@ -44,10 +48,12 @@ for element-local bases that do not satisfy this property or those that need add
 parameters; e.g., ECT spaces.
 
 # Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
+
+  - `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
 
 # Returns
-- `::AbstractCanonicalSpace`: The input element-local basis.
+
+  - `::AbstractCanonicalSpace`: The input element-local basis.
 """
 function get_bisected_canonical_space(elem_loc_basis::AbstractCanonicalSpace)
     return elem_loc_basis
@@ -61,11 +67,13 @@ for element-local bases that do not satisfy this property or those that need add
 parameters; e.g., ECT spaces.
 
 # Arguments
-- `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
-- `num_sub_elements::Int`: The number of sub-elements to divide the canonical space into.
+
+  - `elem_loc_basis::AbstractCanonicalSpace`: An element-local basis.
+  - `num_sub_elements::Int`: The number of sub-elements to divide the canonical space into.
 
 # Returns
-- `::AbstractCanonicalSpace`: The input element-local basis.
+
+  - `::AbstractCanonicalSpace`: The input element-local basis.
 """
 function get_child_canonical_space(
     elem_loc_basis::AbstractCanonicalSpace, num_sub_elements::Int
@@ -82,12 +90,14 @@ Evaluates all derivatives upto order `nderivatives` for all basis functions of
 `canonical_space` at a given point `xi`.
 
 # Arguments
-- `canonical_space::AbstractCanonicalSpace`: A canonical space.
-- `xi::Float64`: The point where all global basis functiuons are evaluated.
-- `nderivatives::Int`: The order upto which derivatives need to be computed.
+
+  - `canonical_space::AbstractCanonicalSpace`: A canonical space.
+  - `xi::Float64`: The point where all global basis functiuons are evaluated.
+  - `nderivatives::Int`: The order upto which derivatives need to be computed.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
+
+  - `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
 """
 function _evaluate_all_at_point(
     canonical_space::AbstractCanonicalSpace, xi::Float64, nderivatives::Int
@@ -120,11 +130,13 @@ It returns a global subdivision matrix that maps the global basis functions of t
 canonical space to the global basis functions of the subspaces.
 
 # Arguments
-- `canonical_space::AbstractCanonicalSpace`: A canonical space.
-- `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
+
+  - `canonical_space::AbstractCanonicalSpace`: A canonical space.
+  - `num_sub_elements::Int`: The number of subspaces to divide the canonical space into.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
+
+  - `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
     functions of the canonical space to the global basis functions of the subspaces.
 """
 function build_two_scale_matrix(
@@ -162,7 +174,7 @@ function build_two_scale_matrix(
     subdivision_matrix = SparseArrays.sparse(Matrix(LinearAlgebra.I, p + 1, p + 1))
     for i in 1:num_ref
         subdivision_matrix =
-            SparseArrays.blockdiag([bisection_matrix for i in 1:(2^(i - 1))]...) * subdivision_matrix
+            SparseArrays.blockdiag([bisection_matrix for i in 1:(2 ^ (i - 1))]...) * subdivision_matrix
     end
 
     return subdivision_matrix

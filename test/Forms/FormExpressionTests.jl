@@ -37,7 +37,9 @@ function dmapping_ed_test(x::Vector{Float64})
     x2_new = (2.0 / (Ltop - Lbottom)) * x[2] - 2.0 * Lbottom / (Ltop - Lbottom) - 1.0
 
     return [
-        1.0+pi * c * cospi(x1_new) * sinpi(x2_new) ((Lright - Lleft)/(Ltop - Lbottom))*pi*c*sinpi(x1_new)*cospi(x2_new)
+        1.0+pi * c * cospi(x1_new) * sinpi(x2_new) ((Lright - Lleft)/(Ltop - Lbottom))*pi*c*sinpi(
+            x1_new
+        )*cospi(x2_new)
         ((Ltop - Lbottom)/(Lright - Lleft))*pi*c*cospi(x1_new)*sinpi(x2_new) 1.0+pi * c * sinpi(x1_new) * cospi(x2_new)
     ]
 end

@@ -8,13 +8,14 @@ Note that while the section spaces on each element are the same, they don't nece
 to be polynomials; they are just named `polynomials` for convention.
 
 # Fields
-- `geometry::G`: Physical geometry to which the B-Spline space is mapped.
-- `knot_vector::KnotVector`: 1-dimensional knot vector defining the parametric geometry. See
+
+  - `geometry::G`: Physical geometry to which the B-Spline space is mapped.
+  - `knot_vector::KnotVector`: 1-dimensional knot vector defining the parametric geometry. See
     [`KnotVector`](@ref) for more details.
-- `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
-- `polynomials::F`: local section space F, named `polynomials` just for convention. Can be
+  - `extraction_op::ExtractionOperator`: Stores extraction coefficients and basis indices.
+  - `polynomials::F`: local section space F, named `polynomials` just for convention. Can be
     any [`AbstractCanonicalSpace`](@ref).
-- `dof_partition::D`: Partitioning of the degrees of freedom into boundary and interior
+  - `dof_partition::D`: Partitioning of the degrees of freedom into boundary and interior
     dofs. The type will be similar to Vector{Vector{Vector{Int}}}, where the outer Vector
     will have length 1 (its for patches), the middle Vector will be of length 3 (1: left
     boundary, 2 interior, 3 right boundary), and the inner Vector will contain the global
@@ -222,10 +223,12 @@ end
 Returns the knot vector object of the B-spline space `space`.
 
 # Arguments
-- `space::BSplineSpace`: The B-spline space.
+
+  - `space::BSplineSpace`: The B-spline space.
 
 # Returns
-- `::KnotVector`: The knot vector of the B-spline space.
+
+  - `::KnotVector`: The knot vector of the B-spline space.
 """
 function get_knot_vector(space::BSplineSpace)
     return space.knot_vector
@@ -237,10 +240,12 @@ end
 Returns the reference Bernstein polynomials of `space`.
 
 # Arguments
-- `space::BSplineSpace`: A univariate B-Spline function space.
+
+  - `space::BSplineSpace`: A univariate B-Spline function space.
 
 # Returns
-- `::Bernstein`: Bernstein polynomials.
+
+  - `::Bernstein`: Bernstein polynomials.
 """
 function get_polynomials(space::BSplineSpace)
     return space.polynomials
@@ -292,10 +297,12 @@ Returns the multiplicities of the knot vector associated with the univariate fun
 `space`.
 
 # Arguments
-- `space::BSplineSpace`: The B-Spline function space.
+
+  - `space::BSplineSpace`: The B-Spline function space.
 
 # Returns
-- `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
+
+  - `::Vector{Int}`: The multiplicity of the knot vector associated with the B-Spline space.
 """
 function get_multiplicity_vector(space::BSplineSpace)
     return get_multiplicity(get_knot_vector(space))
@@ -307,11 +314,13 @@ end
 Returns the elements where the B-spline given by `basis_id` is supported.
 
 # Arguments
-- `space::BSplineSpace`: The B-Spline function space.
-- `basis_id::Int`: The id of the basis function.
+
+  - `space::BSplineSpace`: The B-Spline function space.
+  - `basis_id::Int`: The id of the basis function.
 
 # Returns
-- `::Vector{Int}`: The support of the basis function.
+
+  - `::Vector{Int}`: The support of the basis function.
 """
 function get_support(space::BSplineSpace, basis_id::Int)
     first_element = convert_knot_to_breakpoint_idx(get_knot_vector(space), basis_id)
@@ -374,10 +383,12 @@ end
 Returns the derivative space of the B-spline space.
 
 # Arguments
-- `space::BSplineSpace`: The B-spline space.
+
+  - `space::BSplineSpace`: The B-spline space.
 
 # Returns
-- `::BSplineSpace`: The derivative space.
+
+  - `::BSplineSpace`: The derivative space.
 """
 function get_derivative_space(space::BSplineSpace)
     # polynomial degree of derivative space

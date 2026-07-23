@@ -41,19 +41,23 @@ Tchebycheffian B-splines), and adaptively-refinable spaces (e.g., hierarchical B
 [EUPL licence](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE).
 
 The `Mantis` package was created by
-- Diogo C. Cabanas,
-- Joey Dekker,
-- Artur Palha,
-- Deepesh Toshniwal,
-from TU Delft's Institute of Applied Mathematics (DIAM).
+
+  - Diogo C. Cabanas,
+  - Joey Dekker,
+  - Artur Palha,
+  - Deepesh Toshniwal,
+    from TU Delft's Institute of Applied Mathematics (DIAM).
 
 !!! warning "Under development"
+
     `Mantis` is under active development and can still undergo large changes.
 
 ## References on this page
+
 ```@bibliography
 Pages = ["index.md"]
 Canonical = false
 ```
-See the full [reference list](@ref References) for all references cited throughout this 
+
+See the full [reference list](@ref References) for all references cited throughout this
 documentation.

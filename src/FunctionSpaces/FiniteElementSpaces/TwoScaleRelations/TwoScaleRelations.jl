@@ -5,19 +5,20 @@ A structure representing a two-scale operator that dechilds the relationships be
 and child finite element spaces.
 
 # Fields
-- `parent_space::S`: The parent finite element space.
-- `child_space::S`: The child finite element space.
-- `global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global subdivision
+
+  - `parent_space::S`: The parent finite element space.
+  - `child_space::S`: The child finite element space.
+  - `global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global subdivision
     matrix. The size of this matrix is `(num_child_basis, num_parent_basis)` where
     `num_child_basis` is the dimension of `child_space` and `num_parent_basis` the dimension
     of `parent_space`.
-- `parent_to_child_elements::Vector{Vector{Int}}`: A vector of vectors containing the child
+  - `parent_to_child_elements::Vector{Vector{Int}}`: A vector of vectors containing the child
     element IDs for each parent element.
-- `child_to_parent_elements::Vector{Int}`: A vector containing the parent element ID for
+  - `child_to_parent_elements::Vector{Int}`: A vector containing the parent element ID for
     each child element.
-- `parent_to_child_basis::Vector{Vector{Int}}`: A vector of vectors containing the child
+  - `parent_to_child_basis::Vector{Vector{Int}}`: A vector of vectors containing the child
     basis function IDs for each parent basis function.
-- `child_to_parent_basis::Vector{Vector{Int}}`: A vector of vectors containing the
+  - `child_to_parent_basis::Vector{Vector{Int}}`: A vector of vectors containing the
     parent basis function IDs for each child basis function.
 """
 struct TwoScaleOperator{manifold_dim, num_components, num_patches, PS, CS, R} <:

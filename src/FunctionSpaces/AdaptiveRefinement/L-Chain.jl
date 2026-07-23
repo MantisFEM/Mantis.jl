@@ -1,7 +1,7 @@
 """
-	update_domains_with_lchains!(
-	    space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
-	)
+    update_domains_with_lchains!(
+        space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
+    )
 
 Returns a hierarchically nested set of `domains`, associated with an exact de Rham complex.
 The `domains` are computed from the original domains of the given `space`, and refinement
@@ -11,12 +11,14 @@ Note that the bang (!) is used to denote an in-place change, despite returning `
 which is not an argument. This is because `domains` is a field of the `space` structure.
 
 # Arguments
-- `space::HierarchicalFiniteElementSpace{2}`: The space to be refined.
-- `marked_els::Vector{Vector{Int}}`: The elements used for refinement.
+
+  - `space::HierarchicalFiniteElementSpace{2}`: The space to be refined.
+  - `marked_els::Vector{Vector{Int}}`: The elements used for refinement.
 
 # Returns
-- `domains::Hierarchy.ActiveInfo`: The hierarchically nested domains after refinement. This
-	is also a field of `space`, which is modified in-place.
+
+  - `domains::Hierarchy.ActiveInfo`: The hierarchically nested domains after refinement. This
+    is also a field of `space`, which is modified in-place.
 """
 function update_domains_with_lchains!(
     space::HierarchicalFiniteElementSpace{2}, marked_els::Vector{Vector{Int}}
@@ -24,7 +26,7 @@ function update_domains_with_lchains!(
     previous_parents = Int[]
     L = get_num_levels(space)
     domains = get_nested_domains(space)
-	two_scale_operators = copy(get_two_scale_operators(space))
+    two_scale_operators = copy(get_two_scale_operators(space))
     spaces = get_spaces(space)
     for level in L:-1:1
         level_marked_els = marked_els[level]
@@ -91,13 +93,14 @@ function update_domains_with_lchains!(
 end
 
 """
-	get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
+    get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
 
 Returns the basis indices the original space at level `l` whose support is contained
 in the domain `Ωₖ`.
 
 # Returns
-- `Vector{Int}`: The basis contained in the domain `Ωₖ`.
+
+  - `Vector{Int}`: The basis contained in the domain `Ωₖ`.
 """
 function get_Blk(space::HierarchicalFiniteElementSpace, l::Int, k::Int)
     if k < l
@@ -129,18 +132,19 @@ end
 get_Blk(space::HierarchicalFiniteElementSpace, l::Int) = get_Blk(space, l, l + 1)
 
 """
-	initiate_pairs(
-	    space::HierarchicalFiniteElementSpace{2},
-	    level::Int,
-	    Blk::Vector{Int},
-	    marked_els::Vector{Int},
-	)
+    initiate_pairs(
+        space::HierarchicalFiniteElementSpace{2},
+        level::Int,
+        Blk::Vector{Int},
+        marked_els::Vector{Int},
+    )
 
 Generates all the possibly problematic pairs at `level` that need to be checked for
 problems.
 
 # Returns
-- `Vector{Tuple{Int, Int}}`: The pairs that need to be checked for problems.
+
+  - `Vector{Tuple{Int, Int}}`: The pairs that need to be checked for problems.
 
 See also [`update_domains_with_lchains!`](@ref), [`get_Blk`](@ref) and
 [`get_local_pairs`](@ref).
@@ -166,14 +170,15 @@ function initiate_pairs(
 end
 
 """
-	is_resolved(
-	    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
-	)
+    is_resolved(
+        space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
+    )
 
 Checks whether the basis function `βᵢ` at `level` is resolved or not.
 
 # Returns
-- `Bool`: Whether `βᵢ` is resolved.
+
+  - `Bool`: Whether `βᵢ` is resolved.
 """
 function is_resolved(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
@@ -212,21 +217,23 @@ function is_resolved(
 end
 
 """
-	get_local_pairs(
-	    space::HierarchicalFiniteElementSpace{2},
-	    level::Int,
-	    Blk::Vector{Int},
-	    unchecked::Vector{Int},
-	)
+    get_local_pairs(
+        space::HierarchicalFiniteElementSpace{2},
+        level::Int,
+        Blk::Vector{Int},
+        unchecked::Vector{Int},
+    )
 
 Returns a list of pairs of basis functions that need to be checked for problems from a set
 of `unchecked` basis functions.
 
 # Arguments
-- `unchecked::Vector{Int}`: A list of unresolved basis functions.
+
+  - `unchecked::Vector{Int}`: A list of unresolved basis functions.
 
 # Returns
-- `Vector{Tuple{Int, Int}}`: The list of possibly problematic pairs.
+
+  - `Vector{Tuple{Int, Int}}`: The list of possibly problematic pairs.
 
 See also [`initiate_pairs`](@ref) and [`is_resolved`](@ref).
 """
@@ -254,15 +261,16 @@ function get_local_pairs(
 end
 
 """
-	get_interaction_box(
-	    space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
-	)
+    get_interaction_box(
+        space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
+    )
 
 Returns a list of basis functions that are at most `p[k]+1` away from `βᵢ` in index space
 for each manifold dimension `k`, where `p[k]` is the polynomial degree.
 
 # Returns
-- `Vector{Int}`: The list of basis functions interacting with `βᵢ`.
+
+  - `Vector{Int}`: The list of basis functions interacting with `βᵢ`.
 """
 function get_interaction_box(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
@@ -294,17 +302,18 @@ function get_interaction_box(
 end
 
 """
-	is_problematic(
-	    space::HierarchicalFiniteElementSpace{2},
-	    level::Int,
-	    Blk::Vector{Int},
-	    (βᵢ, βⱼ)::Tuple{Int, Int},
-	)
+    is_problematic(
+        space::HierarchicalFiniteElementSpace{2},
+        level::Int,
+        Blk::Vector{Int},
+        (βᵢ, βⱼ)::Tuple{Int, Int},
+    )
 
 Checks whether a `(βᵢ, βⱼ)` is a problematic pair.
 
 # Returns
-- `Bool`: Whether the pair is problematic.
+
+  - `Bool`: Whether the pair is problematic.
 """
 function is_problematic(
     space::HierarchicalFiniteElementSpace{2},
@@ -317,14 +326,15 @@ function is_problematic(
 end
 
 """
-	has_minimal_intersection(
-	    space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
-	)
+    has_minimal_intersection(
+        space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
+    )
 
 Checks whether a `(βᵢ, βⱼ)` share a minimal-(l+1) intersection.
 
 # Returns
-- `Bool`: Whether the pair shares a minimal intersection.
+
+  - `Bool`: Whether the pair shares a minimal intersection.
 """
 function has_minimal_intersection(
     space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
@@ -351,17 +361,18 @@ function has_minimal_intersection(
 end
 
 """
-	get_contained_knot_vector(
-	    boundary_breakpoints::NTuple{2, Int},
-	    ts::AbstractTwoScaleOperator,
-	    fine_space::BSplineSpace,
-	)
+    get_contained_knot_vector(
+        boundary_breakpoints::NTuple{2, Int},
+        ts::AbstractTwoScaleOperator,
+        fine_space::BSplineSpace,
+    )
 
 Returns a `KnotVector` corresponding to the largest subset of the knot-vector defining
 `fine_space` that is contained between `boundary_breakpoints`.
 
 # Returns
-- `KnotVector`: The largest knot-vector contained between `boundary_breakpoints`.
+
+  - `KnotVector`: The largest knot-vector contained between `boundary_breakpoints`.
 """
 function get_contained_knot_vector(
     boundary_breakpoints::NTuple{2, Int},
@@ -395,17 +406,18 @@ function get_contained_knot_vector(
 end
 
 """
-	has_shortest_chain(
-	    space::HierarchicalFiniteElementSpace{2},
-	    level::Int,
-	    Blk::Vector{Int},
-	    (βᵢ, βⱼ)::Tuple{Int, Int},
-	)
+    has_shortest_chain(
+        space::HierarchicalFiniteElementSpace{2},
+        level::Int,
+        Blk::Vector{Int},
+        (βᵢ, βⱼ)::Tuple{Int, Int},
+    )
 
 Checks whether a `(βᵢ, βⱼ)` have a shortest chain between them.
 
 # Returns
-- `Bool`: Whether `(βᵢ, βⱼ)` have a shortest chain between them.
+
+  - `Bool`: Whether `(βᵢ, βⱼ)` have a shortest chain between them.
 """
 function has_shortest_chain(
     space::HierarchicalFiniteElementSpace{2},
@@ -449,18 +461,19 @@ function has_shortest_chain(
 end
 
 """
-	get_lchain_corner(
-	    space::HierarchicalFiniteElementSpace{2},
-	    level::Int,
-	    Blk::Vector{Int},
-	    (βᵢ, βⱼ)::Tuple{Int, Int},
-	)
+    get_lchain_corner(
+        space::HierarchicalFiniteElementSpace{2},
+        level::Int,
+        Blk::Vector{Int},
+        (βᵢ, βⱼ)::Tuple{Int, Int},
+    )
 
 Returns a corner basis function of an L-chain between `βᵢ` and `βⱼ`, with preference for
 resolved corners.
 
 # Returns
-- `Int`: The id of the corner basis function.
+
+  - `Int`: The id of the corner basis function.
 """
 function get_lchain_corner(
     space::HierarchicalFiniteElementSpace{2},
@@ -481,12 +494,13 @@ function get_lchain_corner(
 end
 
 """
-	get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
+    get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
 
 Returns the first basis function of `βᵢ`.
 
 # Returns
-- `Int`: The id of the parent basis function.
+
+  - `Int`: The id of the parent basis function.
 """
 function get_parent_function(space::HierarchicalFiniteElementSpace, level::Int, βᵢ::Int)
     operator = get_twoscale_operator(space, level - 1)

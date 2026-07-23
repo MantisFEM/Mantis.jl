@@ -12,12 +12,14 @@ The parent multiplicities are preserved in the `child_multiplicity_vector`, and 
 inserted ones are given multiplicity `child_multiplicity`.
 
 # Arguments
-- `parent_multiplicity::Vector{Int}`: parent multiplicity vector.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-- `child_multiplicity::Int`: Multiplicity of each new knot.
+
+  - `parent_multiplicity::Vector{Int}`: parent multiplicity vector.
+  - `num_subdivisions::Int`: Number of times each element is subdivided.
+  - `child_multiplicity::Int`: Multiplicity of each new knot.
 
 # Returns
-- `child_multiplicity_vector::Vector{Int}`: child multiplicity vector.
+
+  - `child_multiplicity_vector::Vector{Int}`: child multiplicity vector.
 """
 function subdivide_multiplicity_vector(
     parent_multiplicity::Vector{Int}, num_subdivisions::Int, child_multiplicity::Int=1
@@ -50,12 +52,14 @@ The parent multiplicities are preserved in the `child_multiplicity_vector`, and 
 inserted ones are given multiplicity `child_multiplicity`.
 
 # Arguments
-- `parent_knot_vector::KnotVector`: parent knot vector.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-- `child_multiplicity::Int`: Multiplicity of each new knot.
+
+  - `parent_knot_vector::KnotVector`: parent knot vector.
+  - `num_subdivisions::Int`: Number of times each element is subdivided.
+  - `child_multiplicity::Int`: Multiplicity of each new knot.
 
 # Returns
-- `::KnotVector`: child knot vector.
+
+  - `::KnotVector`: child knot vector.
 """
 function subdivide_knot_vector(
     parent_knot_vector::KnotVector, num_subdivisions::Int, child_multiplicity::Int
@@ -79,12 +83,14 @@ The parent multiplicities are preserved in the final multiplicity vector, and ne
 ones are given multiplicity `child_multiplicity`.
 
 # Arguments
-- `parent_bspline::BSplineSpace`: parent B-spline.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-- `child_multiplicity::Int`: Multiplicity of each new knot.
+
+  - `parent_bspline::BSplineSpace`: parent B-spline.
+  - `num_subdivisions::Int`: Number of times each element is subdivided.
+  - `child_multiplicity::Int`: Multiplicity of each new knot.
 
 # Returns
-- `::BSplineSpace`: refined B-spline space.
+
+  - `::BSplineSpace`: refined B-spline space.
 """
 function subdivide_space(
     parent_bspline::BSplineSpace, num_subdivisions::Int, child_multiplicity::Int=1
@@ -117,15 +123,16 @@ end
 ############################################################################################
 #
 function build_two_scale_operator(
-	parent_bspline::BSplineSpace, num_subdivisions::Tuple{Int}
+    parent_bspline::BSplineSpace, num_subdivisions::Tuple{Int}
 )
-	return build_two_scale_operator(parent_bspline, num_subdivisions[1])
+    return build_two_scale_operator(parent_bspline, num_subdivisions[1])
 end
 
 """
     build_two_scale_operator(
         parent_bspline::BSplineSpace, num_subdivisions::Int, child_multiplicity::Int
     )
+
 Algorithm for the coefficients of a change of B-spline representation for knot insertion
 of multiple knots, recursively using `single_knot_insertion_oslo()`. The parent knot vector
 is `parent_bspline.knot_vector` and the inserted knots are given by `num_subdivisions`,
@@ -135,12 +142,14 @@ with multiplicity 1.
 For more information, see [Dangella2018](@cite).
 
 # Arguments
-- `parent_bspline::BSplineSpace`: parent B-spline.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
-- `child_multiplicity::Int`: Multiplicity of each new knot in refined knot vector.\
+
+  - `parent_bspline::BSplineSpace`: parent B-spline.
+  - `num_subdivisions::Int`: Number of times each element is subdivided.
+  - `child_multiplicity::Int`: Multiplicity of each new knot in refined knot vector.\
 
 # Returns
-- `::FiniteElementSpaces.TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
+
+  - `::FiniteElementSpaces.TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
     twoscale_operator and child B-spline space.
 """
 function build_two_scale_operator(
@@ -169,12 +178,14 @@ is `parent_bspline.knot_vector` and the inserted knots are given by
 For more information, see [Dangella2018](@cite).
 
 # Arguments
-- `parent_bspline::BSplineSpace`: parent B-spline.
-- `child_bspline::BSplineSpace`: child B-spline, with extra knots.
-- `num_subdivisions::Int`: Number of times each element is subdivided.
+
+  - `parent_bspline::BSplineSpace`: parent B-spline.
+  - `child_bspline::BSplineSpace`: child B-spline, with extra knots.
+  - `num_subdivisions::Int`: Number of times each element is subdivided.
 
 # Returns
-- `::FiniteElementSpaces.TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
+
+  - `::FiniteElementSpaces.TwoScaleOperator, child_bspline::BSplineSpace`: Tuple with a
     twoscale_operator and child B-spline space.
 """
 function build_two_scale_operator(
@@ -228,11 +239,13 @@ is `parent_knot_vector` and the inserted knots are given by `child_knot_vector`.
 For more information, see [Dangella2018](@cite).
 
 # Arguments
-- `parent_knot_vector::KnotVector`: parent knot vector.
-- `child_knot_vector::KnotVector`: child knot vector, with the extra knots.
+
+  - `parent_knot_vector::KnotVector`: parent knot vector.
+  - `child_knot_vector::KnotVector`: child knot vector, with the extra knots.
 
 # Returns
-- `global_extraction_matrix`: Global subdivision matrix
+
+  - `global_extraction_matrix`: Global subdivision matrix
 """
 function build_two_scale_matrix(
     parent_knot_vector::KnotVector, child_knot_vector::KnotVector
@@ -307,15 +320,16 @@ For more information, see
 [A note on the Oslo Algorithm](https://collections.lib.utah.edu/dl_files/66/d4/66d493df0f5c97cce67e0bc1294363d64dde7f06.pdf).
 
 # Arguments
-- `parent_knot_vector::KnotVector`: parent knot vector.
-- `child_knot_vector::KnotVector`: child knot vector, with the extra knot.
-- `cf::Int`: Index of the parent knot vector.
-- `rf::Int`: Index of the child knot vector such that
-    `get_knot_value(parent_knot_vector,cf) <= get_knot_value(child_knot_vector,rf) <
-    get_knot_value(parent_knot_vector,cf+1)`.
+
+  - `parent_knot_vector::KnotVector`: parent knot vector.
+  - `child_knot_vector::KnotVector`: child knot vector, with the extra knot.
+  - `cf::Int`: Index of the parent knot vector.
+  - `rf::Int`: Index of the child knot vector such that
+    `get_knot_value(parent_knot_vector,cf) <= get_knot_value(child_knot_vector,rf) < get_knot_value(parent_knot_vector,cf+1)`.
 
 # Returns
-- `b::Vector{Float64}`: Coefficients for the change of basis.
+
+  - `b::Vector{Float64}`: Coefficients for the change of basis.
 """
 function single_knot_insertion_oslo(
     parent_knot_vector::KnotVector, child_knot_vector::KnotVector, cf::Int, rf::Int

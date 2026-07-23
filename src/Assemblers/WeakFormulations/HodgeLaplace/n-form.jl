@@ -10,16 +10,18 @@
 Function for assembling the weak form of the n-form Hodge Laplacian problem.
 
 # Arguments
-- `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test, trial and
+
+  - `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test, trial and
     forcing terms.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
+  - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
+
+  - `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
     The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the left-hand side matrix.
-- `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
+  - `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
     The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the right-hand side matrix.
 """
@@ -45,14 +47,16 @@ end
 Returns the solution of the weak form of the n-form Hodge Laplacian.
 
 # Arguments
-- `Xⁿ⁻¹`: The (n-1)-form space to use as trial and test space.
-- `Xⁿ`: The n-form space to use as trial and test space.
-- `fₑ`: The forcing term to use for the right-hand side of the weak formulation.
-- `dΩ`: The quadrature rule to use for the assembly.
+
+  - `Xⁿ⁻¹`: The (n-1)-form space to use as trial and test space.
+  - `Xⁿ`: The n-form space to use as trial and test space.
+  - `fₑ`: The forcing term to use for the right-hand side of the weak formulation.
+  - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `u¹ₕ`: The (n-1)-form solution of the weak-formulation.
-- `ϕ²ₕ`: The n-form solution of the weak-formulation.
+
+  - `u¹ₕ`: The (n-1)-form solution of the weak-formulation.
+  - `ϕ²ₕ`: The n-form solution of the weak-formulation.
 """
 function solve_volume_form_hodge_laplacian(Xⁿ⁻¹, Xⁿ, fₑ, dΩ)
     weak_form_inputs = WeakFormInputs((Xⁿ⁻¹, Xⁿ), (fₑ,))

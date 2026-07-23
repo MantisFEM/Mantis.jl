@@ -40,7 +40,7 @@ function _compute_square_error_per_element(
         elseif norm == "Linf"
             result[elem_id] = maximum(
                 abs.(
-                    Forms.evaluate(difference, elem_id, Quadrature.get_nodes(quad_rule))[1][1]
+                    Forms.evaluate(difference, elem_id, Quadrature.get_nodes(quad_rule))[1][1],
                 ),
             )
         else

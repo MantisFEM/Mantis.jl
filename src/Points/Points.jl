@@ -16,8 +16,9 @@ module Points
 Supertype for all evaluable points.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold where the points are evaluated.
-- `T`: The `eltype` of the points; see `Base.eltype`.
+
+  - `manifold_dim`: Dimension of the manifold where the points are evaluated.
+  - `T`: The `eltype` of the points; see `Base.eltype`.
 """
 abstract type AbstractPoints{manifold_dim, T} end
 
@@ -38,7 +39,7 @@ get_manifold_dim(::AbstractPoints{manifold_dim}) where {manifold_dim} = manifold
 Returns the number of of evaluable `points` in the given point structure.
 """
 function get_num_points(::P) where {P <: AbstractPoints}
-    throw(MethodError(get_num_points, (P,)))
+    return throw(MethodError(get_num_points, (P,)))
 end
 
 """
@@ -51,25 +52,27 @@ function get_constituent_points(points::P) where {P <: AbstractPoints}
 end
 
 """
-	scale_and_shift_points(
-	    points::P, scalings::S, translations::T
-	) where {
-	    manifold_dim,
-	    P <: AbstractPoints{manifold_dim},
-	    S <: NTuple{manifold_dim, Real},
-	    T <: NTuple{manifold_dim, Real},
-	}
+    scale_and_shift_points(
+        points::P, scalings::S, translations::T
+    ) where {
+        manifold_dim,
+        P <: AbstractPoints{manifold_dim},
+        S <: NTuple{manifold_dim, Real},
+        T <: NTuple{manifold_dim, Real},
+    }
 
-Applies an affine map defined by `scalings` and `translations` to each point in `points`. 
+Applies an affine map defined by `scalings` and `translations` to each point in `points`.
 
 # Arguments
-- `points::P`: The set of points.
-- `scalings::S`: The scaling of the affine map.
-- `translations::T`: The translation of the affine map.
+
+  - `points::P`: The set of points.
+  - `scalings::S`: The scaling of the affine map.
+  - `translations::T`: The translation of the affine map.
 
 # Returns
-- `transformed_points::P`: The set of transformed points of the same type as the original
-	`points`.
+
+  - `transformed_points::P`: The set of transformed points of the same type as the original
+    `points`.
 """
 function scale_and_shift_points(
     points::P, scalings::S, translations::T

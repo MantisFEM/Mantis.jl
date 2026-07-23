@@ -23,17 +23,19 @@ Assemble the left- and right-hand sides of a discrete Petrov-Galerkin problem fo
 weak-formulation and Dirichlet boundary conditions.
 
 # Arguments
-- `weak_form::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form to assemble.
-- `dirichlet_bcs::Dict{Int, Float64}`: A dictionary containing the Dirichlet boundary
+
+  - `weak_form::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form to assemble.
+  - `dirichlet_bcs::Dict{Int, Float64}`: A dictionary containing the Dirichlet boundary
     conditions, where the key is the index of the boundary condition and the value is the
     boundary condition value.
-- `lhs_type::Type`: The type of the left-hand side array. Default is
+  - `lhs_type::Type`: The type of the left-hand side array. Default is
     `SparseMatrixCSC{Float64, Int}`.
-- `rhs_type::Type`: The type of the right-hand side array. Default is `Vector{Float64}`.
+  - `rhs_type::Type`: The type of the right-hand side array. Default is `Vector{Float64}`.
 
 # Returns
-- `lhs::lhs_type`: The assembled left-hand side array.
-- `rhs::rhs_type`: The assembled right-hand side vector.
+
+  - `lhs::lhs_type`: The assembled left-hand side array.
+  - `rhs::rhs_type`: The assembled right-hand side vector.
 """
 function assemble(
     weak_form::WeakForm{manifold_dim, LHS, RHS, I},
@@ -119,13 +121,15 @@ Returns pre-allocated row, column, and value vectors for the left-hand side (lhs
 right-hand side (rhs) array.
 
 # Arguments
-- `weak_form::WeakForm`: The weak form to use for the pre-allocation.
-- `side::String`: The side of the array to pre-allocate. Must be either "lhs" or "rhs".
+
+  - `weak_form::WeakForm`: The weak form to use for the pre-allocation.
+  - `side::String`: The side of the array to pre-allocate. Must be either "lhs" or "rhs".
 
 # Returns
-- `rows::Vector{Int}`: The pre-allocated row indices.
-- `cols::Vector{Int}`: The pre-allocated column indices.
-- `vals::Vector{T}`: The pre-allocated values.
+
+  - `rows::Vector{Int}`: The pre-allocated row indices.
+  - `cols::Vector{Int}`: The pre-allocated column indices.
+  - `vals::Vector{T}`: The pre-allocated values.
 """
 function get_pre_allocation(
     weak_form::WeakForm, side::String, ::Type{A}
@@ -167,20 +171,22 @@ Updates the row, column, and value vectors with contributions from the specified
 expression at the element given by `element_id`.
 
 # Arguments
-- `rows::Vector{Int}`: The row indices of the array.
-- `cols::Vector{Int}`: The column indices of the array.
-- `vals::AbstractVector`: The values of the array.
-- `counts::Int`: The current count of non-zero entries in the array.
-- `expressions`: The expression to evaluate.
-- `element_id::Int`: The identifier of the element.
-- `test_offsets::Int`: The offset for the test function.
-- `trial_offsets::Int`: The offset for the trial function.
+
+  - `rows::Vector{Int}`: The row indices of the array.
+  - `cols::Vector{Int}`: The column indices of the array.
+  - `vals::AbstractVector`: The values of the array.
+  - `counts::Int`: The current count of non-zero entries in the array.
+  - `expressions`: The expression to evaluate.
+  - `element_id::Int`: The identifier of the element.
+  - `test_offsets::Int`: The offset for the test function.
+  - `trial_offsets::Int`: The offset for the trial function.
 
 # Returns
-- `rows::Vector{Int}`: The updated row indices of the array.
-- `cols::Vector{Int}`: The updated column indices of the array.
-- `vals::AbstractVector`: The updated values of the array.
-- `counts::Int`: The updated count of non-zero entries in the array.
+
+  - `rows::Vector{Int}`: The updated row indices of the array.
+  - `cols::Vector{Int}`: The updated column indices of the array.
+  - `vals::AbstractVector`: The updated values of the array.
+  - `counts::Int`: The updated count of non-zero entries in the array.
 """
 function add_expression_contributions!(
     rows::Vector{Int},
@@ -226,10 +232,13 @@ For each index `i` that is a key of `dirichlet_bcs`, set the corresponding value
 row to zero, both in `lhs_vals` and `rhs_vals`.
 
 # Examples
+
 ```jldoctest
 using Mantis
 
-Assemblers.zero_rows!([1., 1., 1.], [1., 2., 3.], [1, 2, 3], [1, 3, 2], Dict(2 => 42.0))
+Assemblers.zero_rows!(
+    [1.0, 1.0, 1.0], [1.0, 2.0, 3.0], [1, 2, 3], [1, 3, 2], Dict(2 => 42.0)
+)
 
 # output
 
@@ -272,10 +281,11 @@ Set the rows to 0 and diagonals to 1 in `lhs`, and rows of `rhs` to a value, as 
 the row indices (keys) and values of `dirichlet_bcs`.
 
 # Examples
+
 ```jldoctest
 using Mantis
 
-Assemblers.add_bc!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
+Assemblers.add_bc!([2.0 2.0 2.0; 2.0 2.0 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
 
 # output
 
@@ -301,6 +311,8 @@ end
 
 Remove the rows and columns of `lhs` and `rhs` as specified by the keys of `dirichlet_bcs`.
 See also [`set_diagonal!`](@ref).
+
+```
 ```
 """
 function add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
@@ -316,10 +328,11 @@ Set the diagonals of `lhs` to 1 and rows of `rhs` to a value, as specified by th
 indices (keys) and values of `dirichlet_bcs`. See also [`add_bc!`](@ref).
 
 # Examples
+
 ```jldoctest
 using Mantis
 
-Assemblers.set_diagonal!([2.0 2.0 2.0; 2.0 2. 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
+Assemblers.set_diagonal!([2.0 2.0 2.0; 2.0 2.0 2.0; 2.0 2.0 2.0], zeros(3), Dict(2 => 42.0))
 
 # output
 
@@ -344,11 +357,14 @@ end
 Remove the rows and columns of `lhs` and `rhs` as specified by the keys of `dirichlet_bcs`.
 
 # Examples
+
 ```jldoctest
 using Mantis
 
 Assemblers.set_diagonal!(
-    [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], [2. 0. 0.; 0. 2. 0.; 0. 0. 2.], Dict(2 => 42.0)
+    [2.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 2.0],
+    [2.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 2.0],
+    Dict(2 => 42.0),
 )
 
 # output
@@ -378,14 +394,16 @@ end
 Returns a array of the specified type with the given row and column indices and values.
 
 # Arguments
-- `array_type::Type{AbstractArray}`: The type of array to build.
-- `rows::Vector{Int}`: The row indices of the array.
-- `cols::Vector{Int}`: The column indices of the array.
-- `vals::AbstractVector`: The values of the array.
-- `size::Tuple{Int, Int}`: The size of the array.
+
+  - `array_type::Type{AbstractArray}`: The type of array to build.
+  - `rows::Vector{Int}`: The row indices of the array.
+  - `cols::Vector{Int}`: The column indices of the array.
+  - `vals::AbstractVector`: The values of the array.
+  - `size::Tuple{Int, Int}`: The size of the array.
 
 # Returns
-- `::array_type`: The constructed array of the specified type.
+
+  - `::array_type`: The constructed array of the specified type.
 """
 function build_array(
     array_type::Type{A},
@@ -394,7 +412,7 @@ function build_array(
     vals::AbstractVector,
     size::Tuple{Int, Int},
 ) where {A <: AbstractArray}
-    throw(
+    return throw(
         ArgumentError("Assembly of array type `$(array_type)` not currently implemented.")
     )
 end

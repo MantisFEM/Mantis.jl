@@ -127,8 +127,9 @@ size_tp_coarse = size(geom_coeffs_coarse)
 TS_tp, space_tp_fine = FunctionSpaces.build_two_scale_operator(
     FunctionSpaces.get_degenerate_space(P_scalar_coarse), (num_subdiv_p, num_subdiv_r)
 )
-size_tp_fine =
-    FunctionSpaces.get_num_basis.(FunctionSpaces.get_constituent_spaces(space_tp_fine))
+size_tp_fine = FunctionSpaces.get_num_basis.(
+    FunctionSpaces.get_constituent_spaces(space_tp_fine)
+)
 subdiv_mat_tp = FunctionSpaces.get_global_subdiv_matrix(TS_tp)
 geom_coeffs_fine = reshape(
     subdiv_mat_tp * reshape(geom_coeffs_coarse, :, size_tp_coarse[3]),

@@ -135,10 +135,11 @@ tuple.
 Supports dimensions 1 to 3.
 Logical positions are defined based on assumption of tensor product patches (lines, quads,
 hexahedra) and logical coordinate system is as follows:
-    - -1: located at the leftmost or bottommost position (start of interval of that
-        dimension)
-    -  1: located at rightmost or topmost position (end of interval of that dimension)
-    -  0: extended over that dimension
+
+  - -1: located at the leftmost or bottommost position (start of interval of that
+    dimension)
+  - 1: located at rightmost or topmost position (end of interval of that dimension)
+  - 0: extended over that dimension
 
 This means that the start vertex of a line segment is at (-1,), the end vertex is at (1,),
 and the edge is at (0,).
@@ -186,17 +187,19 @@ edges, faces, volumes), and the determination of topological neighbors. Supports
 2D (quads), and 3D (hexahedra) topologies.
 
 # Fields
-- `incidence_relations`: A nested tuple containing the incidence relations between
+
+  - `incidence_relations`: A nested tuple containing the incidence relations between
     geometric objects of different dimensions.
-- `n_geometric_objects`: Total number of global geometric objects per topological dimension.
-- `n_local_geometric_objects`: Number of local geometric objects per patch per dimension.
-- `local_edge2vertex`: Local edge-to-vertex mapping, `local_edge2vertex[i,j]` contains the
+  - `n_geometric_objects`: Total number of global geometric objects per topological dimension.
+  - `n_local_geometric_objects`: Number of local geometric objects per patch per dimension.
+  - `local_edge2vertex`: Local edge-to-vertex mapping, `local_edge2vertex[i,j]` contains the
     i-th vertex of the j-th edge, all at local level.
-- `local_face2vertex`: Local face-to-vertex mapping, `local_face2vertex[i,j]` contains the
+  - `local_face2vertex`: Local face-to-vertex mapping, `local_face2vertex[i,j]` contains the
     i-th vertex of the j-th face, all at local level.
 
 # Constructors
-- `MeshTopology(patches::Vector{Vector{Int}})`: Builds the patch topology from a list of
+
+  - `MeshTopology(patches::Vector{Vector{Int}})`: Builds the patch topology from a list of
     patch connectivities (vertex indices).
 """
 struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches}
@@ -545,12 +548,13 @@ end
     compute_face_neighbours(mesh_topology::MeshTopology{3,4}, patch_id::Int, face_local_id::Int)
 
 Returns a `4 × N` matrix for the face `face_local_id` of `patch_id` containing information
-    about its neighboring patches:
-- Row 1: Neighboring patch ID
-- Row 2: Local face ID in the neighbor patch
-- Row 3: Rotation (number of vertices shifted), numbering of neighbour face dofs must be rotated
+about its neighboring patches:
+
+  - Row 1: Neighboring patch ID
+  - Row 2: Local face ID in the neighbor patch
+  - Row 3: Rotation (number of vertices shifted), numbering of neighbour face dofs must be rotated
     clockwise 90 degrees as many times are rotation.
-- Row 4: Orientation (+1 if aligned, -1 if reversed), indicates if the axis of the face in the neighbor patch
+  - Row 4: Orientation (+1 if aligned, -1 if reversed), indicates if the axis of the face in the neighbor patch
     is aligned with the axis of the face in the current patch, if not, the dof numbering must be transposed.
 
 Only applicable to 3D hexahedral meshes.
@@ -721,10 +725,11 @@ end
 
 Returns a `4 × N` matrix describing the neighboring patches across edge `edge_local_id` of
 `patch_id`. Each column encodes:
-- Row 1: Neighboring patch ID.
-- Row 2: Local edge ID in neighbor.
-- Row 3: Always 0 (edges do not rotate), only orientation needs to be considered.
-- Row 4: Orientation (+1 or -1), this indicates whether you need to apply `reverse` on edge numbering or not.
+
+  - Row 1: Neighboring patch ID.
+  - Row 2: Local edge ID in neighbor.
+  - Row 3: Always 0 (edges do not rotate), only orientation needs to be considered.
+  - Row 4: Orientation (+1 or -1), this indicates whether you need to apply `reverse` on edge numbering or not.
 
 Only applicable to 2D quadrilateral meshes.
 """
@@ -821,10 +826,11 @@ end
 Same as the 2D version, but for 3D hexahedral meshes. Computes edge neighbors of a specific patch edge.
 Returns a `4 × N` matrix describing the neighboring patches across edge `edge_local_id` of
 `patch_id`. Each column encodes:
-- Row 1: Neighboring patch ID.
-- Row 2: Local edge ID in neighbor.
-- Row 3: Always 0 (edges do not rotate), only orientation needs to be considered.
-- Row 4: Orientation (+1 or -1).
+
+  - Row 1: Neighboring patch ID.
+  - Row 2: Local edge ID in neighbor.
+  - Row 3: Always 0 (edges do not rotate), only orientation needs to be considered.
+  - Row 4: Orientation (+1 or -1).
 
 Only applicable to 3D hexahedral meshes.
 """
@@ -918,7 +924,7 @@ end
     compute_edge_neighbours(mesh_topology::MeshTopology)
 
 Returns a matrix containing neighbor information for all edges of all patches.
-    Each entry `[i,j]` corresponds to the result of `compute_edge_neighbours(mesh_topology, i, j)`.
+Each entry `[i,j]` corresponds to the result of `compute_edge_neighbours(mesh_topology, i, j)`.
 """
 function compute_edge_neighbours(
     mesh_topology::MT
@@ -953,10 +959,11 @@ end
     compute_vertex_neighbours(mesh_topology::MeshTopology, patch_id::Int, vertex_local_id::Int)
 
 Returns a `4 × N` matrix of vertex neighbor data:
-- Row 1: Neighboring patch ID.
-- Row 2: Local vertex ID in neighbor.
-- Row 3: Always 0 (no rotation for vertices).
-- Row 4: Always 0 (no orientation.
+
+  - Row 1: Neighboring patch ID.
+  - Row 2: Local vertex ID in neighbor.
+  - Row 3: Always 0 (no rotation for vertices).
+  - Row 4: Always 0 (no orientation.
 
 Applicable to all supported topologies.
 """

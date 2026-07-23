@@ -8,18 +8,21 @@
 Build the two-scale operator for a general unstructured space. The fine space is assumed to
 be obtained from the coarse space by subdividing the `i`-th patch into `nsubdivisions[i]`
 sub-elements.
-- It is assumed that the computation of subdivision matrices for the individual function
+
+  - It is assumed that the computation of subdivision matrices for the individual function
     spaces that form the coarse unstructured space have already been implemented.
-- The global subdivision matrix for the two scale operator is computed in a brute-force
+  - The global subdivision matrix for the two scale operator is computed in a brute-force
     manner by solving a least-squares problem.
 
 # Arguments
-- `coarse_us_space::AbstractFESpace{manifold_dim,num_patches}`: The coarse unstructured space.
-- `fine_us_space::AbstractFESpace{manifold_dim,num_patches}`: The fine unstructured space.
-- `nsubdivisions::NTuple{num_patches, NTuple{manifold_dim,Int}}`: The number of subdivisions.
+
+  - `coarse_us_space::AbstractFESpace{manifold_dim,num_patches}`: The coarse unstructured space.
+  - `fine_us_space::AbstractFESpace{manifold_dim,num_patches}`: The fine unstructured space.
+  - `nsubdivisions::NTuple{num_patches, NTuple{manifold_dim,Int}}`: The number of subdivisions.
 
 # Returns
-- `two_scale_op::TwoScaleOperator`: The two-scale operator.
+
+  - `two_scale_op::TwoScaleOperator`: The two-scale operator.
 """
 function build_two_scale_operator(
     coarse_us_space::AbstractFESpace{manifold_dim, 1, num_patches},

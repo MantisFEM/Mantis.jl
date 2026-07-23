@@ -146,9 +146,7 @@ points = Mantis.Points.CartesianPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
 @test typeof(Points.CartesianPoints(LinRange(0, 1, 2), [1, 2]).constituent_points) ==
     Tuple{LinRange{Float64, Int}, Vector{Float64}}
 @test typeof(
-    Points.CartesianPoints(
-        1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)
-    ).constituent_points,
+    Points.CartesianPoints(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)).constituent_points,
 ) == Tuple{Vector{Float64}, Vector{Float64}, LinRange{Float64, Int}, Vector{Float64}}
 
 end

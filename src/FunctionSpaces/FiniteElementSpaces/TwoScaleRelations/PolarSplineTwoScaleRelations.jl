@@ -41,8 +41,7 @@ function build_two_scale_operator(
 end
 
 function build_two_scale_operator(
-    parent_space::PolarSplineSpace,
-    num_subdivisions::NTuple{1, NTuple{2, Int}},
+    parent_space::PolarSplineSpace, num_subdivisions::NTuple{1, NTuple{2, Int}}
 )
     return build_two_scale_operator(
         parent_space, subdivide_space(parent_space, num_subdivisions), num_subdivisions
@@ -50,23 +49,17 @@ function build_two_scale_operator(
 end
 
 function build_two_scale_operator(
-    parent_space::PolarSplineSpace,
-    num_subdivisions::NTuple{2, Int},
+    parent_space::PolarSplineSpace, num_subdivisions::NTuple{2, Int}
 )
     return build_two_scale_operator(parent_space, (num_subdivisions,))
 end
 
-function build_two_scale_operator(
-    parent_space::PolarSplineSpace, num_subdivisions::Int
-)
-    return build_two_scale_operator(
-        parent_space, (num_subdivisions, num_subdivisions)
-    )
+function build_two_scale_operator(parent_space::PolarSplineSpace, num_subdivisions::Int)
+    return build_two_scale_operator(parent_space, (num_subdivisions, num_subdivisions))
 end
 
 function subdivide_space(
-    parent_space::PolarSplineSpace,
-    num_subdivisions::NTuple{1, NTuple{2, Int}},
+    parent_space::PolarSplineSpace, num_subdivisions::NTuple{1, NTuple{2, Int}}
 )
 
     ############################################
@@ -78,8 +71,7 @@ function subdivide_space(
     size_degen_cp_parent = size(degen_cp_parent)
     # refine degenerate mapping
     TS_tp, degen_space_child = build_two_scale_operator(
-        get_degenerate_space(parent_space),
-        num_subdivisions[1]
+        get_degenerate_space(parent_space), num_subdivisions[1]
     )
     size_tp_child = FunctionSpaces.get_num_basis.(
         FunctionSpaces.get_constituent_spaces(degen_space_child)
@@ -95,8 +87,7 @@ function subdivide_space(
     ############################################
 
     patch_spaces_child = subdivide_space.(
-        get_patch_spaces(parent_space),
-        Ref(num_subdivisions[1]),
+        get_patch_spaces(parent_space), Ref(num_subdivisions[1])
     )
 
     ############################################
@@ -111,10 +102,7 @@ function subdivide_space(
     )
 end
 
-function subdivide_space(
-    parent_space::PolarSplineSpace,
-    num_subdivisions::NTuple{2, Int},
-)
+function subdivide_space(parent_space::PolarSplineSpace, num_subdivisions::NTuple{2, Int})
     return subdivide_space(parent_space, (num_subdivisions,))
 end
 

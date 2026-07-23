@@ -8,16 +8,18 @@
 Function to compute the L2 projection of a function onto a discrete form space.
 
 # Arguments
-- `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
+
+  - `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
     forcing terms.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
+  - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
+
+  - `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
     The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the left-hand side matrix.
-- `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
+  - `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
     The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the right-hand side matrix.
 """
@@ -39,12 +41,14 @@ end
 Returns the solution of the weak form of the L2 projection.
 
 # Arguments
-- `Xᵏ`: The k-form space to use as trial and test space.
-- `fₑ`: The forcing term to use for the right-hand side of the weak formulation.
-- `dΩ`: The quadrature rule to use for the assembly.
+
+  - `Xᵏ`: The k-form space to use as trial and test space.
+  - `fₑ`: The forcing term to use for the right-hand side of the weak formulation.
+  - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `fₕ::FormField`: The projection of `fₑ` onto `Xᵏ`.
+
+  - `fₕ::FormField`: The projection of `fₑ` onto `Xᵏ`.
 """
 function solve_L2_projection(Xᵏ, fₑ, dΩ)
     weak_form_inputs = WeakFormInputs(Xᵏ, fₑ)

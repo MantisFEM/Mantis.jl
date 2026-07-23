@@ -58,14 +58,16 @@ export ∧, Wedge, get_forms
 Supertype for all form expressions representing differential forms.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold on which the form lives. This will always be
+
+  - `manifold_dim`: Dimension of the manifold on which the form lives. This will always be
     inherited from the underlying function space or geometry.
-- `form_rank`: The rank of the form, i.e. ``0``-form, ``1``-form, ``2``-form, etc.
-- `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
+  - `form_rank`: The rank of the form, i.e. ``0``-form, ``1``-form, ``2``-form, etc.
+  - `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
     present, ``1`` for a single basis, and ``2`` for two bases. Expression ranks larger
     than ``2`` are not allowed.
 
 !!! note "Non-zero expression rank does not mean that the full expression has a basis."
+
     If `expression_rank` is larger than ``0``, this means that the expression acts on
     at least one basis, but not necessarily that there is a basis for the total
     expression. For example, applying the exterior derivative to a `FormSpace` will
@@ -172,10 +174,12 @@ and `γ`, if all have expression_rank > 1. If, e.g., `α` has expression_rank = 
 returns the spaces of `β` and `γ`.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The AbstractFormSpace structure.
+
+  - `form_space::AbstractFormSpace`: The AbstractFormSpace structure.
 
 # Returns
-- `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression.
+
+  - `::Tuple(<:AbstractForm)`: The list of forms present in the tree of the expression.
 """
 function get_form_space_tree(form::AbstractFormSpace)
     return get_form_space_tree(get_form(form))
@@ -214,6 +218,7 @@ If a single form is given, returns the geometry of that form. If additional form
 checks if the number of elements is the same between them; throws an error if not.
 
 !!! warning
+
     Even if the number of elements is the same, the geometries might be incompatible.
 """
 function get_geometry(single_form::AbstractForm, additional_forms::AbstractForm...)
@@ -234,10 +239,12 @@ end
 Returns the number of elements in the geometry of the given form expression.
 
 # Arguments
-- `form::AbstractForm`: The form expression.
+
+  - `form::AbstractForm`: The form expression.
 
 # Returns
-- `Int`: The number of elements in the geometry of the form expression.
+
+  - `Int`: The number of elements in the geometry of the form expression.
 """
 function get_num_elements(form::AbstractForm)
     return Geometry.get_num_elements(get_geometry(form))
@@ -252,10 +259,12 @@ end
 Returns the estimated number of non-zero entries per element for the given form expression.
 
 # Arguments
-- `form::AbstractForm`: The form expression.
+
+  - `form::AbstractForm`: The form expression.
 
 # Returns
-- `::Int`: The estimated number of non-zero entries per element.
+
+  - `::Int`: The estimated number of non-zero entries per element.
 """
 function get_estimated_nnz_per_elem(form::AbstractForm)
     return prod(get_estimated_nnz_per_elem.(get_forms(form)))
@@ -276,10 +285,12 @@ Compute an upper bound of the element-local dimension of `form_space`. Note that
 necessarily a tight upper bound.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+
+  - `form_space::AbstractFormSpace`: The form space.
 
 # Returns
-- `::Int`: The element-local upper bound.
+
+  - `::Int`: The element-local upper bound.
 """
 function get_max_local_dim(form_space::AbstractFormSpace)
     return FunctionSpaces.get_max_local_dim(get_fe_space(form_space))
@@ -293,10 +304,12 @@ recurses untill it finds a form (usually a [`FormSpace`](@ref)) which has an und
 finite element space.
 
 # Arguments
-- `form_space::AbstractForm`: The form space.
+
+  - `form_space::AbstractForm`: The form space.
 
 # Returns
-- `<:FunctionSpaces.AbstractFESpace`: The finite element space.
+
+  - `<:FunctionSpaces.AbstractFESpace`: The finite element space.
 """
 function get_fe_space(form::FS) where {FS <: AbstractForm}
     if hasfield(FS, :fem_space)
@@ -313,10 +326,12 @@ Returns the number of basis functions of the function space associated with the 
 space.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+
+  - `form_space::AbstractFormSpace`: The form space.
 
 # Returns
-- `Int`: The number of basis functions of the function space.
+
+  - `Int`: The number of basis functions of the function space.
 """
 function get_num_basis(form_space::AbstractFormSpace)
     return get_num_basis(get_form(form_space))
@@ -329,10 +344,12 @@ Returns the number of basis functions at the given element of the function space
 the given form space.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+
+  - `form_space::AbstractFormSpace`: The form space.
 
 # Returns
-- `Int`: The number of basis functions at the given element.
+
+  - `Int`: The number of basis functions at the given element.
 """
 function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
     return get_num_basis(get_form(form_space), element_id)
@@ -351,30 +368,35 @@ end
 Evaluate any form (expression) on the given `element_id` at the given points `xi`.
 
 !!! note "Evaluation in the canonical domain."
+
     The evaluation of a form (expression) is always done in the canonical domain, not the
     physical domain. See the [documentation on the Geometry module](@ref DocGeometryModule)
     for more details on these domains.
 
 # Arguments
-- `form::AbstractForm{manifold_dim}`: The differential form space.
-- `element_id::Int`: The global element id. See [Geometry](@ref) for the details.
-- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
+
+  - `form::AbstractForm{manifold_dim}`: The differential form space.
+  - `element_id::Int`: The global element id. See [Geometry](@ref) for the details.
+  - `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
     evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
     canonical domain and point structure.
 
 # Returns
-- `Vector{Array{Float64, expression_rank+1}}`: Vector of length equal to the number of
+
+  - `Vector{Array{Float64, expression_rank+1}}`: Vector of length equal to the number of
     components of the form, where each entry is a `Array{Float64, expression_rank+1}` (so,
     a `Vector` for `AbstractFormField`s and a `Matrix` for `AbstractFormSpace`s)  of size
     `(num_evaluation_points,)`, `(num_evaluation_points, num_basis_functions_on_element)`,
     respectively. For expressions involving two forms (such as the `wedge`), the entries
     will be of type `Array{Float64, 1 + expression_rank_1 + expression_rank_2}`
-- `form_basis_indices::Vector{Vector{Int}}`: The indices of the underlying function space
+  - `form_basis_indices::Vector{Vector{Int}}`: The indices of the underlying function space
     that have been evaluated (the inner vector), per basis (the outer vector). For
     `AbstractFormField`s (things without a basis), this will always be [[1]].
 
 # Examples
+
 Evaluating a ``0``-form:
+
 ```jldoctest
 julia> using Mantis
 
@@ -387,8 +409,10 @@ julia> xi = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)
 julia> Forms.evaluate(Λ⁰ₕ, 1, xi)
 ([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
 ```
+
 Evaluating a ``2``-form in 2D (a top form). Note how the result is scaled by the pullback
 to the canonical domain.
+
 ```jldoctest
 julia> using Mantis
 
@@ -407,7 +431,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    throw(MethodError(evaluate, (form, element_id, xi)))
+    return throw(MethodError(evaluate, (form, element_id, xi)))
 end
 
 ############################################################################################

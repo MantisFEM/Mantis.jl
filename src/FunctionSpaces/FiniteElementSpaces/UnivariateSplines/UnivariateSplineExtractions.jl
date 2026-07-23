@@ -8,14 +8,17 @@ Compute the extraction coefficients of B-Spline basis functions in terms of cano
 functions; see [Borden2011](@cite) [Toshniwal2020](@cite) [Hiemstra2020](@cite).
 
 # Arguments
-- `knot_vector::KnotVector`: The knot vector defining the B-Spline basis.
-- `polynomials::AbstractCanonicalSpace`: The canonical space to extract to.
+
+  - `knot_vector::KnotVector`: The knot vector defining the B-Spline basis.
+  - `polynomials::AbstractCanonicalSpace`: The canonical space to extract to.
 
 # Returns
-- `::ExtractionOperator{Indices{1, TE, TI, TJ}}`: See [`ExtractionOperator`](@ref)
+
+  - `::ExtractionOperator{Indices{1, TE, TI, TJ}}`: See [`ExtractionOperator`](@ref)
     for the details.
 
 # Note
+
 The extraction coefficients `E[el]` for element `el` contain the coefficients of the linear
 combination of reference Canonical polynomials determining the basis functions on that
 element.
@@ -129,7 +132,7 @@ function extract_bspline_to_section_space(
         # Count forwrd multiplicity of knot at k_id_end
         t = k_id_end
         while k_id_end < num_knots &&
-            convert_knot_to_breakpoint_idx(knot_vector, k_id_end + 1) == b_id_end
+              convert_knot_to_breakpoint_idx(knot_vector, k_id_end + 1) == b_id_end
             k_id_end += 1
         end
         mult = k_id_end - t + 1
@@ -261,8 +264,9 @@ function extract_bspline_to_section_space(
     for el in 1:nel
         cols_el = (canonical_dims[el] + 1):canonical_dims[el + 1]
         # Matrix of coefficients
-        extraction_coefficients[el] =
-            Matrix(H[get_basis_indices(basis_indices[el]), cols_el])'
+        extraction_coefficients[el] = Matrix(
+            H[get_basis_indices(basis_indices[el]), cols_el]
+        )'
     end
 
     Etup = [(extraction_coefficients[el],) for el in eachindex(extraction_coefficients)]
@@ -279,11 +283,13 @@ Compute the extraction coefficients of GTB-Spline basis functions in terms of (r
 B-spline basis functions.
 
 # Arguments
-- `spline_spaces::NTuple{m,F}`: Collection of (rational) B-spline spaces.
-- `regularity::Vector{Int}`: Smoothness to be imposed at patch interfaces.
+
+  - `spline_spaces::NTuple{m,F}`: Collection of (rational) B-spline spaces.
+  - `regularity::Vector{Int}`: Smoothness to be imposed at patch interfaces.
 
 # Returns
-- `ExtractionOperator{Indices{1, TE, TI, TJ}}`: The extraction operator containing the
+
+  - `ExtractionOperator{Indices{1, TE, TI, TJ}}`: The extraction operator containing the
     coefficients. See [`ExtractionOperator`](@ref) for the details.
 """
 function extract_gtbspline_to_bspline(
@@ -422,14 +428,16 @@ end
 Build the sparsest possible nullspace of a constraint vector with no zero entries.
 
 # Arguments
-- `constraint::SparseArrays.SparseVector{Float64}`: The constraint vector.
+
+  - `constraint::SparseArrays.SparseVector{Float64}`: The constraint vector.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: The sparse nullspace matrix.
+
+  - `::SparseMatrixCSC{Float64}`: The sparse nullspace matrix.
 """
 function build_sparse_nullspace(constraint::SparseArrays.SparseVector{Float64})
     q = length(constraint)
-    nz_flag = .!isapprox.(constraint, 0.0, atol=1e-14)
+    nz_flag = .!isapprox.(constraint, 0.0; atol=1e-14)
     i1 = findfirst(nz_flag)
     i2 = findlast(nz_flag)
     dd = zeros(Float64, q - 1, 2)

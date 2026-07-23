@@ -3,8 +3,8 @@
 ############################################################################################
 
 """
-	HierarchicalGeometry{manifold_dim, image_dim, num_patches, G} <:
-	AbstractGeometry{manifold_dim, image_dim, num_patches}
+    HierarchicalGeometry{manifold_dim, image_dim, num_patches, G} <:
+    AbstractGeometry{manifold_dim, image_dim, num_patches}
 
 Represents a hierarchy of nested `geometries`. Which elements are active or inactive is
 determined by `active_elements`.
@@ -12,11 +12,12 @@ determined by `active_elements`.
 See also [`Hierarchy.ActiveInfo`](@ref).
 
 # Fiels
-- `geometries::G`: A tuple `G` such that `G <: NTuple{num_levels, AbstractGeometry}`, where
-`num_levels` is the number of levels in the hierarchy. As a consequence, `num_levels` is
-also the number of distinct level-wise geometries.
-- `active_elements::Hierarchy.ActiveInfo`: Information about which elements are active or
-inactive at each level and geometry.
+
+  - `geometries::G`: A tuple `G` such that `G <: NTuple{num_levels, AbstractGeometry}`, where
+    `num_levels` is the number of levels in the hierarchy. As a consequence, `num_levels` is
+    also the number of distinct level-wise geometries.
+  - `active_elements::Hierarchy.ActiveInfo`: Information about which elements are active or
+    inactive at each level and geometry.
 """
 struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, G} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -51,7 +52,7 @@ end
 ############################################################################################
 
 """
-	get_geometries(geometry::HierarchicalGeometry)
+    get_geometries(geometry::HierarchicalGeometry)
 
 Returns the tuple of level-wise geometries defining the hierarchical `geometry`.
 """
@@ -60,7 +61,7 @@ function get_geometries(geometry::HierarchicalGeometry)
 end
 
 """
-	get_active_elements(geometry::HierarchicalGeometry)
+    get_active_elements(geometry::HierarchicalGeometry)
 
 Returns the `Hierarchy.ActiveInfo` object defining the active elements of the hierarchical
 `geometry`.
@@ -72,7 +73,7 @@ function get_active_elements(geometry::HierarchicalGeometry)
 end
 
 """
-	get_level_geometry(geometry::HierarchicalGeometry, level::Int)
+    get_level_geometry(geometry::HierarchicalGeometry, level::Int)
 
 Returns the full geometry associated with the given `level`.
 """
@@ -81,7 +82,7 @@ function get_level_geometry(geometry::HierarchicalGeometry, level::Int)
 end
 
 """
-	get_num_levels(geometry::HierarchicalGeometry)
+    get_num_levels(geometry::HierarchicalGeometry)
 
 Returns the number of levels of the hierarchical `geometry`.
 """
@@ -116,20 +117,22 @@ end
 ############################################################################################
 
 """
-	convert_to_level_and_level_id(geometry::HierarchicalGeometry, element_id::Int)
+    convert_to_level_and_level_id(geometry::HierarchicalGeometry, element_id::Int)
 
 Returns the `level` and `level_id` of the `element_id` in hierarchical indexing.
 
 See also [`Hierarchy.convert_to_level_and_level_id`](@ref).
 
 # Arguments
-- `geometry::HierarchicalGeometry`: The hierarchical geometry.
-- `element_id::Int`: The hierarchical indexing of the given element.
+
+  - `geometry::HierarchicalGeometry`: The hierarchical geometry.
+  - `element_id::Int`: The hierarchical indexing of the given element.
 
 # Returns
-- `level::Int`: The level to which the element given by `element_id` corresponds to.
-- `level_id::Int`: The index to which the element given by `element_id` corresponds to in
-	geometry at the determined `level`.
+
+  - `level::Int`: The level to which the element given by `element_id` corresponds to.
+  - `level_id::Int`: The index to which the element given by `element_id` corresponds to in
+    geometry at the determined `level`.
 """
 function convert_to_level_and_level_id(geometry::HierarchicalGeometry, element_id::Int)
     level, level_id = Hierarchy.convert_to_level_and_level_id(

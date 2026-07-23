@@ -8,15 +8,16 @@ A structure representing a `TensorProductSpace`, defined by the tensor product o
 the sum of the constituent spaces' manifold dimensions.
 
 # Fields
-- `constituent_spaces::T`: A tuple of constituent finite element spaces to be tensored.
-- `geometry::G`: The underlying physical geometry.
-- `parametric_geometry::GP`: The underlying parametric geometry. The function space is
+
+  - `constituent_spaces::T`: A tuple of constituent finite element spaces to be tensored.
+  - `geometry::G`: The underlying physical geometry.
+  - `parametric_geometry::GP`: The underlying parametric geometry. The function space is
     defined with respect to this.
-- `cart_num_basis::CIB`: To convert from tensor-product indexing to constituent-wise
+  - `cart_num_basis::CIB`: To convert from tensor-product indexing to constituent-wise
     indexing for basis functions.
-- `lin_num_basis::LIB`: To convert from constituent-wise indexing to tensor-product indexing
+  - `lin_num_basis::LIB`: To convert from constituent-wise indexing to tensor-product indexing
     for basis functions.
-- `dof_partition::D`: See [`get_dof_partition`](@ref).
+  - `dof_partition::D`: See [`get_dof_partition`](@ref).
 """
 struct TensorProductSpace{
     manifold_dim, num_components, num_patches, num_spaces, T, G, GP, CIB, LIB, D
@@ -212,7 +213,7 @@ get_constituent_spaces(space::TensorProductSpace) = space.constituent_spaces
 get_num_basis(space::TensorProductSpace) = prod(get_constituent_num_basis(space))
 
 """
-	get_cart_num_elements(space::TensorProductSpace)
+    get_cart_num_elements(space::TensorProductSpace)
 
 See [`Geometry.get_cart_num_elements`](@ref).
 """
@@ -221,7 +222,7 @@ function get_cart_num_elements(space::TensorProductSpace)
 end
 
 """
-	get_lin_num_elements(space::TensorProductSpace)
+    get_lin_num_elements(space::TensorProductSpace)
 
 See [`Geometry.get_lin_num_elements`](@ref).
 """
@@ -724,8 +725,8 @@ function evaluate(
         else
             eval[der_order + 1][der_id][1] = kron(
                 (
-                    const_eval[space][space_der_order[space] + 1][space_der_id[space]][1] for
-                    space in num_spaces:-1:1
+                    const_eval[space][space_der_order[space] + 1][space_der_id[space]][1]
+                    for space in num_spaces:-1:1
                 )...,
             )
         end
