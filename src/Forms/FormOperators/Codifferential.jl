@@ -140,6 +140,32 @@ function _evaluate_codifferential(
     return d_form_eval, [[1]]
 end
 
+function _evaluate_codifferential(
+    form::ExteriorDerivative{manifold_dim, 1, 0, FF},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, FF <: FormField{manifold_dim, 0}}
+    field = get_form(form)
+    space = get_form(field)
+    d_form_basis_eval, form_basis_indices = _evaluate_codifferential(
+        d(space), element_id, xi
+    )
+    T = eltype(d_form_basis_eval[1])
+    coefficients = get_coefficients(field)
+    # This is equal to binomial(manifold_dim, form_rank + 1).
+    n_derivative_components = size(d_form_basis_eval, 1)
+    d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
+    for dform_component_id in eachindex(d_form_eval)
+        d_form_eval[dform_component_id] =
+            d_form_basis_eval[dform_component_id] *
+            coefficients[form_basis_indices[1]]
+    end
+
+    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
+    # multi-indexed expressions, like wedges.
+    return d_form_eval, [[1]]
+end
+
 ############################################################################################
 #                                        Form Space                                        #
 ############################################################################################
