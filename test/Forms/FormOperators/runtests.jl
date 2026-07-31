@@ -5,6 +5,9 @@ using Test
 @testset "Algebraic.jl" verbose = true begin
     include("Algebraic.jl")
 end
+@testset "Codifferential" verbose = true begin
+    include("CodifferentialTests.jl")
+end
 @testset "Hodge" verbose = true begin
     include("HodgeTests.jl")
 end
