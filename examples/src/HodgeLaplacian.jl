@@ -7,7 +7,7 @@
 # ``0``-form Hodge-Laplacian on a domain ``\Omega`` with boundary ``\partial \Omega`` is
 # ```math
 # \begin{alignat*}{2}
-#     &\mathrm{d}^* \mathrm{d} \phi^0 = - f^0  \quad &&\text{on}\ \Omega \;, \\
+#     &\mathrm{d}^* \mathrm{d} \phi^0 = f^0  \quad &&\text{on}\ \Omega \;, \\
 #     &tr(\phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;.
 # \end{alignat*}
 # ```
@@ -154,4 +154,3 @@ weak_form_3D = Assemblers.WeakForm(lhs_expressions_3D, rhs_expressions_3D, wfi_3
 A_3D, b_3D = Assemblers.assemble(weak_form_3D, bc_3D)
 sol_3D = vec(A_3D \ b_3D)
 ϕ⁰_3D = Forms.build_form_field(Λ⁰_3D, sol_3D)
-

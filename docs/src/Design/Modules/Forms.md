@@ -146,8 +146,6 @@ Hodge
 
 ### [Codifferential](@id FormsCodifferential)
 The codifferential, often denoted ``d^{\star}`` or ``\delta``, is a differential operator mapping ``k``-forms to ``k-1``-forms. 
-On manifolds without boundaries, it is the ``L^2``-adjoint of the exterior derivative. 
-That is, ``(\alpha^{k-1}, \delta\beta^k) = (d\alpha^{k-1}, \beta^k)``, where ``(\cdot, \cdot)`` is an ``L^2`` inner-product.
 ```@docs
 CoDifferential
 dstar

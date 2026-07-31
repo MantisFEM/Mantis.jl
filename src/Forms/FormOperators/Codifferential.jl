@@ -8,11 +8,31 @@
 
 Represents the codifferential of an `AbstractForm`.
 
+The codifferential, often denoted ``d^{\\star}`` or ``\\delta``, is a differential operator
+mapping ``k``-forms to ``k-1``-forms. On manifolds without boundaries, it is the
+``L^2``-adjoint of the exterior derivative. That is,
+``(\\alpha^{k-1}, \\delta\\beta^k) = (d\\alpha^{k-1}, \\beta^k)``, where
+``(\\cdot, \\cdot)`` is an ``L^2`` inner-product.
+
+The codifferential can (formally) be defined in terms of the [ExteriorDerivative](@ref) and
+[Hodge](@ref). We then have (with ``n`` the manifold dimension and ``k`` the form rank)
+```math
+\\delta = (-1)^{n(k+1)+1} \\star d \\star\\;.
+```
+The codifferential is often used to defined the Hodge-Laplacian as
+``\\delta d + d \\delta``. Applied to zero-forms, the Hodge-Laplacian reduces to
+``\\delta d``. Note that this gives the opposite sign compared to the standard Laplacian in
+Cartesian coordinates.
+
 The `manifold_dim` of the `CoDifferential` is inherited from the input form, while the
 `form_rank` is the form rank of the input form minus 1.
 
 # Constructors
 - `CoDifferential(form::F)`: General constructor.
+
+# Aliases
+- `δ`: See [`δ`](@ref) (unicode character command `\\delta`).
+- `dstar`: See [`dstar`](@ref).
 
 # Examples
 ```jldoctest

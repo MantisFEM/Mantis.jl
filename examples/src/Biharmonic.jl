@@ -11,7 +11,7 @@
 # In 1D the biharmonic problem is defined as:
 # ```math
 # \begin{alignat*}{2}
-#     &\frac{\partial^4 \phi(x)}{\partial x^4} = - f(x)  \quad &&\text{for}\ x \in [0, L] \;, \\
+#     &\frac{\partial^4 \phi(x)}{\partial x^4} = f(x)  \quad &&\text{for}\ x \in [0, L] \;, \\
 #     &\phi(0) = \phi(L) = 0 \;, \\
 #     &\frac{\partial^2 \phi}{\partial x^2}(0) = \frac{\partial^2 \phi}{\partial x^2}(L) = 0 \;,
 # \end{alignat*}
@@ -43,7 +43,7 @@
 # ``\Omega \subset \mathbb{R}^n`` with boundary ``\partial \Omega`` is
 # ```math
 # \begin{alignat*}{2}
-#     &\Delta^2 \phi^0 = - f^0  \quad &&\text{on}\ \Omega \;, \\
+#     &\Delta^2 \phi^0 = f^0  \quad &&\text{on}\ \Omega \;, \\
 #     &tr(\phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;, \\
 #     &tr(\Delta \phi^0) = 0  \quad &&\text{on}\ \partial\Omega \;.
 # \end{alignat*}
@@ -88,7 +88,7 @@
 # ```
 # These expressions are for the Laplacian applied to ``0``-forms, in which case
 # ```math
-# \Delta = \delta \mathrm{d} = \star \mathrm{d} \star \mathrm{d} \;,
+# \Delta = \delta \mathrm{d} = -\star \mathrm{d} \star \mathrm{d} \;,
 # ```
 # with ``\delta`` the codifferential.
 #
