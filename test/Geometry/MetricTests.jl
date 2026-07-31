@@ -36,15 +36,15 @@ for element_idx in 1:Geometry.get_num_elements(cartesian_geometry_cart_1_1)
     )
     for point in eachindex(g)
         if !isapprox(g[point][1], g_ref_cart_1_1[1]; rtol=rtol)
-            g_test_11 = false
+            global g_test_11 = false
         end
         if !isapprox(inv_g[point][1], inv_g_ref_cart_1_1[1]; rtol=rtol)
-            inv_g_test_11 = false
+            global inv_g_test_11 = false
         end
     end
 
     if any(.!isapprox.(sqrt_g, det_g_ref_cart_1_1; rtol=rtol))
-        sqrt_test_11 = false
+        global sqrt_test_11 = false
     end
 end
 @test g_test_11
@@ -86,15 +86,15 @@ for element_idx in 1:Geometry.get_num_elements(cartesian_geometry_cart_2_2)
 
     for point in eachindex(g)
         if !all(isapprox.(g[point], g_ref_cart_2_2; rtol=rtol))
-            g_test_22 = false
+            global g_test_22 = false
         end
         if !all(isapprox.(inv_g[point], inv_g_ref_cart_2_2; rtol=rtol))
-            inv_g_test_22 = false
+            global inv_g_test_22 = false
         end
     end
 
     if any(.!isapprox.(sqrt_g, det_g_ref_cart_2_2; rtol=rtol))
-        sqrt_test_22 = false
+        global sqrt_test_22 = false
     end
 end
 @test g_test_22
@@ -131,19 +131,19 @@ for element_idx in 1:Geometry.get_num_elements(cartesian_geometry_cart_2_2_inh)
     inv_g, g, sqrt_g = Geometry.inv_metric(
         cartesian_geometry_cart_2_2_inh, element_idx, xi_cart_2_2
     )
-    g_test = true
-    inv_g_test = true
+    global g_test = true
+    global inv_g_test = true
     for point in eachindex(g)
         if !all(isapprox.(g[point], g_ref_cart_2_2_inh[element_idx]; rtol=rtol))
-            g_test_22_inh = false
+            global g_test_22_inh = false
         end
         if !all(isapprox.(inv_g[point], inv_g_ref_cart_2_2_inh[element_idx]; rtol=rtol))
-            inv_g_test_22_inh = false
+            global inv_g_test_22_inh = false
         end
     end
 
     if any(.!isapprox.(sqrt_g, det_g_ref_cart_2_2_inh[element_idx]; rtol=rtol))
-        sqrt_test_22_inh = false
+        global sqrt_test_22_inh = false
     end
 end
 @test g_test_22_inh
@@ -184,7 +184,7 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
                 rtol=1e-14,
             ),
         )
-            inv_g_test_geo23 = false
+            global inv_g_test_geo23 = false
         end
         if !all(
             isapprox.(
@@ -193,7 +193,7 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
                 rtol=1e-14,
             ),
         )
-            g_test_geo23 = false
+            global g_test_geo23 = false
         end
     end
     if !all(
@@ -206,7 +206,7 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
                 rtol=1e-14,
             ),
         )
-        sqrt_test_geo23 = false
+        global sqrt_test_geo23 = false
     end
 end
 @test g_test_geo23
@@ -265,37 +265,37 @@ dinvg1_test_geo23ext = true
 dinvg2_test_geo23ext = true
 for p in eachindex(xi)
     if !all(isapprox.(J[p], Jans(xi[p]...), rtol=1e-14))
-        J_test_geo23ext = false
+        global J_test_geo23ext = false
     end
     if !all(isapprox.(g[p], gans(xi[p]...), rtol=1e-14))
-        g_test_geo23ext = false
+        global g_test_geo23ext = false
     end
     if !all(isapprox.(sqrt_g[p], sqrtgans(xi[p]...), rtol=1e-14))
-        sqrt_test_geo23ext = false
+        global sqrt_test_geo23ext = false
     end
     if !all(isapprox.(inv_g[p], ginvans(xi[p]...), rtol=1e-14))
-        inv_g_test_geo23ext = false
+        global inv_g_test_geo23ext = false
     end
     if !all(isapprox.(Hs[p][1], Hans(xi[p]...)[1], rtol=1e-14))
-        H1_test_geo23ext = false
+        global H1_test_geo23ext = false
     end
     if !all(isapprox.(Hs[p][2], Hans(xi[p]...)[2], rtol=1e-14))
-        H2_test_geo23ext = false
+        global H2_test_geo23ext = false
     end
     if !all(isapprox.(Hs[p][3], Hans(xi[p]...)[3], rtol=1e-14))
-        H3_test_geo23ext = false
+        global H3_test_geo23ext = false
     end
     if !all(isapprox.(dgdxs[1][p], dgduans(xi[p]...), rtol=1e-14))
-        dgdx1_test_geo23ext = false
+        global dgdx1_test_geo23ext = false
     end
     if !all(isapprox.(dgdxs[2][p], dgdvans(xi[p]...), rtol=1e-14))
-        dgdx2_test_geo23ext = false
+        global dgdx2_test_geo23ext = false
     end
     if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans(xi[p]...), rtol=1e-12))
-        dinvg1_test_geo23ext = false
+        global dinvg1_test_geo23ext = false
     end
     if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans(xi[p]...), rtol=1e-12))
-        dinvg2_test_geo23ext = false
+        global dinvg2_test_geo23ext = false
     end
 end
 @test J_test_geo23ext
@@ -355,37 +355,37 @@ for (k, IJ) in enumerate(CartesianIndices((3, 4)))
     for p in eachindex(xi)
         u, v = uv[p, :]
         if !all(isapprox.(J[p], Jans_geo232(u, v), rtol=1e-12))
-            J_test_geo23ext2 = false
+            global J_test_geo23ext2 = false
         end
         if !all(isapprox.(g[p], gans_geo232(u, v), rtol=1e-14))
-            g_test_geo23ext2 = false
+            global g_test_geo23ext2 = false
         end
         if !all(isapprox.(sqrt_g[p], sqrtgans_geo232(u, v), rtol=1e-14))
-            sqrt_test_geo23ext2 = false
+            global sqrt_test_geo23ext2 = false
         end
         if !all(isapprox.(inv_g[p], ginvans_geo232(u, v), rtol=1e-14))
-            inv_g_test_geo23ext2 = false
+            global inv_g_test_geo23ext2 = false
         end
         if !all(isapprox.(Hs[p][1], Hans_geo232(u, v)[1], rtol=1e-14))
-            H1_test_geo23ext2 = false
+            global H1_test_geo23ext2 = false
         end
         if !all(isapprox.(Hs[p][2], Hans_geo232(u, v)[2], rtol=1e-14))
-            H2_test_geo23ext2 = false
+            global H2_test_geo23ext2 = false
         end
         if !all(isapprox.(Hs[p][3], Hans_geo232(u, v)[3], rtol=1e-14))
-            H3_test_geo23ext2 = false
+            global H3_test_geo23ext2 = false
         end
         if !all(isapprox.(dgdxs[1][p], dgduans_geo232(u, v), rtol=1e-14))
-            dgdx1_test_geo23ext2 = false
+            global dgdx1_test_geo23ext2 = false
         end
         if !all(isapprox.(dgdxs[2][p], dgdvans_geo232(u, v), rtol=1e-14))
-            dgdx2_test_geo23ext2 = false
+            global dgdx2_test_geo23ext2 = false
         end
         if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_geo232(u, v), rtol=1e-12))
-            dinvg1_test_geo23ext2 = false
+            global dinvg1_test_geo23ext2 = false
         end
         if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_geo232(u, v), rtol=1e-12))
-            dinvg2_test_geo23ext2 = false
+            global dinvg2_test_geo23ext2 = false
         end
     end
 end
@@ -456,38 +456,38 @@ for (k, IJ) in enumerate(CartesianIndices((1, 1)))
     for p in eachindex(xi_exp12)
         u, v = uv[p, :]
         if !all(isapprox.(J[p], Jans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            J_test_exp12 = false
+            global J_test_exp12 = false
         end
         if !all(isapprox.(g[p], gans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            g_test_exp12 = false
+            global g_test_exp12 = false
         end
         if !all(isapprox.(sqrt_g[p], sqrtgans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            sqrt_test_exp12 = false
+            global sqrt_test_exp12 = false
         end
         if !all(isapprox.(inv_g[p], ginvans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            inv_g_test_exp12 = false
+            global inv_g_test_exp12 = false
         end
         if !all(isapprox.(Hs[p][1], Hans_exp12(u, v)[1], rtol=1e-14, atol=1e-14))
-            H1_test_exp12 = false
+            global H1_test_exp12 = false
         end
         if !all(isapprox.(Hs[p][2], Hans_exp12(u, v)[2], rtol=1e-14, atol=1e-14))
-            H2_test_exp12 = false
+            global H2_test_exp12 = false
         end
         if !all(isapprox.(dgdxs[1][p], dgduans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            dgdx1_test_exp12 = false
+            global dgdx1_test_exp12 = false
         end
         if !all(isapprox.(dgdxs[2][p], dgdvans_exp12(u, v), rtol=1e-14, atol=1e-14))
-            dgdx2_test_exp12 = false
+            global dgdx2_test_exp12 = false
         end
         if !all(
             isapprox.(dinv_g_dxs[1][p], dginvgduans_exp12(u, v), rtol=1e-14, atol=1e-14)
         )
-            dinvg1_test_exp12 = false
+            global dinvg1_test_exp12 = false
         end
         if !all(
             isapprox.(dinv_g_dxs[2][p], dginvgdvans_exp12(u, v), rtol=1e-14, atol=1e-14)
         )
-            dinvg2_test_exp12 = false
+            global dinvg2_test_exp12 = false
         end
     end
 end
@@ -533,34 +533,34 @@ dinvg1_test_cb = true
 dinvg2_test_cb = true
 for p in eachindex(xi)
     if !all(isapprox.(J[p], Jans_cart_box(xi[p]...), rtol=1e-14))
-        J_test_cb = false
+        global J_test_cb = false
     end
     if !all(isapprox.(g[p], gans_cart_box(xi[p]...), rtol=1e-14))
-        g_test_cb = false
+        global g_test_cb = false
     end
     if !all(isapprox.(sqrt_g[p], sqrtgans_cart_box(xi[p]...), rtol=1e-14))
-        sqrt_test_cb = false
+        global sqrt_test_cb = false
     end
     if !all(isapprox.(inv_g[p], ginvans_cart_box(xi[p]...), rtol=1e-14))
-        inv_g_test_cb = false
+        global inv_g_test_cb = false
     end
     if !all(isapprox.(Hs[p][1], Hans_cart_box(xi[p]...)[1], rtol=1e-14))
-        H1_test_cb = false
+        global H1_test_cb = false
     end
     if !all(isapprox.(Hs[p][2], Hans_cart_box(xi[p]...)[2], rtol=1e-14))
-        H2_test_cb = false
+        global H2_test_cb = false
     end
     if !all(isapprox.(dgdxs[1][p], dgduans_cart_box(xi[p]...), rtol=1e-14))
-        dgdx1_test_cb = false
+        global dgdx1_test_cb = false
     end
     if !all(isapprox.(dgdxs[2][p], dgdvans_cart_box(xi[p]...), rtol=1e-14))
-        dgdx2_test_cb = false
+        global dgdx2_test_cb = false
     end
     if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_cart_box(xi[p]...), rtol=1e-12))
-        dinvg1_test_cb = false
+        global dinvg1_test_cb = false
     end
     if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_cart_box(xi[p]...), rtol=1e-12))
-        dinvg2_test_cb = false
+        global dinvg2_test_cb = false
     end
 end
 @test J_test_cb
@@ -612,16 +612,16 @@ for (k, IJ) in enumerate(CartesianIndices((3, 4)))
         u = (2.0 / (r - l)) * uv[p, 1] - 2.0 * l / (r - l) - 1.0
         v = (2.0 / (t - b)) * uv[p, 2] - 2.0 * b / (t - b) - 1.0
         if !all(isapprox.(J[p], Jans_curv(u, v), rtol=1e-12))
-            J_test_cg = false
+            global J_test_cg = false
         end
         if !all(isapprox.(g[p], gans_curv(u, v), rtol=1e-12))
-            g_test_cg = false
+            global g_test_cg = false
         end
         if !all(isapprox.(sqrt_g[p], sqrtgans_curv(u, v), rtol=1e-12))
-            sqrt_test_cg = false
+            global sqrt_test_cg = false
         end
         if !all(isapprox.(inv_g[p], invgans_curv(u, v), rtol=1e-12))
-            inv_g_test_cg = false
+            global inv_g_test_cg = false
         end
     end
 end
@@ -666,34 +666,34 @@ dinvg1_test_tpcb = true
 dinvg2_test_tpcb = true
 for p in eachindex(xi)
     if !all(isapprox.(J[p], Jans_tp_cart_box(xi[p]...), rtol=1e-14))
-        J_test_tpcb = false
+        global J_test_tpcb = false
     end
     if !all(isapprox.(g[p], gans_tp_cart_box(xi[p]...), rtol=1e-14))
-        g_test_tpcb = false
+        global g_test_tpcb = false
     end
     if !all(isapprox.(sqrt_g[p], sqrtgans_tp_cart_box(xi[p]...), rtol=1e-14))
-        sqrt_test_tpcb = false
+        global sqrt_test_tpcb = false
     end
     if !all(isapprox.(inv_g[p], ginvans_tp_cart_box(xi[p]...), rtol=1e-14))
-        inv_g_test_tpcb = false
+        global inv_g_test_tpcb = false
     end
     if !all(isapprox.(Hs[p][1], Hans_tp_cart_box(xi[p]...)[1], rtol=1e-14))
-        H1_test_tpcb = false
+        global H1_test_tpcb = false
     end
     if !all(isapprox.(Hs[p][2], Hans_tp_cart_box(xi[p]...)[2], rtol=1e-14))
-        H2_test_tpcb = false
+        global H2_test_tpcb = false
     end
     if !all(isapprox.(dgdxs[1][p], dgduans_tp_cart_box(xi[p]...), rtol=1e-14))
-        dgdx1_test_tpcb = false
+        global dgdx1_test_tpcb = false
     end
     if !all(isapprox.(dgdxs[2][p], dgdvans_tp_cart_box(xi[p]...), rtol=1e-14))
-        dgdx2_test_tpcb = false
+        global dgdx2_test_tpcb = false
     end
     if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_tp_cart_box(xi[p]...), rtol=1e-12))
-        dinvg1_test_tpcb = false
+        global dinvg1_test_tpcb = false
     end
     if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_tp_cart_box(xi[p]...), rtol=1e-12))
-        dinvg2_test_tpcb = false
+        global dinvg2_test_tpcb = false
     end
 end
 @test J_test_tpcb
@@ -770,37 +770,37 @@ for (k, IJ) in enumerate(CartesianIndices((n_theta, n_z)))
     for p in eachindex(xi_cyl)
         u, v = uv[p, :]
         if !all(isapprox.(J[p], Jans_tp_cyl(u, v), rtol=1e-14))
-            J_test_tpcyl = false
+            global J_test_tpcyl = false
         end
         if !all(isapprox.(g[p], gans_tp_cyl(u, v), rtol=1e-14))
-            g_test_tpcyl = false
+            global g_test_tpcyl = false
         end
         if !all(isapprox.(sqrt_g[p], sqrtgans_tp_cyl(u, v), rtol=1e-14))
-            sqrt_test_tpcyl = false
+            global sqrt_test_tpcyl = false
         end
         if !all(isapprox.(inv_g[p], ginvans_tp_cyl(u, v), rtol=1e-14))
-            inv_g_test_tpcyl = false
+            global inv_g_test_tpcyl = false
         end
         if !all(isapprox.(Hs[p][1], Hans_tp_cyl(u, v)[1], rtol=1e-14))
-            H1_test_tpcyl = false
+            global H1_test_tpcyl = false
         end
         if !all(isapprox.(Hs[p][2], Hans_tp_cyl(u, v)[2], rtol=1e-14))
-            H2_test_tpcyl = false
+            global H2_test_tpcyl = false
         end
         if !all(isapprox.(Hs[p][3], Hans_tp_cyl(u, v)[3], rtol=1e-14))
-            H3_test_tpcyl = false
+            global H3_test_tpcyl = false
         end
         if !all(isapprox.(dgdxs[1][p], dgduans_tp_cyl(u, v), atol=1e-14))
-            dgdx1_test_tpcyl = false
+            global dgdx1_test_tpcyl = false
         end
         if !all(isapprox.(dgdxs[2][p], dgdvans_tp_cyl(u, v), atol=1e-14))
-            dgdx2_test_tpcyl = false
+            global dgdx2_test_tpcyl = false
         end
         if !all(isapprox.(dinv_g_dxs[1][p], dginvgduans_tp_cyl(u, v), atol=1e-14))
-            dinvg1_test_tpcyl = false
+            global dinvg1_test_tpcyl = false
         end
         if !all(isapprox.(dinv_g_dxs[2][p], dginvgdvans_tp_cyl(u, v), atol=1e-14))
-            dinvg2_test_tpcyl = false
+            global dinvg2_test_tpcyl = false
         end
     end
 end
@@ -936,65 +936,65 @@ for (k, IJK) in enumerate(CartesianIndices((n_r, n_theta_cyl, n_z_cyl)))
     for p in eachindex(xi_solid_cyl)
         r, theta, z = uvw[p, 1], uvw[p, 2], uvw[p, 3]
         if !all(isapprox.(J[p], Jans_solid_cyl(r, theta, z), rtol=1e-14))
-            J_test_scyl = false
+            global J_test_scyl = false
         end
         if !all(isapprox.(g[p], gans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14))
-            g_test_scyl = false
+            global g_test_scyl = false
         end
         if !all(isapprox.(sqrt_g[p], sqrtgans_solid_cyl(r, theta, z), rtol=1e-14))
-            sqrt_test_scyl = false
+            global sqrt_test_scyl = false
         end
         if !all(
             isapprox.(inv_g[p], ginvans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
         )
-            inv_g_test_scyl = false
+            global inv_g_test_scyl = false
         end
         if !all(
             isapprox.(Hs[p][1], Hans_solid_cyl(r, theta, z)[1], rtol=1e-14, atol=1e-14)
         )
-            H1_test_scyl = false
+            global H1_test_scyl = false
         end
         if !all(
             isapprox.(Hs[p][2], Hans_solid_cyl(r, theta, z)[2], rtol=1e-14, atol=1e-14)
         )
-            H2_test_scyl = false
+            global H2_test_scyl = false
         end
         if !all(
             isapprox.(Hs[p][3], Hans_solid_cyl(r, theta, z)[3], rtol=1e-14, atol=1e-14)
         )
-            H3_test_scyl = false
+            global H3_test_scyl = false
         end
         if !all(
             isapprox.(dgdxs[1][p], dgduans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
         )
-            dgdx1_test_scyl = false
+            global dgdx1_test_scyl = false
         end
         if !all(
             isapprox.(dgdxs[2][p], dgdvans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
         )
-            dgdx2_test_scyl = false
+            global dgdx2_test_scyl = false
         end
         if !all(
             isapprox.(dgdxs[3][p], dgdwans_solid_cyl(r, theta, z), rtol=1e-14, atol=1e-14)
         )
-            dgdx3_test_scyl = false
+            global dgdx3_test_scyl = false
         end
         if !all(
             isapprox.(
                 dinv_g_dxs[1][p], dginvgduans_solid_cyl(r, theta, z), rtol=1e-12, atol=1e-12
             )
         )
-            dinvg1_test_scyl = false
+            global dinvg1_test_scyl = false
         end
         if !all(
             isapprox.(dinv_g_dxs[2][p], dginvgdvans_solid_cyl(r, theta, z), atol=1e-12)
         )
-            dinvg2_test_scyl = false
+            global dinvg2_test_scyl = false
         end
         if !all(
             isapprox.(dinv_g_dxs[3][p], dginvgdwans_solid_cyl(r, theta, z), atol=1e-12)
         )
-            dinvg3_test_scyl = false
+            global dinvg3_test_scyl = false
         end
     end
 end
