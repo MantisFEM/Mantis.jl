@@ -49,7 +49,7 @@ function _plot(
     # vertices_el[:,i,j,k] .= vector_output_of_evaluate
 
     for element_idx in 1:n_total_elements
-        for subcell_idx in 1:(n_subcells^manifold_dim)
+        for subcell_idx in 1:(n_subcells ^ manifold_dim)
             ξ_shift_per_dir = dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- 1)
             ξ = Points.CartesianPoints(
                 ntuple(dim -> ξ_shift_per_dir[dim] .+ dξ .* ξ_ref_per_dir, manifold_dim)
@@ -93,7 +93,7 @@ function _plot(
         compress=compress,
         vtkversion=:latest,
     ) do vtk
-        vtk.version == "2.2"
+        return vtk.version == "2.2"
     end
 
     ###################################
@@ -175,7 +175,7 @@ function _plot(
             compress=compress,
             vtkversion=:latest,
         ) do vtk
-            vtk.version == "2.2"
+            return vtk.version == "2.2"
         end
     end
 end
@@ -293,8 +293,9 @@ function _plot(
             end
 
             if !isnothing(offset)
-                point_data[:, vertex_offset .+ (1:n_vertices_per_subcell)] .-=
-                    offset(vertices[:, vertex_offset .+ (1:n_vertices_per_subcell)]')'
+                point_data[:, vertex_offset .+ (1:n_vertices_per_subcell)] .-= offset(
+                    vertices[:, vertex_offset .+ (1:n_vertices_per_subcell)]'
+                )'
             end
 
             # Add cell
@@ -330,7 +331,7 @@ function _plot(
         vtkversion=:latest,
     ) do vtk
         vtk.version == "2.2"
-        vtk[Forms.get_label(form), WriteVTK.VTKPointData()] = point_data
+        return vtk[Forms.get_label(form), WriteVTK.VTKPointData()] = point_data
     end
 
     ###################################
@@ -412,7 +413,7 @@ function _plot(
             compress=compress,
             vtkversion=:latest,
         ) do vtk
-            vtk.version == "2.2"
+            return vtk.version == "2.2"
         end
     end
 end

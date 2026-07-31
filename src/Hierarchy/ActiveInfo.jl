@@ -10,10 +10,11 @@ the hierarchical space is such that the index of an object in level `l-1` is alw
 than that of an object in level `l`.
 
 # Fields
-- `level_ids::Vector{Vector{Int}}`: Per level collection of active objects.
+
+  - `level_ids::Vector{Vector{Int}}`: Per level collection of active objects.
     `level_ids[l][i]` gives the id in level `l` of the object indicated by `i`,
     not the hierarchical id of the overall set of objects.
-- `level_cum_num_ids::Vector{Int}`: Total number of active objects up to a certain level,
+  - `level_cum_num_ids::Vector{Int}`: Total number of active objects up to a certain level,
     i.e. `level_cum_num_ids[l]=sum(length.(level_ids[1:l-1]))`. First entry is always 0 for
     ease of use.
 """
@@ -81,7 +82,7 @@ function convert_to_level_id(active_info::ActiveInfo, hier_id::Int)
 end
 
 """
-	convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
+    convert_to_level_and_level_id(active_info::ActiveInfo, hier_id::Int)
 
 Returns the `level` and `level_id` that correspond to hierarchical index `hier_id`.
 """

@@ -7,13 +7,16 @@ degree `p`. However, in practise, this quadrature rule can obtain results compar
 Gauss quadrature (in some cases), see [Trefethen2008](@cite) and [Trefethen2022](@cite).
 
 # Arguments
-- `p::Integer`: Degree of the quadrature rule.
+
+  - `p::Integer`: Degree of the quadrature rule.
 
 # Returns
-- `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
+
+  - `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
     There will be `p+1` nodes and weights.
 
 # Notes
+
 See [Waldvogel2006](@cite) for the algorithm based on fast fourier transforms. The algorithm
 used here is a direct translation from the given MATLAB code on page 201.
 """

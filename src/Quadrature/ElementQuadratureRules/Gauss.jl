@@ -8,17 +8,21 @@ Note that here the quadrature rule is valid for the interval ``\\xi \\in [0, 1]`
 of ``\\xi \\in [-1, 1]`` as usual.
 
 # Arguments
-- `N::Integer`: Number of nodes used in the quadrature rule.
+
+  - `N::Integer`: Number of nodes used in the quadrature rule.
 
 # Returns
-- `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
+
+  - `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
     There will be `N` nodes and weights.
 
 # Throws
-- `DomainError`: If `N` is less than or equal to 1. This is handled by the
+
+  - `DomainError`: If `N` is less than or equal to 1. This is handled by the
     FastGaussQuadrature.jl package.
 
 # Notes
+
 Uses the FastGaussQuadrature.jl package. We only linearly map the nodes and weights to the
 interval [0, 1].
 """
@@ -41,16 +45,20 @@ Note that here the quadrature rule is valid for the interval ``\\xi \\in [0, 1]`
 of ``\\xi \\in [-1, 1]`` as usual.
 
 # Arguments
-- `N::Integer`: Number of nodes used in the quadrature rule.
+
+  - `N::Integer`: Number of nodes used in the quadrature rule.
 
 # Returns
-- `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
+
+  - `::CanonicalQuadratureRule{1}`: 1 dimensional quadrature rule containing the nodes and weights.
     There will be `N` nodes and weights.
 
 # Throws
-- `DomainError`: If `N` is less than or equal to zero.
+
+  - `DomainError`: If `N` is less than or equal to zero.
 
 # Notes
+
 Uses the FastGaussQuadrature.jl package. We only linearly map the nodes and weights to the
 interval [0, 1].
 """

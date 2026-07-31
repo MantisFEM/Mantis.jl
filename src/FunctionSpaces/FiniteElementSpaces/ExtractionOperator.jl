@@ -5,9 +5,10 @@
 Stores basis indices for an `ExtractionOperator`.
 
 # Fields
-- `I::TI`: Global basis indices per element. Should be a vector-like type with integer
+
+  - `I::TI`: Global basis indices per element. Should be a vector-like type with integer
     elements.
-- `J::NTuple{num_components, TJ}`: 'Permutation' of the basis indices. This
+  - `J::NTuple{num_components, TJ}`: 'Permutation' of the basis indices. This
     tells the `evaluate` function to which basis on an element the evaluations correspond.
 """
 struct Indices{num_components, TI, TJ}
@@ -22,15 +23,14 @@ struct Indices{num_components, TI, TJ}
             throw(ArgumentError("The elements in Indices.J must be of type Int."))
         end
 
-        new{num_components, TI, TJ}(I, J)
+        return new{num_components, TI, TJ}(I, J)
     end
 end
 
-get_num_components(::Indices{num_components, TI, TJ}) where {num_components, TI, TJ} = num_components
+get_num_components(::Indices{num_components, TI, TJ}) where {num_components, TI, TJ} =
+    num_components
 get_basis_indices(indices::Indices) = indices.I
 get_basis_permutation(indices::Indices, component_id::Int) = indices.J[component_id]
-
-
 
 """
     ExtractionOperator{num_components, TE, TI, TJ}
@@ -38,13 +38,14 @@ get_basis_permutation(indices::Indices, component_id::Int) = indices.J[component
 Stores extraction coefficients and basis indices for a function space.
 
 # Fields
-- `extraction_coefficients::Vector{NTuple{num_components, TE}}`: A vector of extraction
+
+  - `extraction_coefficients::Vector{NTuple{num_components, TE}}`: A vector of extraction
     coefficient matrices, where each matrix corresponds to an element. TE should be matrix-
     like.
-- `basis_indices::Vector{TI}`: A vector of `Indices`. See [`Indices`](@ref) for more
+  - `basis_indices::Vector{TI}`: A vector of `Indices`. See [`Indices`](@ref) for more
     details.
-- `num_elements::Int`: The number of elements.
-- `num_basis::Int`: The (total) dimension of the function space.
+  - `num_elements::Int`: The number of elements.
+  - `num_basis::Int`: The (total) dimension of the function space.
 """
 struct ExtractionOperator{num_components, TE, TI, TJ}
     extraction_coefficients::Vector{NTuple{num_components, TE}}
@@ -58,31 +59,43 @@ struct ExtractionOperator{num_components, TE, TI, TJ}
         num_elements::Int,
         num_basis::Int,
     ) where {num_components, TE, TI, TJ}
-
         if length(extraction_coefficients) != num_elements
-            throw(ArgumentError(
-                "Number of extraction coefficient matrices must match number of elements."
-            ))
+            throw(
+                ArgumentError(
+                    "Number of extraction coefficient matrices must match number of elements.",
+                ),
+            )
         end
 
         if length(basis_indices) != num_elements
-            throw(ArgumentError(
-                "Number of basis index vectors must match number of elements."
-            ))
+            throw(
+                ArgumentError(
+                    "Number of basis index vectors must match number of elements."
+                ),
+            )
         end
 
-        new{num_components, TE, TI, TJ}(
+        return new{num_components, TE, TI, TJ}(
             extraction_coefficients, basis_indices, num_elements, num_basis
         )
-
     end
 end
 
-get_num_components(::ExtractionOperator{num_components, TE, TI, TJ}) where {num_components, TE, TI, TJ} = num_components
-get_EIJ_types(::ExtractionOperator{num_components, TE, TI, TJ}) where {num_components, TE, TI, TJ} = (TE, TI, TJ)
-get_extraction_type(::ExtractionOperator{num_components, TE, TI, TJ}) where {num_components, TE, TI, TJ} = TE
-get_index_type(::ExtractionOperator{num_components, TE, TI, TJ}) where {num_components, TE, TI, TJ} = TI
-get_permutation_type(::ExtractionOperator{num_components, TE, TI, TJ}) where {num_components, TE, TI, TJ} = TJ
+get_num_components(
+    ::ExtractionOperator{num_components, TE, TI, TJ}
+) where {num_components, TE, TI, TJ} = num_components
+get_EIJ_types(
+    ::ExtractionOperator{num_components, TE, TI, TJ}
+) where {num_components, TE, TI, TJ} = (TE, TI, TJ)
+get_extraction_type(
+    ::ExtractionOperator{num_components, TE, TI, TJ}
+) where {num_components, TE, TI, TJ} = TE
+get_index_type(
+    ::ExtractionOperator{num_components, TE, TI, TJ}
+) where {num_components, TE, TI, TJ} = TI
+get_permutation_type(
+    ::ExtractionOperator{num_components, TE, TI, TJ}
+) where {num_components, TE, TI, TJ} = TJ
 
 function _get_index_operator(extraction_op::ExtractionOperator, element_id::Int)
     return extraction_op.basis_indices[element_id]
@@ -117,7 +130,7 @@ function get_extraction(
 )
     return (
         get_extraction_coefficients(extraction_op, element_id, component_id),
-        get_basis_permutation(extraction_op, element_id, component_id)
+        get_basis_permutation(extraction_op, element_id, component_id),
     )
 end
 

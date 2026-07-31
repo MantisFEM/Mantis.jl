@@ -27,12 +27,13 @@ and adaptively-refinable spaces (e.g., hierarchical B-splines).
 `Mantis` is free, open-source, and available under the
 [EUPL licence](https://github.com/MantisFEM/Mantis.jl/blob/main/LICENSE).
 
-
 ## Authors
+
 The `Mantis` package was created by
-- Diogo C. Cabanas,
-- Joey Dekker,
-- Artur Palha,
-- Deepesh Toshniwal,
-  
+
+  - Diogo C. Cabanas,
+  - Joey Dekker,
+  - Artur Palha,
+  - Deepesh Toshniwal,
+
 from TU Delft's Institute of Applied Mathematics (DIAM).

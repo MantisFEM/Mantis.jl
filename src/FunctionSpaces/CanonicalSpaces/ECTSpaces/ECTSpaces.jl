@@ -6,17 +6,21 @@ Compute derivatives up to order `nderivatives` for all basis functions of degree
 for ``\\xi \\in [0.0, 1.0]``.
 
 # Arguments
-- `ect_space::AbstractECTSpaces`: ECT section space.
-- `ξ::Points.AbstractPoints{1}`: vector of evaluation points ``\\in [0.0, 1.0]``.
-- `nderivatives::Int`: maximum order of derivatives to be computed (nderivatives
+
+  - `ect_space::AbstractECTSpaces`: ECT section space.
+  - `ξ::Points.AbstractPoints{1}`: vector of evaluation points ``\\in [0.0, 1.0]``.
+  - `nderivatives::Int`: maximum order of derivatives to be computed (nderivatives
     ``\\leq p``). Defaults to `0`, i.e., only the values are computed.
 """
 Memoization.@memoize function evaluate(
     ect_space::AbstractECTSpaces, ξ::Points.AbstractPoints{1}, nderivatives::Int=0
 )
-
     if nderivatives >= ect_space.p
-        throw(ArgumentError("Cannot compute derivatives of order higher than $(ect_space.p-1)."))
+        throw(
+            ArgumentError(
+                "Cannot compute derivatives of order higher than $(ect_space.p-1)."
+            ),
+        )
     end
     neval = Points.get_num_points(ξ)
     # allocate space for derivatives
@@ -27,10 +31,10 @@ Memoization.@memoize function evaluate(
         ders[j + 1][1] = zeros(Float64, neval, ect_space.p + 1)
     end
     # loop over the evaluation points and evaluate all derivatives at each point
-    for i = 1:neval
+    for i in 1:neval
         tmp = _evaluate(ect_space, ξ[i][1], nderivatives)
-        for j = 0:nderivatives
-            ders[j+1][1][i,:] .= tmp[1,:,j+1]
+        for j in 0:nderivatives
+            ders[j + 1][1][i, :] .= tmp[1, :, j + 1]
         end
     end
     return ders

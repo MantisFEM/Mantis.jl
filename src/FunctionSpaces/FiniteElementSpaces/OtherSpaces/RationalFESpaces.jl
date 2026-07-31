@@ -7,8 +7,9 @@ by a fixed element from the same function space. The latter is defined with the 
 specified weights.
 
 # Fields
-- `function_space::F`: The underlying function space.
-- `weights::Vector{Float64}`: The weights associated with the basis functions of the
+
+  - `function_space::F`: The underlying function space.
+  - `weights::Vector{Float64}`: The weights associated with the basis functions of the
     function space.
 """
 struct RationalFESpace{manifold_dim, F} <: AbstractFESpace{manifold_dim, 1, 1}
@@ -56,10 +57,12 @@ Returns the polynomial degree (or the degree of the underlying function space) o
 rational finite element space for a specific element.
 
 # Arguments
-- `space::RationalFESpace`: The rational finite element space.
-- `element_id::Int`: The index of the element.
+
+  - `space::RationalFESpace`: The rational finite element space.
+  - `element_id::Int`: The index of the element.
 
 # Returns
+
 The polynomial degree (or the degree of the underlying function space) of the rational
 finite element space for the specified element.
 """

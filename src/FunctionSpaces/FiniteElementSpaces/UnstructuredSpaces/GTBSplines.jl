@@ -6,27 +6,30 @@ regularity conditions. Periodic spaces are a special case of GTBSplines for
 `num_patches = 1` and `regularity = [r]` with `r > -1`; see [Hiemstra2020](@cite).
 
 # Fields
-- `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.
-- `extraction_op::ExtractionOperator{1, TE, TI, TJ}`: The extraction operator for the
+
+  - `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.
+  - `extraction_op::ExtractionOperator{1, TE, TI, TJ}`: The extraction operator for the
     GTBSpline space.
-- `dof_partition::Vector{Vector{Vector{Int}}}`: A vector of vectors of vectors of integers
+  - `dof_partition::Vector{Vector{Vector{Int}}}`: A vector of vectors of vectors of integers
     representing the degree of freedom partitioning.
-- `regularity::Vector{Int}`: A vector of regularity conditions at the interfaces between
+  - `regularity::Vector{Int}`: A vector of regularity conditions at the interfaces between
     the spaces.
 
 # Arguments for constructor
-- `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.
-- `regularity::Vector{Int}`: A vector of regularity conditions at the interfaces between
+
+  - `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.
+  - `regularity::Vector{Int}`: A vector of regularity conditions at the interfaces between
     the spaces.
-- `num_dofs_left::Int`: The number of degrees of freedom at the left boundary. Default is
+  - `num_dofs_left::Int`: The number of degrees of freedom at the left boundary. Default is
     -1, which means it will be computed automatically.
-- `num_dofs_right::Int`: The number of degrees of freedom at the right boundary. Default is
+  - `num_dofs_right::Int`: The number of degrees of freedom at the right boundary. Default is
     -1, which means it will be computed automatically.
 
 # Throws
-- `ArgumentError`: If the number of regularity conditions does not match the number of
+
+  - `ArgumentError`: If the number of regularity conditions does not match the number of
     interfaces.
-- `ArgumentError`: If the minimal polynomial degree of any pair of adjacent spaces is less
+  - `ArgumentError`: If the minimal polynomial degree of any pair of adjacent spaces is less
     than the corresponding regularity condition.
 """
 struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:

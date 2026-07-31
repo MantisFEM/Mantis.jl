@@ -13,32 +13,37 @@ basis, the `form_rank` of the `FormSpace` will dictate the behaviour of the form
 it a ``0``-form, ``1``-form, etc.) and thus its properties.
 
 # Constructors
-- `FormSpace(form_rank::Int, fem_space::F, label::AbstractString)`: General constructor.
+
+  - `FormSpace(form_rank::Int, fem_space::F, label::AbstractString)`: General constructor.
 
 # Example
+
 ```jldoctest
 julia> using Mantis
 
-julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2,2));
+julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2, 2));
 
 julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form with B as basis.
 
 julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
+
 ```
 
 # Fields
-- `fem_space::F`: The finite element space [FunctionSpaces.AbstractFESpace](@ref) used as
+
+  - `fem_space::F`: The finite element space [FunctionSpaces.AbstractFESpace](@ref) used as
     basis for this form. From this space, the `manifold_dim` and geometry are inherited.
     Additionally, the `num_components` of the function space must be consistent with the
     provided `form_rank` and the `manifold_dim`, i.e., a real-valued ``0``-form has 1
     component (in any dimension), a ``1``-form in 3D has 3 components, etc.
-- `label::AbstractString`: Label for the form space. This will be used in export and
+  - `label::AbstractString`: Label for the form space. This will be used in export and
     plotting functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F`: Type of the finite element space (a [FunctionSpaces.AbstractFESpace](@ref)).
-- `L`: Type of the label (an `AbstractString`).
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `F`: Type of the finite element space (a [FunctionSpaces.AbstractFESpace](@ref)).
+  - `L`: Type of the label (an `AbstractString`).
 """
 struct FormSpace{manifold_dim, form_rank, F, L} <:
        AbstractFormSpace{manifold_dim, form_rank}
@@ -133,14 +138,16 @@ end
 Evaluate the form basis functions and their arbitrary derivatives in canonical coordinates.
 
 # Arguments
-- `form_space::FormSpace{manifold_dim, form_rank}`: The form space.
-- `element_idx::Int`: Index of the element where the evaluation is performed.
-- `xi::Points.AbstractPoints{manifold_dim}`: Canonical points for evaluation.
+
+  - `form_space::FormSpace{manifold_dim, form_rank}`: The form space.
+  - `element_idx::Int`: Index of the element where the evaluation is performed.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Canonical points for evaluation.
 
 # Returns
-- `local_form_basis::Vector{Vector{Vector{Matrix{Float64}}}}`: The basis functions evaluated
+
+  - `local_form_basis::Vector{Vector{Vector{Matrix{Float64}}}}`: The basis functions evaluated
     at the canonical coordinates of the element.
-- `::Vector{Vector{Int}}`: The basis functions evaluated at the canonical coordinates of the
+  - `::Vector{Vector{Int}}`: The basis functions evaluated at the canonical coordinates of the
     element.
 """
 function _evaluate_form_in_canonical_coordinates(
@@ -175,14 +182,16 @@ end
 Pullback the basis functions to the canonical coordinates of the element.
 
 # Arguments
-- `geometry::Geometry.AbstractGeometry{manifold_dim}`: The geometry of the form space.
-- `form_evaluations::Vector{Vector{Vector{Matrix{Float64}}}}`: The basis functions evaluated
+
+  - `geometry::Geometry.AbstractGeometry{manifold_dim}`: The geometry of the form space.
+  - `form_evaluations::Vector{Vector{Vector{Matrix{Float64}}}}`: The basis functions evaluated
     at the parametric coordinates.
-- `element_idx::Int`: Index of the element to evaluate.
-- `form_rank::Int`: Rank of the form.
+  - `element_idx::Int`: Index of the element to evaluate.
+  - `form_rank::Int`: Rank of the form.
 
 # Returns
-- `form_evaluations::Vector{Vector{Vector{Matrix{Float64}}}}`: The form evaluations
+
+  - `form_evaluations::Vector{Vector{Vector{Matrix{Float64}}}}`: The form evaluations
     pulled-back to canonical coordinates.
 """
 function _pullback_to_canonical_coordinates(

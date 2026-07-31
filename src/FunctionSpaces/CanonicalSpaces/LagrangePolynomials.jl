@@ -5,10 +5,11 @@
 Lagrange interpolating polynomials.
 
 # Fields
-- `p::Int`: Degree of the Lagrange polynomial.
-- `nodes::NT`: Points at which the polynomial should be interpolating. The length of the
+
+  - `p::Int`: Degree of the Lagrange polynomial.
+  - `nodes::NT`: Points at which the polynomial should be interpolating. The length of the
     `nodes` vector dictates the degree.
-- `barycentric_weights::Vector{T}`: Barycentric weights. `T` is `eltype(nodes)`.
+  - `barycentric_weights::Vector{T}`: Barycentric weights. `T` is `eltype(nodes)`.
 """
 struct Lagrange{NT, T} <: AbstractLagrangePolynomials
     p::Int
@@ -146,23 +147,28 @@ Edge histapolant polynomials of degree `p`.
 
 The ``j``-th edge basis polynomial, ``e_{j}(\\xi)``, is given by, see
 [Gerritsma2011](@cite),
+
 ```math
     e_{j}(\\xi) = -\\sum_{k=1}^{j} \\frac{\\mathrm{d} h_{k}(\\xi)}{\\mathrm{d}\\xi}, j = 1 , \\dots, p+1\\,.
 ```
+
 where ``h_{k}(\\xi)`` is the ``k``-th Lagrange polynomial of degree ``(p+1)`` over a given
 set of nodes. If ``\\xi_{i}`` are the given ``(p+1)`` nodes, then
+
 ```math
 \\int_{\\xi_{i}}^{\\xi_{i+1}} e_{j}(\\xi)\\,\\mathrm{d}\\xi = \\delta_{i,j}, \\qquad i,j = 1, \\dots, p\\,,
 ```
+
 i.e., they satisfy an integral Kronecker-``\\delta`` property.
 
 See [Gerritsma2011](@cite) for more details.
 
 # Fields
-- `p::Int`: Degree of the Edge polynomial.
-- `nodes::NT`: Nodes between which the polynomial should be histapolating. The length of
+
+  - `p::Int`: Degree of the Edge polynomial.
+  - `nodes::NT`: Nodes between which the polynomial should be histapolating. The length of
     the `nodes` vector dictates the degree.
-- `lagrange_polynomial::Lagrange{NT, T}`: The underlying Lagrange polynomial. See
+  - `lagrange_polynomial::Lagrange{NT, T}`: The underlying Lagrange polynomial. See
     [Lagrange](@ref) for the details.
 """
 struct Edge{NT, T} <: AbstractEdgePolynomials
@@ -237,6 +243,7 @@ d_{k,j} = \\left\\{
 \\end{aligned}
 \\right.
 ```
+
 with
 
 ```math
@@ -249,21 +256,25 @@ the polynomials, ``B_{j}``, of order ``p``
 ```math
 D_{k,j} = \\frac{\\mathrm{d}B_{j}(x_{k})}{\\mathrm{d}x}
 ```
+
 # Arguments
-- `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
-  degree ``p``, ``B_{j}^{p}(\\xi)``, for which to compute the derivative matrix. Note that
-  the polynomials are such that ``B_{j}^{p}(\\xi_{i}) = \\delta_{j,i}`` with ``j,i = 1, \\dots, p+1``,
-  `\\xi_{i} \\in [0.0, 1.0]`.
+
+  - `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
+    degree ``p``, ``B_{j}^{p}(\\xi)``, for which to compute the derivative matrix. Note that
+    the polynomials are such that ``B_{j}^{p}(\\xi_{i}) = \\delta_{j,i}`` with ``j,i = 1, \\dots, p+1``,
+    `\\xi_{i} \\in [0.0, 1.0]`.
 
 # Keyword arguments
-- `algorithm::Int`: Flag to specify the algorithm to use
+
+  - `algorithm::Int`: Flag to specify the algorithm to use
     1: <default> Stable algorithm using Eq. (7) in [1].
     2: Direct computation using Eq. (4) in [1].
 
 # Returns
-- `D::Array{Float64, 2}` :: The derivatives of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
-   ``D_{k,j} = \\frac{\\mathrm{d}B_{j}(x_{k})}{\\mathrm{d}x}``.
-   (size: [p+1, p+1])
+
+  - `D::Array{Float64, 2}` :: The derivatives of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.    #   Revisions:  2009-11-25 (apalha) First implementation.
+    ``D_{k,j} = \\frac{\\mathrm{d}B_{j}(x_{k})}{\\mathrm{d}x}``.    #               2014-12-03 (apalha) Removed pre-allocation of result.
+    (size: [p+1, p+1])    #                                   Replaced repmats by bsxfun for smaller
 """
 function _derivative_matrix(nodes::AbstractVector{Float64}; algorithm::Int=1)
     #   Revisions:  2009-11-25 (apalha) First implementation.
@@ -366,22 +377,22 @@ compute the derivative of order `(n+1)`.
 We follow the algorithm proposed in section 4 of [Costa2000](@cite).
 
 # Arguments
-- `D_m::Array{float64, 2}`: Derivative matrix of order `m` for the ``(p+1)`` `polynomials`` of degree ``p``,
-   evaluated at the `(p+1)` nodal points, following the same format as the derivative matrix `D` below.
-   (size: [p+1, p+1])
-- `D::Array{Float64, 2}` :: The derivatives of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
-   ``D_{k,j} = \\frac{\\mathrm{d}B_{j}(x_{k})}{\\mathrm{d}x}``.
-   (size: [p+1, p+1])
-- `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
-   degree ``p``, ``B_{j}^{p}(\\xi)``, for which to compute the derivative matrix. Note that
-   the polynomials are such that ``B_{j}^{p}(\\xi_{i}) = \\delta_{j,i}`` with ``j,i = 1, \\dots, p+1``,
-   `\\xi_{i} \\in [0.0, 1.0]`.
+
+  - `D_m::Array{float64, 2}`: Derivative matrix of order `m` for the ``(p+1)`` ```polynomials`` of degree ``p``, evaluated at the ```(p+1)`nodal points, following the same format as the derivative matrix`D` below.
+    (size: [p+1, p+1])
+  - `D::Array{Float64, 2}` :: The derivatives of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
+    ``D_{k,j} = \\frac{\\mathrm{d}B_{j}(x_{k})}{\\mathrm{d}x}``.
+    (size: [p+1, p+1])
+  - `nodes::Vector{Float64}`: ``(p+1)`` nodes that define a set of Lagrange polynomials of
+    degree ``p``, ``B_{j}^{p}(\\xi)``, for which to compute the derivative matrix. Note that
+    the polynomials are such that ``B_{j}^{p}(\\xi_{i}) = \\delta_{j,i}`` with ``j,i = 1, \\dots, p+1``,
+    `\\xi_{i} \\in [0.0, 1.0]`.
 
 # Returns
-- `D_m::Array{Float64, 2}` :: The derivatives or degree `(m+1)` of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
-   ``D^{(m)}_{k,j} = \\frac{\\mathrm{d}^{m}B_{j}(x_{k})}{\\mathrm{d}x^{m}}``. `D_m` given as input argument is updated with the new value.
-   (size: [p+1, p+1])
 
+  - `D_m::Array{Float64, 2}` :: The derivatives or degree `(m+1)` of the `(p+1)` polynomials evaluated at the `(p+1)` nodal points.
+    ``D^{(m)}_{k,j} = \\frac{\\mathrm{d}^{m}B_{j}(x_{k})}{\\mathrm{d}x^{m}}``. `D_m` given as input argument is updated with the new value.
+    (size: [p+1, p+1])
 """
 function _derivative_matrix_next!(
     D_m::Array{Float64, 2}, m::Int, D::Array{Float64, 2}, nodes::AbstractVector{Float64}
@@ -419,12 +430,14 @@ global subdivision matrix that maps the global basis functions of the ECT space 
 global basis functions of the subspaces.
 
 # Arguments
-- `ect_space::AbstractECTSpaces`: A ect space.
-- `num_sub_elements::Int`: The number of subspaces to divide the EC T space into.
+
+  - `ect_space::AbstractECTSpaces`: A ect space.
+  - `num_sub_elements::Int`: The number of subspaces to divide the EC T space into.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
-functions of the ECT space to the global basis functions of the subspaces.
+
+  - `::SparseMatrixCSC{Float64}`: A global subdivision matrix that maps the global basis
+    functions of the ECT space to the global basis functions of the subspaces.
 """
 function build_two_scale_matrix(
     polynomials::AbstractLagrangePolynomials, num_sub_elements::Int

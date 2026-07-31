@@ -7,9 +7,9 @@ using Test
 # Tests for a tensor product HierarchicalSplineSpace
 ne1 = 5
 ne2 = 5
-breakpoints1 = collect(range(0,1,ne1+1))
+breakpoints1 = collect(range(0, 1, ne1+1))
 patch1 = Mantis.Geometry.CartesianGeometry(breakpoints1)
-breakpoints2 = collect(range(0,1,ne2+1))
+breakpoints2 = collect(range(0, 1, ne2+1))
 patch2 = Mantis.Geometry.CartesianGeometry(breakpoints2)
 deg1 = 2
 deg2 = 2
@@ -25,19 +25,31 @@ TTS, FTP = Mantis.FunctionSpaces.build_two_scale_operator(CTP, nsubs)
 spaces = [CTP, FTP]
 operators = [TTS]
 
-for level ∈ 3:nlevels
-    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(spaces[level-1], nsubs)
+for level in 3:nlevels
+    new_operator, new_space = Mantis.FunctionSpaces.build_two_scale_operator(
+        spaces[level - 1], nsubs
+    )
     push!(spaces, new_space)
     push!(operators, new_operator)
 end
 
-level_2_marked_elements = [child for parent in [7,8,9,12,13,14,17,18,19] for child in Mantis.FunctionSpaces.get_element_children(operators[1], parent)]
-level_3_marked_elements = [child for parent in [23, 24, 25, 33, 34, 35, 43, 44, 45] for child in Mantis.FunctionSpaces.get_element_children(operators[2], parent)]
+level_2_marked_elements = [
+    child for parent in [7, 8, 9, 12, 13, 14, 17, 18, 19] for
+    child in Mantis.FunctionSpaces.get_element_children(operators[1], parent)
+]
+level_3_marked_elements = [
+    child for parent in [23, 24, 25, 33, 34, 35, 43, 44, 45] for
+    child in Mantis.FunctionSpaces.get_element_children(operators[2], parent)
+]
 
 marked_elements_per_level = [Int[], level_2_marked_elements, level_3_marked_elements]
-hier_space = Mantis.FunctionSpaces.HierarchicalFiniteElementSpace(spaces, operators, marked_elements_per_level, nsubs, true)
+hier_space = Mantis.FunctionSpaces.HierarchicalFiniteElementSpace(
+    spaces, operators, marked_elements_per_level, nsubs, true
+)
 
-qrule = Mantis.Quadrature.tensor_product_rule((deg1+1, deg2+1), Mantis.Quadrature.gauss_legendre)
+qrule = Mantis.Quadrature.tensor_product_rule(
+    (deg1+1, deg2+1), Mantis.Quadrature.gauss_legendre
+)
 xi = Mantis.Quadrature.get_nodes(qrule)
 
 # Tests for coefficients and evaluation

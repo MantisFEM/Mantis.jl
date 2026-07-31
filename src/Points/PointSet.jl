@@ -4,7 +4,8 @@
 Represents a set of points in `manifold_dim` dimensions.
 
 # Fields
-- `constituent_points::NTuple{manifold_dim, T}`: The set of points per manifold dimension.
+
+  - `constituent_points::NTuple{manifold_dim, T}`: The set of points per manifold dimension.
 """
 struct PointSet{manifold_dim, T, CP} <: AbstractPoints{manifold_dim, T}
     constituent_points::CP

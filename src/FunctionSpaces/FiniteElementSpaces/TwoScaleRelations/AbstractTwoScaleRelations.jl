@@ -15,11 +15,13 @@ abstract type AbstractTwoScaleOperator{manifold_dim, num_components, num_patches
 Retrieve and return the global subdivision matrix associated with a two-scale operator.
 
 # Arguments
-- `operator::AbstractTwoScaleOperator`: The two-scale operator from which to
+
+  - `operator::AbstractTwoScaleOperator`: The two-scale operator from which to
     retrieve the global subdivision matrix.
 
 # Returns
-- `::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global subdivision matrix associated
+
+  - `::SparseArrays.SparseMatrixCSC{Float64, Int}`: The global subdivision matrix associated
     with the two-scale operator.
 """
 get_global_subdiv_matrix(operator::AbstractTwoScaleOperator) = operator.global_subdiv_matrix
@@ -30,24 +32,29 @@ get_global_subdiv_matrix(operator::AbstractTwoScaleOperator) = operator.global_s
 Retrieve and return the coarse space associated with a two-scale operator.
 
 # Arguments
-- `operator::TwoScaleOperator`: The two-scale operator from which to retrieve the
+
+  - `operator::TwoScaleOperator`: The two-scale operator from which to retrieve the
     coarse space.
 
 # Returns
-- `::AbstractFESpace`: The coarse space associated with the two-scale operator.
+
+  - `::AbstractFESpace`: The coarse space associated with the two-scale operator.
 """
 get_parent_space(operator::AbstractTwoScaleOperator) = operator.parent_space
 
 """
     get_child_space(operator::TwoScaleOperator)
+
 Retrieve and return the fine space associated with a two-scale operator.
 
 # Arguments
-- `operator::TwoScaleOperator`: The two-scale operator from which to retrieve the
+
+  - `operator::TwoScaleOperator`: The two-scale operator from which to retrieve the
     fine space.
 
 # Returns
-- `::AbstractFESpace`: The fine space associated with the two-scale operator.
+
+  - `::AbstractFESpace`: The fine space associated with the two-scale operator.
 """
 get_child_space(operator::AbstractTwoScaleOperator) = operator.child_space
 
@@ -58,14 +65,16 @@ Compute and return the ancestor element ID for a given child element ID within a
 number of ancestor levels.
 
 # Arguments
-- `two_scale_operators`: A collection of operators that define the parent-child
+
+  - `two_scale_operators`: A collection of operators that define the parent-child
     relationships between elements at different levels.
-- `child_element_id::Int`: The identifier of the child element w.r.t. `child_level`.
-- `child_level::Int`: The level of the child element.
-- `num_ancestor_levels::Int`: The number of ancestor levels to traverse.
+  - `child_element_id::Int`: The identifier of the child element w.r.t. `child_level`.
+  - `child_level::Int`: The level of the child element.
+  - `num_ancestor_levels::Int`: The number of ancestor levels to traverse.
 
 # Returns
-- `ancestor_id::Int`: The identifier of the ancestor element.
+
+  - `ancestor_id::Int`: The identifier of the ancestor element.
 """
 function get_element_ancestor(
     two_scale_operators::Vector{TS},
@@ -88,13 +97,15 @@ Perform a change of basis using a two-scale operator from a coarse basis and ret
 resulting fine basis coefficients.
 
 # Arguments
-- `coarse_basis_coeffs::Vector{Float64}`: A vector containing the coefficients of the
+
+  - `coarse_basis_coeffs::Vector{Float64}`: A vector containing the coefficients of the
     coarse basis.
-- `operator::T`: The two-scale operator that defines the subdivision process,
+  - `operator::T`: The two-scale operator that defines the subdivision process,
     where `T` is a subtype of `AbstractTwoScaleOperator`.
 
 # Returns
-- `::Vector{Float64}`: A vector containing the coefficients of the fine basis after
+
+  - `::Vector{Float64}`: A vector containing the coefficients of the fine basis after
     subdivision.
 """
 function get_child_basis_coefficients(
@@ -110,13 +121,15 @@ Retrieve and return the local subdivision matrix for a given pair of coarse and 
 elements within a two-scale operator.
 
 # Arguments
-- `operator::AbstractTwoScaleOperator`: The two-scale operator that defines the
+
+  - `operator::AbstractTwoScaleOperator`: The two-scale operator that defines the
     subdivision process.
-- `coarse_element_id::Int`: The identifier of the coarse element.
-- `fine_element_id::Int`: The identifier of the fine element.
+  - `coarse_element_id::Int`: The identifier of the coarse element.
+  - `fine_element_id::Int`: The identifier of the fine element.
 
 # Returns
-- `::Matrix{Float64}`: The local subdivision matrix corresponding to the specified coarse
+
+  - `::Matrix{Float64}`: The local subdivision matrix corresponding to the specified coarse
     and fine elements.
 """
 function get_local_subdiv_matrix(

@@ -7,16 +7,13 @@
 Integral of a form over a manifold.
 
 # Constructors
-- `Integral(
-        form::F, quad_rule::Q
-    ) where {
-        manifold_dim,
-        F <: AbstractForm{manifold_dim, manifold_dim},
-        Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
-    }`: General constructor.
+
+  - `Integral( form::F, quad_rule::Q ) where { manifold_dim, F <: AbstractForm{manifold_dim, manifold_dim}, Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim}, }`: General constructor.
 
 # Examples
+
 Basic syntax:
+
 ```jldoctest
 julia> using Mantis
 
@@ -35,11 +32,11 @@ true
 
 julia> isa(Forms.get_form(integral), Forms.FormSpace{2, 2})
 true
-
 ```
 
 The `Integral` is more commonly used to represent inner products in combination with the
 [Wedge](@ref) and [Hodge](@ref) operators:
+
 ```jldoctest
 julia> using Mantis
 
@@ -58,18 +55,19 @@ true
 
 julia> isa(Forms.get_form(integral), Forms.Wedge{2, 2})
 true
-
 ```
 
 # Fields
-- `form::F`: The form expression to be integrated.
-- `quad_rule::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule
+
+  - `form::F`: The form expression to be integrated.
+  - `quad_rule::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule
     used for the integral.
 
 # Type Parameters
-- `manifold_dim::Int`: The dimension of the manifold.
-- `F`: The type of the form expression.
-- `Q`: The type of the quadrature expression.
+
+  - `manifold_dim::Int`: The dimension of the manifold.
+  - `F`: The type of the form expression.
+  - `Q`: The type of the quadrature expression.
 """
 struct Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
     form::F
@@ -115,10 +113,12 @@ const ∫ = Integral
 Returns the quadrature rule associated with the integral operator.
 
 # Arguments
-- `integral::Integral`: The integral operator.
+
+  - `integral::Integral`: The integral operator.
 
 # Returns
-- `<:Quadrature.AbstractGlobalQuadratureRule`: Returns the quadrature rule associated with
+
+  - `<:Quadrature.AbstractGlobalQuadratureRule`: Returns the quadrature rule associated with
     the integral operator.
 """
 get_quadrature_rule(integral::Integral) = integral.quad_rule
@@ -129,10 +129,12 @@ get_quadrature_rule(integral::Integral) = integral.quad_rule
 Returns the number of elements in the geometry associated with the integral operator.
 
 # Arguments
-- `integral::Integral`: The integral operator.
+
+  - `integral::Integral`: The integral operator.
 
 # Returns
-- `::Int`: The number of elements associated with the integral operator.
+
+  - `::Int`: The number of elements associated with the integral operator.
 """
 function get_num_elements(integral::Integral)
     return Quadrature.get_num_base_elements(get_quadrature_rule(integral))
@@ -145,10 +147,12 @@ Returns the number of evaluation elements in the quadrature rule associated with
 integral operator.
 
 # Arguments
-- `integral::Integral`: The integral operator.
+
+  - `integral::Integral`: The integral operator.
 
 # Returns
-- `::Int`: The number of evaluation elements associated with the integral operator.
+
+  - `::Int`: The number of evaluation elements associated with the integral operator.
 """
 function get_num_evaluation_elements(integral::Integral)
     return Quadrature.get_num_evaluation_elements(get_quadrature_rule(integral))
@@ -160,10 +164,12 @@ end
 Returns the estimated number of non-zero entries per element for the integral operator.
 
 # Arguments
-- `integral::Integral`: The integral operator.
+
+  - `integral::Integral`: The integral operator.
 
 # Returns
-- `::Int`: The estimated number of non-zero entries per element associated with the integral
+
+  - `::Int`: The estimated number of non-zero entries per element associated with the integral
     operator.
 """
 function get_estimated_nnz_per_elem(integral::Integral)
@@ -188,12 +194,14 @@ Evaluates the integral of a form over a given global element using a specified q
 rule.
 
 # Arguments
-- `integral::Integral{manifold_dim, F, Q}`: The integral operator to evaluate.
-- `global_element_id::Int`: The global element over which to evaluate the integral.
+
+  - `integral::Integral{manifold_dim, F, Q}`: The integral operator to evaluate.
+  - `global_element_id::Int`: The global element over which to evaluate the integral.
 
 # Returns
-- `integral_eval::Vector{Float64}`: The evaluated integral.
-- `integral_indices::Vector{Vector{Int}}`: The indices of the evaluated integral. The length
+
+  - `integral_eval::Vector{Float64}`: The evaluated integral.
+  - `integral_indices::Vector{Vector{Int}}`: The indices of the evaluated integral. The length
     of the outer vector depends on the `expression_rank` of the form expression.
 """
 function evaluate(

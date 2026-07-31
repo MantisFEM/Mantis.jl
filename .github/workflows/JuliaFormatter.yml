@@ -1,0 +1,23 @@
+name: Validate Formatting
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  validate-formatting:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+      - uses: julia-actions/cache@v3
+      - name: Install jlfmt and check formatting
+        run: |
+          export PATH="$HOME/.julia/bin:$PATH"
+          julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.update(); Pkg.Apps.add(["JuliaFormatter"])'
+          jlfmt --check -v ./

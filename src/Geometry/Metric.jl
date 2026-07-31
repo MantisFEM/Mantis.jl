@@ -9,13 +9,15 @@
 Returns the metric and its determinant.
 
 # Arguments
-- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
-- `element_id::Int`: Global element id.
-- `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
+
+  - `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
+  - `element_id::Int`: Global element id.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
 
 # Returns
-- `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per evaluation point.
-- `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per evaluation
+
+  - `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per evaluation point.
+  - `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per evaluation
     point.
 """
 function metric(
@@ -48,15 +50,17 @@ end
 Returns the inverse metric, the metric and its determinant.
 
 # Arguments
-- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
-- `element_id::Int`: Global element id.
-- `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
+
+  - `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
+  - `element_id::Int`: Global element id.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
 
 # Returns
-- `::Vector{SMatrix{manifold_dim, manifold_dim}}`: Inverse metric tensor per evaluation
+
+  - `::Vector{SMatrix{manifold_dim, manifold_dim}}`: Inverse metric tensor per evaluation
     point.
-- `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per evaluation point.
-- `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per evaluation
+  - `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per evaluation point.
+  - `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per evaluation
     point.
 """
 function inv_metric(
@@ -79,22 +83,24 @@ end
 Returns the inverse metric, the metric and its determinant.
 
 # Arguments
-- `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
-- `element_id::Int`: Global element id.
-- `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
+
+  - `geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}`: The geometry.
+  - `element_id::Int`: Global element id.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Evaluation points in the canonical domain.
 
 # Returns
-- `J::Vector{SMatrix{image_dim, manifold_dim}}`: Jacobian per point.
-- `inv_g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Inverse metric tensor per point.
-- `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per point.
-- `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per point.
-- `dgdxs::NTuple{manifold_dim, Vector{SMatrix{manifold_dim, manifold_dim}}}`: Derivative of
+
+  - `J::Vector{SMatrix{image_dim, manifold_dim}}`: Jacobian per point.
+  - `inv_g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Inverse metric tensor per point.
+  - `g::Vector{SMatrix{manifold_dim, manifold_dim}}`: Metric tensor per point.
+  - `sqrt_g::Vector{Float64}`: Square-root of the determinant of the metric per point.
+  - `dgdxs::NTuple{manifold_dim, Vector{SMatrix{manifold_dim, manifold_dim}}}`: Derivative of
     the metric tensor per direction in manifold_dim.
-- `dinv_g_dxs::NTuple{manifold_dim, Vector{SMatrix{manifold_dim, manifold_dim}}}`:
+  - `dinv_g_dxs::NTuple{manifold_dim, Vector{SMatrix{manifold_dim, manifold_dim}}}`:
     Derivative of the inverse metric tensor per direction in manifold_dim.
-- `dsqrt_g_dxs::NTuple{manifold_dim, Vector{Float64}`: Derivative of the square-root of the
+  - `dsqrt_g_dxs::NTuple{manifold_dim, Vector{Float64}`: Derivative of the square-root of the
     determinant of the metric tensor per direction in manifold_dim.
-- `Hs::Vector{NTuple{image_dim, SMatrix{manifold_dim, manifold_dim}}}`: Hessians per point.
+  - `Hs::Vector{NTuple{image_dim, SMatrix{manifold_dim, manifold_dim}}}`: Hessians per point.
 """
 function metric_derivatives(
     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches},

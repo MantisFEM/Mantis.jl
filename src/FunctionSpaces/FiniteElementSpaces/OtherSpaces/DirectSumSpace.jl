@@ -9,11 +9,12 @@ block-diagonal matrix. Each scalar function space contributes to a separate comp
 the multi-component space.
 
 # Fields
-- `component_spaces::F`: Tuple of `num_components` scalar function spaces
-- `basis_offsets::NTuple{num_components, Int}`: Offsets of the basis functions of each
+
+  - `component_spaces::F`: Tuple of `num_components` scalar function spaces
+  - `basis_offsets::NTuple{num_components, Int}`: Offsets of the basis functions of each
     component space to get the global basis functions numbers.
-- `num_elements::Int`: Number of elements in the space.
-- `space_dim::Int`: Dimension of the space, i.e., the number of global d.o.f.s.
+  - `num_elements::Int`: Number of elements in the space.
+  - `space_dim::Int`: Dimension of the space, i.e., the number of global d.o.f.s.
 """
 struct DirectSumSpace{manifold_dim, num_components, num_patches, F} <:
        AbstractFESpace{manifold_dim, num_components, num_patches}

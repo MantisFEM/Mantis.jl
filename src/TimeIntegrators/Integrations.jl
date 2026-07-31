@@ -11,17 +11,20 @@ Perform a single time integration step using the given time integration scheme a
 system operators. Creates a copy of the solution when called.
 
 # See also
+
 [`time_integrate!`](@ref)
 
 # Arguments
-- `y_n::TimeIntegrationSolution`: The current solution vector.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution`: The current solution vector.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns
-- `TimeIntegrationSolution`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution`: The updated solution vector after one time step.
 """
 function time_integrate(
     y_n::TimeIntegrationSolution,
@@ -48,17 +51,20 @@ Perform a single, in-place time integration step using the given time integratio
 and ODE system operators.
 
 # See also
+
 [`time_integrate`](@ref)
 
 # Arguments
-- `y_n::TimeIntegrationSolution`: The current solution vector.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution`: The current solution vector.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns (in-place)
-- `TimeIntegrationSolution`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution`: The updated solution vector after one time step.
 """
 function time_integrate!(
     y_n::TimeIntegrationSolution{T, S},
@@ -302,15 +308,17 @@ ODE system operators. Implements algorithm 1 of [Vos2011](@cite) specifically fo
 integrator is explicit.
 
 # Arguments
-- `y_n::TimeIntegrationSolution`: The current solution vector.
-- `scheme::Explicit{num_stages, num_steps}`: The Explicit time integration scheme.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution`: The current solution vector.
+  - `scheme::Explicit{num_stages, num_steps}`: The Explicit time integration scheme.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns (in-place)
-- `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
 """
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
@@ -395,15 +403,17 @@ scheme and ODE system operators. Implements algorithm 1 of [Vos2011](@cite) spec
 for when the integrator in diagonally implicit.
 
 # Arguments
-- `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
-- `scheme::DiagonallyImplicit{num_stages,num_steps}`: The DiagonallyImplicit time integration scheme.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
+  - `scheme::DiagonallyImplicit{num_stages,num_steps}`: The DiagonallyImplicit time integration scheme.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns (in-place)
-- `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
 """
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
@@ -499,15 +509,17 @@ Perform a single time integration step using the given Implicit time integration
 ODE system operators.
 
 # Arguments
-- `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
-- `scheme::Implicit{num_stages,num_steps}`: The Implicit time integration scheme.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
+  - `scheme::Implicit{num_stages,num_steps}`: The Implicit time integration scheme.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns (in-place)
-- `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
 """
 function _time_integrate!(
     y_n::TimeIntegrationSolution,
@@ -566,15 +578,17 @@ Perform a single time integration step using the given IMEX time integration sch
 system operators. Implements algorithm 1 of [Vos2011](@cite) in full.
 
 # Arguments
-- `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
-- `scheme::IMEX{num_stages,num_steps}`: The IMEX time integration scheme.
-- `ode::TimeIntegrationOperators`: The ODE system operators.
-- `t::Float64`: The current time.
-- `dt::Float64`: The time step.
-- `kwargs...`: Additional arguments passed to the ODE system.
+
+  - `y_n::TimeIntegrationSolution{num_steps}`: The current solution vector.
+  - `scheme::IMEX{num_stages,num_steps}`: The IMEX time integration scheme.
+  - `ode::TimeIntegrationOperators`: The ODE system operators.
+  - `t::Float64`: The current time.
+  - `dt::Float64`: The time step.
+  - `kwargs...`: Additional arguments passed to the ODE system.
 
 # Returns (in-place)
-- `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
+
+  - `TimeIntegrationSolution{num_steps}`: The updated solution vector after one time step.
 """
 function _time_integrate!(
     y_n::TimeIntegrationSolution,

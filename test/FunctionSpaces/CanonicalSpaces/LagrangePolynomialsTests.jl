@@ -137,7 +137,9 @@ ll_evaluation = [
 # Perform the tests
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]  # define the polynomial degree
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    nodes = Points.get_constituent_points(
+        Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1))
+    )[1]
     ll_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
@@ -159,7 +161,9 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    nodes = Points.get_constituent_points(
+        Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1))
+    )[1]
     ll_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
@@ -330,7 +334,9 @@ gl_evaluation = [
 # Test nodes
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    nodes = Points.get_constituent_points(
+        Quadrature.get_nodes(Quadrature.gauss_legendre(p+1))
+    )[1]
     gl_polynomial = FunctionSpaces.Lagrange(nodes)
 
     # Test that nodes are generate as expected
@@ -350,7 +356,9 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    nodes = Points.get_constituent_points(
+        Quadrature.get_nodes(Quadrature.gauss_legendre(p+1))
+    )[1]
     gl_polynomial = FunctionSpaces.Lagrange(nodes)
     xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
@@ -403,7 +411,9 @@ for p in degrees_to_test
     # - Integral Kronecker delta property
 
     # Construct the polynomials
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+2)))[1]
+    nodes = Points.get_constituent_points(
+        Quadrature.get_nodes(Quadrature.gauss_lobatto(p+2))
+    )[1]
     ell_poly = FunctionSpaces.Edge(nodes)
 
     # Compute the evaluation points (quadrature points)

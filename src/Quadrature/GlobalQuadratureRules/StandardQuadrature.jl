@@ -5,15 +5,18 @@ Represents a standard quadrature rule for a given manifold dimension, where each
 the same canonical rule `Q`.
 
 # Fields
-- `canonical_qrule::Q`: The canonical quadrature rule used for the elements.
-- `num_elements::Int`: The number of elements in the quadrature rule.
+
+  - `canonical_qrule::Q`: The canonical quadrature rule used for the elements.
+  - `num_elements::Int`: The number of elements in the quadrature rule.
 
 # Type parameters
-- `manifold_dim`: Dimension of the domain
-- `Q`: Type of the canonical quadrature rule.
+
+  - `manifold_dim`: Dimension of the domain
+  - `Q`: Type of the canonical quadrature rule.
 
 # Inner Constructors
-- `StandardQuadrature(canonical_qrule::Q, num_elements::Int)`: Creates a new
+
+  - `StandardQuadrature(canonical_qrule::Q, num_elements::Int)`: Creates a new
     `StandardQuadrature` instance with the specified canonical quadrature rule and number of
     elements.
 """
@@ -34,10 +37,12 @@ end
 Get the canonical quadrature rule of the standard quadrature.
 
 # Arguments
-- `standard_quadrature::StandardQuadrature`: The standard quadrature rule.
+
+  - `standard_quadrature::StandardQuadrature`: The standard quadrature rule.
 
 # Returns
-- `CanonicalQuadratureRule`: The canonical quadrature rule of the standard quadrature.
+
+  - `CanonicalQuadratureRule`: The canonical quadrature rule of the standard quadrature.
 """
 function get_canonical_quadrature_rule(standard_quadrature::StandardQuadrature)
     return standard_quadrature.canonical_qrule
@@ -53,10 +58,12 @@ end
 Returns the number of base elements in the standard quadrature.
 
 # Arguments
-- `standard_quadrature::StandardQuadrature`: The standard quadrature rule.
+
+  - `standard_quadrature::StandardQuadrature`: The standard quadrature rule.
 
 # Returns
-- `::Int`: The number of base elements in the standard quadrature.
+
+  - `::Int`: The number of base elements in the standard quadrature.
 """
 function get_num_base_elements(standard_quadrature::StandardQuadrature)
     return standard_quadrature.num_elements

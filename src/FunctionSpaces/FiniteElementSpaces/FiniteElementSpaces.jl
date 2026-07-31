@@ -8,10 +8,12 @@ general case, the component spaces are not necessarily single-patch spaces, and 
 component spaces may contribute to multiple components.
 
 # Arguments
-- `space::AbstractFESpace`: A (multi-)component finite element space.
+
+  - `space::AbstractFESpace`: A (multi-)component finite element space.
 
 # Returns
-- `component_spaces::Tuple{AbstractFESpace}`: Tuple of single-component spaces.
+
+  - `component_spaces::Tuple{AbstractFESpace}`: Tuple of single-component spaces.
 """
 function get_component_spaces(space::AbstractFESpace)
     return space.component_spaces
@@ -30,17 +32,21 @@ end
 Returns the extraction operator of the given `space`.
 
 !!! warning "Not all AbstractFESpaces have an extraction operator."
+
     Having an explicitly defined extraction operator is not required for building a finite
     element space.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::ExtractionOperator`: The extraction operator.
+
+  - `::ExtractionOperator`: The extraction operator.
 
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no explicitly defined
+
+  - Error "no field 'extraction_op'": This error is thrown if no explicitly defined
     extraction operator is present for this `space`.
 """
 function get_extraction_operator(space::AbstractFESpace)
@@ -54,18 +60,21 @@ Returns the extraction coefficients and indices of the supported basis functions
 given element `element_id` for the given component `component_id`.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
-- `element_id::Int`: Identifier of the element.
-- `component_id::Int=1`: The component ID. This is only relevant for multi-component
+
+  - `space::AbstractFESpace`: A finite element space.
+  - `element_id::Int`: Identifier of the element.
+  - `component_id::Int=1`: The component ID. This is only relevant for multi-component
     spaces, and thus defaults to 1. While it is not needed for single-component spaces, it
     is still required for the function signature.
 
 # Returns
-- `::Matrix{Float64}`: The extraction coefficients.
-- `::Vector{Int}`: The (global) basis functions supported on this element.
+
+  - `::Matrix{Float64}`: The extraction coefficients.
+  - `::Vector{Int}`: The (global) basis functions supported on this element.
 
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_extraction` method for `space`
     either.
 """
@@ -81,17 +90,20 @@ end
 Returns the extraction coefficients on the given element.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
-- `element_id::Int`: Identifier of the element.
-- `component_id::Int=1`: The component ID. This is only relevant for multi-component
+
+  - `space::AbstractFESpace`: A finite element space.
+  - `element_id::Int`: Identifier of the element.
+  - `component_id::Int=1`: The component ID. This is only relevant for multi-component
     spaces, and thus defaults to 1. While it is not needed for single-component spaces, it
     is still required for the function signature.
 
 # Returns
-- `::Matrix{Float64}`: The extraction coefficients on the requested element.
+
+  - `::Matrix{Float64}`: The extraction coefficients on the requested element.
 
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_extraction_coefficients` method for
     `space` either.
 """
@@ -109,17 +121,19 @@ end
 Get the global indices of the basis functions of `space` on element `element_id`.
 
 # Arguments
-- `space::AbstractFESpace`: Finite element space.
-- `element_id::Int`: Identifier of the element.
+
+  - `space::AbstractFESpace`: Finite element space.
+  - `element_id::Int`: Identifier of the element.
 
 # Returns
-- `::TI`: Global indices of the basis functions supported on this element. The type `TI`
+
+  - `::TI`: Global indices of the basis functions supported on this element. The type `TI`
     is an vector-like object with integer type elements. See the documentation of `space` or
     [`Indices`](@ref) for more details.
 
-
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_basis_indices` method for `space`
     either.
 """
@@ -134,20 +148,22 @@ Get the permutation' of the basis indices. This tells the `evaluate` function to
 on an element the evaluations correspond.
 
 # Arguments
-- `space::AbstractFESpace`: Finite element space.
-- `element_id::Int`: Identifier of the element.
-- `component_id::Int=1`: The component ID. This is only relevant for multi-component
+
+  - `space::AbstractFESpace`: Finite element space.
+  - `element_id::Int`: Identifier of the element.
+  - `component_id::Int=1`: The component ID. This is only relevant for multi-component
     spaces, and thus defaults to 1. While it is not needed for single-component spaces, it
     is still required for the function signature.
 
 # Returns
-- `::TJ`: Permutations of indices of the basis functions supported on this element. The type
+
+  - `::TJ`: Permutations of indices of the basis functions supported on this element. The type
     `TJ` is a vector-like object with integer type elements. See the documentation of
     `space` or [`Indices`](@ref) for more details.
 
-
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_basis_indices` method for `space`
     either.
 """
@@ -161,13 +177,16 @@ end
 Returns the number of basis functions of the finite element space `space`.
 
 # Arguments
-- `space::AbstractFESpace`: Finite element space.
+
+  - `space::AbstractFESpace`: Finite element space.
 
 # Returns
-- `::Int`: Number of basis functions spanning the finite element space.
+
+  - `::Int`: Number of basis functions spanning the finite element space.
 
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_num_basis` method for `space`
     either.
 """
@@ -182,14 +201,17 @@ Get the number of basis functions of the finite element space `space` supported 
 `element_id`.
 
 # Arguments
-- `space::AbstractFESpace`: Finite element space.
-- `element_id::Int`: Indentifier of the element.
+
+  - `space::AbstractFESpace`: Finite element space.
+  - `element_id::Int`: Indentifier of the element.
 
 # Returns
-- `::Int`: Number of basis functions supported on the given element.
+
+  - `::Int`: Number of basis functions supported on the given element.
 
 # Exceptions
-- Error "no field 'extraction_op'": This error is thrown if no extraction operator is
+
+  - Error "no field 'extraction_op'": This error is thrown if no extraction operator is
     defined for `space`, and there is no specific `get_num_basis` method for `space`
     either.
 """
@@ -203,10 +225,12 @@ end
 Retrieve and return the degrees of freedom (d.o.f.s) partition for `space`.
 
 # Arguments
-- `space::AbstractFESpace`: Single-component finite element space.
+
+  - `space::AbstractFESpace`: Single-component finite element space.
 
 # Returns
-- `::Vector{Vector{Vector{Int}}}`: Nested d.o.f. partition. The first level of nesting
+
+  - `::Vector{Vector{Vector{Int}}}`: Nested d.o.f. partition. The first level of nesting
     corresponds to the patch. The second level corresponds to the division (see ... for its
     definition). The third level corresponds to the individual d.o.f.s.
 """
@@ -227,13 +251,16 @@ and returning the length of the largest union.
 For single-component spaces, there is no general fallback.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::Int`: The element-local upper bound.
+
+  - `::Int`: The element-local upper bound.
 
 # Exceptions
-- Error "'get_max_local_dim' not implemented": This error is thrown if no 'get_max_local_dim'
+
+  - Error "'get_max_local_dim' not implemented": This error is thrown if no 'get_max_local_dim'
     method is defined for a single-component space (which can be a component of a multi-
     component space).
 """
@@ -258,10 +285,12 @@ end
 Get the geometry underlying the given `space`.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::AbstractGeometry`: The underlying geometry.
+
+  - `::AbstractGeometry`: The underlying geometry.
 """
 function get_geometry(space::AbstractFESpace)
     return space.geometry
@@ -273,10 +302,12 @@ end
 Get the parametric geometry underlying the given `space`.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::AbstractGeometry`: The underlying parametric geometry.
+
+  - `::AbstractGeometry`: The underlying parametric geometry.
 """
 function get_parametric_geometry(space::AbstractFESpace)
     return space.parametric_geometry
@@ -288,10 +319,12 @@ end
 Returns the total number of elements of the geometry on which the `space` is build.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::Int`: The number of elements.
+
+  - `::Int`: The number of elements.
 """
 function get_num_elements(space::AbstractFESpace)
     return Geometry.get_num_elements(get_geometry(space))
@@ -303,10 +336,12 @@ end
 Get the number of elements per patch of the underlying geometry.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
+
+  - `space::AbstractFESpace`: A finite element space.
 
 # Returns
-- `::NTuple{num_patches, Int}`: The number of elements per patch.
+
+  - `::NTuple{num_patches, Int}`: The number of elements per patch.
 """
 function get_num_elements_per_patch(space::AbstractFESpace)
     return Geometry.get_num_elements_per_patch(get_geometry(space))
@@ -319,11 +354,13 @@ Get the ID of the patch of the underlying geometry to which the specified global
 belongs.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
-- `element_id::Int`: The global element ID.
+
+  - `space::AbstractFESpace`: A finite element space.
+  - `element_id::Int`: The global element ID.
 
 # Returns
-- `::Int`: ID of the patch to which the element belongs.
+
+  - `::Int`: ID of the patch to which the element belongs.
 """
 function get_patch_id(space::AbstractFESpace, element_id::Int)
     return Geometry.get_patch_id(get_geometry(space), element_id)
@@ -336,12 +373,14 @@ Get the constituent patch ID and local element ID of the underlying geometry for
 specified global element ID.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
-- `element_id::Int`: The global element ID.
+
+  - `space::AbstractFESpace`: A finite element space.
+  - `element_id::Int`: The global element ID.
 
 # Returns
-- `patch_id::Int`: The patch ID
-- `local_element_id::Int`: The local element ID.
+
+  - `patch_id::Int`: The patch ID
+  - `local_element_id::Int`: The local element ID.
 """
 function get_patch_and_local_element_id(space::AbstractFESpace, element_id::Int)
     return Geometry.get_patch_and_local_element_id(get_geometry(space), element_id)
@@ -354,12 +393,14 @@ Get the global element ID of the underlying geometry for the specified constitue
 and local element ID.
 
 # Arguments
-- `space::AbstractFESpace`: A finite element space.
-- `patch_id::Int`: The constituent patch ID.
-- `local_element_id::Int`: The local element ID.
+
+  - `space::AbstractFESpace`: A finite element space.
+  - `patch_id::Int`: The constituent patch ID.
+  - `local_element_id::Int`: The local element ID.
 
 # Returns
-- `::Int`: The global element ID.
+
+  - `::Int`: The global element ID.
 """
 function get_global_element_id(space::AbstractFESpace, patch_id::Int, local_element_id::Int)
     return Geometry.get_global_element_id(get_geometry(space), patch_id, local_element_id)
@@ -372,11 +413,13 @@ Computes the measure of the element given by `element_id` of the geometry on whi
 `space` is build.
 
 # Arguments
-- 'space::AbstractFESpace': A finite element space.
-- 'element_id::Int': Index of the element being considered.
+
+  - 'space::AbstractFESpace': A finite element space.
+  - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '<:Number': The measure of the element.
+
+  - '<:Number': The measure of the element.
 """
 function get_element_measure(space::AbstractFESpace, element_id::Int)
     return Geometry.get_element_measure(get_geometry(space), element_id)
@@ -389,11 +432,13 @@ Computes the length, in each manifold dimension, of the element given by `elemen
 the geometry on which the `space` is build.
 
 # Arguments
-- 'space::AbstractFESpace': A finite element space.
-- 'element_id::Int': Index of the element being considered.
+
+  - 'space::AbstractFESpace': A finite element space.
+  - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '<:NTuple{manifold_dim, Number}': The element's lengths.
+
+  - '<:NTuple{manifold_dim, Number}': The element's lengths.
 """
 function get_element_lengths(space::AbstractFESpace, element_id::Int)
     return Geometry.get_element_lengths(get_geometry(space), element_id)
@@ -406,11 +451,13 @@ Computes the vertices, in each manifold dimension, of the element given by `elem
 the geometry on which the `space` is build.
 
 # Arguments
-- 'space::AbstractFESpace': A finite element space.
-- 'element_id::Int': Index of the element being considered.
+
+  - 'space::AbstractFESpace': A finite element space.
+  - 'element_id::Int': Index of the element being considered.
 
 # Returns
-- '<:NTuple{manifold_dim, NTuple{2, Number}}': The element's vertices per manifold dim. For
+
+  - '<:NTuple{manifold_dim, NTuple{2, Number}}': The element's vertices per manifold dim. For
     example, for the unit cube [0.0, 1.0]^3 this will be:
     ((0.0, 1.0), (0.0, 1.0), (0.0, 1.0)).
 """
@@ -433,20 +480,22 @@ default for multi-component spaces are the component spaces. There is no default
 component spaces. Single-component spaces are expected to have a specialised implementation.
 
 # Arguments
-- `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: A finite element
+
+  - `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: A finite element
     space.
-- `element_id::Int`: The indentifier of the element.
-- `xi::Points.AbstractPoints{manifold_dim}`: The coordinates at which to evaluate the
+  - `element_id::Int`: The indentifier of the element.
+  - `xi::Points.AbstractPoints{manifold_dim}`: The coordinates at which to evaluate the
     basis functions. These coordinates are in the **canonical** domain, and thus always lie
     in the interval `[0, 1]`. The coordinates have to be given per dimension. Multi-
     dimensional spaces are evaluated on the tensor product of the given coordinates.
-- `nderivatives::Int`: The number of derivatives to compute.
-- `component_id::Int=1`: The component ID. This is only relevant for multi-component
+  - `nderivatives::Int`: The number of derivatives to compute.
+  - `component_id::Int=1`: The component ID. This is only relevant for multi-component
     spaces, and thus defaults to 1. While it is not needed for single-component spaces, it
     is still required for the function signature.
 
 # Returns
-- `::Vector{Vector{Vector{Matrix{Float64}}}}`: A nested vector structure containing the
+
+  - `::Vector{Vector{Vector{Matrix{Float64}}}}`: A nested vector structure containing the
     local basis functions and their derivatives. The first level of nesting corresponds to
     the order of the derivatives. The second level corresponds to a specific derivative. The
     third level corresponds to the component. The matrix contains the actual evaluations.
@@ -485,24 +534,27 @@ evaluate method actually returns the values/derivatives of `f∘Φᵢ`. Consider
 `f₀ := f∘Φᵢ`. Then, `FunctionSpaces.evaluate(f)` returns
 `evaluations::Vector{Vector{Vector{Matrix{Float64}}}` where `evaluations[i][j][k][a,b]` is
 the evaluation of:
-- the `j`-th mixed derivative ...
-- of order `i-1` ...
-- for the `b`-th basis function ...
-- of the `k`-th component ...
-- at the `a`-th evaluation point ...
-- for `f₀`.
-See [`get_derivative_idx`](@ref GeneralHelpers.get_derivative_idx) for more details on
-the order in which all the mixed derivatives of order `i-1` are stored.
+
+  - the `j`-th mixed derivative ...
+  - of order `i-1` ...
+  - for the `b`-th basis function ...
+  - of the `k`-th component ...
+  - at the `a`-th evaluation point ...
+  - for `f₀`.
+    See [`get_derivative_idx`](@ref GeneralHelpers.get_derivative_idx) for more details on
+    the order in which all the mixed derivatives of order `i-1` are stored.
 
 # Arguments
-- `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: Finite element space.
-- `element_id::Int`: Index of the element.
-- `xi::Points.AbstractPoints{manifold_dim}`: Point on the element in canonical coordinates.
-- `nderivatives::Int=0`: Order of the derivatives. Default is 0 (i.e., function evaluation).
+
+  - `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: Finite element space.
+  - `element_id::Int`: Index of the element.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Point on the element in canonical coordinates.
+  - `nderivatives::Int=0`: Order of the derivatives. Default is 0 (i.e., function evaluation).
 
 # Returns
-- `evaluation::Vector{Vector{Vector{Matrix{Float64}}}}`: Values of the basis functions.
-- `basis_indices::TI`: Global indices of the basis functions. The type `TI` is an vector-
+
+  - `evaluation::Vector{Vector{Vector{Matrix{Float64}}}}`: Values of the basis functions.
+  - `basis_indices::TI`: Global indices of the basis functions. The type `TI` is an vector-
     like object with integer type elements. See the documentation of `space` or
     [`Indices`](@ref) for more details.
 """
@@ -561,16 +613,17 @@ Evaluate the basis functions with coefficients of the finite element space `spac
 point `xi` on element `element_id` up to order `nderivatives`. See [`evaluate`](@ref) for
 more details.
 
-
 # Arguments
-- `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: Finite element space.
-- `element_id::Int`: Index of the element.
-- `xi::Points.AbstractPoints{manifold_dim}`: Point on the element in canonical coordinates.
-- `nderivatives::Int=0`: Order of the derivatives. Default is 0 (i.e., function evaluation).
-- `coefficients::Vector{Float64}`: Coefficients.
+
+  - `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: Finite element space.
+  - `element_id::Int`: Index of the element.
+  - `xi::Points.AbstractPoints{manifold_dim}`: Point on the element in canonical coordinates.
+  - `nderivatives::Int=0`: Order of the derivatives. Default is 0 (i.e., function evaluation).
+  - `coefficients::Vector{Float64}`: Coefficients.
 
 # Returns
-- `evaluation::Vector{Vector{Vector{Vector{Float64}}}}`: Values at the points.
+
+  - `evaluation::Vector{Vector{Vector{Vector{Float64}}}}`: Values at the points.
 """
 function evaluate(
     space::AbstractFESpace{manifold_dim, num_components, num_patches},
@@ -609,13 +662,15 @@ coefficients from each element on each patch. The global extraction matrix maps 
 degrees of freedom to the local degrees of freedom.
 
 # Arguments
-- `space::AbstractFESpace`: The finite element space.
+
+  - `space::AbstractFESpace`: The finite element space.
 
 # Returns
-- `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
+
+  - `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
 """
 function assemble_global_extraction_matrix(space::AbstractFESpace)
-    throw(
+    return throw(
         ArgumentError(
             "'assemble_global_extraction_matrix' not implemented for $(typeof(space))"
         ),
@@ -634,13 +689,15 @@ Evaluates all derivatives up to order `nderivatives` for all basis functions of 
 at a given point `xi` in the element `element_id`.
 
 # Arguments
-- `fem_space::AbstractFESpace{1, num_components}`: A univariate FEM space.
-- `element_id::Int`: The id of the element.
-- `xi::Float64`: The point where all global basis functiuons are evaluated.
-- `nderivatives::Int`: The order upto which derivatives need to be computed.
+
+  - `fem_space::AbstractFESpace{1, num_components}`: A univariate FEM space.
+  - `element_id::Int`: The id of the element.
+  - `xi::Float64`: The point where all global basis functiuons are evaluated.
+  - `nderivatives::Int`: The order upto which derivatives need to be computed.
 
 # Returns
-- `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
+
+  - `::SparseMatrixCSC{Float64}`: Global basis functions, size = n_dofs x nderivatives+1
 """
 function _evaluate_all_at_point(
     fem_space::AbstractFESpace{1, num_components, num_patches},
@@ -682,11 +739,13 @@ This function calculates the coefficients necessary for representing the paramet
 of a finite element space.
 
 # Arguments
-- `fem_space::F`: The finite element space for which to compute the parametric geometry
+
+  - `fem_space::F`: The finite element space for which to compute the parametric geometry
     coefficients.
 
 # Returns
-- `coeffs::Matrix{Float64}`: The coefficients necessary for representing the parametric
+
+  - `coeffs::Matrix{Float64}`: The coefficients necessary for representing the parametric
     geometry. The size of the matrix is (num_basis x manifold_dim).
 """
 function _compute_parametric_geometry_coeffs(
@@ -751,4 +810,3 @@ include("UnstructuredSpaces/PolarSplines.jl")
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
 include("Hierarchical/Hierarchical.jl")
-

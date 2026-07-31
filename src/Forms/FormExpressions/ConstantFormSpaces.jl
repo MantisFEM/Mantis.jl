@@ -12,9 +12,11 @@ This can, for instance, be used as a Lagrange multiplier enforcing a zero-averag
 constraint on another differential form.
 
 # Constructors
-- `ConstantFormSpace(form_rank::Int, geometry::G, label::L)`: Generic constructor.
+
+  - `ConstantFormSpace(form_rank::Int, geometry::G, label::L)`: Generic constructor.
 
 # Example
+
 ```jldoctest
 julia> using Mantis
 
@@ -23,20 +25,23 @@ julia> geometry = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (4, 4));
 julia> Λ⁰ₕ = Forms.ConstantFormSpace(0, geometry, "0-form");  # 0-form constant on geometry.
 
 julia> Λ²ₕ = Forms.ConstantFormSpace(2, geometry, "2-form");  # 2-form constant on geometry.
+
 ```
 
 # Fields
-- `geometry::G`: The geometry [Geometry.AbstractGeometry](@ref) on which the
+
+  - `geometry::G`: The geometry [Geometry.AbstractGeometry](@ref) on which the
     `ConstantFormSpace` should be created. The `manifold_dim` will be inherited from this
     geometry.
-- `label::L`: Label for the constant form space. This will be used in export and plotting
+  - `label::L`: Label for the constant form space. This will be used in export and plotting
     functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: Rank of the differential form.
-- `G`: Type of the geometry (a [Geometry.AbstractGeometry](@ref)).
-- `L`: Type of the label (an `AbstractString`).
+
+  - `manifold_dim`: Dimension of the manifold.
+  - `form_rank`: Rank of the differential form.
+  - `G`: Type of the geometry (a [Geometry.AbstractGeometry](@ref)).
+  - `L`: Type of the label (an `AbstractString`).
 """
 struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
        AbstractFormSpace{manifold_dim, form_rank}
@@ -78,10 +83,8 @@ get_form_space_tree(form::ConstantFormSpace) = (get_form(form_space),)
 get_geometry(form::ConstantFormSpace) = form.geometry
 
 function get_fe_space(::ConstantFormSpace)
-    throw(
-        ArgumentError(
-            "ConstantFormSpace does not have an associated finite element space.",
-        ),
+    return throw(
+        ArgumentError("ConstantFormSpace does not have an associated finite element space.")
     )
 end
 
@@ -90,9 +93,7 @@ end
 ############################################################################################
 
 function evaluate(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
+    ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     num_evaluation_points = Points.get_num_points(xi)
     return [ones(Float64, num_evaluation_points, 1)], [[1]]

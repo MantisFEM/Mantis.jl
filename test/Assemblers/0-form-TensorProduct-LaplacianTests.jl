@@ -75,9 +75,7 @@ function test_0form_hodge_laplacian(
                 if section_space == FunctionSpaces.Lagrange
                     nodes = ntuple(manifold_dim) do i
                         return Points.get_constituent_points(
-                            Quadrature.get_nodes(
-                                Quadrature.gauss_lobatto(degree[i]+1)
-                            )
+                            Quadrature.get_nodes(Quadrature.gauss_lobatto(degree[i]+1))
                         )[1]
                     end
                     section_spaces = map(section_space, nodes)
@@ -126,7 +124,9 @@ function test_0form_hodge_laplacian(
                 uₕ = Assemblers.solve_zero_form_hodge_laplacian(X[1], fₑ, dΩ)
                 if test
                     if section_space == FunctionSpaces.Lagrange
-                        ref_coeffs = read_data(sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh.txt")
+                        ref_coeffs = read_data(
+                            sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh.txt"
+                        )
                     else
                         ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh.txt")
                     end

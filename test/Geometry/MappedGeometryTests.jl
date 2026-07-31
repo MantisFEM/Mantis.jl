@@ -357,7 +357,7 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     ]
     jactest = true
     for p in eachindex(jac)
-        if !all(isapprox.(jac[p][:, :], [0.25 0.0; 0.0 0.25; yans[p] xans[p]], rtol=1e-14))
+        if !all(isapprox.(jac[p][:, :], [0.25 0.0; 0.0 0.25; yans[p] xans[p]]; rtol=1e-14))
             jactest = false
         end
     end
@@ -365,15 +365,15 @@ for (k, IJ) in enumerate(CartesianIndices((4, 4)))
 
     hesstest = true
     for p in eachindex(hess)
-        if !all(isapprox.(hess[p][1][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
+        if !all(isapprox.(hess[p][1][:, :], [0.0 0.0; 0.0 0.0]; atol=1e-14))
             println(1)
             hesstest = false
         end
-        if !all(isapprox.(hess[p][2][:, :], [0.0 0.0; 0.0 0.0], atol=1e-14))
+        if !all(isapprox.(hess[p][2][:, :], [0.0 0.0; 0.0 0.0]; atol=1e-14))
             println(2)
             hesstest = false
         end
-        if !all(isapprox.(hess[p][3][:, :], [0.0 1.0/16.0; 1.0/16.0 0.0], rtol=1e-14))
+        if !all(isapprox.(hess[p][3][:, :], [0.0 1.0/16.0; 1.0/16.0 0.0]; rtol=1e-14))
             println(3)
             hesstest = false
         end

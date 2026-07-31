@@ -267,7 +267,7 @@ function compute_hamiltonian(x_n, v_n)
                 U += 1.0 / r
             end
         end
-        K += 0.5 * (v[i]^2 + v[i+1]^2)
+        K += 0.5 * (v[i]^2 + v[i + 1]^2)
     end
     return K - U
 end
@@ -332,7 +332,7 @@ lines!(ax_ham, hamiltonian_history_R; color=:green)
 record(
     fig, "three_body_problem.mp4", LinRange(t0, T, round(Int, T / dt)); framerate=30
 ) do t
-    time[] = t
+    return time[] = t
 end
 
 # ```@raw html

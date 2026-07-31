@@ -40,7 +40,9 @@ end
 function build_form_fields(
     form_spaces::FS; labels::Union{L, Nothing}=nothing
 ) where {
-    num_forms, FS <: NTuple{num_forms, AbstractFormSpace}, L <: NTuple{num_forms, AbstractString}
+    num_forms,
+    FS <: NTuple{num_forms, AbstractFormSpace},
+    L <: NTuple{num_forms, AbstractString},
 }
     if isnothing(labels)
         labels = ntuple(num_forms) do _
@@ -70,9 +72,7 @@ function build_form_fields(
     form_fields = ntuple(num_forms) do i
         num_coeffs = get_num_basis(form_spaces[i])
         ff = build_form_field(
-            form_spaces[i],
-            coeffs[start_id:(start_id + num_coeffs - 1)];
-            label=labels[i],
+            form_spaces[i], coeffs[start_id:(start_id + num_coeffs - 1)]; label=labels[i]
         )
         start_id += num_coeffs
 
@@ -92,11 +92,13 @@ end
 Generate all possible k-form basis index combinations.
 
 # Arguments
-- `manifold_dim::Int`: the dimension of the manifold.
-- `form_rank::Int`: the rank of the form.
+
+  - `manifold_dim::Int`: the dimension of the manifold.
+  - `form_rank::Int`: the rank of the form.
 
 # Returns
-- `NTuple{binomial(manifold_dim, form_rank), Vector{Int}}`: the basis index combinations.
+
+  - `NTuple{binomial(manifold_dim, form_rank), Vector{Int}}`: the basis index combinations.
 """
 function get_basis_index_combinations(manifold_dim::Int, form_rank::Int)
 
@@ -128,15 +130,17 @@ end
 Create a tensor-product B-spline de Rham complex.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
-- `geometry::G`: the geometry of the domain.
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+  - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+  - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+  - `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
+  - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+  - `geometry::G`: the geometry of the domain.
 
 # Returns
-- `::Tuple{<:AbstractFormSpace{manifold_dim, form_rank}}`: Tuple with the form
+
+  - `::Tuple{<:AbstractFormSpace{manifold_dim, form_rank}}`: Tuple with the form
     spaces of the complex, for each `form_rank` from `0` to `manifold_dim+1`.
 """
 function create_tensor_product_bspline_de_rham_complex(
@@ -198,7 +202,7 @@ end
         num_elements::NTuple{manifold_dim, Int},
         section_spaces::NTuple{manifold_dim, F},
         regularities::NTuple{manifold_dim, Int},
-		mapping::M,
+    	mapping::M,
     ) where {
         manifold_dim,
         F <: FunctionSpaces.AbstractCanonicalSpace,
@@ -208,15 +212,17 @@ end
 Create a tensor-product B-spline de Rham complex.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
-- `mapping::M`: the mapping that applied to be base geometry.
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+  - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+  - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+  - `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
+  - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+  - `mapping::M`: the mapping that applied to be base geometry.
 
 # Returns
-- `::Tuple{<:AbstractFormSpace{manifold_dim, form_rank}}`: Tuple with the form
+
+  - `::Tuple{<:AbstractFormSpace{manifold_dim, form_rank}}`: Tuple with the form
     spaces of the complex, for each `form_rank` from `0` to `manifold_dim+1`.
 """
 function create_tensor_product_bspline_de_rham_complex(
@@ -288,14 +294,16 @@ end
 Create a tensor-product B-spline de Rham complex.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+  - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+  - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+  - `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
+  - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
 
 # Returns
-- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
+
+  - `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
 """
 function create_tensor_product_bspline_de_rham_complex(
     starting_points::NTuple{manifold_dim, Float64},
@@ -325,14 +333,16 @@ end
 Create a tensor-product B-spline de Rham complex on a crazy mesh.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+  - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+  - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+  - `section_spaces::NTuple{manifold_dim, F}`: the section spaces.
+  - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
 
 # Returns
-- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
+
+  - `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
 """
 function create_curvilinear_tensor_product_bspline_de_rham_complex(
     starting_points::NTuple{manifold_dim, Float64},
@@ -361,14 +371,16 @@ end
 Create a tensor-product B-spline de Rham complex on a crazy geometry.
 
 # Arguments
-- `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
-- `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
-- `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
-- `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
-- `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
+
+  - `starting_points::NTuple{manifold_dim, Float64}`: the starting points of the domain.
+  - `box_sizes::NTuple{manifold_dim, Float64}`: the sizes of the domain.
+  - `num_elements::NTuple{manifold_dim, Int}`: the number of elements in each direction.
+  - `degrees::NTuple{manifold_dim, Int}`: the degrees of the B-spline spaces.
+  - `regularities::NTuple{manifold_dim, Int}`: the regularities of the B-spline spaces.
 
 # Returns
-- `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
+
+  - `Vector{AbstractFormSpace}`: the `manifold_dim+1` form spaces of the complex.
 """
 function create_curvilinear_tensor_product_bspline_de_rham_complex(
     starting_points::NTuple{manifold_dim, Float64},
@@ -393,21 +405,21 @@ end
 ############################################################################################
 
 """
-	create_hierarchical_de_rham_complex(
-	    starting_points::NTuple{manifold_dim, Float64},
-	    box_sizes::NTuple{manifold_dim, Float64},
-	    num_elements::NTuple{manifold_dim, Int},
-	    section_spaces::NTuple{manifold_dim, F},
-	    regularities::NTuple{manifold_dim, Int},
-	    num_subdivisions::NTuple{manifold_dim, Int},
-	    truncate::Bool,
-	    simplified::Bool,
-	    geometry::G,
-	) where {
-	    manifold_dim,
-	    F <: FunctionSpaces.AbstractCanonicalSpace,
-	    G <: Geometry.AbstractGeometry{manifold_dim},
-	}
+    create_hierarchical_de_rham_complex(
+        starting_points::NTuple{manifold_dim, Float64},
+        box_sizes::NTuple{manifold_dim, Float64},
+        num_elements::NTuple{manifold_dim, Int},
+        section_spaces::NTuple{manifold_dim, F},
+        regularities::NTuple{manifold_dim, Int},
+        num_subdivisions::NTuple{manifold_dim, Int},
+        truncate::Bool,
+        simplified::Bool,
+        geometry::G,
+    ) where {
+        manifold_dim,
+        F <: FunctionSpaces.AbstractCanonicalSpace,
+        G <: Geometry.AbstractGeometry{manifold_dim},
+    }
 
 Construct a hierarchical discrete de Rham complex of finite element spaces over a
 tensor-product geometry, equivalent to a Cartesian grid, in `manifold_dim` dimensions.
@@ -419,7 +431,8 @@ See also [`create_tensor_product_bspline_de_rham_complex`](@ref) and
 [`FunctionSpaces.HierarchicalFiniteElementSpace`](@ref).
 
 # Returns
-- A tuple with the `manifold_dim + 1` spaces that form the de Rham complex.
+
+  - A tuple with the `manifold_dim + 1` spaces that form the de Rham complex.
 """
 function create_hierarchical_de_rham_complex(
     starting_points::NTuple{manifold_dim, Float64},
@@ -510,9 +523,9 @@ function create_hierarchical_de_rham_complex(
 end
 
 """
-	update_hierarchical_de_rham_complex(
-		complex::C, data
-	) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+    update_hierarchical_de_rham_complex(
+    	complex::C, data
+    ) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
 
 Returns a refined hierarchical de Rham complex, based on the given `complex` and refinement
 `data`. The input `data` should have a dedicated method in
@@ -521,14 +534,16 @@ Returns a refined hierarchical de Rham complex, based on the given `complex` and
 See also [`FunctionSpaces.refine_space`](@ref).
 
 # Arguments
-- `complex::C`: The hierarchical B-spline de Rham complex.
-- `data`: The information used for refinement. Examples include domains denoting active
+
+  - `complex::C`: The hierarchical B-spline de Rham complex.
+  - `data`: The information used for refinement. Examples include domains denoting active
     elements, of type [`Hierarchy.ActiveInfo`](@ref), or elements marked for refinement, of
     type `Vector{Vector{Int}}`.
 
 # Returns
-- `new_complex<:NTuple{num_forms, AbstractFormSpace}`:A tuple with the `manifold_dim + 1`
-	refined spaces that form the de Rham complex.
+
+  - `new_complex<:NTuple{num_forms, AbstractFormSpace}`:A tuple with the `manifold_dim + 1`
+    refined spaces that form the de Rham complex.
 """
 function update_hierarchical_de_rham_complex(
     complex::C, data
@@ -541,7 +556,7 @@ function update_hierarchical_de_rham_complex(
             comp_spaces = FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
             new_space = FunctionSpaces.DirectSumSpace(
                 ntuple(num_components) do c
-                    FunctionSpaces.refine_space(comp_spaces[c], data)
+                    return FunctionSpaces.refine_space(comp_spaces[c], data)
                 end,
             )
         end
@@ -569,17 +584,19 @@ end
 Create a polar B-spline de Rham complex.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: the number of elements in each direction.
-- `degrees::NTuple{2, Int}`: the degrees of the B-spline spaces.
-- `regularities::NTuple{2, Int}`: the regularities of the B-spline spaces.
-- `R::Float64`: the radius of the domain.
-- `refine::Bool=false`: whether to refine the domain.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing`: the geometry coefficients.
+
+  - `num_elements::NTuple{2, Int}`: the number of elements in each direction.
+  - `degrees::NTuple{2, Int}`: the degrees of the B-spline spaces.
+  - `regularities::NTuple{2, Int}`: the regularities of the B-spline spaces.
+  - `R::Float64`: the radius of the domain.
+  - `refine::Bool=false`: whether to refine the domain.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing`: the geometry coefficients.
 
 # Returns
-- `::Vector{AbstractFormSpace}`: the 3 form spaces of the complex.
-- `::Vector{NTuple{N,SparseMatrixCSC{Float64,Int}} where {N}}`: the global extraction operators.
-- `::NTuple{2, Array{Float64,3}}`: the geometry coefficients for the underlying tensor-product B-spline spaces.
+
+  - `::Vector{AbstractFormSpace}`: the 3 form spaces of the complex.
+  - `::Vector{NTuple{N,SparseMatrixCSC{Float64,Int}} where {N}}`: the global extraction operators.
+  - `::NTuple{2, Array{Float64,3}}`: the geometry coefficients for the underlying tensor-product B-spline spaces.
 """
 function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
@@ -616,17 +633,19 @@ end
 Create a polar B-spline de Rham complex.
 
 # Arguments
-- `num_elements::NTuple{2, Int}`: the number of elements in each direction.
-- `section_spaces::F`: the section spaces.
-- `regularities::NTuple{2, Int}`: the regularities of the B-spline spaces.
-- `R::Float64`: the radius of the domain.
-- `refine::Bool=false`: whether to refine the domain.
-- `geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing`: the geometry coefficients.
+
+  - `num_elements::NTuple{2, Int}`: the number of elements in each direction.
+  - `section_spaces::F`: the section spaces.
+  - `regularities::NTuple{2, Int}`: the regularities of the B-spline spaces.
+  - `R::Float64`: the radius of the domain.
+  - `refine::Bool=false`: whether to refine the domain.
+  - `geom_coeffs_tp::Union{Nothing, Array{Float64,3}}=nothing`: the geometry coefficients.
 
 # Returns
-- `::Vector{AbstractFormSpace}`: the 3 form spaces of the complex.
-- `::Vector{NTuple{N,SparseMatrixCSC{Float64,Int}} where {N}}`: the global extraction operators.
-- `::NTuple{2, Array{Float64,3}}`: the geometry coefficients for the underlying tensor-product B-spline spaces.
+
+  - `::Vector{AbstractFormSpace}`: the 3 form spaces of the complex.
+  - `::Vector{NTuple{N,SparseMatrixCSC{Float64,Int}} where {N}}`: the global extraction operators.
+  - `::NTuple{2, Array{Float64,3}}`: the geometry coefficients for the underlying tensor-product B-spline spaces.
 """
 function create_polar_spline_de_rham_complex(
     num_elements::NTuple{2, Int},
@@ -708,11 +727,13 @@ end
 Creates a dictionary of Dirichlet boundary conditions for a given form space.
 
 # Arguments
-- `form::AbstractFormSpace`: The form for which to compute the boundary conditions.
-- `value::Float64`: The value of the Dirichlet boundary condition.
+
+  - `form::AbstractFormSpace`: The form for which to compute the boundary conditions.
+  - `value::Float64`: The value of the Dirichlet boundary condition.
 
 # Returns
-- `::Dict{Int, Float64}`: The dictionary of Dirichlet boundary conditions.
+
+  - `::Dict{Int, Float64}`: The dictionary of Dirichlet boundary conditions.
 """
 function set_dirichlet_boundary_conditions(form::AbstractFormSpace, value::Float64)
     return Dict{Int, Float64}(i => value for i in trace_basis_idxs(form))
@@ -726,10 +747,12 @@ end
 Creates a list of basis function idxs which control the trace of the form on the boundary.
 
 # Arguments
-- `form::AbstractForm`: The form for which to compute the boundary conditions.
+
+  - `form::AbstractForm`: The form for which to compute the boundary conditions.
 
 # Returns
-- `Vector{Int}`: The list of basis idxs.
+
+  - `Vector{Int}`: The list of basis idxs.
 """
 function trace_basis_idxs(
     form::AbstractForm{manifold_dim, form_rank, expression_rank}

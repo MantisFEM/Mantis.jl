@@ -6,20 +6,22 @@ Conceptually, this structure combines the functionalities of `CartesianIndices` 
 `Iterators.product`.
 
 # Fields
-- `constituent_points::CP`: The set of points per manifold dimension.
-- `cart_num_points::CI`: The `CartesianIndices` used to convert from linear to cartesian
+
+  - `constituent_points::CP`: The set of points per manifold dimension.
+  - `cart_num_points::CI`: The `CartesianIndices` used to convert from linear to cartesian
     indexing.
-- `lin_num_points::LI`: The `LinearIndices` used to convert from cartesian to linear
+  - `lin_num_points::LI`: The `LinearIndices` used to convert from cartesian to linear
     indexing.
-- `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
+  - `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
     `cart_num_points`. If the `dim`-th entry has value `i`, then dimension `dim` will be the
     `i`-th fastest changing index.
-- `permuted_cart_num_points::CI`: A permuted version of `cart_num_points` as given by
+  - `permuted_cart_num_points::CI`: A permuted version of `cart_num_points` as given by
     `iteration_order`.
 
 # Example
+
 ```julia
-julia> points = Points.CartesianPoints([1,2], [1,2,3]; iteration_order=(1,2));
+julia> points = Points.CartesianPoints([1, 2], [1, 2, 3]; iteration_order=(1, 2));
 
 julia> for point in points
            display(point)
@@ -31,7 +33,7 @@ julia> for point in points
 (1, 3)
 (2, 3)
 
-julia> points = Points.CartesianPoints([1,2], [1,2,3]; iteration_order=(2,1));
+julia> points = Points.CartesianPoints([1, 2], [1, 2, 3]; iteration_order=(2, 1));
 
 julia> for point in points
            display(point)
@@ -115,14 +117,14 @@ Returns the `LinearIndices` used to convert from cartesian to linear indexing.
 get_lin_num_points(points::CartesianPoints) = points.lin_num_points
 
 """
-	get_iteration_order(points::CartesianPoints)
+    get_iteration_order(points::CartesianPoints)
 
 Returns the `iteration_order` order used to index `points`.
 """
 get_iteration_order(points::CartesianPoints) = points.iteration_order
 
 """
-	get_permuted_cart_num_points(points::CartesianPoints)
+    get_permuted_cart_num_points(points::CartesianPoints)
 
 Returns the permuted `cart_num_points` used to index `points`, as given by
 `iteration_order`.

@@ -8,22 +8,15 @@ multiple patches, even though each patch is still a Cartesian grid. Note that th
 are not required to have a matching grid.
 
 # Fields
-- `breakpoints::T`: A tuple of vectors defining the grid points in each dimension.
-- `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
+
+  - `breakpoints::T`: A tuple of vectors defining the grid points in each dimension.
+  - `cart_num_elements::CI`: A (tuple of) `CartesianIndices` representing the indices of
     elements in the grid for each patch.
 
 # Constructors
-- `CartesianGeometry(
-        breakpoints::T
-    ) where {
-        manifold_dim,
-        num_patches,
-        NT <: Number,
-        T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
-    }`: General constructor.
-- `CartesianGeometry(
-        breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
-    ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
+
+  - `CartesianGeometry( breakpoints::T ) where { manifold_dim, num_patches, NT <: Number, T <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}}, }`: General constructor.
+  - `CartesianGeometry( breakpoints::NTuple{manifold_dim, AbstractVector{NT}} ) where {manifold_dim, NT <: Number}`: Single-patch convenience constructor.
 """
 struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, CI, LI} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -120,7 +113,7 @@ get_breakpoint(geometry::CartesianGeometry, patch_id::Int=1, dim::Int=1, point::
     geometry.breakpoints[patch_id][dim][point]
 
 """
-	get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+    get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
 
 Returns a CartesianIndices iterator of all elements in the patch indicated by `patch_id`.
 """
@@ -128,7 +121,7 @@ get_cart_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.cart_num_elements[patch_id]
 
 """
-	get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
+    get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1)
 
 Returns a LinearIndices iterator of all elements in the patch indicated by `patch_id`.
 """
@@ -239,9 +232,7 @@ function hessian(
 ) where {manifold_dim, image_dim, num_patches}
     # The Hessian is zero for Cartesian geometries.
     num_points = Points.get_num_points(xi)
-    return [
-        ntuple(image_dim) do _
-            return zeros(SMatrix{manifold_dim, manifold_dim})
-        end for _ in 1:num_points
-    ]
+    return [ntuple(image_dim) do _
+        return zeros(SMatrix{manifold_dim, manifold_dim})
+    end for _ in 1:num_points]
 end

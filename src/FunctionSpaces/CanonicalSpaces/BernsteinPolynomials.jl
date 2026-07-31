@@ -5,7 +5,8 @@
 Concrete type for Bernstein polynomials; see [DeBoor1978](@cite).
 
 # Fields
-- `p::Int`: Degree of the Bernstein polynomial.
+
+  - `p::Int`: Degree of the Bernstein polynomial.
 """
 struct Bernstein <: AbstractCanonicalSpace
     p::Int
@@ -27,13 +28,15 @@ Compute derivatives up to order `nderivatives` for all Bernstein polynomials of 
 at `ξ` for ``\\xi \\in [0.0, 1.0]``.
 
 # Arguments
-- `polynomial::Bernstein`: Bernstein polynomial.
-- `ξ::Vector{Float64}`: Vector of evaluation points ``\\in [0.0, 1.0]``.
-- `nderivatives::Int=0`: Maximum order of derivatives to be computed (`nderivatives`
+
+  - `polynomial::Bernstein`: Bernstein polynomial.
+  - `ξ::Vector{Float64}`: Vector of evaluation points ``\\in [0.0, 1.0]``.
+  - `nderivatives::Int=0`: Maximum order of derivatives to be computed (`nderivatives`
     ``\\leq p``). Defaults to `0`, i.e., only the values of the polynomials are computed.
 
 # Returns
-- `::Vector{Vector{Matrix{Float64}}}`: Nested vector containing the values.
+
+  - `::Vector{Vector{Matrix{Float64}}}`: Nested vector containing the values.
 """
 Memoization.@memoize function evaluate(
     polynomials::Bernstein, xi::Points.AbstractPoints{1}, nderivatives::Int=0
@@ -113,7 +116,8 @@ a polynomial in terms of the monomial basis into coefficients of
 in terms of the Bernstein basis.
 
 # Arguments
-- `polynomial::Bernstein`: Bernstein polynomial
+
+  - `polynomial::Bernstein`: Bernstein polynomial
 """
 function extract_monomial_to_bernstein(polynomial::Bernstein)
     # degree

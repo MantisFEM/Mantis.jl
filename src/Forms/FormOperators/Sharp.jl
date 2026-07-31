@@ -8,9 +8,11 @@
 Represents the sharp operator, which converts a differential 1-form into a vector field.
 
 # Constructors
-- `Sharp(form::F)`: General constructor.
+
+  - `Sharp(form::F)`: General constructor.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -28,15 +30,16 @@ julia> ♯β¹ₕ = ♯(β¹ₕ); # This is no longer a form!
 
 julia> isa(♯β¹ₕ, Forms.Sharp)
 true
-
 ```
 
 # Fields
-- `form::F`: The differential 1-form to be converted into a vector field.
+
+  - `form::F`: The differential 1-form to be converted into a vector field.
 
 # Type Parameters
-- `manifold_dim`: The dimension of the manifold.
-- `F`: The type of the differential 1-form.
+
+  - `manifold_dim`: The dimension of the manifold.
+  - `F`: The type of the differential 1-form.
 """
 struct Sharp{manifold_dim, F}
     form::F
@@ -89,17 +92,19 @@ manifold, converting the form into a vector field. Note that both the 1-form and
 vector-field are defined in reference, curvilinear coordinates.
 
 # Arguments
-- `sharp::Sharp{manifold_dim}`: The sharp structure containing the form to be evaluated.
-- `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
-- `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
+
+  - `sharp::Sharp{manifold_dim}`: The sharp structure containing the form to be evaluated.
+  - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
+  - `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
     evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
     canonical domain and point structure.
 
 # Returns
-- `::Vector{Matrix{Float64}}`: Each component of the vector, corresponding to each ∂ᵢ,
+
+  - `::Vector{Matrix{Float64}}`: Each component of the vector, corresponding to each ∂ᵢ,
     stores the sharp evaluation. The size of each matrix is (number of evaluation
     points)x(number of basis functions).
-- `::Vector{Vector{Int}}`: Each component of the vector, corresponding to each ∂ᵢ, stores
+  - `::Vector{Vector{Int}}`: Each component of the vector, corresponding to each ∂ᵢ, stores
     the indices of the evaluated basis functions.
 """
 function evaluate(

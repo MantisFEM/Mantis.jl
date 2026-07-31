@@ -4,9 +4,10 @@
 1-dimensional knot vector.
 
 # Fields
-- `geometry::G`: A 1D geometry.
-- `polynomial_degree::Int`: Polynomial degree.
-- `multiplicity::TM`: Number of repetitions of each knot.
+
+  - `geometry::G`: A 1D geometry.
+  - `polynomial_degree::Int`: Polynomial degree.
+  - `multiplicity::TM`: Number of repetitions of each knot.
 """
 struct KnotVector{G, TM}
     geometry::G
@@ -82,15 +83,17 @@ Creates a uniform knot vector corresponding to B-splines basis functions of poly
 degree `p` and continuity `regularity[i]` on `breakpoints[i]`.
 
 # Arguments
-- `breakpoints::AbstractVector{NT}`: Location of each breakpoint.
-- `p::Int`: Degree of the polynomial (``p ≥ 0``).
-- `breakpoint_condition::AbstractVector{Int}`: Either the regularity or multiplicity of each
+
+  - `breakpoints::AbstractVector{NT}`: Location of each breakpoint.
+  - `p::Int`: Degree of the polynomial (``p ≥ 0``).
+  - `breakpoint_condition::AbstractVector{Int}`: Either the regularity or multiplicity of each
     breakpoint.
-- `condition_type::String`: Determines whether `breakpoint_condition` provides the
+  - `condition_type::String`: Determines whether `breakpoint_condition` provides the
     regularity or multiplicity.
 
 # Returns
-- `::KnotVector`: Knot vector.
+
+  - `::KnotVector`: Knot vector.
 """
 function create_knot_vector(
     geometry::Geometry.AbstractGeometry{1},
@@ -131,10 +134,12 @@ end
 Returns the multiplicity of each knot in `knot_vector`.
 
 # Arguments
-- `knot_vector::KnotVector`.
+
+  - `knot_vector::KnotVector`.
 
 # Returns
-- `<:AbstractVector{Int}`: Multiplicity of each knot.
+
+  - `<:AbstractVector{Int}`: Multiplicity of each knot.
 """
 function get_multiplicity(knot_vector::KnotVector)
     return knot_vector.multiplicity
@@ -156,10 +161,12 @@ end
 Determines the length of `knot_vector` by summing the multiplicities of each knot vector.
 
 # Arguments
-- `knot_vector::KnotVector`: Knot vector for length calculation.
+
+  - `knot_vector::KnotVector`: Knot vector for length calculation.
 
 # Returns
-- `::Int`: Length of the knot vector.
+
+  - `::Int`: Length of the knot vector.
 """
 function get_knot_vector_length(knot_vector::KnotVector)
     return sum(knot_vector.multiplicity)
@@ -172,11 +179,13 @@ Retrieves the breakpoint index corresponding to `knot_vector` at `knot_index`, i
 index of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
 
 # Arguments
-- `knot_vector::KnotVector`: Knot vector for length calculation.
-- `knot_index::Int`: Index in the knot vector.
+
+  - `knot_vector::KnotVector`: Knot vector for length calculation.
+  - `knot_index::Int`: Index in the knot vector.
 
 # Returns
-- `::Int`: Index of breakpoint corresponding to `knot_index`.
+
+  - `::Int`: Index of breakpoint corresponding to `knot_index`.
 """
 function convert_knot_to_breakpoint_idx(knot_vector::KnotVector, knot_index::Int)
     return findfirst(idx -> idx >= knot_index, cumsum(knot_vector.multiplicity))
@@ -188,11 +197,13 @@ end
 Get the index of the first knot corresponding to a given breakpoint.
 
 # Arguments
-- `knot_vector::KnotVector`: The knot vector.
-- `breakpoint_index::Int`: Index of the breakpoint.
+
+  - `knot_vector::KnotVector`: The knot vector.
+  - `breakpoint_index::Int`: Index of the breakpoint.
 
 # Returns
-- `::Int`: Index of the first knot for the given breakpoint.
+
+  - `::Int`: Index of the first knot for the given breakpoint.
 """
 function get_first_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
     return cumsum(knot_vector.multiplicity)[breakpoint_index] -
@@ -205,11 +216,13 @@ end
 Get the index of the last knot corresponding to a given breakpoint.
 
 # Arguments
-- `knot_vector::KnotVector`: The knot vector.
-- `breakpoint_index::Int`: Index of the breakpoint.
+
+  - `knot_vector::KnotVector`: The knot vector.
+  - `breakpoint_index::Int`: Index of the breakpoint.
 
 # Returns
-- `::Int`: Index of the last knot for the given breakpoint.
+
+  - `::Int`: Index of the last knot for the given breakpoint.
 """
 function get_last_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
     return cumsum(knot_vector.multiplicity)[breakpoint_index]
@@ -222,11 +235,13 @@ Retrieves the breakpoint corresponding to `knot_vector` at `knot_index`, i.e., t
 of the vector where every `breakpoint[i]` appears `knot_vector.multiplicity[i]`-times.
 
 # Arguments
-- `knot_vector::KnotVector`: Knot vector for length calculation.
-- `knot_index::Int`: Index in the knot vector.
+
+  - `knot_vector::KnotVector`: Knot vector for length calculation.
+  - `knot_index::Int`: Index in the knot vector.
 
 # Returns
-- `::Number`: Breakpoint corresponding to `knot_index`.
+
+  - `::Number`: Breakpoint corresponding to `knot_index`.
 """
 function get_knot_value(knot_vector::KnotVector, knot_index::Int)
     idx = convert_knot_to_breakpoint_idx(knot_vector, knot_index)
@@ -241,11 +256,13 @@ Retrieves the multiplicity of the breakpoint corresponding to `knot_vector` at
 `knot_vector.multiplicity[i]`-times.
 
 # Arguments
-- `knot_vector::KnotVector`: Knot vector for length calculation.
-- `knot_index::Int`: Index in the knot vector.
+
+  - `knot_vector::KnotVector`: Knot vector for length calculation.
+  - `knot_index::Int`: Index in the knot vector.
 
 # Returns
-- `::Int`: Multiplicity of the breakpoint corresponding to `knot_index`.
+
+  - `::Int`: Multiplicity of the breakpoint corresponding to `knot_index`.
 """
 function get_knot_multiplicity(knot_vector::KnotVector, knot_index::Int)
     index = convert_knot_to_breakpoint_idx(knot_vector, knot_index)
@@ -259,11 +276,13 @@ Returns the local knot vector necessary to characterize the B-spline identified 
 `basis_id`.
 
 # Arguments
-- `knot_vector::KnotVector`: The knot vector of the full B-spline basis.
-- `basis_id::Int`: The id of the B-spline.
+
+  - `knot_vector::KnotVector`: The knot vector of the full B-spline basis.
+  - `basis_id::Int`: The id of the B-spline.
 
 # Returns
-- `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
+
+  - `::KnotVector`: The knot vector of the B-spline identified by `basis_id`.
 """
 function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
     deg = get_polynomial_degree(knot_vector)
@@ -290,10 +309,12 @@ end
 Compute the Greville points for the given knot vector.
 
 # Arguments
-- `knot_vector::KnotVector`: The knot vector.
+
+  - `knot_vector::KnotVector`: The knot vector.
 
 # Returns
-- `::Tuple{Vector{Float64}}`: Vector of Greville points.
+
+  - `::Tuple{Vector{Float64}}`: Vector of Greville points.
 """
 function get_greville_points(knot_vector::KnotVector)
     p = get_polynomial_degree(knot_vector)

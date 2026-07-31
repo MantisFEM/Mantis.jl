@@ -68,7 +68,9 @@ run_tests(geom, file_name)
 #                          Lagrange-Bernstein (Square with hole)                           #
 ############################################################################################
 deg = 1
-nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(deg+1)))[1]
+nodes = Points.get_constituent_points(
+    Quadrature.get_nodes(Quadrature.gauss_lobatto(deg+1))
+)[1]
 b = FunctionSpaces.Lagrange(nodes)
 B1 = FunctionSpaces.BSplineSpace(
     Geometry.CartesianGeometry(([0.0, 1.0, 2.0, 3.0, 4.0],)), b, [-1, 0, 0, 0, -1]
@@ -138,8 +140,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0.*r1 [1.0, -1.0, 1.0, -1.0]
+    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
+    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_wavy_surface_test"
@@ -163,8 +165,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(3)
-    geom_coeffs_0.*r1 zeros(3)
+    geom_coeffs_0 .* r0 zeros(3)
+    geom_coeffs_0 .* r1 zeros(3)
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_quarter_annulus_test"
@@ -191,8 +193,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(4)
-    geom_coeffs_0.*r1 zeros(4)
+    geom_coeffs_0 .* r0 zeros(4)
+    geom_coeffs_0 .* r1 zeros(4)
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_annulus_test"
@@ -219,8 +221,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0.*r1 [1.0, -1.0, 1.0, -1.0]
+    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
+    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_wavy_surface_test"
@@ -261,8 +263,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(4)
-    geom_coeffs_0.*r1 zeros(4)
+    geom_coeffs_0 .* r0 zeros(4)
+    geom_coeffs_0 .* r1 zeros(4)
 ]
 
 # NURBS annulus with B-spline and NURBS bases

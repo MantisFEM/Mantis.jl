@@ -218,10 +218,10 @@ for i in 1:Geometry.get_num_elements(geometryMP100)
     hess = Geometry.hessian(geometryMP100, i, Points.CartesianPoints(([0.0, 1.0],)))
 
     for p in eachindex(jac, hess)
-        if !all(isapprox.(jac[p][:, :], [1.0 / i], rtol=1e-14))
+        if !all(isapprox.(jac[p][:, :], [1.0 / i]; rtol=1e-14))
             all_jac_MP100 = false
         end
-        if !all(isapprox.(hess[p][1][:, :], [0.0], rtol=1e-14))
+        if !all(isapprox.(hess[p][1][:, :], [0.0]; rtol=1e-14))
             all_hess_MP100 = false
         end
     end

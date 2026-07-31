@@ -21,7 +21,7 @@ function Base.convert(
     cart_num_patches = CartesianIndices(const_num_patches)
     breakpoints_per_patch = ntuple(num_patches) do patch_id
         return merge_tuples(
-            (map(get_breakpoints, const_geometries, Tuple(cart_num_patches[patch_id])))...,
+            (map(get_breakpoints, const_geometries, Tuple(cart_num_patches[patch_id])))...
         )
     end
 

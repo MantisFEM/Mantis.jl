@@ -11,19 +11,24 @@ operators; these are defined from a set of inputs holding the test, trial and fo
 and a constructor method that defines where the blocks are placed.
 
 # Fields
-- `lhs_expressions::LHS`: The left-hand side blocks of the weak-formulation.
-- `rhs_expressions::RHS`: The right-hand side blocks of the weak-formulation.
-- `inputs::I`: The inputs for the weak-formulation, which include the test and trial spaces,
+
+  - `lhs_expressions::LHS`: The left-hand side blocks of the weak-formulation.
+  - `rhs_expressions::RHS`: The right-hand side blocks of the weak-formulation.
+  - `inputs::I`: The inputs for the weak-formulation, which include the test and trial spaces,
     and forcing terms.
+
 # Type parameters
-- `manifold_dim::Int`: The dimension of the manifold where the weak-formulation is defined.
-- `LHS`: The type of the left-hand side expressions. Each row-column entry should be a
+
+  - `manifold_dim::Int`: The dimension of the manifold where the weak-formulation is defined.
+  - `LHS`: The type of the left-hand side expressions. Each row-column entry should be a
     subtype of  `AbstractRealValuedOperator` or `0`.
-- `RHS`: The type of the right-hand side expressions. Each row-column entry should be a
+  - `RHS`: The type of the right-hand side expressions. Each row-column entry should be a
     subtype of  `AbstractRealValuedOperator` or `0`.
-- `I`: The type of the inputs. It should be a subtype of `WeakFormInputs{manifold_dim}`.
+  - `I`: The type of the inputs. It should be a subtype of `WeakFormInputs{manifold_dim}`.
+
 # Inner constructors
-- `WeakForm(inputs::I, constructor::F)`: Creates a new `WeakForm` instance with the given
+
+  - `WeakForm(inputs::I, constructor::F)`: Creates a new `WeakForm` instance with the given
     inputs and constructor function. The constructor function is used to generate the
     left-hand side and right-hand side blocks of real-valued operators.
 """
@@ -125,10 +130,12 @@ get_lhs_size(wf::WeakForm) = get_test_size(wf), get_trial_size(wf)
 Returns the offsets of the test function spaces used in the weak form.
 
 # Arguments
-- `wf::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form being used.
+
+  - `wf::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form being used.
 
 # Returns
-- `NTuple{num_rows, Int}`: The offsets of the test function spaces.
+
+  - `NTuple{num_rows, Int}`: The offsets of the test function spaces.
 """
 function get_test_offsets(
     wf::WeakForm{manifold_dim, LHS, RHS, I}
@@ -170,10 +177,12 @@ end
 Returns the offsets of the trial function spaces used in the weak form.
 
 # Arguments
-- `wf::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form being used.
+
+  - `wf::WeakForm{manifold_dim, LHS, RHS, I}`: The weak form being used.
 
 # Returns
-- `NTuple{lhs_num_cols, lhs_num_cols}`: The offsets of the trial function spaces.
+
+  - `NTuple{lhs_num_cols, lhs_num_cols}`: The offsets of the trial function spaces.
 """
 function get_trial_offsets(
     wf::WeakForm{manifold_dim, LHS, RHS, I}
@@ -208,11 +217,13 @@ Returns the estimated number of non-zero entries per element for the left- and r
 sides of the weak-formulation.
 
 # Arguments
-- `wf::WeakForm`: The weak-formulation for which the estimated number of non-zero entries is
+
+  - `wf::WeakForm`: The weak-formulation for which the estimated number of non-zero entries is
     to be determined.
 
 # Returns
-- `Tuple(Int, Int)`: The estimated number of non-zero entries per element for the left-hand
+
+  - `Tuple(Int, Int)`: The estimated number of non-zero entries per element for the left-hand
     side and right-hand side of the weak-formulation, respectively.
 """
 function get_estimated_nnz_per_elem(wf::WeakForm)
@@ -243,10 +254,12 @@ end
 Returns the number of elements over which the discrete weak-formulation is defined.
 
 # Arguments
-- `wf::WeakForm`: The weak-formulation for which the number of elements is to be determined.
+
+  - `wf::WeakForm`: The weak-formulation for which the number of elements is to be determined.
 
 # Returns
-- `::Int`: The number of elements.
+
+  - `::Int`: The number of elements.
 """
 function get_num_elements(wf::WeakForm)
     for lhs_row in get_lhs_expressions(wf), expression in lhs_row
@@ -257,7 +270,9 @@ function get_num_elements(wf::WeakForm)
         return Forms.get_num_elements(expression)
     end
 
-    throw(ArgumentError("No elements found in the left-hand side of the weak-formulation."))
+    return throw(
+        ArgumentError("No elements found in the left-hand side of the weak-formulation.")
+    )
 end
 
 """
@@ -267,11 +282,13 @@ Returns the maximum number of elements over which the weak form blocks are evalu
 is the max over all lhs and rhs expression blocks.
 
 # Arguments
-- `wf::WeakForm`: The weak-formulation for which the number of quadrature elements is to be
+
+  - `wf::WeakForm`: The weak-formulation for which the number of quadrature elements is to be
     determined.
 
 # Returns
-- `::Int`: The number of quadrature elements.
+
+  - `::Int`: The number of quadrature elements.
 """
 function get_num_evaluation_elements(wf::WeakForm)
     num_eval_elements = 0

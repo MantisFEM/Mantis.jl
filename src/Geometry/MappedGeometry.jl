@@ -36,10 +36,12 @@ end
 Returns the dimension of the domain manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
+
+  - `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
-- `::Int`: The dimension of the domain manifold.
+
+  - `::Int`: The dimension of the domain manifold.
 """
 function get_manifold_dim(
     ::Mapping{manifold_dim, image_dim}
@@ -53,10 +55,12 @@ end
 Returns the dimension of the image manifold of the mapping.
 
 # Arguments
-- `::Mapping{manifold_dim, image_dim}`: The mapping structure.
+
+  - `::Mapping{manifold_dim, image_dim}`: The mapping structure.
 
 # Returns
-- `::Int`: The dimension of the image manifold.
+
+  - `::Int`: The dimension of the image manifold.
 """
 function get_image_dim(::Mapping{manifold_dim, image_dim}) where {manifold_dim, image_dim}
     return image_dim
@@ -68,11 +72,13 @@ end
 Evaluates the mappping of the points `x` from the parametric space to physical space.
 
 # Arguments
-- `mapping::Mapping`: The mapping defining the transformation of the points `x`.
-- `x::Matrix{Float64}`: The points in parametric space to be mapped.
+
+  - `mapping::Mapping`: The mapping defining the transformation of the points `x`.
+  - `x::Matrix{Float64}`: The points in parametric space to be mapped.
 
 # Returns
-- `::Matrix{Float64}`: The mapped points in physical space. The size of the matrix is
+
+  - `::Matrix{Float64}`: The mapped points in physical space. The size of the matrix is
     `(num_points, image_dim)`, where `num_points` is the number of rows in `x` and
     `image_dim` is the dimension of the mapped points.
 """
@@ -129,7 +135,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
@@ -192,7 +198,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
         Map <: AbstractMapping{manifold_dim, image_dim},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, G, Map}(
@@ -344,13 +350,11 @@ function hessian(
     Jm = jacobian(get_mapping(geometry, base_patch_id), x)
     Hm = hessian(get_mapping(geometry, base_patch_id), x)
 
-    return [
-        ntuple(image_dim) do i
-            Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
-            for j in 1:manifold_dim
-                Hp += Jm[p][i, j] * Hb[p][j]
-            end
-            return Hp
-        end for p in eachindex(Jb, Jm, Hm, Hb)
-    ]
+    return [ntuple(image_dim) do i
+        Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
+        for j in 1:manifold_dim
+            Hp += Jm[p][i, j] * Hb[p][j]
+        end
+        return Hp
+    end for p in eachindex(Jb, Jm, Hm, Hb)]
 end

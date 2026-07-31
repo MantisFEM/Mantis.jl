@@ -74,9 +74,7 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
             if section_space == FunctionSpaces.Lagrange
                 nodes = ntuple(manifold_dim) do i
                     return Points.get_constituent_points(
-                        Quadrature.get_nodes(
-                            Quadrature.gauss_lobatto(degree[i]+1)
-                        )
+                        Quadrature.get_nodes(Quadrature.gauss_lobatto(degree[i]+1))
                     )[1]
                 end
                 section_spaces = map(section_space, nodes)
@@ -127,9 +125,14 @@ for (mesh_idx, mesh) in enumerate(mesh_type)
 
                 # read reference data and compare
                 if section_space == FunctionSpaces.Lagrange
-                    ref_coeffs = read_data(sub_dir, "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh-$form_rank.txt")
+                    ref_coeffs = read_data(
+                        sub_dir,
+                        "$p-Mantis.FunctionSpaces.LobattoLegendre-$mesh-$form_rank.txt",
+                    )
                 else
-                    ref_coeffs = read_data(sub_dir, "$p-$section_space-$mesh-$form_rank.txt")
+                    ref_coeffs = read_data(
+                        sub_dir, "$p-$section_space-$mesh-$form_rank.txt"
+                    )
                 end
                 @test all(
                     isapprox.(fₕ.coefficients, ref_coeffs, atol=atol * 20, rtol=rtol * 20)

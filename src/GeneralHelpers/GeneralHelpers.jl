@@ -31,12 +31,14 @@ An optional `id` can be given to force the compilation of a new cache. This is u
 avoid clashes of dictionaries using the same types.
 
 !!! warning
+
     As per Julia's documentation, it is not guaranteed that the dictionary is not wiped
     during runtime. Read
     [this](https://docs.julialang.org/en/v1/manual/metaprogramming/#Generated-functions) for
     more information.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -56,7 +58,6 @@ Dict{Int64, String} with 1 entry:
 
 julia> new_dict = Mantis.GeneralHelpers.cache_dict(Int, String, Val(2))
 Dict{Int64, String}()
-
 ```
 """
 @generated function cache_dict(::Type{K}, ::Type{V}, id=Val{1}()) where {K, V}
@@ -79,7 +80,7 @@ See also [`cache_dict`](@ref) and `get!`.
 function get_from_cache(::Type{K}, ::Type{V}, key, f, id=Val{1}()) where {K, V}
     dict = cache_dict(K, V, id)
     get!(dict, key) do
-        f(key)
+        return f(key)
     end
 end
 
@@ -92,10 +93,11 @@ If `local_basis` corresponds to basis evaluations for some `manifold_dim`-variat
 space, then its `k`-th derivatives will all be stored in the location `local_basis[k+1]`.
 Moreover, the `k`-th derivative corresponding to the key `[i₁,i₂,...,iₙ]` in the location
 `local_basis[k+1][m]` where:
-- `m = 1` when `iⱼ = 0` for all `j`, i.e., for basis function values;
-- `m = 1+r` when `iⱼ = 0` for all `j` except for `j = r` and `iⱼ = 1`, i.e.,
+
+  - `m = 1` when `iⱼ = 0` for all `j`, i.e., for basis function values;
+  - `m = 1+r` when `iⱼ = 0` for all `j` except for `j = r` and `iⱼ = 1`, i.e.,
     for the first derivative w.r.t. the `j`-th canonical coordinate;
-- in all other cases (i.e., when `k>1`),  the value of `m` is equal to `l`
+  - in all other cases (i.e., when `k>1`),  the value of `m` is equal to `l`
     if `[i₁,i₂,...,iₙ]` is the `l`-th key returned by the function
     `integer_sums(k, Val(manifold_dim))`.
 
@@ -107,10 +109,12 @@ An optional `id` can be given choose the used cache. This is useful to avoid cla
 dictionaries using the same types. See also [`cache_dict`](@ref).
 
 # Arguments
-- `der_key::NTuple{manifold_dim, Int}`: A key for the desired derivative order.
+
+  - `der_key::NTuple{manifold_dim, Int}`: A key for the desired derivative order.
 
 # Returns
-- `::Int`: The linear index corresponding to the derivative's storage location in basis
+
+  - `::Int`: The linear index corresponding to the derivative's storage location in basis
     evaluations.
 """
 function get_derivative_idx(
@@ -150,11 +154,13 @@ An optional `id` can be given choose the used cache. This is useful to avoid cla
 dictionaries using the same types. See also [`cache_dict`](@ref).
 
 # Arguments
-- `sum_indices::Int`: The target sum of the integers in each combination.
-- `num_indices::Val{N}`: The number of integers in each combination, given by `N`.
+
+  - `sum_indices::Int`: The target sum of the integers in each combination.
+  - `num_indices::Val{N}`: The number of integers in each combination, given by `N`.
 
 # Returns
-- `::Vector{NTuple{N, Int}}`: Each inner vector represents a combination of integers that
+
+  - `::Vector{NTuple{N, Int}}`: Each inner vector represents a combination of integers that
     sum up to `sum_indices`. If no valid combinations exist, the vectors are empty.
 """
 function integer_sums(sum_indices::Int, num_indices::Val{N}, id=Val{1}()) where {N}
@@ -198,6 +204,7 @@ An optional `id` can be given choose the used cache. This is useful to avoid cla
 dictionaries using the same types. See also [`cache_dict`](@ref).
 
 # Examples
+
 ```jldoctest
 julia> using Mantis;
 
@@ -209,7 +216,6 @@ julia> Mantis.GeneralHelpers.integer_sums(0, 2, Val(2))
  (0, 2)
  (1, 1)
  (2, 0)
-
 ```
 """
 function integer_sums(init_sum::Int, final_sum::Int, num_indices::Val, id=Val{1}())
@@ -223,6 +229,7 @@ Return the number of distinct partial derivatives of order `d` in an `n`-variate
 assuming equality of mixed partial derivatives.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -231,7 +238,6 @@ julia> Mantis.GeneralHelpers.num_der_indices(1, 2)
 
 julia> Mantis.GeneralHelpers.num_der_indices(3, 2)
 6
-
 ```
 """
 num_der_indices(n, d) = binomial(n + d - 1, n - 1)
@@ -240,7 +246,7 @@ function Array{T, N}(::UndefInitializer, dims...) where {T, N}
     if !matches(Array{T, N}, dims...)
         throw(
             DimensionMismatch(
-                "$(Array{T, N}) incompatible with number of dimensions $(length.(dims)).",
+                "$(Array{T, N}) incompatible with number of dimensions $(length.(dims))."
             ),
         )
     end
@@ -316,14 +322,19 @@ end
 Create a directory (if needed) and return the path to the output file.
 
 # Arguments
-- `output_directory_tree::Vector`: A vector representing the directory tree.
-- `filename`: The name of the output file.
+
+  - `output_directory_tree::Vector`: A vector representing the directory tree.
+  - `filename`: The name of the output file.
 
 # Example
+
 ```julia
 julia> using Mantis
 
-julia> output_file = Mantis.GeneralHelpers.export_path(["examples", "data", "output"], "output.vtu");
+julia> output_file = Mantis.GeneralHelpers.export_path(
+           ["examples", "data", "output"], "output.vtu"
+       );
+
 ```
 """
 function export_path(output_directory_tree::Vector, filename)

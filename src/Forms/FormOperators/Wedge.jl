@@ -14,9 +14,11 @@ respective ranks of the input forms. If the `expression_rank` of the `Wedge` wou
 larger than 2, an error is thrown.
 
 # Constructors
-- `Wedge(form_1::F1, form_2::F2)`: General constructor.
+
+  - `Wedge(form_1::F1, form_2::F2)`: General constructor.
 
 # Examples
+
 ```jldoctest
 julia> using Mantis
 
@@ -30,19 +32,20 @@ julia> wedged = Λ⁰ₕ ∧ Λ²ₕ;  # Wedge operator between the two spaces.
 
 julia> isa(wedged, Forms.Wedge{2, 2, 2})
 true
-
 ```
 
 # Fields
-- `form_1::F1`: The first form.
-- `form_2::F2`: The second form.
-- `label::L`: A label for the wedge.
+
+  - `form_1::F1`: The first form.
+  - `form_2::F2`: The second form.
+  - `label::L`: A label for the wedge.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F1 <: Forms.AbstractForm`: The type of `form_1`.
-- `F2 <: Forms.AbstractForm`: The type of `form_2`.
-- `L <: AbstractString`: The type of the label. Since a "∧" is added to the label, this
+
+  - `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+  - `F1 <: Forms.AbstractForm`: The type of `form_1`.
+  - `F2 <: Forms.AbstractForm`: The type of `form_2`.
+  - `L <: AbstractString`: The type of the label. Since a "∧" is added to the label, this
     type may differ from the label type of the underlying form.
 """
 struct Wedge{manifold_dim, form_rank, expression_rank, F1, F2, L} <:
@@ -112,7 +115,9 @@ function get_forms(form::Wedge)
 end
 
 function get_form(form::Wedge)
-    throw(ArgumentError("'get_form' is not defined for Wedges. Use 'get_forms' instead."))
+    return throw(
+        ArgumentError("'get_form' is not defined for Wedges. Use 'get_forms' instead.")
+    )
 end
 
 function get_geometry(form::Wedge)
@@ -147,7 +152,7 @@ function _evaluate_wedge(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    throw(ArgumentError("Method not implemented for the given form expressions."))
+    return throw(ArgumentError("Method not implemented for the given form expressions."))
 end
 
 ############################################################################################

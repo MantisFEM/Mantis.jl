@@ -10,12 +10,14 @@ mesh into `nsubd[i][j]` elements in the `j`-th direction. The `elements_to_exclu
 is a vector of element indices to exclude from the mesh.
 
 # Arguments
-- `eval_mask::AbstractEvaluationMask`: The evaluation mask.
-- `nsubd::Vector{NTuple{manifold_dim, Int}}`: The number of subdivisions in each direction.
-- `elements_to_exclude::AbstractVector{Int}`: The elements to exclude.
+
+  - `eval_mask::AbstractEvaluationMask`: The evaluation mask.
+  - `nsubd::Vector{NTuple{manifold_dim, Int}}`: The number of subdivisions in each direction.
+  - `elements_to_exclude::AbstractVector{Int}`: The elements to exclude.
 
 # Returns
-- `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
+
+  - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
     eval_mask::AbstractEvaluationMask{manifold_dim},
@@ -64,12 +66,14 @@ mesh into `nsubd[i][j]` elements in the `j`-th direction. The `elements_to_exclu
 argument is a vector of element indices to exclude from the mesh.
 
 # Arguments
-- `eval_mask::AbstractEvaluationMask`: The evaluation mask.
-- `nsubd::Vector{Int}`: The number of subdivisions for each element.
-- `elements_to_exclude::Vector{Int}`: The elements to exclude.
+
+  - `eval_mask::AbstractEvaluationMask`: The evaluation mask.
+  - `nsubd::Vector{Int}`: The number of subdivisions for each element.
+  - `elements_to_exclude::Vector{Int}`: The elements to exclude.
 
 # Returns
-- `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
+
+  - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
     eval_mask::AbstractEvaluationMask{manifold_dim},
@@ -93,12 +97,14 @@ mesh into `nsubd[i][j]` elements in the `j`-th direction. The `elements_to_exclu
 argument is a vector of element indices to exclude from the mesh.
 
 # Arguments
-- `eval_mask::AbstractEvaluationMask`: The evaluation mask.
-- `nsubd::Int`: The number of subdivisions for each element.
-- `elements_to_exclude::AbstractVector{Int}`: The elements to exclude.
+
+  - `eval_mask::AbstractEvaluationMask`: The evaluation mask.
+  - `nsubd::Int`: The number of subdivisions for each element.
+  - `elements_to_exclude::AbstractVector{Int}`: The elements to exclude.
 
 # Returns
-- `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
+
+  - `subdiv_eval_mask::AbstractEvaluationMask`: The subdivided evaluation mask.
 """
 function subdivide_evaluation_mask(
     eval_mask::AbstractEvaluationMask{manifold_dim},

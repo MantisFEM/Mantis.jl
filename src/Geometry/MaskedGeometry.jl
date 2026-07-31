@@ -10,8 +10,9 @@ geometry `base_geometry` is the original geometry and it is composed with the ev
 mask `eval_mask`.
 
 # Fields
-- `base_geometry::G`: The base geometry.
-- `eval_mask::AbstractEvaluationMask`: The evaluation mask.
+
+  - `base_geometry::G`: The base geometry.
+  - `eval_mask::AbstractEvaluationMask`: The evaluation mask.
 """
 struct MaskedGeometry{manifold_dim, image_dim, num_patches, G, M} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}

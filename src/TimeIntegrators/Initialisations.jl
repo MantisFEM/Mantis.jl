@@ -6,11 +6,13 @@
 Creates the TimeIntegrationSolution object with an initialised y0 vector.
 
 # Arguments
-- `y0::Matrix{T}`: The initial value of the solution matrix.
-- `scheme::AbstractTimeIntegrator{num_stages, num_steps}`: The time integration scheme.
+
+  - `y0::Matrix{T}`: The initial value of the solution matrix.
+  - `scheme::AbstractTimeIntegrator{num_stages, num_steps}`: The time integration scheme.
 
 # Returns
-- `TimeIntegrationSolution{num_steps}`: The initialised solution vector.
+
+  - `TimeIntegrationSolution{num_steps}`: The initialised solution vector.
 """
 function initialise_scheme(
     y0::Matrix{T}, scheme::AbstractTimeIntegrator{num_stages, num_steps}
@@ -27,8 +29,9 @@ Initialise single-step schemes. The given input vector will be turned into a mat
 appropriate size.
 
 # Arguments
-- `y0::Vector{T}`: The initial value of the solution vector.
-- `scheme::AbstractTimeIntegrator{num_stages, num_steps}`: The time integration scheme.
+
+  - `y0::Vector{T}`: The initial value of the solution vector.
+  - `scheme::AbstractTimeIntegrator{num_stages, num_steps}`: The time integration scheme.
 """
 function initialise_scheme(
     y0::Vector{T}, scheme::AbstractTimeIntegrator{num_stages, num_steps}
@@ -54,13 +57,15 @@ end
 Initialise multi-step schemes.
 
 # Arguments
-- `y0::Vector{T}`: The initial value of the solution vector.
-- `scheme::AbstractTimeIntegrator{num_stages_scheme, num_steps}`: The time integration
+
+  - `y0::Vector{T}`: The initial value of the solution vector.
+  - `scheme::AbstractTimeIntegrator{num_stages_scheme, num_steps}`: The time integration
     scheme.
-- `startup_scheme::AbstractTimeIntegrator{num_stages_startup, 1}`: The startup scheme.
+  - `startup_scheme::AbstractTimeIntegrator{num_stages_startup, 1}`: The startup scheme.
 
 # Returns
-- `TimeIntegrationSolution{num_steps}`: The initialised solution vector.
+
+  - `TimeIntegrationSolution{num_steps}`: The initialised solution vector.
 """
 function initialise_scheme(
     y0::Vector{T},

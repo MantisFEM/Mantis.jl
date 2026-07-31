@@ -2,6 +2,8 @@ module TensorProductSpacesTests
 
 using Test
 
-@testset "TensorProductSpaces" begin include("TensorProductTests.jl") end
+@testset "TensorProductSpaces" begin
+    include("TensorProductTests.jl")
+end
 
 end

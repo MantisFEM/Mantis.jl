@@ -10,16 +10,18 @@
 Function for assembling the weak form of the 1-form Hodge Laplacian problem.
 
 # Arguments
-- `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
+
+  - `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
     forcing terms.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
+  - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
+
+  - `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
     The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the left-hand side matrix.
-- `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
+  - `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
     The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
     of the right-hand side matrix.
 """
@@ -46,14 +48,16 @@ end
 Returns the solution of the weak form of the 1-form Hodge Laplacian.
 
 # Arguments
-- `X⁰`: The 0-form space to use as trial and test space.
-- `X¹`: The 1-form space to use as trial and test space.
-- `f¹`: The forcing term to use for the right-hand side of the weak formulation.
-- `dΩ`: The quadrature rule to use for the assembly.
+
+  - `X⁰`: The 0-form space to use as trial and test space.
+  - `X¹`: The 1-form space to use as trial and test space.
+  - `f¹`: The forcing term to use for the right-hand side of the weak formulation.
+  - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `δu¹ₕ::Forms.FormField`: The 0-form solution of the weak-formulation.
-- `u¹ₕ::Forms.FormField`: The 1-form solution of the weak-formulation.
+
+  - `δu¹ₕ::Forms.FormField`: The 0-form solution of the weak-formulation.
+  - `u¹ₕ::Forms.FormField`: The 1-form solution of the weak-formulation.
 """
 function solve_one_form_hodge_laplacian(X⁰, X¹, f¹, dΩ, bc_type="")
     weak_form_inputs = Assemblers.WeakFormInputs((X⁰, X¹), (f¹,))
@@ -89,16 +93,17 @@ end
 Returns the solution of the weak form of the 1-form Hodge Laplacian from an adaptive loop.
 
 # Arguments
-- `complex::C`: The initial de Rham complex to use for the problem.
-- `forcing_function::Function`: The function to use for the forcing term.
-- `dΩₐ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule to use
+
+  - `complex::C`: The initial de Rham complex to use for the problem.
+  - `forcing_function::Function`: The function to use for the forcing term.
+  - `dΩₐ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule to use
     for the assembly.
-- `num_steps::Int`: The number of steps to use for the adaptive loop.
-- `dorfler_parameter::Float64`: The parameter to use for the Dörfler marking.
-- `dΩₑ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule to use
+  - `num_steps::Int`: The number of steps to use for the adaptive loop.
+  - `dorfler_parameter::Float64`: The parameter to use for the Dörfler marking.
+  - `dΩₑ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule to use
     for the error estimation.
-- `Lchains::Bool`: Whether to use L-chains for the refinement.
-- `verbose::Bool=false`: Whether to print the progress of the adaptive loop.
+  - `Lchains::Bool`: Whether to use L-chains for the refinement.
+  - `verbose::Bool=false`: Whether to print the progress of the adaptive loop.
 """
 function solve_one_form_hodge_laplacian(
     complex::C,

@@ -19,7 +19,7 @@ end
 end
 
 @testset "HierarchicalGeometry" verbose = true begin
-	include("HierarchicalGeometryTests.jl")
+    include("HierarchicalGeometryTests.jl")
 end
 
 @testset "Metric" begin

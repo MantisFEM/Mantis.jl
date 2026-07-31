@@ -6,13 +6,15 @@
 Returns a tensor product quadrature rule of given degree and rule type.
 
 # Arguments
-- `p::NTuple{manifold_dim, Integer}`: Degree of the quadrature rule per dimension.
-- `quad_rule::F`: The function that returns a `CanonicalQuadratureRule{1}` given an integer degree.
+
+  - `p::NTuple{manifold_dim, Integer}`: Degree of the quadrature rule per dimension.
+  - `quad_rule::F`: The function that returns a `CanonicalQuadratureRule{1}` given an integer degree.
     May take additional arguments.
-- `rule_args_1d...`: Additional arguments for the 1D quadrature rule. Optional.
+  - `rule_args_1d...`: Additional arguments for the 1D quadrature rule. Optional.
 
 # Returns
-- `::CanonicalQuadratureRule{manifold_dim}`: CanonicalQuadratureRule of the new dimension.
+
+  - `::CanonicalQuadratureRule{manifold_dim}`: CanonicalQuadratureRule of the new dimension.
 """
 function tensor_product_rule(
     p::NTuple{manifold_dim, Integer}, quad_rule::F, rule_args_1d...
@@ -32,10 +34,12 @@ end
 Returns a tensor product quadrature rule from the given rules.
 
 # Arguments
-- `qrules_1d::NTuple{manifold_dim, CanonicalQuadratureRule{1}}`: Quadrature rules per dimension.
+
+  - `qrules_1d::NTuple{manifold_dim, CanonicalQuadratureRule{1}}`: Quadrature rules per dimension.
 
 # Returns
-- `::CanonicalQuadratureRule{manifold_dim}`: CanonicalQuadratureRule of the new dimension.
+
+  - `::CanonicalQuadratureRule{manifold_dim}`: CanonicalQuadratureRule of the new dimension.
 """
 function tensor_product_rule(
     const_qrules::NTuple{manifold_dim, CanonicalQuadratureRule{1}}
@@ -69,10 +73,12 @@ end
 Compute the tensor product of the given 1D quadrature weights.
 
 # Arguments
-- `weights_1d::NTuple{manifold_dim, Vector{T}}`: Quadrature weights per dimension.
+
+  - `weights_1d::NTuple{manifold_dim, Vector{T}}`: Quadrature weights per dimension.
 
 # Returns
-- `::Vector{T}`: Tensor product of the quadrature weights.
+
+  - `::Vector{T}`: Tensor product of the quadrature weights.
 """
 function _compute_tensor_product(
     weights_1d::NTuple{manifold_dim, Vector{T}}

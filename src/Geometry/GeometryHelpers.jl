@@ -13,11 +13,13 @@ Create a Cartesian box geometry with `manifold_dim` dimensions, starting at
 `starting_points` and with `box_sizes` and `num_elements` defining the size of the box.
 
 # Arguments
+
   - `starting_points::NTuple{manifold_dim, Float64}`: The starting points of the box.
   - `box_sizes::NTuple{manifold_dim, Float64}`: The size of the box.
   - `num_elements::NTuple{manifold_dim, Int}`: The number of elements in each dimension.
 
 # Output
+
   - `::CartesianGeometry{manifold_dim}`: The Cartesian box geometry.
 """
 function create_cartesian_box(
@@ -66,11 +68,15 @@ function create_curvilinear_mapping(
             (2.0 / (box_sizes[2])) * x[2] - 2.0 * starting_points[2] / (box_sizes[2]) - 1.0
         return (
             [
-                -(2.0 / box_sizes[1])*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new)
+                -(2.0 / box_sizes[1])*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2/box_sizes[2])*pi^2*c*cospi(
+                    x1_new
+                )*cospi(x2_new)
                 (2.0/box_sizes[2])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2 * box_sizes[1] / (box_sizes[2]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
             ],
             [
-                -(2 * box_sizes[2] / (box_sizes[1]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new)
+                -(2 * box_sizes[2] / (box_sizes[1]^2))*pi^2*c*sinpi(x1_new)*sinpi(x2_new) (2.0/box_sizes[1])*pi^2*c*cospi(
+                    x1_new
+                )*cospi(x2_new)
                 (2.0/box_sizes[1])*pi^2*c*cospi(x1_new)*cospi(x2_new) -(2.0 / box_sizes[2])*pi^2*c*sinpi(x1_new)*sinpi(x2_new)
             ],
         )
@@ -138,10 +144,12 @@ direction and a `c` parameter to change the deformation of the mapping. Not that
 becomes singular with `c` = 0.3.
 
 # Arguments
+
   - `num_elements::NTuple{2,Int}`: The number of elements in each direction.
   - `c::Float64 = 0.1`: The `c` parameter.
 
 # Output
+
   - `geometry::MappedGeometry{2, 2, 1}`: The curvilinear square geometry.
 """
 function create_curvilinear_square(

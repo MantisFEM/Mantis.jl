@@ -57,7 +57,7 @@ for element_id in 1:1:FunctionSpaces.get_num_elements(hier_space)
     level, element_level_id = FunctionSpaces.convert_to_element_level_and_level_id(
         hier_space, element_id
     )
-	borders = FunctionSpaces.get_element_vertices(hier_space, element_id)[1]
+    borders = FunctionSpaces.get_element_vertices(hier_space, element_id)[1]
     x = borders[1] .+ Points.get_constituent_points(xi)[1] .* (borders[2] - borders[1])
     idx = ((element_id - 1) * nxi + 1):(element_id * nxi)
     xs[idx] = x
@@ -68,7 +68,7 @@ end
 
 coeffs = A \ xs
 A * coeffs .- xs
-all(isapprox.(A * coeffs .- xs, 0.0, atol=1e-14))
+all(isapprox.(A * coeffs .- xs, 0.0; atol=1e-14))
 
 @test FunctionSpaces.get_num_levels(hier_space) == nlevels
 

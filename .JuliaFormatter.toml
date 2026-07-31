@@ -10,9 +10,9 @@ conditional_to_if = true
 # Add whitespace to type definitions.
 whitespace_typedefs = true
 # Enables formatting for code blocks
-format_docstrings = false
+format_docstrings = true
 # Enables formatting for markdown
-format_markdown = false
+format_markdown = true
 # Stops pipes from being converted to function calls
 pipe_to_function_call = false
 # Since the `formart_markdown` can break markdown blocks in the docs, it is best to ignore

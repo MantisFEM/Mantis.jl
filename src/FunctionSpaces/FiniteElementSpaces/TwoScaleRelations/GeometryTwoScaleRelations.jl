@@ -1,14 +1,15 @@
 """
-	subdivide_geometry(parent_geo::Geometry.AbstractGeometry, num_subdivisions)
+    subdivide_geometry(parent_geo::Geometry.AbstractGeometry, num_subdivisions)
 
 Returns a refined version of `parent_geo` where each element is subdivided according to
 `num_subdivisions`.
 
 # Returns
-- `child_geometry`: The geometry corresponding to the subdivision of `parent_geo`.
+
+  - `child_geometry`: The geometry corresponding to the subdivision of `parent_geo`.
 """
 function subdivide_geometry(parent_geo::Geometry.AbstractGeometry, num_subdivisions)
-    throw(MethodError(subdivide_geometry, (parent_geo, num_subdivisions)))
+    return throw(MethodError(subdivide_geometry, (parent_geo, num_subdivisions)))
 end
 
 function subdivide_geometry(
@@ -92,10 +93,13 @@ Subdivides `parent_breakpoints` by uniformly subdiving each element `num_subdivi
 times.
 
 # Arguments
-- `parent_breakpoints::AbstractVector`: Parent set of breakpoints.
-- `num_subdivisions`: Number of times each element is subdivided.
+
+  - `parent_breakpoints::AbstractVector`: Parent set of breakpoints.
+  - `num_subdivisions`: Number of times each element is subdivided.
+
 # Returns
-- `child_breakpoints::Vector{Float64}`: Child set of breakpoints.
+
+  - `child_breakpoints::Vector{Float64}`: Child set of breakpoints.
 """
 function subdivide_breakpoints(parent_breakpoints::AbstractVector, num_subdivisions)
     num_parent_breakpoints = length(parent_breakpoints)
