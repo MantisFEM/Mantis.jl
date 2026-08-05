@@ -22,13 +22,13 @@ function get_greville_points(
     num_spaces,
     T <: NTuple{num_spaces, BSplineSpace},
 }
-    const_greville_points = map(get_greville_points, get_constituent_spaces(space))
+    factor_greville_points = map(get_greville_points, get_factor_spaces(space))
     greville_points = Vector{Vector{Float64}}(undef, manifold_dim)
-    const_manifold_dims = get_constituent_manifold_dim(space)
-    cum_const_manifold_dims = (0, cumsum(const_manifold_dims)...)
+    factor_manifold_dims = get_factor_manifold_dims(space)
+    cum_factor_manifold_dims = (0, cumsum(factor_manifold_dims)...)
     for space_id in 1:num_spaces
-        for dim in 1:const_manifold_dims[space_id]
-            greville_points[dim + cum_const_manifold_dims[space_id]] = const_greville_points[space_id][dim]
+        for dim in 1:factor_manifold_dims[space_id]
+            greville_points[dim + cum_factor_manifold_dims[space_id]] = factor_greville_points[space_id][dim]
         end
     end
 

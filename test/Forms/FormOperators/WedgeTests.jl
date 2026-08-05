@@ -322,7 +322,7 @@ curv_geom_3d = Geometry.TensorProductGeometry((
 curv_geom_3d_parametric = Geometry.TensorProductGeometry((
     Forms.get_geometry(cart_complex_2d[1]), line_geo_3
 ))
-bsp_3 = FunctionSpaces.get_constituent_spaces(Forms.get_fe_space(cart_complex_3d[1]))[3]
+bsp_3 = FunctionSpaces.get_factor_spaces(Forms.get_fe_space(cart_complex_3d[1]))[3]
 tp_space_curv_3d = FunctionSpaces.TensorProductSpace((
     Forms.get_fe_space(curv_complex_2d[1]), bsp_3
 ))

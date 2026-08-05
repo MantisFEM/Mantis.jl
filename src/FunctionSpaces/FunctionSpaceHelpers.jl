@@ -749,7 +749,7 @@ function refine_polar_geometry_data(P_geom, geom_coeffs_polar; two_poles=false)
 
     return P_geom_ref,
     geom_coeffs_polar_ref,
-    get_num_elements.(get_constituent_spaces(P_geom_ref))
+    get_num_elements.(get_factor_spaces(P_geom_ref))
 end
 
 """

@@ -5,7 +5,7 @@
 function Base.convert(
     ::Type{CartesianGeometry},
     geometry::TensorProductGeometry{
-        manifold_dim, image_dim, num_patches, num_geometries, T, CI
+        manifold_dim, image_dim, num_patches, num_geometries, TP,
     },
 ) where {
     manifold_dim,
@@ -13,15 +13,14 @@ function Base.convert(
     num_patches,
     num_geometries,
     T <: NTuple{num_geometries, CartesianGeometry},
-    CI,
+    TP <: TensorProducts.TensorProduct{T},
 }
-    const_geometries = get_constituent_geometries(geometry)
-    const_manifold_dims = map(get_manifold_dim, const_geometries)
-    const_num_patches = map(get_num_patches, const_geometries)
-    cart_num_patches = CartesianIndices(const_num_patches)
+    factor_num_patches = get_factor_num_patches(geometry)
+    cart_num_patches = CartesianIndices(factor_num_patches)
+    factor_geometries = TensorProducts.get_factors(get_tensor_product(geometry))
     breakpoints_per_patch = ntuple(num_patches) do patch_id
         return merge_tuples(
-            (map(get_breakpoints, const_geometries, Tuple(cart_num_patches[patch_id])))...,
+            (map(get_breakpoints, factor_geometries, Tuple(cart_num_patches[patch_id])))...
         )
     end
 

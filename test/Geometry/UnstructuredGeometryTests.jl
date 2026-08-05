@@ -40,7 +40,7 @@ answers_2 = (
 )
 basic_tests(geometry_2, answers_2)
 
-xi = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+xi = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
 for i in 1:Geometry.get_num_elements(geometry_2)
     evals = Geometry.evaluate(geometry_2, i, xi)
     jac = Geometry.jacobian(geometry_2, i, xi)

@@ -46,7 +46,7 @@ hier_space = FunctionSpaces.HierarchicalFiniteElementSpace(
 
 # Test if projection in space is exact
 nxi = 20
-xi = Points.CartesianPoints((range(0, 1, nxi),))
+xi = Points.TensorProductPoints((range(0, 1, nxi),))
 
 xs = Vector{Float64}(undef, FunctionSpaces.get_num_elements(hier_space) * nxi)
 nx = length(xs)
@@ -58,7 +58,7 @@ for element_id in 1:1:FunctionSpaces.get_num_elements(hier_space)
         hier_space, element_id
     )
 	borders = FunctionSpaces.get_element_vertices(hier_space, element_id)[1]
-    x = borders[1] .+ Points.get_constituent_points(xi)[1] .* (borders[2] - borders[1])
+    x = borders[1] .+ Points.get_input_points(xi)[1] .* (borders[2] - borders[1])
     idx = ((element_id - 1) * nxi + 1):(element_id * nxi)
     xs[idx] = x
     h_eval, h_inds = FunctionSpaces.evaluate(hier_space, element_id, xi, 0)

@@ -52,8 +52,8 @@ function create_multi_patch_c0_space(
     end
     elems_per_patch_offset = vcat(0, cumsum(elems_per_patch[1:(end - 1)]))
 
-    constituent_geometries = map(FunctionSpaces.get_geometry, function_spaces)
-    geometry = Geometry.UnstructuredGeometry(constituent_geometries)
+    factor_geometries = map(FunctionSpaces.get_geometry, function_spaces)
+    geometry = Geometry.UnstructuredGeometry(factor_geometries)
 
     # Create the dof partition, accounting for shared dofs.
     global_dof = 1
@@ -284,7 +284,7 @@ function extract_mcmp_to_tp(
         )
 
         e_elem = ntuple(num_components) do component_idx
-            # Note that the convention is that [constituent_spaces] * [extraction] = [MCMP].
+            # Note that the convention is that [factor_spaces] * [extraction] = [MCMP].
             return transpose(
                 global_extr_ops[component_idx][
                     nz_row_idxs_per_component[component_idx],
@@ -404,7 +404,7 @@ basic_tests(
 )
 
 test_elem_id = 1
-xi = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.1, 0.7]))
+xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.7]))
 mcmpC0_eval, mcmpC0_ind = FunctionSpaces.evaluate(mcmpC0, test_elem_id, xi, 1)
 
 C0TP1_eval, C0TP1_ind = FunctionSpaces.evaluate(C0TP1, test_elem_id, xi, 1)

@@ -82,7 +82,7 @@ function subdivide_space(
         num_subdivisions[1]
     )
     size_tp_child = FunctionSpaces.get_num_basis.(
-        FunctionSpaces.get_constituent_spaces(degen_space_child)
+        FunctionSpaces.get_factor_spaces(degen_space_child)
     )
     subdiv_mat_tp = FunctionSpaces.get_global_subdiv_matrix(TS_tp)
     degen_cp_child = reshape(

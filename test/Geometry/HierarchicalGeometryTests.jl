@@ -180,8 +180,8 @@ end
 ############################################################################################
 
 # Shared parametric evaluation points (3 points in [0,1]^d).
-xi_1d = Points.CartesianPoints(([0.0, 0.5, 1.0],))
-xi_2d = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.0, 0.5, 1.0]))
+xi_1d = Points.TensorProductPoints(([0.0, 0.5, 1.0],))
+xi_2d = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.0, 0.5, 1.0]))
 
 @testset "evaluate" begin
     for (points, geo) in zip((xi_1d, xi_2d), (hgeo_1d, hgeo_2d))

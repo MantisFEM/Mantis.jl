@@ -20,8 +20,8 @@ B1 = FunctionSpaces.BSplineSpace(
 geometry1multi = Geometry.CartesianGeometry((LinRange(-0.34, 1.56, 26),))
 B1multi = FunctionSpaces.BSplineSpace(geometry1multi, 6, 5)
 # Multi-element, Cartesian, different Section Spaces.
-nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(2)))[1]
-nodes2 = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(2)))[1]
+nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(2)))[1]
+nodes2 = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_legendre(2)))[1]
 ll_poly = FunctionSpaces.Lagrange(nodes)
 gl_poly = FunctionSpaces.Lagrange(nodes2)
 el_poly = FunctionSpaces.Edge(nodes)
@@ -89,9 +89,9 @@ const spaces = (
 
 # Note that JET only uses the types of the inputs, so which numbers we pick
 # here is irrelevant.
-const xi_1D = Points.CartesianPoints(([0.0, 1.0],))
-const xi_2D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
-const xi_3D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
+const xi_1D = Points.TensorProductPoints(([0.0, 1.0],))
+const xi_2D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
+const xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 
 const element_id = 1
 const component_id = 1
@@ -134,49 +134,49 @@ foreach(spaces) do space
     elseif typeof(space) <: FunctionSpaces.TensorProductSpace
         @test_opt FunctionSpaces.get_cart_num_basis(space)
         @test_opt FunctionSpaces.get_lin_num_basis(space)
-        @test_opt FunctionSpaces.get_constituent_spaces(space)
+        @test_opt FunctionSpaces.get_factor_spaces(space)
         @test_opt FunctionSpaces.get_cart_num_elements(space)
         @test_opt FunctionSpaces.get_lin_num_elements(space)
         @test_opt FunctionSpaces.get_num_spaces(space)
         @test_opt FunctionSpaces.get_support(space, basis_id)
 
-        @test_opt FunctionSpaces.get_constituent_element_id(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_basis_id(space, basis_id)
-        @test_opt FunctionSpaces.get_constituent_num_basis(space)
-        @test_opt FunctionSpaces.get_constituent_num_basis(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_manifold_dim(space)
-        @test_opt FunctionSpaces.get_constituent_basis_indices(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_support(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_extraction(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_polynomial_degree(space)
-        @test_opt FunctionSpaces.get_constituent_manifold_indices(space)
-        @test_opt FunctionSpaces.get_constituent_element_vertices(space, element_id)
-        @test_opt FunctionSpaces.get_constituent_element_lengths(space, element_id)
+        @test_opt FunctionSpaces.get_factor_element_ids(space, element_id)
+        @test_opt FunctionSpaces.get_factor_basis_ids(space, basis_id)
+        @test_opt FunctionSpaces.get_factor_num_basis(space)
+        @test_opt FunctionSpaces.get_factor_num_basis(space, element_id)
+        @test_opt FunctionSpaces.get_factor_manifold_dims(space)
+        @test_opt FunctionSpaces.get_factor_basis_indices(space, element_id)
+        @test_opt FunctionSpaces.get_factor_supports(space, element_id)
+        @test_opt FunctionSpaces.get_factor_extractions(space, element_id)
+        @test_opt FunctionSpaces.get_factor_polynomial_degrees(space)
+        @test_opt FunctionSpaces.get_factor_manifold_indices(space)
+        @test_opt FunctionSpaces.get_factor_element_vertices(space, element_id)
+        @test_opt FunctionSpaces.get_factor_element_lengths(space, element_id)
 
         if FunctionSpaces.get_manifold_dim(space) == 1
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_local_basis(
                 space, element_id, xi_1D, nderivatives
             )
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_evaluations(
                 space, element_id, xi_1D, nderivatives
             )
-            @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_1D)
+            @test_opt FunctionSpaces.get_factor_evaluation_points(space, xi_1D)
         elseif FunctionSpaces.get_manifold_dim(space) == 2
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_local_basis(
                 space, element_id, xi_2D, nderivatives
             )
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_evaluations(
                 space, element_id, xi_2D, nderivatives
             )
-            @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_2D)
+            @test_opt FunctionSpaces.get_factor_evaluation_points(space, xi_2D)
         elseif FunctionSpaces.get_manifold_dim(space) == 3
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_local_basis(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_local_basis(
                 space, element_id, xi_3D, nderivatives
             )
-            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_constituent_evaluations(
+            @test_opt ignored_modules = (Memoization,) FunctionSpaces.get_factor_evaluations(
                 space, element_id, xi_3D, nderivatives
             )
-            @test_opt FunctionSpaces.get_constituent_evaluation_points(space, xi_3D)
+            @test_opt FunctionSpaces.get_factor_evaluation_points(space, xi_3D)
         end
 
     elseif typeof(space) <: FunctionSpaces.DirectSumSpace

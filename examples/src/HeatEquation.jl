@@ -487,7 +487,7 @@ scheme = TimeIntegrators.EXPLICIT_MIDPOINT
 function evaluate_solution(u_h)
     geometry = Forms.get_geometry(u_h)
     num_elements = Geometry.get_num_elements(geometry)
-    xi = Points.CartesianPoints((LinRange(0.0, 1.0, 25),))
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 25),))
     all_x = Vector{Float64}(undef, 25 * num_elements)
     all_values = Vector{Float64}(undef, 25 * num_elements)
     for element_id in 1:num_elements

@@ -92,7 +92,7 @@ Evaluates all derivatives upto order `nderivatives` for all basis functions of
 function _evaluate_all_at_point(
     canonical_space::AbstractCanonicalSpace, xi::Float64, nderivatives::Int
 )
-    local_basis = evaluate(canonical_space, Points.CartesianPoints(([xi],)), nderivatives)
+    local_basis = evaluate(canonical_space, Points.TensorProductPoints(([xi],)), nderivatives)
     ndofs = get_polynomial_degree(canonical_space) + 1
     basis_indices = collect(1:ndofs)
     I = zeros(Int, ndofs * (nderivatives + 1))

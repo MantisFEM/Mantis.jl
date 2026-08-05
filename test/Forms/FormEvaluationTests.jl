@@ -39,7 +39,7 @@ top_form_space_2d = Forms.FormSpace(2, TP_Space_2d, "σ")
 # Evaluation points
 ξ_1_evaluation = [0.0, 1.0]
 ξ_2_evaluation = [0.0, 1.0]
-ξ_evaluation = Points.CartesianPoints((ξ_1_evaluation, ξ_2_evaluation))
+ξ_evaluation = Points.TensorProductPoints((ξ_1_evaluation, ξ_2_evaluation))
 n_evaluation_points = Points.get_num_points(ξ_evaluation)
 
 # Element where to evaluate
@@ -195,7 +195,7 @@ top_form_space_3d = Forms.FormSpace(3, dsTP_top_form_3d, "σ")
 ξ_1_evaluation = [0.0, 1.0]
 ξ_2_evaluation = [0.0, 1.0]
 ξ_3_evaluation = [0.0, 1.0]
-ξ_evaluation = Points.CartesianPoints((ξ_1_evaluation, ξ_2_evaluation, ξ_3_evaluation))
+ξ_evaluation = Points.TensorProductPoints((ξ_1_evaluation, ξ_2_evaluation, ξ_3_evaluation))
 n_evaluation_points = Points.get_num_points(ξ_evaluation)
 
 # Element where to evaluate

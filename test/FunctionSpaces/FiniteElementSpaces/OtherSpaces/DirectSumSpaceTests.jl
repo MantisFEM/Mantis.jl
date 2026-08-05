@@ -43,7 +43,7 @@ function test_direct_sum_space(breakpoints)
 
     # Verify that the evaluation of the direct sum space is indeed the evaluation of the
     # component spaces per component and zero elsewhere.
-    xi = Points.CartesianPoints(([0.0, 0.5, 1.0],))
+    xi = Points.TensorProductPoints(([0.0, 0.5, 1.0],))
     D1_eval, _ = FunctionSpaces.evaluate(D1, num_elements_B1, xi, 1)
     B1_eval, _ = FunctionSpaces.evaluate(B1, num_elements_B1, xi, 1)
     B2_eval, _ = FunctionSpaces.evaluate(B2, num_elements_B1, xi, 1)
@@ -100,7 +100,7 @@ function test_direct_sum_space(breakpoints)
 
     # Verify that the evaluation of the direct sum space is indeed the evaluation of the
     # component spaces per component and zero elsewhere.
-    xi = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.1, 0.7]))
+    xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.7]))
     D3_eval, _ = FunctionSpaces.evaluate(D3, num_elems_D3, xi, 1)
     TP1_eval, _ = FunctionSpaces.evaluate(TP1, num_elems_D3, xi, 1)
     TP2_eval, _ = FunctionSpaces.evaluate(TP2, num_elems_D3, xi, 1)
@@ -160,7 +160,7 @@ function test_direct_sum_space(breakpoints)
 
     # Verify that the evaluation of the direct sum space is indeed the evaluation of the
     # component spaces per component and zero elsewhere.
-    xi = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.1, 0.7], [0.22]))
+    xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.7], [0.22]))
     D4_eval, _ = FunctionSpaces.evaluate(D4, num_elems_D4, xi, 1)
 
     TP4_eval, _ = FunctionSpaces.evaluate(TP4, num_elems_D4, xi, 1)

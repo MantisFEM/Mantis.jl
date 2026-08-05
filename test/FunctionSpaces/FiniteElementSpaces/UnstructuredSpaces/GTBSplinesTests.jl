@@ -45,9 +45,9 @@ for el in 1:1:nel
 end
 
 # interpolate a cosine and a sine
-x2 = Points.CartesianPoints(([0.5],))
-x_const = Points.get_constituent_points(x)
-x2_const = Points.get_constituent_points(x2)
+x2 = Points.TensorProductPoints(([0.5],))
+x_const = Points.get_input_points(x)
+x2_const = Points.get_input_points(x2)
 LHS = zeros(nel, nel)
 RHS_C = zeros(nel)
 RHS_S = zeros(nel)

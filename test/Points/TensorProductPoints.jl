@@ -1,28 +1,30 @@
-module CartesianPointsTests
+module TensorProductPointsTests
 
 using Mantis
 using Test
 
-@test_throws ArgumentError Points.CartesianPoints(())
-@test_throws ArgumentError Points.CartesianPoints(([1], Int[]))
-@test_throws ArgumentError Points.CartesianPoints(([1], ["wrong_type"]))
-@test_throws TypeError Points.CartesianPoints(1:2, 1:2; iteration_order=(1, 2, 3))
+@test_throws ArgumentError Points.TensorProductPoints(())
+@test_throws ArgumentError Points.TensorProductPoints(([1], Int[]))
+@test_throws ArgumentError Points.TensorProductPoints(([1], ["wrong_type"]))
+@test_throws TypeError Points.TensorProductPoints(1:2, 1:2; iteration_order=(1, 2, 3))
 
 manifold_dims = [1, 2, 3]
-num_const_points = [(2,), (4, 3), (2, 1, 5)]
-num_points = [prod(num_const_points[dim]) for dim in 1:3]
+num_input_points = [(2,), (4, 3), (2, 1, 5)]
+num_points = [prod(num_input_points[dim]) for dim in 1:3]
 for i in 1:3
     manifold_dim = manifold_dims[i]
-    points = ntuple(dim -> rand(num_const_points[i][dim]), manifold_dim)
+    points = ntuple(dim -> rand(num_input_points[i][dim]), manifold_dim)
     range = 1:num_points[i]
-    xi = Points.CartesianPoints(points)
+    xi = Points.TensorProductPoints(points)
 
     @test Points.get_manifold_dim(xi) == manifold_dim
     @test firstindex(xi) == 1
     @test lastindex(xi) == num_points[i]
     @test keys(xi) == 1:num_points[i]
-    @test Points.get_constituent_points(xi) == points
-    @test Points.get_constituent_num_points(xi) == num_const_points[i]
+    @test Points.get_input_points(xi) == points
+    @test Points.get_factor_points(xi) == points
+    @test Points.get_input_num_points(xi) == num_input_points[i]
+    @test Points.get_factor_num_points(xi) == num_input_points[i]
     @test Points.get_num_points(xi) == num_points[i]
     for (j, original_point) in zip(eachindex(xi), Iterators.product(points...))
         @test j == range[j]
@@ -37,13 +39,13 @@ order_3 = (2, 1, 3)
 order_4 = (2, 3, 1)
 order_5 = (3, 1, 2)
 order_6 = (3, 2, 1)
-points_0 = Points.CartesianPoints(points)
-points_1 = Points.CartesianPoints(points; iteration_order=order_1)
-points_2 = Points.CartesianPoints(points; iteration_order=order_2)
-points_3 = Points.CartesianPoints(points; iteration_order=order_3)
-points_4 = Points.CartesianPoints(points; iteration_order=order_4)
-points_5 = Points.CartesianPoints(points; iteration_order=order_5)
-points_6 = Points.CartesianPoints(points; iteration_order=order_6)
+points_0 = Points.TensorProductPoints(points)
+points_1 = Points.TensorProductPoints(points; iteration_order=order_1)
+points_2 = Points.TensorProductPoints(points; iteration_order=order_2)
+points_3 = Points.TensorProductPoints(points; iteration_order=order_3)
+points_4 = Points.TensorProductPoints(points; iteration_order=order_4)
+points_5 = Points.TensorProductPoints(points; iteration_order=order_5)
+points_6 = Points.TensorProductPoints(points; iteration_order=order_6)
 num_points = Points.get_num_points(points_0)
 
 for p in 1:num_points
@@ -112,7 +114,7 @@ end
 
 # Test different number of points
 
-points = Mantis.Points.CartesianPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
+points = Mantis.Points.TensorProductPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
 @test points[1] == (1, 1, 1)
 @test points[2] == (1, 2, 1)
 @test points[3] == (1, 3, 1)
@@ -139,16 +141,18 @@ points = Mantis.Points.CartesianPoints(1:2, 1:3, 1:4; iteration_order=(3, 1, 2))
 @test points[24] == (2, 3, 4)
 
 # Test heterogeneous types
-@test typeof(Points.CartesianPoints([1, 2], [1.0, 2.0]).constituent_points) ==
+@test typeof(Points.get_input_points(Points.TensorProductPoints([1, 2], [1.0, 2.0]))) ==
     Tuple{Vector{Float64}, Vector{Float64}}
-@test typeof(Points.CartesianPoints(LinRange(0, 1, 2), [1.0, 2.0]).constituent_points) ==
-    Tuple{LinRange{Float64, Int}, Vector{Float64}}
-@test typeof(Points.CartesianPoints(LinRange(0, 1, 2), [1, 2]).constituent_points) ==
-    Tuple{LinRange{Float64, Int}, Vector{Float64}}
 @test typeof(
-    Points.CartesianPoints(
-        1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)
-    ).constituent_points,
+    Points.get_input_points(Points.TensorProductPoints(LinRange(0, 1, 2), [1.0, 2.0]))
+) == Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(
+    Points.get_input_points(Points.TensorProductPoints(LinRange(0, 1, 2), [1, 2]))
+) == Tuple{LinRange{Float64, Int}, Vector{Float64}}
+@test typeof(
+    Points.get_input_points(
+        Points.TensorProductPoints(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2))
+    ),
 ) == Tuple{Vector{Float64}, Vector{Float64}, LinRange{Float64, Int}, Vector{Float64}}
 
 end

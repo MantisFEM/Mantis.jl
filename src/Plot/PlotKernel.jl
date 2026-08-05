@@ -51,7 +51,7 @@ function _plot(
     for element_idx in 1:n_total_elements
         for subcell_idx in 1:(n_subcells^manifold_dim)
             ξ_shift_per_dir = dξ .* (Tuple(subcell_cartesian_idx[subcell_idx]) .- 1)
-            ξ = Points.CartesianPoints(
+            ξ = Points.TensorProductPoints(
                 ntuple(dim -> ξ_shift_per_dir[dim] .+ dξ .* ξ_ref_per_dir, manifold_dim)
             )
             # evaluate geometry and rearrange
@@ -136,7 +136,7 @@ function _plot(
 
                 for subcell_idx in 1:n_subcells
                     ξ_shift_per_dir = dξ_edge .* (subcell_cartesian_idx[subcell_idx][1] - 1)
-                    ξ = Points.CartesianPoints(
+                    ξ = Points.TensorProductPoints(
                         ntuple(
                             dim -> collect(ξ_shift_per_dir[dim] .+ ξ_ref_scaled[dim]),
                             manifold_dim,
@@ -239,7 +239,7 @@ function _plot(
     for element_id in 1:num_elements
         for subcell_id in 1:(n_total_subscells)
             ξ_shift_per_dir = dξ .* (Tuple(subcell_cartesian_idx[subcell_id]) .- 1)
-            ξ = Points.CartesianPoints(
+            ξ = Points.TensorProductPoints(
                 Tuple(ξ_shift_per_dir[i] .+ dξ .* ξ_ref_per_dir for i in 1:manifold_dim)
             )
 
@@ -373,7 +373,7 @@ function _plot(
 
                 for subcell_idx in 1:n_subcells
                     ξ_shift_per_dir = dξ_edge .* (subcell_cartesian_idx[subcell_idx][1] - 1)
-                    ξ = Points.CartesianPoints(
+                    ξ = Points.TensorProductPoints(
                         ntuple(
                             dim -> collect(ξ_shift_per_dir[dim] .+ ξ_ref_scaled[dim]),
                             manifold_dim,

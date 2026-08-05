@@ -407,7 +407,7 @@ println("L2 error: ", Analysis.L2_norm(ϕ⁰_2D - ϕ⁰_exact_2D, dΩ_2D_analysi
 mapping_2D_curv = Geometry.create_curvilinear_mapping(starting_point_2D, box_size_2D)
 geometry_2D_curv = Geometry.MappedGeometry(geometry_2D, mapping_2D_curv)
 B_2D_curv = FunctionSpaces.TensorProductSpace(
-    FunctionSpaces.get_constituent_spaces(B_2D), Geometry.CartesianGeometry, mapping_2D_curv
+    FunctionSpaces.get_factor_spaces(B_2D), Geometry.CartesianGeometry, mapping_2D_curv
 )
 
 Λ⁰_2D_curv = Forms.FormSpace(0, B_2D_curv, L"\phi_h")
@@ -494,7 +494,7 @@ for i in eachindex(num_elements_study_2D)
         starting_point_2D, box_size_2D, num_elements_study_2D[i], p_2D, k_2D
     )
     space_curvilinear = FunctionSpaces.TensorProductSpace(
-        FunctionSpaces.get_constituent_spaces(space_cartesian),
+        FunctionSpaces.get_factor_spaces(space_cartesian),
         Geometry.CartesianGeometry,
         curved_mapping,
     )

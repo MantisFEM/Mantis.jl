@@ -37,7 +37,7 @@ polar_spline_space = FunctionSpaces.create_scalar_polar_spline_space(
     box_sizes=(box_size_θ, box_size_r),
 )
 tp_space_θr = FunctionSpaces.get_patch_spaces(polar_spline_space)[1]
-GBθ, Br = FunctionSpaces.get_constituent_spaces(tp_space_θr)
+GBθ, Br = FunctionSpaces.get_factor_spaces(tp_space_θr)
 space_θrϕ = FunctionSpaces.TensorProductSpace((polar_spline_space, GBθ))
 E_polar = FunctionSpaces.assemble_global_extraction_matrix(polar_spline_space)
 geom_coeffs_polar =

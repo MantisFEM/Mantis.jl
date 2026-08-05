@@ -18,7 +18,7 @@ for N in range(2, 17; step=3)
     quad_rule = Quadrature.gauss_lobatto(N)
 
     ξ = Quadrature.get_nodes(quad_rule)
-    ξ_const = Points.get_constituent_points(ξ)[1]
+    ξ_const = Points.get_input_points(ξ)[1]
     w = Quadrature.get_weights(quad_rule)
 
     # Check that the rule type is correct.
@@ -78,7 +78,7 @@ for N in range(1, 16; step=3)
     quad_rule = Quadrature.gauss_legendre(N)
 
     ξ = Quadrature.get_nodes(quad_rule)
-    ξ_const = Points.get_constituent_points(ξ)[1]
+    ξ_const = Points.get_input_points(ξ)[1]
     w = Quadrature.get_weights(quad_rule)
 
     # Check that the rule type is correct.

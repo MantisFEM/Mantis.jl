@@ -81,7 +81,7 @@ for one_d_rule in one_dim_quad_rules
         @test isapprox(w, reverse(w), atol=atol)
 
         # Value tests on [0,1]^d.
-        f = chebyshev_nd(deg .- 1, Points.get_constituent_points(ξ))
+        f = chebyshev_nd(deg .- 1, Points.get_input_points(ξ))
         I_num = LinearAlgebra.dot(w, f)
         I = integrated_chebyshev_nd(deg .- 1)
         @test isapprox(I_num, I, atol=atol)

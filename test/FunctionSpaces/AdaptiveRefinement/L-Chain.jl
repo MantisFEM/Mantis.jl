@@ -25,9 +25,9 @@ H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
 domains = FunctionSpaces.get_nested_domains(H)
 ts = FunctionSpaces.get_two_scale_operators(H)
 lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
-const_i = (3, 4)
-const_j = (8, 6)
-βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
+input_i = (3, 4)
+input_j = (8, 6)
+βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
 marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), vcat, (βᵢ, βⱼ))]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
@@ -40,12 +40,12 @@ H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
 domains = FunctionSpaces.get_nested_domains(H)
 ts = FunctionSpaces.get_two_scale_operators(H)
 lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
-const_i = (4, 4)
-const_j = (6, 6)
-const_t1 = (4, 5)
-const_t2 = (5, 4)
-βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
-βₜ₁, βₜ₂ = lin_num_basis[const_t1...], lin_num_basis[const_t2...]
+input_i = (4, 4)
+input_j = (6, 6)
+input_t1 = (4, 5)
+input_t2 = (5, 4)
+βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
+βₜ₁, βₜ₂ = lin_num_basis[input_t1...], lin_num_basis[input_t2...]
 marked_elements = [
     mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ₁, βₜ₂))
 ]
@@ -80,11 +80,11 @@ H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
 domains = FunctionSpaces.get_nested_domains(H)
 ts = FunctionSpaces.get_two_scale_operators(H)
 lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
-const_i = (4, 4)
-const_j = (6, 6)
-const_t = (7, 4)
-βᵢ, βⱼ = lin_num_basis[const_i...], lin_num_basis[const_j...]
-βₜ = lin_num_basis[const_t...]
+input_i = (4, 4)
+input_j = (6, 6)
+input_t = (7, 4)
+βᵢ, βⱼ = lin_num_basis[input_i...], lin_num_basis[input_j...]
+βₜ = lin_num_basis[input_t...]
 marked_elements = [mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (βᵢ, βⱼ, βₜ))]
 Ωₗₗ = FunctionSpaces.get_level_domain(H, 2)
 FunctionSpaces.refine_domains!(domains, ts, marked_elements[1], 1)
@@ -113,12 +113,12 @@ H = FunctionSpaces.HierarchicalFiniteElementSpace(B0, num_sub, truncate)
 domains = FunctionSpaces.get_nested_domains(H)
 ts = FunctionSpaces.get_two_scale_operators(H)
 lin_num_basis = FunctionSpaces.get_lin_num_basis(B0)
-const_t1 = (9, 5)
-const_t2 = (7, 7)
-const_t3 = (5, 9)
-t1 = lin_num_basis[const_t1...]
-t2 = lin_num_basis[const_t2...]
-t3 = lin_num_basis[const_t3...]
+input_t1 = (9, 5)
+input_t2 = (7, 7)
+input_t3 = (5, 9)
+t1 = lin_num_basis[input_t1...]
+t2 = lin_num_basis[input_t2...]
+t3 = lin_num_basis[input_t3...]
 marked_elements = [
     mapreduce(β -> FunctionSpaces.get_support(B0, β), union, (t1, t2, t3)), Int[]
 ]

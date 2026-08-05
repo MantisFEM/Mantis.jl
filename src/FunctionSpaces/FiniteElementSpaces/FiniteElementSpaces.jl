@@ -649,7 +649,7 @@ function _evaluate_all_at_point(
     nderivatives::Int,
 ) where {num_components, num_patches}
     basis_eval, basis_indices = evaluate(
-        fem_space, element_id, Points.CartesianPoints(([xi],)), nderivatives
+        fem_space, element_id, Points.TensorProductPoints(([xi],)), nderivatives
     )
     nloc = length(basis_indices)
     ndofs = get_num_basis(fem_space)

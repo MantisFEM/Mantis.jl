@@ -122,7 +122,7 @@ x1 = LinRange(0.0, 1.0, 11)
 x2 = LinRange(0.0, 1.0, 11)
 for el in 1:1:FunctionSpaces.get_num_elements(TP)
     # check B-spline evaluation
-    TP_eval, _ = FunctionSpaces.evaluate(TP, el, Points.CartesianPoints((x1, x2)))
+    TP_eval, _ = FunctionSpaces.evaluate(TP, el, Points.TensorProductPoints((x1, x2)))
     # Positivity of the polynomials
     @test minimum(TP_eval[1][1][1]) >= 0.0
 
@@ -221,7 +221,7 @@ answers_1b = (
 basic_tests(TP_B1_b, answers_1b)
 
 # Reduction test, single-patch, single element, 1D, Cartesian, degree 3 Lagrange.
-nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(4)))[1]
+nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(4)))[1]
 ll_polynomial = FunctionSpaces.Lagrange(nodes)
 L3 = FunctionSpaces.BSplineSpace(
     geometry1, geometry1, ll_polynomial, [-1, -1]

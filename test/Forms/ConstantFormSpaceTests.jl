@@ -27,7 +27,7 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(geom))
 
     # Setup the form spaces, evaluate and check the results
-    ξ = Points.CartesianPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
+    ξ = Points.TensorProductPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
     for form_rank in 0:manifold_dim
         if form_rank ∉ Set([0, manifold_dim])
             @test_throws ArgumentError Forms.ConstantFormSpace(form_rank, geom, "c")
@@ -131,7 +131,7 @@ function test_mapped(num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(canonical_qrule, Geometry.get_num_elements(mapped_geometry))
 
     # Setup the form spaces, evaluate and check the results
-    ξ = Points.CartesianPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
+    ξ = Points.TensorProductPoints(ntuple(i->range(0.0, 1.0, num_points_per_dim), manifold_dim))
     for form_rank in 0:manifold_dim
         if form_rank ∉ Set([0, manifold_dim])
             @test_throws ArgumentError Forms.ConstantFormSpace(form_rank, mapped_geometry, "c")

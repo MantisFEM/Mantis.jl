@@ -17,7 +17,7 @@ for N in range(2, 12; step=3)
     quad_rule = Quadrature.newton_cotes(N, "closed")
 
     ξ = Quadrature.get_nodes(quad_rule)
-    ξ_const = Points.get_constituent_points(ξ)[1]
+    ξ_const = Points.get_input_points(ξ)[1]
     w = Quadrature.get_weights(quad_rule)
 
     # Check that the rule type is correct.
@@ -81,7 +81,7 @@ for N in range(1, 10; step=3)
     quad_rule = Quadrature.newton_cotes(N, "open")
 
     ξ = Quadrature.get_nodes(quad_rule)
-    ξ_const = Points.get_constituent_points(ξ)[1]
+    ξ_const = Points.get_input_points(ξ)[1]
     w = Quadrature.get_weights(quad_rule)
 
     # Check that the rule type is correct.

@@ -28,14 +28,14 @@ for i in 1:3
 end
 
 # Test heterogeneous types
-@test typeof(Points.PointSet([1, 2], [1.0, 2.0]).constituent_points) ==
+@test typeof(Points.PointSet([1, 2], [1.0, 2.0]).input_points) ==
     Tuple{Vector{Float64}, Vector{Float64}}
-@test typeof(Points.PointSet(LinRange(0, 1, 2), [1.0, 2.0]).constituent_points) ==
+@test typeof(Points.PointSet(LinRange(0, 1, 2), [1.0, 2.0]).input_points) ==
     Tuple{LinRange{Float64, Int}, Vector{Float64}}
-@test typeof(Points.PointSet(LinRange(0, 1, 2), [1, 2]).constituent_points) ==
+@test typeof(Points.PointSet(LinRange(0, 1, 2), [1, 2]).input_points) ==
     Tuple{LinRange{Float64, Int}, Vector{Float64}}
 @test typeof(
-    Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)).constituent_points
+    Points.PointSet(1:2, [1, 2], LinRange(0, 1, 2), zeros(Float32, 2)).input_points
 ) == Tuple{Vector{Float64}, Vector{Float64}, LinRange{Float64, Int}, Vector{Float64}}
 
 end

@@ -174,12 +174,12 @@ function create_tensor_product_bspline_de_rham_complex(
             fem_space_idxs = ones(Int, manifold_dim)
             # ...unless the basis index is present in the k-form basis indices.
             fem_space_idxs[k_form_basis_idxs[component]] .= 2
-            # Build and store constituent spaces of the tensor-product FEM space.
-            tp_consituent_spaces = ntuple(manifold_dim) do dim
+            # Build and store factor spaces of the tensor-product FEM space.
+            tp_factor_spaces = ntuple(manifold_dim) do dim
                 return fem_spaces[fem_space_idxs[dim]][dim]
             end
             # Build and return the corresponding tensor-product FEM space.
-            return FunctionSpaces.TensorProductSpace(tp_consituent_spaces)
+            return FunctionSpaces.TensorProductSpace(tp_factor_spaces)
         end
         if num_form_components == 1
             return FormSpace(k, k_form_fem_spaces[1], "ω_$k")
@@ -259,12 +259,12 @@ function create_tensor_product_bspline_de_rham_complex(
             fem_space_idxs = ones(Int, manifold_dim)
             # ...unless the basis index is present in the k-form basis indices.
             fem_space_idxs[k_form_basis_idxs[component]] .= 2
-            # Build and store constituent spaces of the tensor-product FEM space.
-            tp_consituent_spaces = ntuple(manifold_dim) do dim
+            # Build and store factor spaces of the tensor-product FEM space.
+            tp_factor_spaces = ntuple(manifold_dim) do dim
                 return fem_spaces[fem_space_idxs[dim]][dim]
             end
             # Build and return the corresponding tensor-product FEM space.
-            return FunctionSpaces.TensorProductSpace(tp_consituent_spaces, mapping)
+            return FunctionSpaces.TensorProductSpace(tp_factor_spaces, mapping)
         end
         if num_form_components == 1
             return FormSpace(k, k_form_fem_spaces[1], "ω_$k")
@@ -464,12 +464,12 @@ function create_hierarchical_de_rham_complex(
             fem_space_idxs = ones(Int, manifold_dim)
             # ...unless the basis index is present in the k-form basis indices.
             fem_space_idxs[k_form_basis_idxs[component]] .= 2
-            # Build and store constituent spaces of the tensor-product FEM space.
-            tp_consituent_spaces = ntuple(manifold_dim) do dim
+            # Build and store factor spaces of the tensor-product FEM space.
+            tp_factor_spaces = ntuple(manifold_dim) do dim
                 return fem_spaces[fem_space_idxs[dim]][dim]
             end
             # Build the corresponding tensor-product FEM space.
-            tp_space = FunctionSpaces.TensorProductSpace(tp_consituent_spaces)
+            tp_space = FunctionSpaces.TensorProductSpace(tp_factor_spaces)
             hierarchical_space = FunctionSpaces.HierarchicalFiniteElementSpace(
                 tp_space, num_subdivisions, truncate, simplified
             )

@@ -53,16 +53,18 @@ function subdivide_geometry(
     },
     num_subdivisons::NTuple{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches, num_geometries}
-    const_parent_geo = Geometry.get_constituent_geometries(parent_geo)
-    const_manifold_indices = Geometry.get_constituent_manifold_indices(parent_geo)
-    const_num_subdivions = ntuple(
-        geo -> num_subdivisons[const_manifold_indices[geo]], num_geometries
-    )
-    const_child_geo = ntuple(
-        geo -> subdivide_geometry(const_parent_geo[geo], const_num_subdivions[geo]),
+    factor_parent_geo = Geometry.get_factor_geometries(parent_geo)
+    factor_manifold_indices = Geometry.get_factor_manifold_indices(parent_geo)
+    factor_num_subdivions = ntuple(
+        geo ->
+            num_subdivisons[factor_manifold_indices[geo][1]:factor_manifold_indices[geo][end]],
         num_geometries,
     )
-    child_geometry = Geometry.TensorProductGeometry(const_child_geo)
+    factor_child_geo = ntuple(
+        geo -> subdivide_geometry(factor_parent_geo[geo], factor_num_subdivions[geo]),
+        num_geometries,
+    )
+    child_geometry = Geometry.TensorProductGeometry(factor_child_geo)
 
     return child_geometry
 end
@@ -76,11 +78,11 @@ function subdivide_geometry(
     num_subdivisons::NTuple{manifold_dim},
 ) where {manifold_dim}
     parent_breakpoints = Geometry.get_breakpoints(parent_geo)
-    const_child_breakpoints = ntuple(
+    factor_child_breakpoints = ntuple(
         dim -> subdivide_breakpoints(parent_breakpoints[dim], num_subdivisons[dim]),
         manifold_dim,
     )
-    child_geometry = Geometry.CartesianGeometry(const_child_breakpoints)
+    child_geometry = Geometry.CartesianGeometry(factor_child_breakpoints)
 
     return child_geometry
 end

@@ -6,6 +6,8 @@ any other objects.
 """
 module Points
 
+using ..TensorProducts
+
 ############################################################################################
 #                                      Abstract Types                                      #
 ############################################################################################
@@ -42,12 +44,13 @@ function get_num_points(::P) where {P <: AbstractPoints}
 end
 
 """
-    get_constituent_points(points::P) where {P <: AbstractPoints}
+    get_input_points(points::P) where {P <: AbstractPoints}
 
-Returns the constituent points of `points` per manifold dimension.
+Returns the points given as input when constructing `points`, up to a _possible_ type
+promotion.
 """
-function get_constituent_points(points::P) where {P <: AbstractPoints}
-    return points.constituent_points
+function get_input_points(points::P) where {P <: AbstractPoints}
+    return points.input_points
 end
 
 """
@@ -79,9 +82,9 @@ function scale_and_shift_points(
     S <: NTuple{manifold_dim, Real},
     T <: NTuple{manifold_dim, Real},
 }
-    constituent_points = get_constituent_points(points)
+    input_points = get_input_points(points)
     transformed_points = ntuple(
-        dim -> constituent_points[dim] .* scalings[dim] .+ translations[dim], manifold_dim
+        dim -> input_points[dim] .* scalings[dim] .+ translations[dim], manifold_dim
     )
     constructor = Base.typename(P).wrapper
 
@@ -111,7 +114,7 @@ end
 #                                         Includes                                         #
 ############################################################################################
 
-include("./CartesianPoints.jl")
+include("./TensorProductPoints.jl")
 include("./PointSet.jl")
 
 end

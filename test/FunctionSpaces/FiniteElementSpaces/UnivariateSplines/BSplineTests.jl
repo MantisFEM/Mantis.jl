@@ -192,7 +192,7 @@ end
 
 # interpolate an exponential
 x = range(; start=0.1, stop=0.9, length=deg4 + 1)
-xi = Points.CartesianPoints((x,))
+xi = Points.TensorProductPoints((x,))
 npts = deg4 + 1
 LHS = zeros(nel * npts, nbasis)
 RHS_P = zeros(nel * npts)

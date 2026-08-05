@@ -74,7 +74,7 @@ function test_0form_hodge_laplacian(
                 # section spaces
                 if section_space == FunctionSpaces.Lagrange
                     nodes = ntuple(manifold_dim) do i
-                        return Points.get_constituent_points(
+                        return Points.get_input_points(
                             Quadrature.get_nodes(
                                 Quadrature.gauss_lobatto(degree[i]+1)
                             )

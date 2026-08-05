@@ -9,6 +9,9 @@ end
 @testset verbose=true "Mesh" begin
     include("Mesh/runtests.jl")
 end
+@testset verbose=true "TensorProducts" begin
+    include("TensorProducts/runtests.jl")
+end
 @testset verbose=true "Points" begin
     include("Points/runtests.jl")
 end

@@ -44,7 +44,7 @@ for p in degrees_to_test
     # Check that Greville points represent the polynomial \xi
     @test all(
         isapprox.(
-            b_eval[1][1] * LinRange(0, p, p + 1), p .* Points.get_constituent_points(x)[1]
+            b_eval[1][1] * LinRange(0, p, p + 1), p .* Points.get_input_points(x)[1]
         ),
     )
 
@@ -62,9 +62,9 @@ for p in degrees_to_test
                 (p - 1 - m >= 0 ? 1.0 : 0.0) *
                 prod(LinRange((p - 1):-1:(p - m))) *
                 (p - 1 - m > 0 ? x^(p - 1 - m) : 1.0)
-        f_eval = f.(Points.get_constituent_points(x)[1], p, 0)  # the polynomial at evaluation points
-        df_dx_eval = f.(Points.get_constituent_points(x)[1], p, 1)  # the first derivative at evaluation points
-        d2f_dx2_eval = f.(Points.get_constituent_points(x)[1], p, 2)  # the second derivative at evaluation points
+        f_eval = f.(Points.get_input_points(x)[1], p, 0)  # the polynomial at evaluation points
+        df_dx_eval = f.(Points.get_input_points(x)[1], p, 1)  # the first derivative at evaluation points
+        d2f_dx2_eval = f.(Points.get_input_points(x)[1], p, 2)  # the second derivative at evaluation points
         # Coefficients of f in terms of the monomial basis ...
         coeff_m = [zeros(p - 1); 1.0; 1.0]
         # ... and in terms of the Bernstein basis

@@ -76,7 +76,7 @@ function newton_cotes(num_points::Integer, type::String)
     # Map roots and weights to the interval [0, 1].
     @. ξ = (ξ + 1.0) / 2.0
     @. w = 0.5 * w
-    nodes = Points.CartesianPoints((ξ,))
+    nodes = Points.TensorProductPoints((ξ,))
 
     return CanonicalQuadratureRule(nodes, w, "Newton-Cotes ($type)")
 end

@@ -137,16 +137,16 @@ ll_evaluation = [
 # Perform the tests
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]  # define the polynomial degree
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
     ll_polynomial = FunctionSpaces.Lagrange(nodes)
-    xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
+    xi_evaluate = Points.TensorProductPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test that nodes are generated as expected
     @test ll_polynomial.nodes ≈ ll_nodes_reference[p_idx] atol = 1e-12
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
     @test FunctionSpaces.evaluate(
-        ll_polynomial, Points.CartesianPoints((ll_polynomial.nodes,))
+        ll_polynomial, Points.TensorProductPoints((ll_polynomial.nodes,))
     )[1][1] == LinearAlgebra.Diagonal(ones(p + 1))
 
     # Test if polynomial basis evaluation at evenly spaced nodes
@@ -159,9 +159,9 @@ end
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+1)))[1]
     ll_polynomial = FunctionSpaces.Lagrange(nodes)
-    xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
+    xi_evaluate = Points.TensorProductPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test if polynomial basis evaluation at evenly spaced nodes
     # Check only for first and second derivatives (we do not use higher orders)
@@ -189,9 +189,9 @@ for p in degrees_to_test
 
     # Evaluate f at the evenly spaced points
     f_nodes = f.(ll_polynomial.nodes, p, 0)  # the polynomial at nodes
-    f_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 0)  # the polynomial at evaluation points
-    df_dx_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 1)  # the first derivative at evaluation points
-    d2f_dx2_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 2)  # the second derivative at evaluation points
+    f_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 0)  # the polynomial at evaluation points
+    df_dx_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 1)  # the first derivative at evaluation points
+    d2f_dx2_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 2)  # the second derivative at evaluation points
 
     # Use the basis to compute the first and second derivatives and check if they match
     @test isapprox(maximum(abs.(ll_eval[2][1] * f_nodes .- df_dx_eval)), 0.0, atol=1e-11)
@@ -330,7 +330,7 @@ gl_evaluation = [
 # Test nodes
 for p_idx in eachindex(p_reference)
     p = p_reference[p_idx]
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
     gl_polynomial = FunctionSpaces.Lagrange(nodes)
 
     # Test that nodes are generate as expected
@@ -338,21 +338,21 @@ for p_idx in eachindex(p_reference)
 
     # Test if polynomial basis evaluation at nodes gives an identity matrix
     @test FunctionSpaces.evaluate(
-        gl_polynomial, Points.CartesianPoints((gl_polynomial.nodes,))
+        gl_polynomial, Points.TensorProductPoints((gl_polynomial.nodes,))
     )[1][1] == LinearAlgebra.Diagonal(ones(p + 1))
 
     # Test if polynomial basis evaluation at evenly spaces nodes gives expected results
     @test FunctionSpaces.evaluate(
-        gl_polynomial, Points.CartesianPoints((range(0.0, 1.0; length=11),))
+        gl_polynomial, Points.TensorProductPoints((range(0.0, 1.0; length=11),))
     )[1][1] ≈ gl_evaluation[p_idx] atol = 1e-11
 end
 
 # Perform derivative tests
 degrees_to_test = 1:25
 for p in degrees_to_test
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_legendre(p+1)))[1]
     gl_polynomial = FunctionSpaces.Lagrange(nodes)
-    xi_evaluate = Points.CartesianPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
+    xi_evaluate = Points.TensorProductPoints((range(0.0, 1.0; length=11),))  # the points where to evaluate for testing
 
     # Test if polynomial basis evaluation at evenly spaced nodes
     # Check only for first and second derivatives (we do not use higher orders)
@@ -381,9 +381,9 @@ for p in degrees_to_test
 
     # Evaluate f at the evenly spaced points
     f_nodes = f.(gl_polynomial.nodes, p, 0)  # the polynomial at nodes
-    f_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 0)  # the polynomial at evaluation points
-    df_dx_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 1)  # the first derivative at evaluation points
-    d2f_dx2_eval = f.(Points.get_constituent_points(xi_evaluate)[1], p, 2)  # the second derivative at evaluation points
+    f_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 0)  # the polynomial at evaluation points
+    df_dx_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 1)  # the first derivative at evaluation points
+    d2f_dx2_eval = f.(Points.get_input_points(xi_evaluate)[1], p, 2)  # the second derivative at evaluation points
 
     # Use the basis to compute the first and second derivatives and check if they match
     @test @views isapprox(
@@ -403,7 +403,7 @@ for p in degrees_to_test
     # - Integral Kronecker delta property
 
     # Construct the polynomials
-    nodes = Points.get_constituent_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+2)))[1]
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(p+2)))[1]
     ell_poly = FunctionSpaces.Edge(nodes)
 
     # Compute the evaluation points (quadrature points)
@@ -430,11 +430,11 @@ for p in degrees_to_test
     for k_interval in 1:(p + 1)
         Δinterval = ell_nodes[k_interval + 1] - ell_nodes[k_interval]
         ξ[:, k_interval] .=
-            Points.get_constituent_points(ξ_quad)[1] * Δinterval .+ ell_nodes[k_interval]  # rescale the nodes to fit inside the interval
+            Points.get_input_points(ξ_quad)[1] * Δinterval .+ ell_nodes[k_interval]  # rescale the nodes to fit inside the interval
     end
 
     # Evaluate the polynomials at the evaluation points
-    ξ = Points.CartesianPoints((reshape(ξ, :),))  # transform into vector just to use it an input in evaluate
+    ξ = Points.TensorProductPoints((reshape(ξ, :),))  # transform into vector just to use it an input in evaluate
     ell_poly_eval = FunctionSpaces.evaluate(ell_poly, ξ, 0)
     ell_poly_eval = reshape(ell_poly_eval[1][1], p + 1, p + 1, p + 1)  # reshape so that we have the quadrature nodes for each interval in a column
     # Compute the integrals of each basis over each of the intervals

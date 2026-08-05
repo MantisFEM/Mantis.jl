@@ -23,7 +23,7 @@ det_g_ref_cart_1_1 = sqrt(prod(dx_cart_1_1 .^ 2))
 
 # Points where to evaluate the metric
 nx_evaluate = 3
-xi_1_cart_1_1 = Points.CartesianPoints((LinRange(0.0, 1.0, nx_evaluate + 1),))
+xi_1_cart_1_1 = Points.TensorProductPoints((LinRange(0.0, 1.0, nx_evaluate + 1),))
 n_evaluation_points = nx_evaluate
 
 # Evaluate the metric, its inverse and its determinant
@@ -70,7 +70,7 @@ det_g_ref_cart_2_2 = prod(dx_cart_2_2)
 # Points where to evaluate the metric
 nx_evaluate = 3
 ny_evaluate = 7
-xi_cart_2_2 = Points.CartesianPoints((
+xi_cart_2_2 = Points.TensorProductPoints((
     LinRange(0.0, 1.0, nx_evaluate + 1), LinRange(0.0, 1.0, ny_evaluate + 1)
 ))
 n_evaluation_points = nx_evaluate * ny_evaluate
@@ -164,7 +164,7 @@ inv_g_test_geo23 = true
 sqrt_test_geo23 = true
 for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     inv_g, g, det_g = Geometry.inv_metric(
-        geometry2to3, k, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+        geometry2to3, k, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
     )
 
     i, j = Tuple(IJ)
@@ -248,7 +248,7 @@ dginvgdvans(u, v) =
     (1.0 / (1.0 + u^2 + v^2)^2) .*
     [-2 * v-2.0 * u^2 * v -u + u * v^2-u^3; -u + u * v^2-u^3 2.0*u^2*v]
 
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
     geometry2to3_ext, 1, xi
 )
@@ -335,7 +335,7 @@ dginvgdvans_geo232(u, v) =
         (-u + u * v^2 - u^3) / 12/4 (2.0 * u^2 * v) / 9/4
     ]
 
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J_test_geo23ext2 = true
 g_test_geo23ext2 = true
 sqrt_test_geo23ext2 = true
@@ -437,7 +437,7 @@ dgdvans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgduans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgdvans_exp12(u, v) = [0.0 0.0; 0.0 0.0]
 
-xi_exp12 = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi_exp12 = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J_test_exp12 = true
 g_test_exp12 = true
 sqrt_test_exp12 = true
@@ -517,7 +517,7 @@ dgdvans_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgduans_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgdvans_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
     cart_box, 1, xi
 )
@@ -598,7 +598,7 @@ gans_curv(u, v) = [
 sqrtgans_curv(u, v) = sqrt(det(gans_curv(u, v)))
 invgans_curv(u, v) = inv(gans_curv(u, v))
 
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J_test_cg = true
 g_test_cg = true
 sqrt_test_cg = true
@@ -650,7 +650,7 @@ dgdvans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgduans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 dginvgdvans_tp_cart_box(u, v) = [0.0 0.0; 0.0 0.0]
 
-xi = Points.CartesianPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
+xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 8), LinRange(0.0, 1.0, 12)))
 J, inv_g, g, sqrt_g, dgdxs, dinv_g_dxs, dsqrt_g_dxs, Hs = Geometry.metric_derivatives(
     cart_box, 1, xi
 )
@@ -750,7 +750,7 @@ dgdvans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
 dginvgduans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
 dginvgdvans_tp_cyl(u, v) = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
 
-xi_cyl = Points.CartesianPoints((LinRange(0.0, 1.0, 6), LinRange(0.0, 1.0, 7)))
+xi_cyl = Points.TensorProductPoints((LinRange(0.0, 1.0, 6), LinRange(0.0, 1.0, 7)))
 J_test_tpcyl = true
 g_test_tpcyl = true
 sqrt_test_tpcyl = true
@@ -911,7 +911,7 @@ dginvgdwans_solid_cyl(r, theta, z) = SMatrix{3,3}(
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 )
 
-xi_solid_cyl = Points.CartesianPoints(
+xi_solid_cyl = Points.TensorProductPoints(
     (LinRange(0.1, 1.0, 4), LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 3))
 )
 

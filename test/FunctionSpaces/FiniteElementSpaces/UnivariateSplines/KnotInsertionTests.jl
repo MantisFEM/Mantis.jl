@@ -12,7 +12,7 @@ subdivisions_to_test = 2:8
 nq = 30
 coeff_factor = 5
 
-child_x = Points.CartesianPoints((range(0, 1, nq + 1),))
+child_x = Points.TensorProductPoints((range(0, 1, nq + 1),))
 
 for p in degrees_for_test
     nel = p + 2
@@ -26,7 +26,7 @@ for p in degrees_for_test
         (rand(FunctionSpaces.get_num_basis(parent_bspline)) .* 2 .- 1) .* coeff_factor
 
     for nsubdivision in subdivisions_to_test
-        parent_x = Points.CartesianPoints((range(0, 1, nq * nsubdivision + 1),))
+        parent_x = Points.TensorProductPoints((range(0, 1, nq * nsubdivision + 1),))
 
         twoscale_operator, child_bspline = FunctionSpaces.build_two_scale_operator(
             parent_bspline, nsubdivision

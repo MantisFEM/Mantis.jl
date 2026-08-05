@@ -382,7 +382,7 @@ julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (
 
 julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form with B as basis.
 
-julia> xi = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
+julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
 
 julia> Forms.evaluate(Λ⁰ₕ, 1, xi)
 ([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
@@ -396,7 +396,7 @@ julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (
 
 julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
 
-julia> xi = Points.CartesianPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
+julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
 
 julia> Forms.evaluate(Λ²ₕ, 1, xi)
 ([[0.25 0.0 … 0.0 0.0; 0.0 0.125 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0625 0.0625]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])

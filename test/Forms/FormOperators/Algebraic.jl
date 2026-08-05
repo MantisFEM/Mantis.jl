@@ -15,7 +15,7 @@ regularity_2d = (1, 1)
 nqrule = max(degree_2d...) + 1
 qrule = Quadrature.tensor_product_rule((nqrule, nqrule), Quadrature.gauss_legendre)
 dΩ = Quadrature.StandardQuadrature(qrule, prod(num_elements_2d))
-xi = Points.CartesianPoints(([0.0, 0.5, 1.0], [0.1, 0.2, 0.86]))
+xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.2, 0.86]))
 # Create the B-spline de Rham complex
 W0, W1, W2 = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, section_spacesW, regularity_2d

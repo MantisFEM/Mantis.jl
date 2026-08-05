@@ -183,14 +183,14 @@ const geos = (
     geom_unstr2,
 )
 
-const xi_1D = Points.CartesianPoints(([0.0, 1.0],))
-const xi_2D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
-const xi_3D = Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
+const xi_1D = Points.TensorProductPoints(([0.0, 1.0],))
+const xi_2D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
+const xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 const xi_3D_set = Points.PointSet(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
-const xi_4D = Points.CartesianPoints((
+const xi_4D = Points.TensorProductPoints((
     [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]
 ))
-const xi_11D = Points.CartesianPoints((
+const xi_11D = Points.TensorProductPoints((
     [0.0, 1.0],
     [0.0, 1.0],
     [0.0, 1.0],

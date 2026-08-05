@@ -17,7 +17,7 @@ function Mantis.Plot.plot_solution(
     geometry = Forms.get_geometry(fields[1])
 
     n_elements = Geometry.get_num_elements(geometry)
-    xi = Points.CartesianPoints((LinRange(0.0, 1.0, num_plot_points_per_element),))
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, num_plot_points_per_element),))
 
     colors = [:blue, :green, :red, :purple, :orange, :black, :pink, :brown]
     for field_id in eachindex(fields)
@@ -140,7 +140,7 @@ function _plot_basis!(
     image_dim = Geometry.get_image_dim(geometry)
 
     TPoint = Point{image_dim, Float32}
-    xi = Points.CartesianPoints(
+    xi = Points.TensorProductPoints(
         ntuple(manifold_dim) do i
             return LinRange(
                 zero(eltype(TPoint)), one(eltype(TPoint)), plot_points_per_element
@@ -228,7 +228,7 @@ function _draw_elements!(ax, geometry, TPoint)
     manifold_dim = Geometry.get_manifold_dim(geometry)
     image_dim = Geometry.get_image_dim(geometry)
 
-    xi_element = Points.CartesianPoints(
+    xi_element = Points.TensorProductPoints(
         ntuple(manifold_dim) do i
             return LinRange(0.0, 1.0, 2)
         end,

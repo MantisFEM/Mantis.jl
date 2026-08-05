@@ -179,21 +179,21 @@ function is_resolved(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 )
     level_space = get_space(space, level)
-    const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
-    const_num_basis = get_constituent_num_basis(level_space)
+    factor_βᵢ = get_factor_basis_ids(level_space, βᵢ)
+    factor_num_basis = get_factor_num_basis(level_space)
     lin_num_basis = get_lin_num_basis(level_space)
     for k in 1:2
-        const_left_βᵢ = const_βᵢ .- (k .== (1, 2))
-        const_right_βᵢ = const_βᵢ .+ (k .== (1, 2))
-        if const_βᵢ[k] == 1
-            right_βᵢ = lin_num_basis[const_right_βᵢ...]
+        factor_left_βᵢ = factor_βᵢ .- (k .== (1, 2))
+        factor_right_βᵢ = factor_βᵢ .+ (k .== (1, 2))
+        if factor_βᵢ[k] == 1
+            right_βᵢ = lin_num_basis[factor_right_βᵢ...]
             if right_βᵢ ∈ Blk
                 return true
             else
                 continue
             end
-        elseif const_βᵢ[k] == const_num_basis[k]
-            left_βᵢ = lin_num_basis[const_left_βᵢ...]
+        elseif factor_βᵢ[k] == factor_num_basis[k]
+            left_βᵢ = lin_num_basis[factor_left_βᵢ...]
             if left_βᵢ ∈ Blk
                 return true
             else
@@ -201,8 +201,8 @@ function is_resolved(
             end
         end
 
-        left_βᵢ = lin_num_basis[const_left_βᵢ...]
-        right_βᵢ = lin_num_basis[const_right_βᵢ...]
+        left_βᵢ = lin_num_basis[factor_left_βᵢ...]
+        right_βᵢ = lin_num_basis[factor_right_βᵢ...]
         if left_βᵢ ∈ Blk && right_βᵢ ∈ Blk
             return true
         end
@@ -268,9 +268,9 @@ function get_interaction_box(
     space::HierarchicalFiniteElementSpace{2}, level::Int, Blk::Vector{Int}, βᵢ::Int
 )
     level_space = get_space(space, level)
-    p = get_constituent_polynomial_degree(level_space)
-    const_num_basis = get_constituent_num_basis(level_space)
-    const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
+    p = get_factor_polynomial_degrees(level_space)
+    factor_num_basis = get_factor_num_basis(level_space)
+    factor_βᵢ = get_factor_basis_ids(level_space, βᵢ)
     lin_num_basis = get_lin_num_basis(level_space)
     inter_box = Int[]
     for offset_1 in (-(p[1] + 1)):(p[1] + 1), offset_2 in (-(p[2] + 1)):(p[2] + 1)
@@ -278,9 +278,9 @@ function get_interaction_box(
             continue
         end
 
-        lj = const_βᵢ[1] + offset_1
-        rj = const_βᵢ[2] + offset_2
-        if lj < 1 || lj > const_num_basis[1] || rj < 1 || rj > const_num_basis[2]
+        lj = factor_βᵢ[1] + offset_1
+        rj = factor_βᵢ[2] + offset_2
+        if lj < 1 || lj > factor_num_basis[1] || rj < 1 || rj > factor_num_basis[2]
             continue
         end
 
@@ -330,16 +330,16 @@ function has_minimal_intersection(
     space::HierarchicalFiniteElementSpace{2}, level::Int, (βᵢ, βⱼ)::Tuple{Int, Int}
 )
     level_space = get_space(space, level)
-    const_supp_1 = get_constituent_support(level_space, βᵢ)
-    const_supp_2 = get_constituent_support(level_space, βⱼ)
+    factor_supp_1 = get_factor_supports(level_space, βᵢ)
+    factor_supp_2 = get_factor_supports(level_space, βⱼ)
     operator = get_twoscale_operator(space, level)
-    p_fine = get_constituent_polynomial_degree(get_child_space(operator))
-    const_twoscale_operators = get_constituent_twoscale_operators(operator)
+    p_fine = get_factor_polynomial_degrees(get_child_space(operator))
+    factor_twoscale_operators = get_factor_twoscale_operators(operator)
     for k in 1:2
-        ts = const_twoscale_operators[k]
+        ts = factor_twoscale_operators[k]
         child_space = get_child_space(ts)
-        lv1, rv1 = const_supp_1[k][1], const_supp_1[k][end]
-        lv2, rv2 = const_supp_2[k][1], const_supp_2[k][end]
+        lv1, rv1 = factor_supp_1[k][1], factor_supp_1[k][end]
+        lv2, rv2 = factor_supp_2[k][1], factor_supp_2[k][end]
         intersection_boundary_breakpoints = (maximum((lv1, lv2)), minimum((rv1, rv2)) + 1)
         I_k = get_contained_knot_vector(intersection_boundary_breakpoints, ts, child_space)
         if get_knot_vector_length(I_k) > p_fine[k]
@@ -415,10 +415,10 @@ function has_shortest_chain(
 )
     level_space = get_space(space, level)
     lin_num_basis = get_lin_num_basis(level_space)
-    const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
-    const_βⱼ = get_constituent_basis_id(level_space, βⱼ)
-    const_diff = const_βᵢ .- const_βⱼ
-    if any(map(iszero, const_diff))
+    factor_βᵢ = get_factor_basis_ids(level_space, βᵢ)
+    factor_βⱼ = get_factor_basis_ids(level_space, βⱼ)
+    factor_diff = factor_βᵢ .- factor_βⱼ
+    if any(map(iszero, factor_diff))
         return true
     end
 
@@ -426,12 +426,12 @@ function has_shortest_chain(
     inter_box_j = get_interaction_box(space, level, Blk, βⱼ)
     inter_box_ij = inter_box_i ∩ inter_box_j
     verts_to_rmv = Int[]
-    sign_1 = sign(const_diff[1])
-    sign_2 = sign(const_diff[2])
+    sign_1 = sign(factor_diff[1])
+    sign_2 = sign(factor_diff[2])
     for (v, offset) in
-        enumerate(CartesianIndices((0:abs(const_diff[1]), 0:abs(const_diff[2]))))
+        enumerate(CartesianIndices((0:abs(factor_diff[1]), 0:abs(factor_diff[2]))))
         βₜ = lin_num_basis[
-            const_βᵢ[1] - sign_1 * offset[1], const_βᵢ[2] - sign_2 * offset[2]
+            factor_βᵢ[1] - sign_1 * offset[1], factor_βᵢ[2] - sign_2 * offset[2]
         ]
         if βₜ ∈ (βᵢ, βⱼ)
             continue
@@ -442,7 +442,7 @@ function has_shortest_chain(
         end
     end
 
-    graph = Graphs.SimpleGraphs.grid(abs.(const_diff) .+ 1)
+    graph = Graphs.SimpleGraphs.grid(abs.(factor_diff) .+ 1)
     Graphs.SimpleGraphs.rem_vertices!(graph, verts_to_rmv; keep_order=true)
 
     return Graphs.has_path(graph, 1, Graphs.nv(graph))
@@ -470,14 +470,14 @@ function get_lchain_corner(
 )
     level_space = get_space(space, level)
     lin_num_basis = get_lin_num_basis(level_space)
-    const_βᵢ = get_constituent_basis_id(level_space, βᵢ)
-    const_βⱼ = get_constituent_basis_id(level_space, βⱼ)
-    corner = lin_num_basis[const_βᵢ[1], const_βⱼ[2]]
+    factor_βᵢ = get_factor_basis_ids(level_space, βᵢ)
+    factor_βⱼ = get_factor_basis_ids(level_space, βⱼ)
+    corner = lin_num_basis[factor_βᵢ[1], factor_βⱼ[2]]
     if is_resolved(space, level, Blk, corner)
         return corner
     end
 
-    return lin_num_basis[const_βⱼ[1], const_βᵢ[2]]
+    return lin_num_basis[factor_βⱼ[1], factor_βᵢ[2]]
 end
 
 """

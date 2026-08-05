@@ -209,7 +209,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
         zero_at_poles::Bool=false,
     ) where {G <: Geometry.AbstractGeometry{2}, GP <: Geometry.AbstractGeometry{2}}
         # number of basis functions for the poloidal and radial spaces
-        n_p, n_r = get_constituent_num_basis(patch_spaces[1])
+        n_p, n_r = get_factor_num_basis(patch_spaces[1])
         zero_at_poles && (n_r += 1)
         if n_p != size(degenerate_control_points, 1)
             throw(
@@ -221,7 +221,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             throw(ArgumentError("The radial space does not match the input coefficients."))
         end
 
-        if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
+        if n_p != get_num_basis(get_factor_spaces(degenerate_space)[1])
             throw(
                 ArgumentError(
                     "The degenerate tensor-product space does not match the input coefficients.",
@@ -229,7 +229,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             )
         end
 
-        if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
+        if n_r != get_num_basis(get_factor_spaces(degenerate_space)[2])
             throw(
                 ArgumentError(
                     "The degenerate tensor-product space does not match the input coefficients.",
@@ -335,8 +335,8 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
         ::Bool=false,
     ) where {G <: Geometry.AbstractGeometry{2}, GP <: Geometry.AbstractGeometry{2}}
         # poloidal and radial component spaces
-        dspace_p, space_r = get_constituent_spaces(patch_spaces[1])
-        space_p, dspace_r = get_constituent_spaces(patch_spaces[2])
+        dspace_p, space_r = get_factor_spaces(patch_spaces[1])
+        space_p, dspace_r = get_factor_spaces(patch_spaces[2])
         # number of basis functions for the poloidal and radial spaces
         n_p = get_num_basis(space_p)
         n_r = get_num_basis(space_r)
@@ -350,7 +350,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             throw(ArgumentError("The radial space does not match the input coefficients."))
         end
 
-        if n_p != get_num_basis(get_constituent_spaces(degenerate_space)[1])
+        if n_p != get_num_basis(get_factor_spaces(degenerate_space)[1])
             throw(
                 ArgumentError(
                     "The degenerate tensor-product space does not match the input coefficients.",
@@ -358,7 +358,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             )
         end
 
-        if n_r != get_num_basis(get_constituent_spaces(degenerate_space)[2])
+        if n_r != get_num_basis(get_factor_spaces(degenerate_space)[2])
             throw(
                 ArgumentError(
                     "The degenerate tensor-product space does not match the input coefficients.",

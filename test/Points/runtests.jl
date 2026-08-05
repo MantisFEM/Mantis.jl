@@ -10,8 +10,8 @@ end
     include("PointSet.jl")
 end
 
-@testset "CartesianPoints" begin
-    include("CartesianPoints.jl")
+@testset "TensorProductPoints" begin
+    include("TensorProductPoints.jl")
 end
 
 end

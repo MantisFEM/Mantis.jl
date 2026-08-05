@@ -11,6 +11,7 @@ using StaticArrays
 import ..Points
 import ..GeneralHelpers
 import ..Hierarchy
+using ..TensorProducts
 
 """
     AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -106,7 +107,7 @@ function get_patch_id(geometry::AbstractGeometry, element_id::Int)
             return patch_id
         end
     end
-    throw(
+    return throw(
         ArgumentError(
             LazyString(
                 "Element ID ",
@@ -179,7 +180,7 @@ function get_patch_and_local_element_id(geometry::AbstractGeometry, element_id::
         local_element_id -= num_element_patch_i
     end
 
-    throw(
+    return throw(
         ArgumentError(
             LazyString(
                 "Element ID ",
@@ -303,6 +304,7 @@ explicitly stored.
 function get_num_elements(geometry::AbstractGeometry)
     return geometry.num_elements
 end
+
 function get_num_elements(geometry::AbstractGeometry, patch_id::Int)
     return get_num_elements_per_patch(geometry)[patch_id]
 end
@@ -348,11 +350,11 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(MethodError(get_geometry, (geometry, patch_id)))
+    return throw(MethodError(get_geometry, (geometry, patch_id)))
 end
 
 function get_parametric_geometry(geometry::AbstractGeometry)
-    throw(MethodError(get_parametric_geometry, geometry))
+    return throw(MethodError(get_parametric_geometry, geometry))
 end
 
 """
@@ -373,7 +375,7 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_parametric_geometry(geometry::AbstractGeometry, patch_id::Int)
-    throw(MethodError(get_parametric_geometry, (geometry, patch_id)))
+    return throw(MethodError(get_parametric_geometry, (geometry, patch_id)))
 end
 
 """
@@ -393,7 +395,7 @@ There is no generic fallback for this method. It should be implemented for each 
 geometry type.
 """
 function get_element_measure(geometry::AbstractGeometry, element_id::Int)
-    throw(MethodError(get_element_measure, (geometry, element_id)))
+    return throw(MethodError(get_element_measure, (geometry, element_id)))
 end
 
 """
@@ -418,7 +420,7 @@ geometry type.
 function get_element_lengths(
     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
 ) where {manifold_dim, image_dim, num_patches}
-    throw(MethodError(get_element_lengths, (geometry, element_id)))
+    return throw(MethodError(get_element_lengths, (geometry, element_id)))
 end
 
 """
@@ -445,7 +447,7 @@ geometry type.
 function get_element_vertices(
     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
 ) where {manifold_dim, image_dim, num_patches}
-    throw(MethodError(get_element_vertices, (geometry, element_id)))
+    return throw(MethodError(get_element_vertices, (geometry, element_id)))
 end
 
 """
@@ -477,7 +479,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
-    throw(MethodError(evaluate, (geometry, element_id, xi)))
+    return throw(MethodError(evaluate, (geometry, element_id, xi)))
 end
 
 """
@@ -510,7 +512,7 @@ function jacobian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
-    throw(MethodError(jacobian, (geometry, element_id, xi)))
+    return throw(MethodError(jacobian, (geometry, element_id, xi)))
 end
 
 """
@@ -544,7 +546,86 @@ function hessian(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, image_dim, num_patches}
-    throw(MethodError(hessian, (geometry, element_id, xi)))
+    return throw(MethodError(hessian, (geometry, element_id, xi)))
+end
+
+# TensorProducts module interface
+TensorProducts.get_num_objects(geometry::AbstractGeometry) = get_num_elements(geometry)
+
+"""
+    get_factor_manifold_indices(geometry::AbstractGeometry)
+
+Return a tuple of the cumulative manifold indices of the of the factor geometries, in the
+global tensor-product numbering.
+
+# Arguments
+- `geometry::AbstractGeometry`: The global geometry with a tensor-product structure.
+
+# Returns
+- `factor_manifold_indices`: The cumulative start and end manifold indices.
+    `factor_manifold_indices[i][1]:factor_manifold_indices[i][end]` will be a range over
+    manifold dimensions corresponding to factor geometry `i`, in the global manifold
+    dimension numbering.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> line = Geometry.create_cartesian_box((0.0,), (1.0,), (1,)); nothing
+
+julia> square = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (1, 1)); nothing
+
+julia> tp = Geometry.TensorProductGeometry((line, square, line)); nothing
+
+julia> Geometry.get_factor_manifold_indices(tp)
+((1,), (2, 3), (4,))
+
+```
+"""
+function get_factor_manifold_indices(geometry::AbstractGeometry)
+    return throw(MethodError(get_factor_manifold_indices, (geometry,)))
+end
+
+"""
+    get_factor_evaluation_points(
+        geometry::AbstractGeometry{manifold_dim}, xi::Points.AbstractPoints{manifold_dim}
+    ) where {manifold_dim}
+
+Convert `xi` into factor-wise evaluations points, with manifold dimension of each factor
+geometry. See [`get_factor_manifold_indices`](@ref).
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> line = Geometry.create_cartesian_box((0.0,), (1.0,), (1,)); nothing
+
+julia> square = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (1, 1)); nothing
+
+julia> tp = Geometry.TensorProductGeometry((line, square, line)); nothing
+
+julia> xi = Points.TensorProductPoints([0.0], [0.5], [0.0, 1.0], [0.3]); nothing
+
+julia> factor_points = Geometry.get_factor_evaluation_points(tp, xi); nothing
+
+julia> map(collect, factor_points[1])
+1-element Vector{Vector{Float64}}:
+ [0.0]
+
+julia> map(collect, factor_points[2])
+2-element Vector{Vector{Float64}}:
+ [0.5, 0.0]
+ [0.5, 1.0]
+
+julia> map(collect, factor_points[3])
+1-element Vector{Vector{Float64}}:
+ [0.3]
+```
+"""
+function get_factor_evaluation_points(
+    geometry::AbstractGeometry{manifold_dim}, xi::Points.AbstractPoints{manifold_dim}
+) where {manifold_dim}
+    return throw(MethodError(get_factor_evaluation_points, (geometry, xi)))
 end
 
 include("CartesianGeometry.jl")

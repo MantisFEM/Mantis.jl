@@ -44,7 +44,7 @@ for L in [1.0, 0.5]
             d2f_dx2_eval = -Wt * Wt * cos.(Wt * x * L) - Wt * Wt * sin.(Wt * x * L)
 
             # interpolate via collocation
-            b_eval = FunctionSpaces.evaluate(b, Points.CartesianPoints((x,)), 2)
+            b_eval = FunctionSpaces.evaluate(b, Points.TensorProductPoints((x,)), 2)
             coeff_b = b_eval[1][1] \ f_eval
 
             # Check that the values match f ...
@@ -97,7 +97,7 @@ for L in [1.0, 0.5]
             d2f_dx2_eval = Wt .* Wt .* exp.(Wt * x * L) + Wt .* Wt .* 2 .* exp.(-Wt * x * L)
 
             # interpolate via collocation
-            b_eval = FunctionSpaces.evaluate(b, Points.CartesianPoints((x,)), 2)
+            b_eval = FunctionSpaces.evaluate(b, Points.TensorProductPoints((x,)), 2)
             coeff_b = b_eval[1][1] \ f_eval
 
             # Check that the values match f ...

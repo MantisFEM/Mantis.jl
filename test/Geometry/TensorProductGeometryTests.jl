@@ -97,7 +97,7 @@ for element_row_idx in 1:nz_elements
     # Compute Jacobian at x_{1} = [1.0, 0.0, z]
     # This corresponds to the point with local coordinates [0.0, 0.0] on the first element of
     # row element_row_idx
-    ξ = Points.CartesianPoints(([0.0], [0.0]))
+    ξ = Points.TensorProductPoints(([0.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
         0.5*π 0.0
@@ -111,7 +111,7 @@ for element_row_idx in 1:nz_elements
     # Compute Jacobian at x_{1} = [0.0, 1.0, 0.0]
     # This corresponds to the point with local coordinates [1.0, 0.0] on the first element
     # of row element_row_idx
-    ξ = Points.CartesianPoints(([1.0], [0.0]))
+    ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         -0.5*π 0.0
         0.0 0.0
@@ -125,7 +125,7 @@ for element_row_idx in 1:nz_elements
     # Compute Jacobian at x_{1} = [-1.0, 0.0, 0.0]
     # This corresponds to the point with local coordinates [1.0, 0.0] on the second element
     # of row element_row_idx
-    ξ = Points.CartesianPoints(([1.0], [0.0]))
+    ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
         -0.5*π 0.0
@@ -139,7 +139,7 @@ for element_row_idx in 1:nz_elements
     # Compute Jacobian at x_{1} = [0.0, -1.0, 0.0]
     # This corresponds to the point with local coordinates [1.0, 0.0] on the third element
     # of row element_row_idx
-    ξ = Points.CartesianPoints(([1.0], [0.0]))
+    ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         0.5*π 0.0
         0.0 0.0
@@ -153,7 +153,7 @@ for element_row_idx in 1:nz_elements
     # Compute Jacobian again at x_{1} = [1.0, 0.0, 0.0]
     # This corresponds to the point with local coordinates [1.0, 0.0] on the fourth element
     # of row element_row_idx
-    ξ = Points.CartesianPoints(([1.0], [0.0]))
+    ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
         0.5*π 0.0
@@ -169,7 +169,7 @@ end
 
 # Constructor, property, and getters and setters tests -------------------------------------
 function basic_tests(geometry, answers)
-    @test all(Geometry.get_constituent_num_elements(geometry) .== answers[1])
+    @test all(Geometry.get_factor_num_elements(geometry) .== answers[1])
 
     @test Geometry.get_num_patches(geometry) == answers[2]
     @test Geometry.get_num_elements(geometry) == answers[3]

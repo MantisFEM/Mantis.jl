@@ -26,7 +26,7 @@ function gauss_lobatto(N::Integer)
     ξ, w = FastGaussQuadrature.gausslobatto(N)
     @. ξ = (ξ + 1.0) / 2.0
     @. w = 0.5 * w
-    xi = Points.CartesianPoints((ξ,))
+    xi = Points.TensorProductPoints((ξ,))
 
     return CanonicalQuadratureRule(xi, w, "Gauss-Lobatto")
 end
@@ -67,7 +67,7 @@ function gauss_legendre(N::Integer)
     ξ, w = FastGaussQuadrature.gausslegendre(N)
     @. ξ = (ξ + 1.0) / 2.0
     @. w = 0.5 * w
-    nodes = Points.CartesianPoints((ξ,))
+    nodes = Points.TensorProductPoints((ξ,))
 
     return CanonicalQuadratureRule(nodes, w, "Gauss-Legendre")
 end

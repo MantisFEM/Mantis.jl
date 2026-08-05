@@ -18,7 +18,7 @@ for p in range(2, 20; step=3)
     quad_rule = Quadrature.clenshaw_curtis(p)
 
     ξ = Quadrature.get_nodes(quad_rule)
-    ξ_const = Points.get_constituent_points(ξ)[1]
+    ξ_const = Points.get_input_points(ξ)[1]
     w = Quadrature.get_weights(quad_rule)
 
     # Check that the rule type is correct.

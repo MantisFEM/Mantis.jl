@@ -15,6 +15,7 @@ using ..Geometry
 using ..Points
 using ..GeneralHelpers
 using ..Hierarchy
+using ..TensorProducts
 
 """
     AbstractFunctionSpace
@@ -72,6 +73,9 @@ function check_geometry(space_1::AbstractFunctionSpace, space_2::AbstractFunctio
         throw(ArgumentError("The given spaces have different number of elements."))
     end
 end
+
+# TensorProducts module interface
+TensorProducts.get_num_objects(space::AbstractFESpace) = get_num_basis(space)
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
 include("AdaptiveRefinement/AdaptiveRefinement.jl")

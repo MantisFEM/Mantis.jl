@@ -11,7 +11,7 @@ include("GeometryTestsHelpers.jl")
 # Constructor, property, and getters and setters tests -------------------------------------
 function basic_tests(geometry, answers)
     @test Geometry.get_breakpoints(geometry) == answers[1]  # Breakpoints on first patch.
-    @test collect(Geometry.get_constituent_num_elements(geometry)) == answers[2]
+    @test collect(Geometry.get_factor_num_elements(geometry)) == answers[2]
 
     @test Geometry.get_num_patches(geometry) == answers[3]
     @test Geometry.get_num_elements(geometry) == answers[4]
@@ -163,8 +163,8 @@ basic_tests(geometryMP, answers_MP)
 @test Geometry.get_patch_and_local_element_id(geometryMP, 10) == (2, 2)
 
 for i in 1:Geometry.get_num_elements(geometryMP)
-    jac = Geometry.jacobian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
-    hess = Geometry.hessian(geometryMP, i, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0])))
+    jac = Geometry.jacobian(geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0])))
+    hess = Geometry.hessian(geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0])))
     if i <= 4
         for p in axes(jac, 1)
             @test all(isapprox.(jac[p][:, :], [0.5 0.0; 0.0 0.85], rtol=1e-14))
@@ -214,8 +214,8 @@ basic_tests(geometryMP100, answers_MP100)
 all_jac_MP100 = true
 all_hess_MP100 = true
 for i in 1:Geometry.get_num_elements(geometryMP100)
-    jac = Geometry.jacobian(geometryMP100, i, Points.CartesianPoints(([0.0, 1.0],)))
-    hess = Geometry.hessian(geometryMP100, i, Points.CartesianPoints(([0.0, 1.0],)))
+    jac = Geometry.jacobian(geometryMP100, i, Points.TensorProductPoints(([0.0, 1.0],)))
+    hess = Geometry.hessian(geometryMP100, i, Points.TensorProductPoints(([0.0, 1.0],)))
 
     for p in eachindex(jac, hess)
         if !all(isapprox.(jac[p][:, :], [1.0 / i], rtol=1e-14))

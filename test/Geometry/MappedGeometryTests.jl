@@ -342,10 +342,10 @@ basic_tests(geometry2to3, answers_geometry2to3)
 
 for (k, IJ) in enumerate(CartesianIndices((4, 4)))
     jac = Geometry.jacobian(
-        geometry2to3, k, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+        geometry2to3, k, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
     )
     hess = Geometry.hessian(
-        geometry2to3, k, Points.CartesianPoints(([0.0, 1.0], [0.0, 1.0]))
+        geometry2to3, k, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
     )
 
     i, j = Tuple(IJ)

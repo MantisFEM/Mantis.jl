@@ -1,35 +1,33 @@
 """
     TensorProductSpace{
-        manifold_dim, num_components, num_patches, num_spaces, T, G, GP, CIB, LIB, D
+        manifold_dim, num_components, num_patches, num_spaces, TP, G, GP, D
     } <: AbstractFESpace{manifold_dim, num_components, num_patches}
 
-A structure representing a `TensorProductSpace`, defined by the tensor product of
-`num_spaces` constituent spaces. The resulting tensor product has a `manifold_dim` equal to
-the sum of the constituent spaces' manifold dimensions.
+A structure representing  the tensor product of `num_spaces` factor spaces. The resulting
+tensor product has a `manifold_dim` equal to the sum of the factor spaces' manifold
+dimensions.
+
+The interface with `TensorProducts` is done by defining the number of objects of a function
+space as the number of basis functions; the ids then refer to basis ids. See
+[`TensorProducts`](@ref).
 
 # Fields
-- `constituent_spaces::T`: A tuple of constituent finite element spaces to be tensored.
+- `tensor_product::TP`: A `TensorProducts.TensorProduct` of the factor spaces.
 - `geometry::G`: The underlying physical geometry.
 - `parametric_geometry::GP`: The underlying parametric geometry. The function space is
     defined with respect to this.
-- `cart_num_basis::CIB`: To convert from tensor-product indexing to constituent-wise
-    indexing for basis functions.
-- `lin_num_basis::LIB`: To convert from constituent-wise indexing to tensor-product indexing
-    for basis functions.
 - `dof_partition::D`: See [`get_dof_partition`](@ref).
 """
 struct TensorProductSpace{
-    manifold_dim, num_components, num_patches, num_spaces, T, G, GP, CIB, LIB, D
+    manifold_dim, num_components, num_patches, num_spaces, TP, G, GP, D
 } <: AbstractFESpace{manifold_dim, num_components, num_patches}
-    constituent_spaces::T
+    tensor_product::TP
     geometry::G
     parametric_geometry::GP
-    cart_num_basis::CIB
-    lin_num_basis::LIB
     dof_partition::D
 
     function TensorProductSpace(
-        constituent_spaces::T,
+        spaces::T,
         geometry::Geometry.AbstractGeometry{manifold_dim_G, image_dim, num_patches_G},
         parametric_geometry::Geometry.AbstractGeometry{
             manifold_dim_G, manifold_dim_G, num_patches_G
@@ -41,29 +39,30 @@ struct TensorProductSpace{
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
     }
-        if all(get_num_components.(constituent_spaces) .== 1)
+        if all(get_num_components.(spaces) .== 1)
             num_components = 1
         else
             throw(
                 ArgumentError(
                     LazyString(
-                        "All input spaces must have only one component, but got ",
-                        get_num_components.(constituent_spaces),
+                        "All factor spaces must have only one component, but got ",
+                        get_num_components.(spaces),
                         "as the number of components for each space.",
                     ),
                 ),
             )
         end
 
+        tensor_product = TensorProduct(spaces)
         # Parameters for the Tensor-product space
-        manifold_dim = sum(get_manifold_dim, constituent_spaces)
-        num_patches = prod(get_num_patches, constituent_spaces)
+        manifold_dim = sum(get_manifold_dim, spaces)
+        num_patches = prod(get_num_patches, spaces)
         if manifold_dim != manifold_dim_G
             throw(
                 ArgumentError(
                     LazyString(
                         "The sum of the `manifold_dim`s of each of the ",
-                        "`constituent_spaces` must match the `manifold_dim` of the ",
+                        "`factor_spaces` must match the `manifold_dim` of the ",
                         "`geometry`, but got ",
                         manifold_dim,
                         "and ",
@@ -73,12 +72,13 @@ struct TensorProductSpace{
                 ),
             )
         end
+
         if num_patches != num_patches_G
             throw(
                 ArgumentError(
                     LazyString(
                         "The product of the `num_patches` of each of the ",
-                        "`constituent_spaces` must match the `num_patches` of the ",
+                        "`factor_spaces` must match the `num_patches` of the ",
                         "`geometry`, but got ",
                         num_patches,
                         "and ",
@@ -91,38 +91,32 @@ struct TensorProductSpace{
 
         # Pre-allocate memory for degree of freedom partitioning
         dof_partition = Vector{Vector{Vector{Int}}}(undef, num_patches)
-        # Constituent spaces
-        const_dof_partitions = ntuple(
-            space -> get_dof_partition(constituent_spaces[space]), num_spaces
-        )
-        const_num_patches = ntuple(space -> length(const_dof_partitions[space]), num_spaces)
-        const_num_basis = ntuple(
-            space -> get_num_basis(constituent_spaces[space]), num_spaces
-        )
-        cart_num_basis = CartesianIndices(const_num_basis)
-        lin_num_basis = LinearIndices(const_num_basis)
+        # factor spaces
+        factor_dof_partitions = map(get_dof_partition, spaces)
+        factor_num_patches = map(length, factor_dof_partitions)
+        lin_num_basis = TensorProducts.get_lin_ids(tensor_product)
         # Loop over all spaces and build the appropriate index subsets
-        for (patch_count, patch_ids) in enumerate(CartesianIndices(const_num_patches))
-            const_patches = ntuple(
-                space -> const_dof_partitions[space][patch_ids[space]], num_spaces
+        for (patch_count, patch_ids) in enumerate(CartesianIndices(factor_num_patches))
+            factor_patches = ntuple(
+                space -> factor_dof_partitions[space][patch_ids[space]], num_spaces
             )
-            const_partition_lengths = ntuple(
-                space -> length(const_patches[space]), num_spaces
+            factor_partition_lengths = ntuple(
+                space -> length(factor_patches[space]), num_spaces
             )
             dof_partition[patch_count] = Vector{Vector{Int}}(
-                undef, prod(const_partition_lengths)
+                undef, prod(factor_partition_lengths)
             )
             for (partition_count, partition_ids) in
-                enumerate(CartesianIndices(const_partition_lengths))
-                const_partition_dofs = ntuple(
-                    space -> const_patches[space][partition_ids[space]], num_spaces
+                enumerate(CartesianIndices(factor_partition_lengths))
+                factor_partition_dofs = ntuple(
+                    space -> factor_patches[space][partition_ids[space]], num_spaces
                 )
                 dof_partition[patch_count][partition_count] = Vector{Int}(
-                    undef, prod(length, const_partition_dofs)
+                    undef, prod(length, factor_partition_dofs)
                 )
-                for (dof_count, const_basis_id) in
-                    enumerate(Iterators.product(const_partition_dofs...))
-                    basis_id = lin_num_basis[const_basis_id...]
+                for (dof_count, factor_basis_id) in
+                    enumerate(Iterators.product(factor_partition_dofs...))
+                    basis_id = lin_num_basis[factor_basis_id...]
                     dof_partition[patch_count][partition_count][dof_count] = basis_id
                 end
             end
@@ -133,83 +127,96 @@ struct TensorProductSpace{
             num_components,
             num_patches,
             num_spaces,
-            T,
+            typeof(tensor_product),
             typeof(geometry),
             typeof(parametric_geometry),
-            typeof(cart_num_basis),
-            typeof(lin_num_basis),
             typeof(dof_partition),
         }(
-            constituent_spaces,
-            geometry,
-            parametric_geometry,
-            cart_num_basis,
-            lin_num_basis,
-            dof_partition,
+            tensor_product, geometry, parametric_geometry, dof_partition
         )
     end
 
     function TensorProductSpace(
-        constituent_spaces::T
+        factor_spaces::T
     ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
-        # Create a tensor-product geometry from the constituent ones.
-        constituent_geometries = map(get_geometry, constituent_spaces)
-        geometry = Geometry.TensorProductGeometry(constituent_geometries)
-        constituent_parametric_geometries = map(get_parametric_geometry, constituent_spaces)
-        parametric_geometry = Geometry.TensorProductGeometry(
-            constituent_parametric_geometries
-        )
-        return TensorProductSpace(constituent_spaces, geometry, parametric_geometry)
+        # Create a tensor-product geometry from the factor ones.
+        factor_geometries = map(get_geometry, factor_spaces)
+        geometry = Geometry.TensorProductGeometry(factor_geometries)
+        factor_parametric_geometries = map(get_parametric_geometry, factor_spaces)
+        parametric_geometry = Geometry.TensorProductGeometry(factor_parametric_geometries)
+        return TensorProductSpace(factor_spaces, geometry, parametric_geometry)
     end
 
     function TensorProductSpace(
-        constituent_spaces::T, mapping::Geometry.Mapping
+        factor_spaces::T, mapping::Geometry.Mapping
     ) where {num_spaces, T <: NTuple{num_spaces, AbstractFESpace}}
-        constituent_geometries = map(get_geometry, constituent_spaces)
-        geometry = Geometry.TensorProductGeometry(constituent_geometries)
+        factor_geometries = map(get_geometry, factor_spaces)
+        geometry = Geometry.TensorProductGeometry(factor_geometries)
         return TensorProductSpace(
-            constituent_spaces, Geometry.MappedGeometry(geometry, mapping), geometry
+            factor_spaces, Geometry.MappedGeometry(geometry, mapping), geometry
         )
     end
 
     function TensorProductSpace(
-        constituent_spaces::T, ::Type{G}
+        factor_spaces::T, ::Type{G}
     ) where {
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
         G <: Geometry.CartesianGeometry,
     }
-        constituent_geometries = map(get_geometry, constituent_spaces)
-        geometry = Geometry.TensorProductGeometry(constituent_geometries)
+        factor_geometries = map(get_geometry, factor_spaces)
+        geometry = Geometry.TensorProductGeometry(factor_geometries)
         cartesian_geometry = convert(G, geometry)
-        return TensorProductSpace(
-            constituent_spaces, cartesian_geometry, cartesian_geometry
-        )
+        return TensorProductSpace(factor_spaces, cartesian_geometry, cartesian_geometry)
     end
 
     function TensorProductSpace(
-        constituent_spaces::T, ::Type{G}, mapping::Geometry.AbstractMapping
+        factor_spaces::T, ::Type{G}, mapping::Geometry.AbstractMapping
     ) where {
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
         G <: Geometry.CartesianGeometry,
     }
-        constituent_geometries = map(get_geometry, constituent_spaces)
-        geometry = Geometry.TensorProductGeometry(constituent_geometries)
+        factor_geometries = map(get_geometry, factor_spaces)
+        geometry = Geometry.TensorProductGeometry(factor_geometries)
         cartesian_geometry = convert(G, geometry)
         return TensorProductSpace(
-            constituent_spaces,
+            factor_spaces,
             Geometry.MappedGeometry(cartesian_geometry, mapping),
             cartesian_geometry,
         )
     end
 end
 
-# Getters
-get_cart_num_basis(space::TensorProductSpace) = space.cart_num_basis
-get_lin_num_basis(space::TensorProductSpace) = space.lin_num_basis
-get_constituent_spaces(space::TensorProductSpace) = space.constituent_spaces
-get_num_basis(space::TensorProductSpace) = prod(get_constituent_num_basis(space))
+TensorProductSpace(spaces...) = TensorProductSpace(spaces)
+
+TensorProducts.get_factors(space::TensorProductSpace) = get_factor_spaces(space)
+
+"""
+    get_tensor_product(space::TensorProductSpace)
+
+Return the `TensorProducts.TensorProduct` object of the factor spaces of `space`.
+"""
+get_tensor_product(space::TensorProductSpace) = space.tensor_product
+
+"""
+    get_factor_spaces(space::TensorProductSpace)
+
+Return the factor spaces of `space`.
+"""
+function get_factor_spaces(space::TensorProductSpace)
+    return TensorProducts.get_factors(get_tensor_product(space))
+end
+
+function get_num_basis(space::TensorProductSpace)
+    #=
+    The `TensorProducts` module already implements a `get_num_objects` by checking the size
+    of the `CartesianIndices` iterator.
+    However, `TensorProducts` needs to call `get_num_objects` on the factor geometries, which
+    is why there is also a `TensorProducts.get_num_objects(space::AbstractFESpace)`.
+    =#
+    return TensorProducts.get_num_objects(get_tensor_product(space))
+end
 
 """
 	get_cart_num_elements(space::TensorProductSpace)
@@ -234,7 +241,7 @@ end
         ::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns the number of constituent spaces in a given `TensorProductSpace`.
+Returns the number of factor spaces in a given `TensorProductSpace`.
 """
 function get_num_spaces(
     ::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
@@ -243,332 +250,267 @@ function get_num_spaces(
 end
 
 """
-    get_constituent_space(space::TensorProductSpace, space_id::Int)
-
-Returns the constituent space numbered `space_id` of the tensor product `space`.
-"""
-function get_constituent_space(space::TensorProductSpace, space_id::Int)
-    return get_constituent_spaces(space)[space_id]
-end
-
-"""
-    get_constituent_element_id(space::TensorProductSpace, element_id::Int)
+    get_factor_element_ids(space::TensorProductSpace, element_id::Int)
 
 Returns a tuple corresponding to the conversion of `element_id` in tensor-product numbering
-to constituent-wise numbering.
+to factor-wise numbering.
 """
-function get_constituent_element_id(space::TensorProductSpace, element_id::Int)
-    return Tuple(get_cart_num_elements(space)[element_id])
+function get_factor_element_ids(space::TensorProductSpace, element_id::Int)
+    return Geometry.get_factor_element_ids(get_parametric_geometry(space), element_id)
 end
 
 """
-    get_constituent_basis_id(space::TensorProductSpace, basis_id::Int)
+    get_cart_num_basis(space::TensorProductSpace)
+
+Return a `CartesianIndices` iterator over the number of basis functions in `space`.
+"""
+function get_cart_num_basis(space::TensorProductSpace)
+    return TensorProducts.get_cart_ids(get_tensor_product(space))
+end
+
+"""
+    get_lin_num_basis(space::TensorProductSpace)
+
+Return a `LinearIndices` iterator over the number of basis functions in `space`.
+"""
+function get_lin_num_basis(space::TensorProductSpace)
+    return TensorProducts.get_lin_ids(get_tensor_product(space))
+end
+
+function TensorProducts.get_factor_ids(space::TensorProductSpace, basis_id::Int)
+    return get_factor_basis_ids(space, basis_id)
+end
+
+"""
+    get_factor_basis_ids(space::TensorProductSpace, basis_id::Int)
 
 Returns a tuple corresponding to the conversion of `basis_id` in tensor-product numbering to
-constituent-wise numbering.
+factor-wise numbering.
 """
-function get_constituent_basis_id(space::TensorProductSpace, basis_id::Int)
+function get_factor_basis_ids(space::TensorProductSpace, basis_id::Int)
     return Tuple(get_cart_num_basis(space)[basis_id])
 end
 
 """
-    get_constituent_num_basis(space::TensorProductSpace)
+    get_factor_num_basis(space::TensorProductSpace)
 
-Returns a tuple corresponding to the constituent-wise number of basis functions — or
+Returns a tuple corresponding to the factor-wise number of basis functions — or
 dimension.
 """
-function get_constituent_num_basis(space::TensorProductSpace)
-    return Tuple(maximum(get_cart_num_basis(space)))
+function get_factor_num_basis(space::TensorProductSpace)
+    return TensorProducts.get_factor_num_objects(get_tensor_product(space))
 end
 
 """
-    get_constituent_num_basis(
+    get_factor_num_basis(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
         element_id::Int,
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise number of basis functions supported on
+Returns a tuple corresponding to the factor-wise number of basis functions supported on
 `element_id`.
 """
-function get_constituent_num_basis(
+function get_factor_num_basis(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_num_basis = map(get_num_basis, const_spaces, Tuple(const_element_id))
+    factor_element_ids, _ = get_factor_element_ids(space, element_id)
 
-    return const_num_basis
+    return map(get_num_basis, get_factor_spaces(space), factor_element_ids)
 end
 
 function get_num_basis(space::TensorProductSpace, element_id::Int)
-    return prod(get_constituent_num_basis(space, element_id))
+    return prod(get_factor_num_basis(space, element_id))
 end
 
 """
-    get_constituent_manifold_dim(
+    get_factor_manifold_dims(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise manifold dimension.
+Returns a tuple corresponding to the factor-wise manifold dimension.
 """
-function get_constituent_manifold_dim(
+function get_factor_manifold_dims(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-
-    return ntuple(space -> get_manifold_dim(const_spaces[space]), num_spaces)
+    return TensorProducts.mapfactors(get_manifold_dim, get_tensor_product(space))
 end
 
 """
-    get_constituent_basis_indices(
-        space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-        element_id::Int,
-    ) where {manifold_dim, num_components, num_patches, num_spaces}
+    get_factor_basis_indices( space::TensorProductSpace, element_id::Int)
 
-Returns a tuple corresponding to the constituent-wise basis indices supported on
-`element_id`.
+Returns a tuple corresponding to the factor-wise basis indices supported on `element_id`.
 
 See also [`get_basis_indices`](@ref).
 """
-function get_constituent_basis_indices(
-    space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-    element_id::Int,
-) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_basis_indices = map(get_basis_indices, const_spaces, Tuple(const_element_id))
+function get_factor_basis_indices(space::TensorProductSpace, element_id::Int)
+    factor_element_ids, _ = get_factor_element_ids(space, element_id)
 
-    return const_basis_indices
+    return map(get_basis_indices, get_factor_spaces(space), factor_element_ids)
 end
 
 """
-    get_constituent_support(
+    get_factor_supports(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
         basis_id::Int,
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise support of the basis function
+Returns a tuple corresponding to the factor-wise support of the basis function
 identified by `basis_id`.
 
 See also [`get_support`](@ref).
 """
-function get_constituent_support(
+function get_factor_supports(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_basis_id = get_constituent_basis_id(space, basis_id)
-    const_spaces = get_constituent_spaces(space)
-    const_support = ntuple(
-        space -> get_support(const_spaces[space], const_basis_id[space]), num_spaces
-    )
-
-    return const_support
+    return TensorProducts.mapfactors(get_support, get_tensor_product(space), basis_id)
 end
 
 """
-    get_constituent_extraction(
+    get_factor_extraction(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
         element_id::Int,
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise extraction at `element_id`.
+Returns a tuple corresponding to the factor-wise extraction at `element_id`.
 
 See also [`get_extraction`](@ref).
 """
-function get_constituent_extraction(
+function get_factor_extractions(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_spaces = get_constituent_spaces(space)
-    const_extraction = map(get_extraction, const_spaces, Tuple(const_element_id))
+    factor_element_ids, _ = get_factor_element_ids(space, element_id)
 
-    return const_extraction
+    return map(get_extraction, get_factor_spaces(space), factor_element_ids)
 end
 
 """
-    get_constituent_polynomial_degree(
+    get_factor_polynomial_degrees(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise polynomial degree. Note that
-`get_polynomial_degree` is not necessarily defined for every constituent space.
+Returns a tuple corresponding to the factor-wise polynomial degree. Note that
+`get_polynomial_degree` is not necessarily defined for every factor space.
 
 See also [`get_polynomial_degree`](@ref).
 """
-function get_constituent_polynomial_degree(
+function get_factor_polynomial_degrees(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces}
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_polynomial_degree = ntuple(
-        space -> get_polynomial_degree(const_spaces[space]), num_spaces
-    )
-
-    return const_polynomial_degree
+    return TensorProducts.mapfactors(get_polynomial_degree, get_tensor_product(space))
 end
 
 """
-    get_constituent_local_basis(
+    get_factor_local_basis(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
         nderivatives::Int=0,
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Returns a tuple corresponding to the constituent-wise local basis evaluation at `element_id`
+Returns a tuple corresponding to the factor-wise local basis evaluation at `element_id`
 and points `xi`.
 
 See also [`get_local_basis`](@ref).
 """
-function get_constituent_local_basis(
+function get_factor_local_basis(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int=0,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_xi = get_constituent_evaluation_points(space, xi)
-    const_local_basis = ntuple(
+    factor_spaces = get_factor_spaces(space)
+    factor_element_id, _ = get_factor_element_ids(space, element_id)
+    factor_xi = get_factor_evaluation_points(space, xi)
+    factor_local_basis = ntuple(
         space -> get_local_basis(
-            const_spaces[space], const_element_id[space], const_xi[space], nderivatives
+            factor_spaces[space],
+            factor_element_id[space],
+            factor_xi[space],
+            nderivatives,
         ),
         num_spaces,
     )
 
-    return const_local_basis
+    return factor_local_basis
 end
 
 """
-    get_constituent_evaluations(
+    get_factor_evaluations(
         space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
         element_id::Int,
         xi::Points.AbstractPoints{manifold_dim},
         nderivatives::Int=0,
     ) where {manifold_dim, num_components, num_patches, num_spaces}
 
-Get evaluations of all constituent spaces at `element_id` and points `xi`.
+Get evaluations of all factor spaces at `element_id` and points `xi`.
 """
-function get_constituent_evaluations(
+function get_factor_evaluations(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int=0,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_xi = get_constituent_evaluation_points(space, xi)
-
+    factor_spaces = get_factor_spaces(space)
+    factor_element_id, _ = get_factor_element_ids(space, element_id)
+    factor_xi = get_factor_evaluation_points(space, xi)
     tup_ders = ntuple(i -> nderivatives, num_spaces)
-    const_eval_and_inds = map(
-        evaluate, const_spaces, Tuple(const_element_id), const_xi, tup_ders
+    factor_eval_and_inds = map(
+        evaluate, factor_spaces, factor_element_id, factor_xi, tup_ders
     )
+    factor_eval = map(getindex, factor_eval_and_inds, ntuple(i -> 1, num_spaces))
 
-    const_eval = map(getindex, const_eval_and_inds, ntuple(i -> 1, num_spaces))
-
-    return const_eval
+    return factor_eval
 end
 
 """
-    get_constituent_evaluation_points(
-        space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim, num_components, num_patches, num_spaces}
+    get_factor_evaluation_points(
+        space::TensorProductSpace{manifold_dim}, xi::Points.AbstractPoints{manifold_dim}
+    ) where {manifold_dim}
 
-Returns a tuple corresponding to the constituent-wise splitting of `xi` according to each
-constituent space's manifold dimension.
+See [`Geometry.get_factor_evaluation_points`](@ref).
 """
-function get_constituent_evaluation_points(
-    space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_manifold_indices = get_constituent_manifold_indices(space)
-    const_points = Points.get_constituent_points(xi)
-    const_xi = ntuple(num_spaces) do space
-        const_indices = const_manifold_indices[space]
-        const_range = const_indices[1]:const_indices[end]
-
-        return Points.CartesianPoints(const_points[const_range])
-    end
-
-    return const_xi
+function get_factor_evaluation_points(
+    space::TensorProductSpace{manifold_dim}, xi::Points.AbstractPoints{manifold_dim}
+) where {manifold_dim}
+    return Geometry.get_factor_evaluation_points(get_parametric_geometry(space), xi)
 end
 
 """
-    get_constituent_manifold_indices(space::TensorProductSpace)
+    get_factor_manifold_indices(space::TensorProductSpace)
 
-Return the indices corresponding to the constituent-wise splitting of `manifold_dim`;
-useful to iterate over each manifold dimension of each constituent space.
-The returned tuple has length equal to the number of spaces in `space`, and each entry has
-length equal to the manifold dimension of corresponding space.
+See [`Geometry.get_factor_manifold_indices`](@ref).
 """
-function get_constituent_manifold_indices(space::TensorProductSpace)
-    const_manifold_dims = get_constituent_manifold_dim(space)
-
-    return _get_constituent_manifold_indices(const_manifold_dims)
+function get_factor_manifold_indices(space::TensorProductSpace)
+    return Geometry.get_factor_manifold_indices(get_parametric_geometry(space))
 end
 
-function _get_constituent_manifold_indices(
-    const_manifold_dims::NTuple{num_spaces, Int}
-) where {num_spaces}
-    cum_const_manifold_dim = (0, cumsum(const_manifold_dims)...)
-    const_manifold_indices = ntuple(
-        space -> ntuple(i -> cum_const_manifold_dim[space] + i, const_manifold_dims[space]),
-        num_spaces,
-    )
-
-    return const_manifold_indices
-end
-
-function get_constituent_element_vertices(
+function get_factor_element_vertices(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_element_vertices = map(
-        get_element_vertices, const_spaces, Tuple(const_element_id)
-    )
-
-    return const_element_vertices
+    return Geometry.get_factor_element_vertices(get_parametric_geometry(space), element_id)
 end
 
-function get_constituent_element_lengths(
+function get_factor_element_lengths(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_spaces = get_constituent_spaces(space)
-    const_element_id, patch_id = Geometry.get_constituent_element_id(
-        get_parametric_geometry(space), element_id
-    )
-    const_element_lengths = map(get_element_lengths, const_spaces, Tuple(const_element_id))
-
-    return const_element_lengths
+    return Geometry.get_factor_element_lengths(get_parametric_geometry(space), element_id)
 end
 
 function get_basis_indices(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_basis_indices = get_constituent_basis_indices(space, element_id)
+    factor_basis_indices = get_factor_basis_indices(space, element_id)
+    product = Iterators.product(factor_basis_indices...)
     lin_num_basis = get_lin_num_basis(space)
-    basis_indices = Vector{Int}(undef, prod(length, const_basis_indices))
-    for (basis_count, const_basis_id) in
-        enumerate(Iterators.product(const_basis_indices...))
-        basis_indices[basis_count] = lin_num_basis[const_basis_id...]
+    basis_indices = Vector{Int}(undef, length(product))
+    for (i, basis) in enumerate(product)
+        basis_indices[i] = lin_num_basis[basis...]
     end
 
     return basis_indices
@@ -578,18 +520,19 @@ function get_support(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     basis_id::Int,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_support = get_constituent_support(space, basis_id)
+    factor_supports = get_factor_supports(space, basis_id)
+    iterator = Iterators.product(factor_supports...)
     lin_num_elements = get_lin_num_elements(space)
-    support = Vector{Int}(undef, prod(length, const_support))
-    for (element_count, const_element_id) in enumerate(Iterators.product(const_support...))
-        support[element_count] = lin_num_elements[const_element_id...]
+    support = Vector{Int}(undef, length(iterator))
+    for (i, el) in enumerate(iterator)
+        support[i] = lin_num_elements[el...]
     end
 
     return support
 end
 
 function get_max_local_dim(space::TensorProductSpace)
-    return prod(get_max_local_dim, get_constituent_spaces(space))
+    return prod(get_max_local_dim, get_factor_spaces(space))
 end
 
 function get_extraction_coefficients(
@@ -597,9 +540,9 @@ function get_extraction_coefficients(
     element_id::Int,
     component_id::Int=1,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    # The permutations of the constituent spaces should be combined if we allow for more
+    # The permutations of the factor spaces should be combined if we allow for more
     # than one component.
-    extraction_per_space = get_constituent_extraction(space, element_id)
+    extraction_per_space = get_factor_extractions(space, element_id)
     if num_spaces == 1
         extraction_coeffs = extraction_per_space[1][1]
     elseif all([
@@ -642,8 +585,8 @@ function get_local_basis(
     nderivatives::Int=0,
     component_id::Int=1,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
-    const_local_basis = get_constituent_local_basis(space, element_id, xi, nderivatives)
-    const_sizes = ntuple(space -> size(const_local_basis[space][1][1][1]), num_spaces)
+    factor_local_basis = get_factor_local_basis(space, element_id, xi, nderivatives)
+    factor_sizes = ntuple(space -> size(factor_local_basis[space][1][1][1]), num_spaces)
     num_points = Points.get_num_points(xi)
     num_basis = get_num_basis(space, element_id)
     local_basis = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
@@ -656,24 +599,27 @@ function get_local_basis(
     end
 
     der_keys = integer_sums(0, nderivatives, Val(manifold_dim))
-    const_manifold_indices = get_constituent_manifold_indices(space)
-    const_eval = ntuple(space -> Matrix{Float64}(undef, const_sizes[space]), num_spaces)
+    factor_manifold_indices = get_factor_manifold_indices(space)
+    der_keys = integer_sums(0, nderivatives, Val(manifold_dim))
+    factor_eval = ntuple(space -> Matrix{Float64}(undef, factor_sizes[space]), num_spaces)
+    space_der_order = zeros(Int, num_spaces)
+    space_der_id = zeros(Int, num_spaces)
     for key in der_keys
         der_order = sum(key)
         der_id = get_derivative_idx(key)
         for space in 1:num_spaces
             space_der_order, space_der_id = _get_key_info(
-                key, const_manifold_indices, space
+                key, factor_manifold_indices, space
             )
-            space_eval = const_local_basis[space][space_der_order + 1][space_der_id][1]
-            const_eval[space] .= space_eval
+            space_eval = factor_local_basis[space][space_der_order + 1][space_der_id][1]
+            factor_eval[space] .= space_eval
         end
 
         if manifold_dim == 1
-            local_basis[der_order + 1][der_id][1] = const_eval[1]
+            local_basis[der_order + 1][der_id][1] = factor_eval[1]
         else
             local_basis[der_order + 1][der_id][1] = kron(
-                (const_eval[space] for space in num_spaces:-1:1)...
+                (factor_eval[space] for space in num_spaces:-1:1)...
             )
         end
     end
@@ -681,26 +627,24 @@ function get_local_basis(
     return local_basis
 end
 
-function get_constituent_derivative_key(
-    key::NTuple{manifold_dim, Int}, constituent_indices, constituent_id::Int
+function get_factor_derivative_key(
+    key::NTuple{manifold_dim, Int}, factor_indices, factor_id::Int
 ) where {manifold_dim}
-    key_size = length(constituent_indices[constituent_id])
-    constituent_key = ntuple(key_size) do i
-        return key[constituent_indices[constituent_id][i]]
-    end
+    key_size = length(factor_indices[factor_id])
+    factor_key = ntuple(i -> key[factor_indices[factor_id][i]], key_size)
 
-    return constituent_key
+    return factor_key
 end
 
 function evaluate(
     space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
     element_id::Int,
-    xi::Points.CartesianPoints{manifold_dim},
+    xi::Points.TensorProductPoints{manifold_dim},
     nderivatives::Int=0,
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     basis_indices = get_basis_indices(space, element_id)
     num_basis = length(basis_indices)
-    const_eval = get_constituent_evaluations(space, element_id, xi, nderivatives)
+    factor_eval = get_factor_evaluations(space, element_id, xi, nderivatives)
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for der_order in 0:nderivatives
@@ -711,21 +655,21 @@ function evaluate(
         ]
     end
 
-    const_manifold_indices = get_constituent_manifold_indices(space)
+    factor_manifold_indices = get_factor_manifold_indices(space)
     der_keys = integer_sums(0, nderivatives, Val(manifold_dim))
     space_der_order = zeros(Int, num_spaces)
     space_der_id = zeros(Int, num_spaces)
     for key in der_keys
         der_order = sum(key)
         der_id = get_derivative_idx(key)
-        _update_key_info!(space_der_order, space_der_id, key, const_manifold_indices)
+        _update_key_info!(space_der_order, space_der_id, key, factor_manifold_indices)
         if num_spaces == 1
-            eval[der_order + 1][der_id][1] = const_eval[1][space_der_order[1] + 1][space_der_id[1]][1]
+            eval[der_order + 1][der_id][1] .= factor_eval[1][space_der_order[1] + 1][space_der_id[1]][1]
         else
-            eval[der_order + 1][der_id][1] = kron(
+            eval[der_order + 1][der_id][1] .= kron(
                 (
-                    const_eval[space][space_der_order[space] + 1][space_der_id[space]][1] for
-                    space in num_spaces:-1:1
+                    factor_eval[space][space_der_order[space] + 1][space_der_id[space]][1]
+                    for space in num_spaces:-1:1
                 )...,
             )
         end
@@ -742,7 +686,7 @@ function evaluate(
 ) where {manifold_dim, num_components, num_patches, num_spaces}
     basis_indices = get_basis_indices(space, element_id)
     num_basis = length(basis_indices)
-    const_eval = get_constituent_evaluations(space, element_id, xi, nderivatives)
+    factor_eval = get_factor_evaluations(space, element_id, xi, nderivatives)
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
     for der_order in 0:nderivatives
@@ -753,21 +697,21 @@ function evaluate(
         ]
     end
 
-    const_manifold_indices = get_constituent_manifold_indices(space)
+    factor_manifold_indices = get_factor_manifold_indices(space)
     der_keys = integer_sums(0, nderivatives, Val(manifold_dim))
     space_der_order = zeros(Int, num_spaces)
     space_der_id = zeros(Int, num_spaces)
     for key in der_keys
         der_order = sum(key)
         der_id = get_derivative_idx(key)
-        _update_key_info!(space_der_order, space_der_id, key, const_manifold_indices)
+        _update_key_info!(space_der_order, space_der_id, key, factor_manifold_indices)
         if num_spaces == 1
-            eval[der_order + 1][der_id][1] = const_eval[1][space_der_order[1] + 1][space_der_id[1]][1]
+            eval[der_order + 1][der_id][1] .= factor_eval[1][space_der_order[1] + 1][space_der_id[1]][1]
         else
             for point in axes(eval[der_order + 1][der_id][1], 1)
-                eval[der_order + 1][der_id][1][point, :] = kron(
+                eval[der_order + 1][der_id][1][point, :] .= kron(
                     (
-                        const_eval[space][space_der_order[space] + 1][space_der_id[space]][1][
+                        factor_eval[space][space_der_order[space] + 1][space_der_id[space]][1][
                             point, :,
                         ] for space in num_spaces:-1:1
                     )...,
@@ -779,9 +723,9 @@ function evaluate(
     return eval, basis_indices
 end
 
-function _update_key_info!(space_der_order, space_der_id, key, const_manifold_indices)
+function _update_key_info!(space_der_order, space_der_id, key, factor_manifold_indices)
     for space in eachindex(space_der_order, space_der_id)
-        der_order, der_id = _get_key_info(key, const_manifold_indices, space)
+        der_order, der_id = _get_key_info(key, factor_manifold_indices, space)
         space_der_order[space] = der_order
         space_der_id[space] = der_id
     end
@@ -789,10 +733,10 @@ function _update_key_info!(space_der_order, space_der_id, key, const_manifold_in
     return space_der_order, space_der_id
 end
 
-function _get_key_info(key, const_manifold_indices, space)
-    constituent_key = get_constituent_derivative_key(key, const_manifold_indices, space)
-    space_der_order = sum(constituent_key)
-    space_der_id = get_derivative_idx(constituent_key)
+function _get_key_info(key, factor_manifold_indices, space)
+    factor_key = get_factor_derivative_key(key, factor_manifold_indices, space)
+    space_der_order = sum(factor_key)
+    space_der_id = get_derivative_idx(factor_key)
 
     return space_der_order, space_der_id
 end

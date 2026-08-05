@@ -5,6 +5,7 @@ module Mantis
 ############################################################################################
 include("GeneralHelpers/GeneralHelpers.jl")
 include("Mesh/Mesh.jl")
+include("TensorProducts/TensorProducts.jl")
 include("Points/Points.jl")
 include("Hierarchy/Hierarchy.jl")
 include("Geometry/Geometry.jl")
@@ -23,6 +24,7 @@ include("Plot/Plot.jl")
 export Mesh,
     Points,
     Quadrature,
+    TensorProducts,
     Hierarchy,
     FunctionSpaces,
     Geometry,
