@@ -7,7 +7,6 @@ GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
-Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
