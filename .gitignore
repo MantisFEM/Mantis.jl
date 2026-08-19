@@ -50,12 +50,17 @@ Manifest.toml
 *.jpeg
 *.svg
 *.ico
-# Unless they are in the docs/src/assets folder
+# Unless they are in the docs/src/assets folder or a subfolder
 !docs/src/assets/*.png
+!docs/src/assets/**/*.png
 !docs/src/assets/*.jpg
+!docs/src/assets/**/*.jpg
 !docs/src/assets/*.jpeg
+!docs/src/assets/**/*.jpeg
 !docs/src/assets/*.svg
+!docs/src/assets/**/*.svg
 !docs/src/assets/*.ico
+!docs/src/assets/**/*.ico
 
 # Ignore videos by default
 *.mkv
