@@ -7,21 +7,26 @@
         inputs::AbstractInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
     )
 
-Function for assembling the weak form of the 0-form Hodge Laplacian.
+Set up the equations for the ``0``-form Hodge-Laplacian. Does not specify any boundary
+conditions.
+
+Weak form: for given ``f^0 \\in L^2\\Lambda^0(\\Omega)``, find
+``u^0 \\in H^1\\Lambda^0(\\Omega)`` such that
+```math
+    \\int d v^0 \\wedge \\star d u^0 = \\int v^0 \\wedge \\star f^0 \\quad \\forall v^0 \\in H^1_0\\Lambda^0(\\Omega)
+```
 
 # Arguments
-- `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
-    forcing terms.
+- `inputs::AbstractInputs`: The inputs for the weak form assembly. See
+    [`WeakFormInputs`](@ref) for the details.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
-    The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the left-hand side matrix.
-- `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
-    The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the right-hand side matrix.
+- `lhs_expression<:NTuple{1, NTuple{1, AbstractRealValuedOperator}}`: The left-hand side of
+    the weak form.
+- `rhs_expression<:NTuple{1, NTuple{1, AbstractRealValuedOperator}}`: The right-hand side
+    of the weak form.
 """
 function zero_form_hodge_laplacian(
     inputs::AbstractInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
@@ -40,7 +45,14 @@ end
 """
     solve_zero_form_hodge_laplacian(X⁰, fₑ, dΩ)
 
-Returns the solution of the weak form of the 0-form Hodge Laplacian.
+Returns the solution of the weak form of the 0-form Hodge Laplacian using homogeneous
+Dirichlet boundary conditions.
+
+Weak form: for given ``f_e^0 \\in L^2\\Lambda^k(\\Omega)``, find
+``u_h^0 \\in X^0_0`` such that
+```math
+    \\int d v^0 \\wedge \\star d u_h^0 = \\int v^0 \\wedge \\star f_e^0 \\quad \\forall v^0 \\in X^0
+```
 
 # Arguments
 - `X⁰`: The 0-form space to use as trial and test space.
@@ -48,7 +60,7 @@ Returns the solution of the weak form of the 0-form Hodge Laplacian.
 - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `::Forms.FormField`: The solution of the weak-formulation.
+- `uₕ::Forms.FormField`: The solution of the weak-formulation.
 """
 function solve_zero_form_hodge_laplacian(X⁰, fₑ, dΩ)
     weak_form_inputs = WeakFormInputs(X⁰, fₑ)

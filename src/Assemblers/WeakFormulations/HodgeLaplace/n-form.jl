@@ -7,21 +7,29 @@
         inputs::WeakFormInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
     )
 
-Function for assembling the weak form of the n-form Hodge Laplacian problem.
+Set up the equations for the ``n``-form Hodge-Laplacian. Does not specify any boundary
+conditions.
+
+Weak form: for given ``f^n \\in L^2\\Lambda^n(\\Omega)``, find
+``u^{n-1}, \\phi^n \\in H(\\text{div})\\Lambda^{n-1}(\\Omega) \\times L^2\\Lambda^n(\\Omega)`` such that
+```math
+\\begin{align}
+    \\int \\epsilon^{n-1} \\wedge \\star u^{n-1} - \\int d \\epsilon^{n-1} \\wedge \\star \\phi^n &= 0 \\quad &&\\forall \\epsilon^{n-1} \\in H(\\text{div})\\Lambda^{n-1}(\\Omega) \\\\
+    \\int \\epsilon^n \\wedge \\star d u^{n-1} &= \\int \\epsilon^n \\wedge \\star f^n \\quad &&\\forall \\epsilon^n \\in L^2\\Lambda^n(\\Omega)
+\\end{align}
+```
 
 # Arguments
-- `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test, trial and
-    forcing terms.
+- `inputs::AbstractInputs`: The inputs for the weak form assembly. See
+    [`WeakFormInputs`](@ref) for the details.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
-    The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the left-hand side matrix.
-- `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
-    The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the right-hand side matrix.
+- `lhs_expression<:NTuple{2, NTuple{2, Union{Int, AbstractRealValuedOperator}}}`: The
+    left-hand side of the weak form.
+- `rhs_expression<:NTuple{2, NTuple{1, Union{Int, AbstractRealValuedOperator}}}`: The
+    right-hand side of the weak form.
 """
 function n_form_hodge_laplacian(
     inputs::WeakFormInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
@@ -44,6 +52,15 @@ end
 
 Returns the solution of the weak form of the n-form Hodge Laplacian.
 
+Weak form: for given ``f_e^n \\in L^2\\Lambda^n(\\Omega)``, find
+``u^{n-1}_h, \\phi^n_h \\in X^{n-1} \\times X^n`` such that
+```math
+\\begin{align}
+    \\int \\epsilon^{n-1}_h \\wedge \\star u^{n-1}_h - \\int d \\epsilon^{n-1}_h \\wedge \\star \\phi^n_h &= 0 \\quad &&\\forall \\epsilon^{n-1}_h \\in X^{n-1} \\\\
+    \\int \\epsilon^n_h \\wedge \\star d u^{n-1}_h &= \\int \\epsilon^n_h \\wedge \\star f_e^n \\quad &&\\forall \\epsilon^n_h \\in X^{n}
+\\end{align}
+```
+
 # Arguments
 - `Xⁿ⁻¹`: The (n-1)-form space to use as trial and test space.
 - `Xⁿ`: The n-form space to use as trial and test space.
@@ -51,8 +68,8 @@ Returns the solution of the weak form of the n-form Hodge Laplacian.
 - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `u¹ₕ`: The (n-1)-form solution of the weak-formulation.
-- `ϕ²ₕ`: The n-form solution of the weak-formulation.
+- `uⁿ⁻¹ₕ`: The (n-1)-form solution of the weak-formulation.
+- `ϕⁿₕ`: The n-form solution of the weak-formulation.
 """
 function solve_volume_form_hodge_laplacian(Xⁿ⁻¹, Xⁿ, fₑ, dΩ)
     weak_form_inputs = WeakFormInputs((Xⁿ⁻¹, Xⁿ), (fₑ,))

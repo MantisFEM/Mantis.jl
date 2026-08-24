@@ -7,21 +7,30 @@
         inputs::AbstractInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
     )
 
-Function for assembling the weak form of the 1-form Hodge Laplacian problem.
+Set up the equations for the ``1``-form Hodge-Laplacian. Does not specify any boundary
+conditions.
+
+Weak form: for given ``f^1 \\in L^2\\Lambda^1(\\Omega)``, find
+``\\sigma^0, u^1 \\in H^1\\Lambda^{0}(\\Omega) \\times H(\\text{curl})\\Lambda^1(\\Omega)`` such that
+```math
+\\begin{align}
+    \\int \\tau^0 \\wedge \\star \\sigma^0 - \\int d \\tau^{0} \\wedge \\star u^1 &= 0 \\quad &&\\forall \\tau^{0} \\in H^1\\Lambda^{0}(\\Omega) \\\\
+    \\int v^1 \\wedge \\star d \\sigma^0 + \\int d v^1 \\wedge \\star d u^1 &= \\int v^1 \\wedge \\star f^1 \\quad &&\\forall v^1 \\in H(\\text{curl})\\Lambda^1(\\Omega)
+\\end{align}
+```
 
 # Arguments
-- `inputs::AbstractInputs`: The inputs for the weak form assembly, including test, trial and
-    forcing terms.
+- `inputs::AbstractInputs`: The inputs for the weak form assembly. See
+    [`WeakFormInputs`](@ref) for the details.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expressions<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
-    The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the left-hand side matrix.
-- `rhs_expressions<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
-    The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the right-hand side matrix.
+- `lhs_expression<:NTuple{2, NTuple{2, Union{Int, AbstractRealValuedOperator}}}`: The
+    left-hand side of the weak form.
+- `rhs_expression<:NTuple{2, NTuple{1, Union{Int, AbstractRealValuedOperator}}}`: The
+    right-hand side of the weak form.
+Function for assembling the weak form of the 1-form Hodge Laplacian problem.
 """
 function one_form_hodge_laplacian(
     inputs::AbstractInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
@@ -45,6 +54,15 @@ end
 
 Returns the solution of the weak form of the 1-form Hodge Laplacian.
 
+Weak form: for given ``f^1 \\in L^2\\Lambda^1(\\Omega)``, find
+``\\sigma^0_h, u^1_h \\in X^0 \\times X^1`` such that
+```math
+\\begin{align}
+    \\int \\tau^0_h \\wedge \\star \\sigma^0_h - \\int d \\tau^{0}_h \\wedge \\star u^1_h &= 0 \\quad &&\\forall \\tau^{0}_h \\in X^0 \\\\
+    \\int v^1_h \\wedge \\star d \\sigma^0_h + \\int d v^1_h \\wedge \\star d u^1_h &= \\int v^1 \\wedge \\star f^1 \\quad &&\\forall v^1_h \\in X^1
+\\end{align}
+```
+
 # Arguments
 - `X⁰`: The 0-form space to use as trial and test space.
 - `X¹`: The 1-form space to use as trial and test space.
@@ -52,7 +70,7 @@ Returns the solution of the weak form of the 1-form Hodge Laplacian.
 - `dΩ`: The quadrature rule to use for the assembly.
 
 # Returns
-- `δu¹ₕ::Forms.FormField`: The 0-form solution of the weak-formulation.
+- `σ⁰ₕ::Forms.FormField`: The 0-form solution of the weak-formulation.
 - `u¹ₕ::Forms.FormField`: The 1-form solution of the weak-formulation.
 """
 function solve_one_form_hodge_laplacian(X⁰, X¹, f¹, dΩ, bc_type="")

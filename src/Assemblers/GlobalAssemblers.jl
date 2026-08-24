@@ -301,7 +301,6 @@ end
 
 Remove the rows and columns of `lhs` and `rhs` as specified by the keys of `dirichlet_bcs`.
 See also [`set_diagonal!`](@ref).
-```
 """
 function add_bc!(lhs::AbstractMatrix, rhs::AbstractMatrix, dirichlet_bcs::Dict)
     return set_diagonal!(lhs, rhs, dirichlet_bcs)

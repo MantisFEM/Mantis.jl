@@ -5,21 +5,24 @@
 """
     maxwell_eigenvalue(inputs::WeakFormInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule)
 
-Function for assembling the weak form of the Maxwell eigenvalue problem.
+Set up the equations for Maxwell's eigenvalue problem.
+
+Weak form: find ``u^1 \\in H(\\text{curl})\\Lambda^1(\\Omega)`` such that
+```math
+    \\int d v^1 \\wedge \\star d u^1 = \\int v^1 \\wedge \\star u^1 \\quad \\forall v^1 \\in H(\\text{curl})\\Lambda^1(\\Omega)
+```
 
 # Arguments
-- `inputs::WeakFormInputs`: The inputs for the weak form assembly, including test and trial
-    spaces.
+- `inputs::AbstractInputs`: The inputs for the weak form assembly. See
+    [`WeakFormInputs`](@ref) for the details.
 - `dΩ::Quadrature.AbstractGlobalQuadratureRule`: The quadrature rule to use for the integral
     evaluation.
 
 # Returns
-- `lhs_expression<:NTuple{num_lhs_rows, NTuple{num_lhs_cols, AbstractRealValuedOperator}}`:
-    The left-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the left-hand side matrix.
-- `rhs_expression<:NTuple{num_rhs_rows, NTuple{num_rhs_cols, AbstractRealValuedOperator}}`:
-    The right-hand side of the weak form, which is a tuple of tuples contain all the blocks
-    of the right-hand side matrix.
+- `lhs_expression<:NTuple{1, NTuple{1, AbstractRealValuedOperator}}`: The left-hand side of
+    the weak form.
+- `rhs_expression<:NTuple{1, NTuple{1, AbstractRealValuedOperator}}`: The right-hand side
+    of the weak form.
 """
 function maxwell_eigenvalue(
     inputs::WeakFormInputs, dΩ::Quadrature.AbstractGlobalQuadratureRule
@@ -119,10 +122,17 @@ end
 Returns the first `num_eig` eigenvalues and 1-form eigenfunctions of the Maxwell eigenvalue
 problem.
 
+Weak form: find ``u^1 \\in X^1`` such that
+```math
+    \\int d v^1 \\wedge \\star d u^1 = \\int v^1 \\wedge \\star u^1 \\quad \\forall v^1 \\in X^1
+```
+
 # Arguments
-- `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to use as trial and test space.
+- `X⁰::Forms.AbstractFormSpace{2, 0}`: The 0-form space to compute the nullspace offset
+    with.
 - `X¹::Forms.AbstractFormSpace{2, 1}`: The 1-form space to use as trial and test space.
-- `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the assembly.
+- `dΩ::Quadrature.AbstractGlobalQuadratureRule{2}`: The quadrature rule to use for the
+    assembly.
 - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
 - `verbose::Bool=false`: Whether to print the nullspace offset.
 
@@ -165,8 +175,9 @@ function solve_maxwell_eig(
         u¹ₕ[eig_id] = Forms.FormField(
             X¹, zeros(Forms.get_num_basis(X¹)), original_label * subscript_str
         )
-        u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .=
-            real.(eig_vecs[:, nullspace_offset + eig_id])
+        u¹ₕ[eig_id].coefficients[non_boundary_rows_cols] .= real.(
+            eig_vecs[:, nullspace_offset + eig_id]
+        )
     end
 
     return ωₕ², u¹ₕ
@@ -244,7 +255,9 @@ function solve_maxwell_eig(
             H⁰, dorfler_marking
         )
         if Lchains
-            domains = FunctionSpaces.update_domains_with_lchains!(H⁰, marked_elements_per_level)
+            domains = FunctionSpaces.update_domains_with_lchains!(
+                H⁰, marked_elements_per_level
+            )
             complex = Forms.update_hierarchical_de_rham_complex(complex, domains)
         else
             complex = Forms.update_hierarchical_de_rham_complex(
