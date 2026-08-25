@@ -58,33 +58,37 @@ function assemble(
     rhs_rows, rhs_cols, rhs_vals = get_pre_allocation(weak_form, "rhs", rhs_type)
     lhs_counts, rhs_counts = 0, 0
     # TODO: The loop over elements should also handle boundary integrals.
-    # PERF: We might what to make the loop over elements the inner most one; that way we can
-    # skip the 0 expressions instead of checking them everytime.
-    for elem_id in 1:get_num_elements(weak_form), row in 1:num_rows
-        for col in 1:lhs_num_cols
-            lhs_rows, lhs_cols, lhs_vals, lhs_counts = add_expression_contributions!(
-                lhs_rows,
-                lhs_cols,
-                lhs_vals,
-                lhs_counts,
-                lhs_expressions[row][col],
-                elem_id,
-                test_offsets[row],
-                trial_offsets[col],
-            )
+
+    # The number of rows is the same, as enforced by the `WeakForm` constructor
+    for (row, (lhs_row, rhs_row)) in enumerate(zip(lhs_expressions, rhs_expressions))
+        for (col, expression) in enumerate(lhs_row)
+            for elem_id in 1:get_num_elements(weak_form)
+                lhs_rows, lhs_cols, lhs_vals, lhs_counts = add_expression_contributions!(
+                    lhs_rows,
+                    lhs_cols,
+                    lhs_vals,
+                    lhs_counts,
+                    expression,
+                    elem_id,
+                    test_offsets[row],
+                    trial_offsets[col],
+                )
+            end
         end
 
-        for col in 1:rhs_num_cols
-            rhs_rows, rhs_cols, rhs_vals, rhs_counts = add_expression_contributions!(
-                rhs_rows,
-                rhs_cols,
-                rhs_vals,
-                rhs_counts,
-                rhs_expressions[row][col],
-                elem_id,
-                test_offsets[row],
-                trial_offsets[col],
-            )
+        for (col, expression) in enumerate(rhs_row)
+            for elem_id in 1:get_num_elements(weak_form)
+                rhs_rows, rhs_cols, rhs_vals, rhs_counts = add_expression_contributions!(
+                    rhs_rows,
+                    rhs_cols,
+                    rhs_vals,
+                    rhs_counts,
+                    expression,
+                    elem_id,
+                    test_offsets[row],
+                    trial_offsets[col],
+                )
+            end
         end
     end
 
@@ -393,7 +397,7 @@ function build_array(
     vals::AbstractVector,
     size::Tuple{Int, Int},
 ) where {A <: AbstractArray}
-    throw(
+    return throw(
         ArgumentError("Assembly of array type `$(array_type)` not currently implemented.")
     )
 end
