@@ -1,7 +1,5 @@
 module TimeIntegratorsInferenceTests
 
-import Pkg
-
 using Mantis
 using Test
 using JET
@@ -150,7 +148,7 @@ const t = 0.0
     4,
 )
 
-foreach(schemes) do (scheme, startup_scheme)
+for (scheme, startup_scheme) in schemes
     if isnothing(startup_scheme)
         @test_opt TimeIntegrators.initialise_scheme([y_0], scheme)
         y_n = TimeIntegrators.initialise_scheme([y_0], scheme)

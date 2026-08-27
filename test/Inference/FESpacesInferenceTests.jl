@@ -103,7 +103,7 @@ component_id = 1
 nderivatives = 2
 basis_id = 4
 
-foreach(spaces) do space
+for space in spaces
 
     # Methods on the type.
     @test_opt FunctionSpaces.get_manifold_dim(space)

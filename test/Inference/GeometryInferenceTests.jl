@@ -1,7 +1,5 @@
 module GeometryInferenceTests
 
-import Pkg
-
 using Mantis
 using Test
 using JET
@@ -37,9 +35,7 @@ cg2d = Geometry.CartesianGeometry((
 ))
 tpgeo = Geometry.TensorProductGeometry((cg2d, cg1d))
 # 11D, TensorProduct, mixed
-tpgeo11D = Geometry.TensorProductGeometry((
-    tpgeo, geometry1p4D, cg2d, cg1d, geometry1
-))
+tpgeo11D = Geometry.TensorProductGeometry((tpgeo, geometry1p4D, cg2d, cg1d, geometry1))
 # 2D, Mapped
 # Mappings to create the deformed geometries. The mappings are defined with
 # reference to the unit square [0,1]x[0,1] as parametric domain.
@@ -119,19 +115,13 @@ geom_slanted_2patch_oneref = Geometry.MappedGeometry(
 # Mapped, multiple patches with one map.
 geom_slanted_2patch_onemap = Geometry.MappedGeometry(
     (
-        Geometry.CartesianGeometry(((
-            LinRange(0.0, 0.5, 5), LinRange(0.0, 1.0, 7)
-        ),)),
-        Geometry.CartesianGeometry(((
-            LinRange(0.5, 1.0, 4), LinRange(0.0, 1.0, 7)
-        ),)),
+        Geometry.CartesianGeometry(((LinRange(0.0, 0.5, 5), LinRange(0.0, 1.0, 7)),)),
+        Geometry.CartesianGeometry(((LinRange(0.5, 1.0, 4), LinRange(0.0, 1.0, 7)),)),
     ),
     mapping_patch_1_slanted,
 )
 # Mapped, single mapping, single patch.
-geom_slanted_2patch_11 = Geometry.MappedGeometry(
-    geom_cart_patch_1, mapping_patch_1_slanted
-)
+geom_slanted_2patch_11 = Geometry.MappedGeometry(geom_cart_patch_1, mapping_patch_1_slanted)
 
 # Unstructured
 geom_unstr = Geometry.UnstructuredGeometry((
@@ -187,9 +177,7 @@ const xi_1D = Points.TensorProductPoints(([0.0, 1.0],))
 const xi_2D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
 const xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 const xi_3D_set = Points.PointSet(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
-const xi_4D = Points.TensorProductPoints((
-    [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]
-))
+const xi_4D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 const xi_11D = Points.TensorProductPoints((
     [0.0, 1.0],
     [0.0, 1.0],
@@ -222,7 +210,7 @@ const xi_11D_set = Points.PointSet((
 @test_opt Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (3, 4); c=0.2)
 @test_opt Geometry.create_curvilinear_mapping((0.0, 0.0, 0.0), (1.0, 1.0, 1.0), 0.2)
 
-foreach(geos) do geo
+for geo in geos
     # Note that JET only uses the types of the inputs, so which numbers we pick
     # here is irrelevant.
     @test_opt Geometry.get_patch_id(geo, 14)
