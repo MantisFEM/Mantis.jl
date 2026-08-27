@@ -1,6 +1,4 @@
-module GeometryInferenceTests
-
-import Pkg
+module FESpacesInferenceTests
 
 using Mantis
 using Memoization
@@ -31,9 +29,7 @@ B1ELL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, el_poly, fill(-1,
 
 # Rational
 R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])
-R1m = FunctionSpaces.RationalFESpace(
-    B1multi, rand(FunctionSpaces.get_num_basis(B1multi))
-)
+R1m = FunctionSpaces.RationalFESpace(B1multi, rand(FunctionSpaces.get_num_basis(B1multi)))
 
 # Multi-variate and multi-component ---
 # TensorProduct
@@ -52,6 +48,16 @@ TP_R1mR1mR1m = FunctionSpaces.TensorProductSpace((R1m, R1m, R1m))
 # Two-space (Bspline, Rational), single-patch, multi element, 2D
 TP_B1mR1m = FunctionSpaces.TensorProductSpace((B1multi, R1m))
 
+# The helper function used here creates a TensorProductSpace using a CartesianGeometry. The
+# above constructors use a TensorProductGeometry instead.
+B1_3D = FunctionSpaces.create_bspline_space(
+    (0.0, 0.0, 0.0),
+    (1.0, 1.0, 1.0),
+    (3, 4, 5),
+    (FunctionSpaces.Bernstein(2), FunctionSpaces.Bernstein(2), FunctionSpaces.Bernstein(3)),
+    (1, 1, 1),
+)
+
 # DirectSumSpace
 # Reduction test, single-component, single-patch, single element, 1D.
 DS1 = FunctionSpaces.DirectSumSpace((B1,))
@@ -62,11 +68,9 @@ DS_TP1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_B1mB1m))
 # 3-component, two distinct spaces, 2D, multi-element, single-patch
 DS_TP1mTPR1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mB1m))
 # 3-component, three distinct spaces, 2D, multi-element, single-patch
-DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((
-    TP_B1mB1m, TP_R1mR1m, TP_B1mR1m
-))
+DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mR1m))
 
-const spaces = (
+spaces = (
     B1,
     B1multi,
     B1LL,
@@ -80,6 +84,7 @@ const spaces = (
     TP_R1mR1m,
     TP_R1mR1mR1m,
     TP_B1mR1m,
+    B1_3D,
     DS1,
     DS_B1mB1m,
     DS_TP1mTP1m,
@@ -89,14 +94,14 @@ const spaces = (
 
 # Note that JET only uses the types of the inputs, so which numbers we pick
 # here is irrelevant.
-const xi_1D = Points.TensorProductPoints(([0.0, 1.0],))
-const xi_2D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
-const xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
+xi_1D = Points.TensorProductPoints(([0.0, 1.0],))
+xi_2D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
+xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 
-const element_id = 1
-const component_id = 1
-const nderivatives = 1
-const basis_id = 4
+element_id = 1
+component_id = 1
+nderivatives = 2
+basis_id = 4
 
 foreach(spaces) do space
 
@@ -109,9 +114,7 @@ foreach(spaces) do space
     @test_opt FunctionSpaces.get_component_spaces(space)
     @test_opt FunctionSpaces.get_extraction_operator(space)
     @test_opt FunctionSpaces.get_extraction(space, element_id, component_id)
-    @test_opt FunctionSpaces.get_extraction_coefficients(
-        space, element_id, component_id
-    )
+    @test_opt FunctionSpaces.get_extraction_coefficients(space, element_id, component_id)
     @test_opt FunctionSpaces.get_basis_indices(space, element_id)
     @test_opt FunctionSpaces.get_basis_permutation(space, element_id, component_id)
     @test_opt FunctionSpaces.get_num_basis(space)
