@@ -39,7 +39,13 @@ regularities = (1, -1)
 
 # create tensor-product space
 Bθ, Br = FunctionSpaces.create_dim_wise_bspline_spaces(
-    starting_points, box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
+    starting_points,
+    box_sizes,
+    num_elements,
+    section_spaces,
+    regularities;
+    n_dofs_left=(1, 1),
+    n_dofs_right=(1, 1),
 )
 Bθ_periodic = FunctionSpaces.GTBSplineSpace((Bθ,), [1])
 TP = FunctionSpaces.TensorProductSpace((Bθ_periodic, Br))
@@ -138,8 +144,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0.*r1 [1.0, -1.0, 1.0, -1.0]
+    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
+    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_wavy_surface_test"
@@ -163,8 +169,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(3)
-    geom_coeffs_0.*r1 zeros(3)
+    geom_coeffs_0 .* r0 zeros(3)
+    geom_coeffs_0 .* r1 zeros(3)
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_quarter_annulus_test"
@@ -191,8 +197,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(4)
-    geom_coeffs_0.*r1 zeros(4)
+    geom_coeffs_0 .* r0 zeros(4)
+    geom_coeffs_0 .* r1 zeros(4)
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_annulus_test"
@@ -219,8 +225,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0.*r1 [1.0, -1.0, 1.0, -1.0]
+    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
+    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_wavy_surface_test"
@@ -261,8 +267,8 @@ geom_coeffs_0 = [
 r0 = 1
 r1 = 2
 geom_coeffs = [
-    geom_coeffs_0.*r0 zeros(4)
-    geom_coeffs_0.*r1 zeros(4)
+    geom_coeffs_0 .* r0 zeros(4)
+    geom_coeffs_0 .* r1 zeros(4)
 ]
 
 # NURBS annulus with B-spline and NURBS bases

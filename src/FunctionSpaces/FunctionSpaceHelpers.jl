@@ -315,12 +315,12 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     section_spaces::F,
-    regularities::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
     n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
     n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim, F <: NTuple{manifold_dim, AbstractCanonicalSpace}}
     return ntuple(manifold_dim) do i
-        create_bspline_space(
+        return create_bspline_space(
             starting_points[i],
             box_sizes[i],
             num_elements[i],
@@ -375,9 +375,9 @@ function create_bspline_space(
         box_sizes,
         num_elements,
         degrees,
-        regularities,
-        n_dofs_left,
-        n_dofs_right,
+        regularities;
+        n_dofs_left=n_dofs_left,
+        n_dofs_right=n_dofs_right,
     )
 
     return TensorProductSpace(
@@ -418,12 +418,12 @@ function create_dim_wise_bspline_spaces(
     box_sizes::NTuple{manifold_dim, Float64},
     num_elements::NTuple{manifold_dim, Int},
     degrees::NTuple{manifold_dim, Int},
-    regularities::NTuple{manifold_dim, Int},
-    n_dofs_left::NTuple{manifold_dim, Int},
-    n_dofs_right::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
 ) where {manifold_dim}
     return ntuple(manifold_dim) do i
-        create_bspline_space(
+        return create_bspline_space(
             starting_points[i],
             box_sizes[i],
             num_elements[i],
@@ -532,7 +532,13 @@ function create_scalar_polar_spline_space(
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     # spaces used for creating degenerate geometry
     Bθ_g, Br_g = create_dim_wise_bspline_spaces(
-        (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
+        (0.0, 0.0),
+        box_sizes,
+        num_elements,
+        section_spaces,
+        regularities;
+        n_dofs_left=(1, 1),
+        n_dofs_right=(1, 1),
     )
     GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
 
@@ -543,9 +549,9 @@ function create_scalar_polar_spline_space(
             box_sizes,
             num_elements,
             get_derivative_space.(section_spaces),
-            regularities .- 1,
-            (1, 1),
-            (1, 1),
+            regularities .- 1;
+            n_dofs_left=(1, 1),
+            n_dofs_right=(1, 1),
         )
         GBθ = GTBSplineSpace((Bθ,), [regularities[1] - 1])
 
@@ -652,7 +658,13 @@ function create_vector_polar_spline_space(
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     # spaces used for creating degenerate geometry
     Bθ_g, Br_g = create_dim_wise_bspline_spaces(
-        (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
+        (0.0, 0.0),
+        box_sizes,
+        num_elements,
+        section_spaces,
+        regularities;
+        n_dofs_left=(1, 1),
+        n_dofs_right=(1, 1),
     )
     GBθ_g = GTBSplineSpace((Bθ_g,), [regularities[1]])
 
@@ -712,7 +724,13 @@ function create_polar_geometry_data(
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
 ) where {F <: NTuple{2, AbstractCanonicalSpace}}
     Bθ, Br = create_dim_wise_bspline_spaces(
-        (0.0, 0.0), box_sizes, num_elements, section_spaces, regularities, (1, 1), (1, 1)
+        (0.0, 0.0),
+        box_sizes,
+        num_elements,
+        section_spaces,
+        regularities;
+        n_dofs_left=(1, 1),
+        n_dofs_right=(1, 1),
     )
     # impose periodicity
     GBθ = GTBSplineSpace((Bθ,), [regularities[1]])

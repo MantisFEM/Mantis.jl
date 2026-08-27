@@ -40,7 +40,9 @@ end
 function build_form_fields(
     form_spaces::FS; labels::Union{L, Nothing}=nothing
 ) where {
-    num_forms, FS <: NTuple{num_forms, AbstractFormSpace}, L <: NTuple{num_forms, AbstractString}
+    num_forms,
+    FS <: NTuple{num_forms, AbstractFormSpace},
+    L <: NTuple{num_forms, AbstractString},
 }
     if isnothing(labels)
         labels = ntuple(num_forms) do _
@@ -70,9 +72,7 @@ function build_form_fields(
     form_fields = ntuple(num_forms) do i
         num_coeffs = get_num_basis(form_spaces[i])
         ff = build_form_field(
-            form_spaces[i],
-            coeffs[start_id:(start_id + num_coeffs - 1)];
-            label=labels[i],
+            form_spaces[i], coeffs[start_id:(start_id + num_coeffs - 1)]; label=labels[i]
         )
         start_id += num_coeffs
 
@@ -431,23 +431,13 @@ function create_hierarchical_de_rham_complex(
     truncate::Bool,
     simplified::Bool,
 ) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
-    # number of dofs on the left and right boundary of the domain
-    n_dofs_left = tuple((1 for _ in 1:manifold_dim)...)
-    n_dofs_right = tuple((1 for _ in 1:manifold_dim)...)
-
     # store all univariate FEM spaces helper
     fem_spaces = Vector{NTuple{manifold_dim, FunctionSpaces.AbstractFESpace{1, 1}}}(
         undef, 2
     )
     # first, create all univariate FEM spaces corresponding to directional-zero forms
     fem_spaces[1] = FunctionSpaces.create_dim_wise_bspline_spaces(
-        starting_points,
-        box_sizes,
-        num_elements,
-        section_spaces,
-        regularities,
-        n_dofs_left,
-        n_dofs_right,
+        starting_points, box_sizes, num_elements, section_spaces, regularities
     )
     # next, create all univariate FEM spaces corresponding to directional-one forms
     fem_spaces[2] = map(FunctionSpaces.get_derivative_space, fem_spaces[1])
@@ -541,7 +531,7 @@ function update_hierarchical_de_rham_complex(
             comp_spaces = FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
             new_space = FunctionSpaces.DirectSumSpace(
                 ntuple(num_components) do c
-                    FunctionSpaces.refine_space(comp_spaces[c], data)
+                    return FunctionSpaces.refine_space(comp_spaces[c], data)
                 end,
             )
         end
