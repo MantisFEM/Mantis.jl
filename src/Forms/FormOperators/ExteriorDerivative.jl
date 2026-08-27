@@ -106,7 +106,7 @@ function _evaluate_exterior_derivative(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    throw(ArgumentError("Method not implement for type $(typeof(form))."))
+    return throw(MethodError(_evaluate_exterior_derivative, (form, element_id, xi)))
 end
 
 ############################################################################################
@@ -287,9 +287,7 @@ end
 ############################################################################################
 
 function _evaluate_exterior_derivative(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
+    ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     # Preallocate memory for output array
     n_derivative_form_components = manifold_dim

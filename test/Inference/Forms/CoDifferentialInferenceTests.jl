@@ -46,7 +46,7 @@ for form in forms
         @test_opt Forms.get_num_basis(coder)
         @test_opt Forms.get_num_basis(coder, element_id)
         @test_opt Forms.get_max_local_dim(coder)
-        @test_opt Forms.get_num_basis_per_basis(coder, element_id)
+        @test_opt Forms.get_num_basis_per_expression(coder, element_id)
     end
 
     # Evaluate.

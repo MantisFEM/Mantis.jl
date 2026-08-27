@@ -40,7 +40,7 @@ for form in forms
         @test_opt Forms.get_num_basis(hodge)
         @test_opt Forms.get_num_basis(hodge, element_id)
         @test_opt Forms.get_max_local_dim(hodge)
-        @test_opt Forms.get_num_basis_per_basis(hodge, element_id)
+        @test_opt Forms.get_num_basis_per_expression(hodge, element_id)
     end
 
     # Evaluate.

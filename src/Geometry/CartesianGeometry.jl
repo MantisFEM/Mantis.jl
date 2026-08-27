@@ -199,7 +199,7 @@ function get_element_measure(geometry::CartesianGeometry, element_id::Int)
 end
 
 function get_factor_manifold_indices(::CartesianGeometry{manifold_dim}) where {manifold_dim}
-    return ntuple(i -> i:i, manifold_dim)
+    return ntuple(i -> (i,), manifold_dim)
 end
 
 function get_factor_evaluation_points(

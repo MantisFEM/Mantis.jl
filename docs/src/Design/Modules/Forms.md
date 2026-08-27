@@ -255,6 +255,7 @@ It is also possible to directly obtain some useful information about the underly
 get_estimated_nnz_per_elem
 get_max_local_dim
 get_num_basis
+get_num_basis_per_expression
 ```
 
 ## [Helper Functions](@id FormsHelpers)

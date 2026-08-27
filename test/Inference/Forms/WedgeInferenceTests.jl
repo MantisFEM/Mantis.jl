@@ -210,7 +210,7 @@ for wedge in wedges
         @test_opt Forms.get_num_basis(wedge)
         @test_opt Forms.get_num_basis(wedge, element_id)
         @test_opt Forms.get_max_local_dim(wedge)
-        @test_opt Forms.get_num_basis_per_basis(wedge, element_id)
+        @test_opt Forms.get_num_basis_per_expression(wedge, element_id)
     end
 
     # Methods that only exist for the wedge.

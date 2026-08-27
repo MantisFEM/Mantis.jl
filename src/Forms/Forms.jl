@@ -258,7 +258,7 @@ Returns the estimated number of non-zero entries per element for the given form 
 - `::Int`: The estimated number of non-zero entries per element.
 """
 function get_estimated_nnz_per_elem(form::AbstractForm)
-    return prod(get_estimated_nnz_per_elem.(get_forms(form)))
+    return prod(map(get_estimated_nnz_per_elem, get_forms(form)))
 end
 
 function get_estimated_nnz_per_elem(::AbstractFormField)
@@ -336,6 +336,40 @@ the given form space.
 """
 function get_num_basis(form_space::AbstractFormSpace, element_id::Int)
     return get_num_basis(get_form(form_space), element_id)
+end
+
+"""
+    get_num_basis_per_expression(
+        form::AbstractForm{manifold_dim, form_rank}, element_id::Int
+    ) where {manifold_dim, form_rank}
+
+Returns the number of basis functions at the given element of each expression within `form`.
+There are `expression_rank` many expressions.
+
+# Arguments
+- `form::AbstractForm`: The form space.
+- `element_id::Int`: The element on which to get the number of basis functions.
+
+# Returns
+- `::NTuple{expression_rank, Int}`: The number of basis functions at the given element per
+    expression. Note that if the `expression_rank` is 0, the tuple will be of length 0.
+"""
+function get_num_basis_per_expression(
+    form::AbstractForm{manifold_dim, form_rank, 0}, element_id::Int
+) where {manifold_dim, form_rank}
+    return ()
+end
+
+function get_num_basis_per_expression(
+    form::AbstractForm{manifold_dim, form_rank, 1}, element_id::Int
+) where {manifold_dim, form_rank}
+    return (get_num_basis(get_form(form), element_id),)
+end
+
+function get_num_basis_per_expression(
+    form::AbstractForm{manifold_dim, form_rank, 2}, element_id::Int
+) where {manifold_dim, form_rank}
+    return map(get_num_basis, get_forms(form), (element_id, element_id))
 end
 
 ############################################################################################

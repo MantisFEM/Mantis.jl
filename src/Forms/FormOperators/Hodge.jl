@@ -105,7 +105,7 @@ function _evaluate_hodge(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, expression_rank}
-    throw(ArgumentError("Method not implement for type $(typeof(form))."))
+    return throw(MethodError(_evaluate_hodge, (form, element_id, xi)))
 end
 
 ############################################################################################

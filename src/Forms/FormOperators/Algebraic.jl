@@ -368,19 +368,21 @@ function evaluate(una_trans::UnaryOperatorTransformation, element_id::Int)
     operator = get_operator(una_trans)
     transformation = get_transformation(una_trans)
     eval, indices = evaluate(operator, element_id)
-    eval .= transformation.(eval)
+    for i in eachindex(eval)
+        eval[i] = transformation(eval[i])
+    end
 
     return eval, indices
 end
 
 function evaluate(bin_trans::BinaryOperatorTransformation, element_id::Int)
-    operators = get_operators(bin_trans)
+    operator_1, operator_2 = get_operators(bin_trans)
     transformation = get_transformation(bin_trans)
-    eval_1, indices = evaluate(operators[1], element_id)
-    eval_2, _ = evaluate(operators[2], element_id)
-    eval_1 .= transformation.(eval_1, eval_2)  # we store the output in eval_1 to avoid extra
-    # allocations, the same reason for using .= and
-    # transformation.()
+    eval_1, indices = evaluate(operator_1, element_id)
+    eval_2, _ = evaluate(operator_2, element_id)
+    for i in eachindex(eval_1, eval_2)
+        eval_1[i] = transformation(eval_1[i], eval_2[i])
+    end
 
     return eval_1, indices
 end
@@ -393,9 +395,10 @@ function evaluate(
     form = get_form(uni_trans)
     transformation = get_transformation(uni_trans)
     form_eval, indices = evaluate(form, element_id, xi)
-    form_eval .= transformation.(form_eval)  # we store the output in form_eval to avoid extra
-    # allocations, the same reason for using .= and
-    # transformation.()
+    for i in eachindex(form_eval)
+        form_eval[i] = transformation(form_eval[i])
+    end
+
     return form_eval, indices
 end
 
@@ -404,19 +407,16 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    forms = get_forms(bin_trans)
+    form_1, form_2 = get_forms(bin_trans)
     transformation = get_transformation(bin_trans)
 
-    form_1_eval, indices = evaluate(forms[1], element_id, xi)
-    form_2_eval, indices = evaluate(forms[2], element_id, xi)
-    foreach(
-        c -> map!(
-            i -> transformation(form_1_eval[c][i], form_2_eval[c][i]),
-            form_1_eval[c],
-            eachindex(form_1_eval[c], form_2_eval[c]),
-        ),
-        eachindex(form_1_eval, form_2_eval),
-    )
+    form_1_eval, indices = evaluate(form_1, element_id, xi)
+    form_2_eval, _ = evaluate(form_2, element_id, xi)
+    for c in eachindex(form_1_eval, form_2_eval)
+        for i in eachindex(form_1_eval[c], form_2_eval[c])
+            form_1_eval[c][i] = transformation(form_1_eval[c][i], form_2_eval[c][i])
+        end
+    end
 
     return form_1_eval, indices
 end

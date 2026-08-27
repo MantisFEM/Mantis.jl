@@ -205,9 +205,20 @@ function _pullback_to_canonical_coordinates(
                         form_evaluations[i][j][k] .*= element_dimensions[k]
                     end
                 elseif manifold_dim == 3
-                    form_evaluations[i][j][1] .*= prod(element_dimensions[2:3])
-                    form_evaluations[i][j][2] .*= prod(element_dimensions[1:2:3])
-                    form_evaluations[i][j][3] .*= prod(element_dimensions[1:2])
+                    for edi in eachindex(element_dimensions)
+                        if edi == 1
+                            form_evaluations[i][j][2] .*= element_dimensions[edi]
+                            form_evaluations[i][j][3] .*= element_dimensions[edi]
+                        elseif edi == 2
+                            form_evaluations[i][j][1] .*= element_dimensions[edi]
+                            form_evaluations[i][j][3] .*= element_dimensions[edi]
+                        elseif edi == 3
+                            form_evaluations[i][j][1] .*= element_dimensions[edi]
+                            form_evaluations[i][j][2] .*= element_dimensions[edi]
+                        else
+                            throw(ArgumentError("Something went wrong"))
+                        end
+                    end
                 else
                     throw(
                         ArgumentError(

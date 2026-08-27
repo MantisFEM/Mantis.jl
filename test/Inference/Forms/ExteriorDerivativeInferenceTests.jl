@@ -40,7 +40,7 @@ for form in forms
         @test_opt Forms.get_num_basis(extder)
         @test_opt Forms.get_num_basis(extder, element_id)
         @test_opt Forms.get_max_local_dim(extder)
-        @test_opt Forms.get_num_basis_per_basis(extder, element_id)
+        @test_opt Forms.get_num_basis_per_expression(extder, element_id)
     end
 
     # Evaluate.
