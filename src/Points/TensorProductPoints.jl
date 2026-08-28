@@ -1,25 +1,32 @@
 """
     TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_dim, T}
 
-Represents a set of points constructed from `manifold_dim` lists of uni-dimensional points.
-Conceptually, this structure combines the functionalities of `CartesianIndices` and
-`Iterators.product`.
+Represents a set of points tensored from `manifold_dim` lists of uni-dimensional points.
 
 See also: [`TensorProducts.TensorProduct`](@ref).
+
+# Constructors
+- `TensorProductPoints(
+        input_points::Vararg{AbstractVector{<:Number}, manifold_dim};
+        iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
+    ) where {manifold_dim}`: General constructor. Performs validity checks on the given
+    points and iteration order.
+- `TensorProductPoints(input_points::Tuple; kwargs...)`: Convenience constructor that will
+    splat the given tuple and keyword arguments.
 
 # Fields
 - `tensor_product::TP`: The set of points per manifold dimension.
 - `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
-    `cart_num_points`. If the `dim`-th entry has value `i`, then dimension `dim` will be the
+    the tensored points. If the `k`-th entry has value `i`, then dimension `k` will be the
     `i`-th fastest changing index.
-- `permuted_cart_num_points::CI`: A permuted version of `cart_num_points` as given by
+- `permuted_cart_num_points::CI`: A permuted version of tensored points, as given by
     `iteration_order`.
 
 # Examples
 ```jldoctest
 julia> using Mantis
 
-julia> points = Points.TensorProductPoints([1,2], [1,2,3]; iteration_order=(1, 2)); nothing
+julia> points = Points.TensorProductPoints([1,2], [1,2,3]; iteration_order=(1, 2));
 
 julia> for point in points
            println(point)
@@ -31,7 +38,7 @@ julia> for point in points
 (1, 3)
 (2, 3)
 
-julia> points = Points.TensorProductPoints([1,2], [1,2,3]; iteration_order=(2, 1)); nothing
+julia> points = Points.TensorProductPoints([1,2], [1,2,3]; iteration_order=(2, 1));
 
 julia> for point in points
            println(point)
@@ -50,16 +57,38 @@ struct TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_d
     permuted_cart_num_points::CI
 
     function TensorProductPoints(
-        input_points::Vararg{AbstractVector, manifold_dim};
+        input_points::Vararg{AbstractVector{<:Number}, manifold_dim};
         iteration_order::NTuple{manifold_dim, Int}=ntuple(k -> k, manifold_dim),
     ) where {manifold_dim}
-        iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
+        _construction_checks(input_points)
+
+        if any(i -> i<1 || i>manifold_dim, iteration_order)
+            return throw(
+                ArgumentError(
+                    LazyString(
+                        "The iteration order must range from 1 to ",
+                        manifold_dim,
+                        ". Got ",
+                        iteration_order,
+                    ),
+                ),
+            )
+        end
+
+        if !(allunique(iteration_order))
+            return throw(
+                ArgumentError(
+                    LazyString(
+                        "The iteration order must contain only unique entries. Got ",
+                        iteration_order,
+                    ),
+                ),
+            )
+        end
+
         input_num_points = map(length, input_points)
-        any(iszero, input_num_points) &&
-            throw(ArgumentError("Number of points must be non-empty."))
         types = map(eltype, input_points)
         T = promote_type(types...)
-        T <: Number || throw(ArgumentError("Points must be a subtype of `Number`."))
         promoted_points = ntuple(manifold_dim) do k
             if types[k] != T
                 return convert.(T, input_points[k])
@@ -132,27 +161,16 @@ get_iteration_order(points::TensorProductPoints) = points.iteration_order
 """
 	get_permuted_cart_num_points(points::TensorProductPoints)
 
-Returns the permuted `cart_num_points` used to index `points`, as given by
-`iteration_order`.
+Returns the permuted tensored points used to index `points`, as given by iteration order.
 """
 get_permuted_cart_num_points(points::TensorProductPoints) = points.permuted_cart_num_points
 
 """
-    get_input_num_points(points::TensorProductPoints)
+    get_factor_num_points(points::TensorProductPoints)
 
 Returns the number of input points per manifold dimension.
 """
-function get_input_num_points(points::TensorProductPoints)
-    return TensorProducts.get_factor_num_objects(get_tensor_product(points))
-end
-
-"""
-    get_factor_num_points(points::TensorProductPoints)
-
-Equivalent to [`get_input_num_points`](@ref), but provides a consistent interface with
-[`TensorProducts`](@ref).
-"""
-get_factor_num_points(points::TensorProductPoints) = get_input_num_points(points)
+get_factor_num_points(points::TensorProductPoints) = map(length, get_input_points(points))
 
 function Base.getindex(
     points::TensorProductPoints{manifold_dim}, i::Int

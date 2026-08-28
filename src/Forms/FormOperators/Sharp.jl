@@ -92,7 +92,7 @@ vector-field are defined in reference, curvilinear coordinates.
 - `sharp::Sharp{manifold_dim}`: The sharp structure containing the form to be evaluated.
 - `element_id::Int`: The identifier of the element on which the sharp is to be evaluated.
 - `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
-    evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
+    evaluate the form. See [`Geometry`](@ref) and [`Points`](@ref) for more details on the
     canonical domain and point structure.
 
 # Returns

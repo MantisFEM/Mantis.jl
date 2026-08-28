@@ -3,10 +3,7 @@ module PointSetTests
 using Mantis
 using Test
 
-@test_throws ArgumentError Points.PointSet(())
-@test_throws ArgumentError Points.PointSet(([1], Int[]))
 @test_throws ArgumentError Points.PointSet([1, 2], [1, 2, 3])
-@test_throws ArgumentError Points.PointSet(([1], ["wrong_type"]))
 
 manifold_dims = [1, 2, 3]
 num_points = [7, 8, 9]

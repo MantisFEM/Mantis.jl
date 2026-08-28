@@ -3,10 +3,16 @@ module TensorProductPointsTests
 using Mantis
 using Test
 
-@test_throws ArgumentError Points.TensorProductPoints(())
-@test_throws ArgumentError Points.TensorProductPoints(([1], Int[]))
-@test_throws ArgumentError Points.TensorProductPoints(([1], ["wrong_type"]))
+# iteration order with excessive manifold dimensions
 @test_throws TypeError Points.TensorProductPoints(1:2, 1:2; iteration_order=(1, 2, 3))
+# iteration order out-of-bounds
+@test_throws ArgumentError Points.TensorProductPoints(
+    [1], [2], [3]; iteration_order=(1, 2, 4)
+)
+# iteration order contains duplicates
+@test_throws ArgumentError Points.TensorProductPoints(
+    [1], [2], [3]; iteration_order=(1, 2, 1)
+)
 
 manifold_dims = [1, 2, 3]
 num_input_points = [(2,), (4, 3), (2, 1, 5)]
@@ -23,7 +29,6 @@ for i in 1:3
     @test keys(xi) == 1:num_points[i]
     @test Points.get_input_points(xi) == points
     @test Points.get_factor_points(xi) == points
-    @test Points.get_input_num_points(xi) == num_input_points[i]
     @test Points.get_factor_num_points(xi) == num_input_points[i]
     @test Points.get_num_points(xi) == num_points[i]
     for (j, original_point) in zip(eachindex(xi), Iterators.product(points...))

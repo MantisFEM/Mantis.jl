@@ -1,12 +1,34 @@
 """
     module Points
 
-Contains all definitions of points used to evaluate geometries, function spaces, forms and
-any other objects.
+Provides collections of coordinates in either canonical, parametric, or physical domains, in
+a standardised format.
+
+This serves as an abstraction layer that is used to create evaluation points in several
+downstream modules, such as [Geometry](@ref DocGeometryModule), [FunctionSpaces](@ref), or
+[Forms](@ref).
 """
 module Points
 
 using ..TensorProducts
+
+############################################################################################
+#                                         Exports                                          #
+############################################################################################
+
+# Abstract types
+# The public keyword is only available in Julia 1.11 and up. Since we also support LTS
+# (currently 1.10), we add the following line from the manual:
+# https://docs.julialang.org/en/v1.12/manual/modules/#Export-lists
+VERSION >= v"1.11.0-DEV.469" && eval(Meta.parse("public AbstractPoints"))
+
+export PointSet,
+    TensorProductPoints,
+    get_cart_num_points,
+    get_input_points,
+    get_lin_num_points,
+    get_manifold_dim,
+    get_num_points
 
 ############################################################################################
 #                                      Abstract Types                                      #
@@ -27,6 +49,17 @@ abstract type AbstractPoints{manifold_dim, T} end
 #                                    Abstract Methods                                      #
 ############################################################################################
 
+function _construction_checks(
+    input_points::NTuple{manifold_dim, AbstractVector{<:Number}}
+) where {manifold_dim}
+    iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
+    input_num_points = map(length, input_points)
+    any(iszero, input_num_points) &&
+        throw(ArgumentError("Number of points must be non-empty."))
+
+    return nothing
+end
+
 """
     get_manifold_dim(points::AbstractPoints{manifold_dim}) where {manifold_dim}
 
@@ -37,10 +70,10 @@ get_manifold_dim(::AbstractPoints{manifold_dim}) where {manifold_dim} = manifold
 """
     get_num_points(points::P) where {manifold_dim, P <: AbstractPoints{manifold_dim}}
 
-Returns the number of of evaluable `points` in the given point structure.
+Returns the number of evaluable points in the given point structure.
 """
 function get_num_points(::P) where {P <: AbstractPoints}
-    throw(MethodError(get_num_points, (P,)))
+    return throw(MethodError(get_num_points, (P,)))
 end
 
 """
@@ -72,7 +105,7 @@ Applies an affine map defined by `scalings` and `translations` to each point in 
 
 # Returns
 - `transformed_points::P`: The set of transformed points of the same type as the original
-	`points`.
+    `points`.
 """
 function scale_and_shift_points(
     points::P, scalings::S, translations::T
@@ -83,16 +116,14 @@ function scale_and_shift_points(
     T <: NTuple{manifold_dim, Real},
 }
     input_points = get_input_points(points)
-    transformed_points = ntuple(
-        dim -> input_points[dim] .* scalings[dim] .+ translations[dim], manifold_dim
-    )
+    transformed_points = map((p, s, t) -> p .* s .+ t, input_points, scalings, translations)
     constructor = Base.typename(P).wrapper
 
     return constructor(transformed_points)
 end
 
 Base.eltype(::AbstractPoints{manifold_dim, T}) where {manifold_dim, T} = T
-Base.firstindex(points::AbstractPoints) = 1
+Base.firstindex(::AbstractPoints) = 1
 Base.lastindex(points::AbstractPoints) = get_num_points(points)
 Base.keys(points::AbstractPoints) = firstindex(points):lastindex(points)
 Base.length(points::AbstractPoints) = get_num_points(points)
@@ -114,7 +145,7 @@ end
 #                                         Includes                                         #
 ############################################################################################
 
-include("./TensorProductPoints.jl")
-include("./PointSet.jl")
+include("TensorProductPoints.jl")
+include("PointSet.jl")
 
 end

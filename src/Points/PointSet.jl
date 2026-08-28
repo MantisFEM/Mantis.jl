@@ -1,28 +1,59 @@
 """
-    PointSet{manifold_dim, T} <: AbstractPoints{manifold_dim, T}
+    PointSet{manifold_dim, T, P} <: AbstractPoints{manifold_dim, T}
 
-Represents a set of points in `manifold_dim` dimensions.
+Represents an unstructured set of points in `manifold_dim` dimensions.
+
+# Constructors
+- `PointSet(
+       input_points::Vararg{AbstractVector{<:Number}, manifold_dim}
+    ) where {manifold_dim}`: General constructor. Performs validity checks on the given
+    points.
+- `PointSet(input_points::Tuple)`: Convenience constructor that will splat the given tuple.
 
 # Fields
-- `input_points::NTuple{manifold_dim, T}`: The set of points per manifold dimension.
+- `input_points::P`: A list of points per manifold dimension. The entry `inputs[k][i]` gives
+    the `k`-th coordinate of point `i`.
+- `num_points::Int`: The total number of points.
+
+# Examples
+```jldoctest
+julia> using Mantis
+
+julia> points = Points.PointSet([1, 2, 3], [3, 2, 1]);
+
+julia> for point in points
+           println(point)
+       end
+(1, 3)
+(2, 2)
+(3, 1)
+
+julia> points = Points.PointSet(LinRange(0, 1, 3), [1, 2, 3]);
+
+julia> for point in points
+           println(point)
+       end
+(0.0, 1.0)
+(0.5, 2.0)
+(1.0, 3.0)
+```
 """
-struct PointSet{manifold_dim, T, CP} <: AbstractPoints{manifold_dim, T}
-    input_points::CP
+struct PointSet{manifold_dim, T, P} <: AbstractPoints{manifold_dim, T}
+    input_points::P
     num_points::Int
 
     function PointSet(
-        input_points::Vararg{AbstractVector, manifold_dim}
+        input_points::Vararg{AbstractVector{<:Number}, manifold_dim}
     ) where {manifold_dim}
-        iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
+        _construction_checks(input_points)
+
         input_num_points = map(length, input_points)
-        any(iszero, input_num_points) &&
-            throw(ArgumentError("Number of points must be non-empty."))
         allequal(input_num_points) ||
             throw(ArgumentError("Number of points in each dimension must match."))
         num_points = first(input_num_points)
         types = map(eltype, input_points)
         T = promote_type(types...)
-        T <: Number || throw(ArgumentError("Points must be a subtype of `Number`."))
+        # all input points are promoted promoted to the same type.
         promoted_points = ntuple(manifold_dim) do k
             if types[k] != T
                 return convert.(T, input_points[k])

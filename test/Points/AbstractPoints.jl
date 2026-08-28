@@ -13,4 +13,8 @@ unknown_points = UnknownPoints(([1.0, 2.0],))
 @test isone(Points.get_manifold_dim(unknown_points))
 @test eltype(unknown_points) == Float64
 
+@test_throws ArgumentError Points._construction_checks(())
+@test_throws ArgumentError Points._construction_checks(([1], Int[]))
+@test_throws MethodError Points._construction_checks(([1], ["1"]))
+
 end

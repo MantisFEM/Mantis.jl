@@ -34,6 +34,13 @@ export Mesh,
     TimeIntegrators,
     Plot
 
+# Exports from Points
+using .Points
+export PointSet,
+    TensorProductPoints,
+    get_input_points,
+    get_num_points
+
 # Exports from Forms.
 using .Forms
 export d, ★, ♯, ∧, ∫, dstar, δ
