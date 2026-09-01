@@ -1,6 +1,9 @@
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
 PProf = "e4faabce-9ead-11e9-39d9-4379958e3056"
 Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"

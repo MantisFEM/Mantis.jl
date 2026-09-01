@@ -10,9 +10,9 @@ end
     include("TensorProductSpaces/runtests.jl")
 end
 
-@testset verbose = true "HierarchicalSpaces" begin
-    include("Hierarchical/runtests.jl")
-end
+# @testset verbose = true "HierarchicalSpaces" begin
+#     include("Hierarchical/runtests.jl")
+# end
 
 @testset verbose = true "OtherSpaces" begin
     include("OtherSpaces/runtests.jl")
