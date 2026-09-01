@@ -17,8 +17,8 @@ p = (2, 2) # Polynomial degrees.
 k = p .- 1 # Regularities. (Maximally smooth B-splines.)
 
 # Hierarchical parameters.
-truncate = true
-simplified = false
+selection_type = FunctionSpaces.SelectionStandard
+basis_type = FunctionSpaces.THB
 num_steps = 3 # Number of refinement steps.
 num_sub = (2, 2) # Number of subdivisions per dimension per step.
 dorfler_parameter = 0.2
@@ -90,7 +90,7 @@ function runt_tests(eigval_errors)
 end
 
 R_complex = Forms.create_hierarchical_de_rham_complex(
-    starting_point, box_size, num_elements, p, k, num_sub, truncate, simplified
+    starting_point, box_size, num_elements, p, k, num_sub, selection_type, basis_type
 )
 eigval_errors, eigfunc_errors = run_problems(
     R_complex,

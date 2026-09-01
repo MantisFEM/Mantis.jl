@@ -1,55 +1,44 @@
 module HierarchicalGeometryTests
 
 using Mantis
+using Mantis.Hierarchical
 using Test
+using InteractiveUtils
 
 ############################################################################################
 #                                          Setup                                           #
 ############################################################################################
 
-# 1D two-level hierarchy
-#   Level 1: 2 coarse elements on [0, 1]  (spacing 0.5)
-#   Level 2: 4 fine   elements on [0, 1]  (spacing 0.25)
-#   Active elements: level-1 element 1  ([0.0, 0.5])  +
-#                    level-2 elements 3 ([0.5, 0.75]) and 4 ([0.75, 1.0])
-#   Hierarchical ordering:
-#     hier_id 1 → level 1, level_id 1  → [0.0,  0.5 ]
-#     hier_id 2 → level 2, level_id 3  → [0.5,  0.75]
-#     hier_id 3 → level 2, level_id 4  → [0.75, 1.0 ]
-geo_l1_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3),))   # 2 elements
-geo_l2_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5),))   # 4 elements
-active_1d = Hierarchy.ActiveInfo([[1], [3, 4]])
-hgeo_1d = Geometry.HierarchicalGeometry((geo_l1_1d, geo_l2_1d), active_1d)
+# 1D
+geo_l1_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3),))
+geo_l2_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5),))
 
-# 2D two-level hierarchy
-#   Level 1: 2×2 = 4  coarse elements on [0,1]^2  (spacing 0.5)
-#   Level 2: 4×4 = 16 fine   elements on [0,1]^2  (spacing 0.25)
-#   Active elements: level-1 elements 1, 2, 3  +  level-2 element 16
-#   Hierarchical ordering:
-#     hier_id 1 → level 1, level_id 1  → x=[0.00,0.50], y=[0.00,0.50]
-#     hier_id 2 → level 1, level_id 2  → x=[0.50,1.00], y=[0.00,0.50]
-#     hier_id 3 → level 1, level_id 3  → x=[0.00,0.50], y=[0.50,1.00]
-#     hier_id 4 → level 2, level_id 11 → x=[0.50,0.75], y=[0.75,0.75]
-#     hier_id 5 → level 2, level_id 12 → x=[0.75,1.00], y=[0.50,0.75]
-#     hier_id 6 → level 2, level_id 15 → x=[0.50,0.75], y=[0.75,1.00]
-#     hier_id 7 → level 2, level_id 16 → x=[0.75,1.00], y=[0.75,1.00]
-geo_l1_2d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)))
-geo_l2_2d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 5)))
-active_2d = Hierarchy.ActiveInfo([[1, 2, 3], [11, 12, 15, 16]])
-hgeo_2d = Geometry.HierarchicalGeometry((geo_l1_2d, geo_l2_2d), active_2d)
+active_1d = ActiveInfo([[1], [3, 4]])
+relations_1d = Relations(
+    Geometry.parent_to_children_uniform(geo_l1_1d, 2),
+    Geometry.child_to_parents_uniform(geo_l2_1d, 2),
+)
+scaling_1d = Scaling(geo_l1_1d, geo_l2_1d, relations_1d)
+
+hierarchy_1d = TreeHierarchy(active_1d, scaling_1d)
+hgeo_1d = Geometry.HierarchicalGeometry(hierarchy_1d)
+
+# 2D
+geo_l1_2d = Geometry.TensorProductGeometry((geo_l1_1d, geo_l1_1d))
+geo_l2_2d = Geometry.TensorProductGeometry((geo_l2_1d, geo_l2_1d))
+scaling_2d = Scaling(geo_l1_2d, geo_l2_2d, (scaling_1d, scaling_1d))
+active_info = ActiveInfo([[1, 2, 3], [11, 12, 15, 16]])
+hierarchy_2d = TreeHierarchy(active_info, scaling_2d)
+
+hgeo_2d = Geometry.HierarchicalGeometry(hierarchy_2d)
 
 ############################################################################################
 #                                       Constructor                                        #
 ############################################################################################
 
 @testset "Constructor" begin
-    # Type parameters are inferred from the level geometries.
-    @inferred Geometry.HierarchicalGeometry((geo_l1_1d, geo_l2_1d), active_1d)
-    @inferred Geometry.HierarchicalGeometry((geo_l1_2d, geo_l2_2d), active_2d)
-
-    # Mismatched number of levels raises an ArgumentError.
-    # active_2d has 2 levels but only 1 geometry is provided.
-    @test_throws ArgumentError Geometry.HierarchicalGeometry((geo_l1_2d,), active_2d)
+    @test @inferred(Geometry.HierarchicalGeometry(hierarchy_1d)) === hgeo_1d
+    @test @inferred(Geometry.HierarchicalGeometry(hierarchy_2d)) === hgeo_2d
 end
 
 ############################################################################################
@@ -63,7 +52,7 @@ end
 
     # get_active_elements returns the ActiveInfo object.
     @test Geometry.get_active_elements(hgeo_1d) === active_1d
-    @test Geometry.get_active_elements(hgeo_2d) === active_2d
+    @test Geometry.get_active_elements(hgeo_2d) === active_info
 
     # get_level_geometry returns the geometry for a specific level.
     @test Geometry.get_level_geometry(hgeo_1d, 1) === geo_l1_1d
@@ -78,6 +67,9 @@ end
     # get_num_elements returns the total number of active hierarchical elements.
     @test Geometry.get_num_elements(hgeo_1d) == 3   # 1 from level 1, 2 from level 2
     @test Geometry.get_num_elements(hgeo_2d) == 7   # 3 from level 1, 4 from level 2
+
+    @test Geometry.get_hierarchy(hgeo_1d) === hierarchy_1d
+    @test Geometry.get_hierarchy(hgeo_2d) === hierarchy_2d
 end
 
 ############################################################################################
@@ -85,17 +77,31 @@ end
 ############################################################################################
 
 @testset "Conversions" begin
-    @test Geometry.convert_to_level_and_level_id(hgeo_1d, 1) == (1, 1)
-    @test Geometry.convert_to_level_and_level_id(hgeo_1d, 2) == (2, 3)
-    @test Geometry.convert_to_level_and_level_id(hgeo_1d, 3) == (2, 4)
+    function level_and_level_id(expected, hgeo)
+        for k in keys(expected)
+            val = Geometry.convert_to_level_and_level_id(hgeo, k)
+            if val != expected[k]
+                println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
+                return false
+            end
+        end
 
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 1) == (1, 1)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 2) == (1, 2)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 3) == (1, 3)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 4) == (2, 11)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 5) == (2, 12)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 6) == (2, 15)
-    @test Geometry.convert_to_level_and_level_id(hgeo_2d, 7) == (2, 16)
+        return true
+    end
+
+    expected_1d = Dict(1 => (1, 1), 2 => (2, 3), 3 => (2, 4))
+    @test level_and_level_id(expected_1d, hgeo_1d)
+
+    expected_2d = Dict(
+        1 => (1, 1),
+        2 => (1, 2),
+        3 => (1, 3),
+        4 => (2, 11),
+        5 => (2, 12),
+        6 => (2, 15),
+        7 => (2, 16),
+    )
+    @test level_and_level_id(expected_2d, hgeo_2d)
 end
 
 ############################################################################################
@@ -228,6 +234,43 @@ end
             end
         end
     end
+end
+
+@testset "Type stability" begin
+    @test_nowarn @inferred Geometry.get_hierarchy(hgeo_1d)
+    @test_nowarn @inferred Geometry.get_geometries(hgeo_1d)
+    @test_nowarn @inferred Geometry.get_active_elements(hgeo_1d)
+    @test_nowarn @inferred Geometry.get_level_geometry(hgeo_1d, 1)
+    @test_nowarn @inferred Geometry.get_num_levels(hgeo_1d)
+    @test_nowarn @inferred Geometry.get_num_elements(hgeo_1d)
+    @test_nowarn @inferred Geometry.convert_to_level_and_level_id(hgeo_1d, 2)
+    @test_nowarn @inferred Geometry.get_element_measure(hgeo_1d, 2)
+    @test_nowarn @inferred Geometry.get_element_lengths(hgeo_1d, 2)
+    @test_nowarn @inferred Geometry.get_element_vertices(hgeo_1d, 2)
+end
+
+@testset "Update" verbose = true begin
+    geo_l1 = Geometry.CartesianGeometry(([0.0, 0.5, 1.0], [0.0, 0.5, 1.0]))
+    scal_1 = Geometry.scaling_uniform(geo_l1, (2, 2))
+    scal_2 = Geometry.scaling_uniform(Hierarchical.get_child(scal_1), (2, 2))
+    active_info = ActiveInfo([[1, 2, 3, 4], Int[]])
+    hierarchy = TreeHierarchy(active_info, scal_1)
+    hgeo = Geometry.HierarchicalGeometry(hierarchy)
+    # Updating requires providing a scaling since a new level _might_ need to be added.
+    @test_throws MethodError hgeo = Geometry.update(hgeo, 1, [1], [42])
+    # Should error because parent element 2 is not removed but some of its children (3, 4)
+    # are added
+    @test_throws ArgumentError hgeo = Geometry.update(hgeo, 1, [1], [1, 2, 3, 4], scal_2)
+    hgeo = Geometry.update(hgeo, 1, [1], [1, 2, 5, 6], scal_2)
+    @test get_level_ids(Geometry.get_hierarchy(hgeo)) == [[2, 3, 4], [1, 2, 5, 6]]
+    hgeo = Geometry.refine(hgeo, 1, [4], scal_2)
+    @test get_level_ids(Geometry.get_hierarchy(hgeo)) ==
+        [[2, 3], [1, 2, 5, 6, 11, 12, 15, 16]]
+    @test get_scalings(Geometry.get_hierarchy(hgeo)) == (scal_1,)
+    hgeo = Geometry.refine(hgeo, 2, [16], scal_2)
+    @test get_level_ids(Geometry.get_hierarchy(hgeo)) ==
+        [[2, 3], [1, 2, 5, 6, 11, 12, 15], [55, 56, 63, 64]]
+    @test get_scalings(Geometry.get_hierarchy(hgeo)) == (scal_1, scal_2)
 end
 
 end

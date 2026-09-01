@@ -32,4 +32,9 @@ end
     include("EvaluationMask/runtests.jl")
 end
 
+@testset "Hierarchical" verbose = true begin
+	include("Hierarchical/runtests.jl")
+end
+
+
 end

@@ -156,6 +156,12 @@ function solve_one_form_hodge_laplacian(
             println("Solving the problem on step $step...")
         end
 
+        # TODO: Waiting for multi-component extraction overhaul. This adaptive loop still
+        # uses the marking and L-chain routines from the old `AdaptiveRefinement` module,
+        # which is disabled. Once 1-forms can be hierarchical, port it to the new marking
+        # strategies (e.g. `DorflerMarking` and `SupportMarking`), and pass the marked
+        # hierarchical elements to `Forms.update_hierarchical_de_rham_complex`.
+        # https://github.com/MantisFEM/Mantis.jl/discussions/421
         H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
         dorfler_marking = FunctionSpaces.get_dorfler_marking(
             err_per_element, dorfler_parameter
