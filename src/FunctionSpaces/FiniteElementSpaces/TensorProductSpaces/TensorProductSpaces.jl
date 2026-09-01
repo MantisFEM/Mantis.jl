@@ -281,6 +281,8 @@ function TensorProducts.get_factor_ids(space::TensorProductSpace, basis_id::Int)
     return get_factor_basis_ids(space, basis_id)
 end
 
+TensorProducts.get_lin_ids(space::TensorProductSpace) = get_lin_num_basis(space)
+
 """
     get_factor_basis_ids(space::TensorProductSpace, basis_id::Int)
 

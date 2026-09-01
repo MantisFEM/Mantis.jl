@@ -15,6 +15,9 @@ end
 @testset verbose=true "Points" begin
     include("Points/runtests.jl")
 end
+@testset verbose=true "Hierarchy" begin
+    include("Hierarchical/runtests.jl")
+end
 @testset verbose=true "Geometry" begin
     include("Geometry/runtests.jl")
 end

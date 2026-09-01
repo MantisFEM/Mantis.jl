@@ -25,13 +25,13 @@ See [Giannelli2013](@cite) for more information.
 - `two_scale_operators::Vector{T}`: Collection of `L-1` two-scale operators relating each
     consecutive pair of finite element spaces, where `L` is the total number of levels. See
     [`AbstractTwoScaleOperator`](@ref).
-- `active_elements::Hierarchy.ActiveInfo`: Information about the active elements at each
-    level. See [`Hierarchy.ActiveInfo`](@ref).
-- `active_basis::Hierarchy.ActiveInfo`: Information about the active basis at each level.
-    See [`Hierarchy.ActiveInfo`](@ref).
-- `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
+- `active_elements::Hierarchical.ActiveInfo`: Information about the active elements at each
+    level. See [`Hierarchical.ActiveInfo`](@ref).
+- `active_basis::Hierarchical.ActiveInfo`: Information about the active basis at each level.
+    See [`Hierarchical.ActiveInfo`](@ref).
+- `nested_domains::Hierarchical.ActiveInfo`: Information about the nested domains at each
     level. This is the usual definition of Ωₗ in the literature. See
-    [`Hierarchy.ActiveInfo`](@ref).
+    [`Hierarchical.ActiveInfo`](@ref).
 - `multilevel_elements::SparseArrays.SparseVector{Int, Int}`: Elements where basis from
     multiple levels have non-empty support.
 - `multilevel_extraction_coeffs::Vector{NTuple{num_components, Matrix{Float64}}}`:
@@ -52,9 +52,9 @@ struct HierarchicalFiniteElementSpace{
     parametric_geometry::GP
     spaces::Vector{S}
     two_scale_operators::Vector{T}
-    active_elements::Hierarchy.ActiveInfo
-    active_basis::Hierarchy.ActiveInfo
-    nested_domains::Hierarchy.ActiveInfo
+    active_elements::Hierarchical.ActiveInfo
+    active_basis::Hierarchical.ActiveInfo
+    nested_domains::Hierarchical.ActiveInfo
     multilevel_elements::SparseArrays.SparseVector{Int, Int}
     multilevel_extraction_coeffs::Vector{NTuple{num_components, Matrix{Float64}}}
     multilevel_basis_indices::Vector{Vector{Int}}
@@ -95,9 +95,9 @@ struct HierarchicalFiniteElementSpace{
             msg1 = "Number of two-scale operators should be `num_levels - 1`. "
             msg2 = "Got $(length(two_scale_operators)) and $(num_levels - 1)."
             throw(ArgumentError(msg1 * msg2))
-        elseif Hierarchy.get_num_levels(nested_domains) != num_levels
+        elseif Hierarchical.get_num_levels(nested_domains) != num_levels
             msg1 = "Number of nested domains should be the same as the number of levels. "
-            msg2 = "Got $(num_levels) and $(Hierarchy.get_num_levels(nested_domains))."
+            msg2 = "Got $(num_levels) and $(Hierarchical.get_num_levels(nested_domains))."
             throw(ArgumentError(msg1 * msg2))
         end
 
@@ -144,7 +144,7 @@ end
 	HierarchicalFiniteElementSpace(
 		spaces::Vector{S},
 		two_scale_operators::Vector{T},
-		domains::Hierarchy.ActiveInfo,
+		domains::Hierarchical.ActiveInfo,
 		num_subdivisions::NTuple{manifold_dim, Int},
 		truncated::Bool=true,
 		simplified::Bool=false,
@@ -161,7 +161,7 @@ Constructor that generates multilevel information.
 function HierarchicalFiniteElementSpace(
     spaces::Vector{S},
     two_scale_operators::Vector{T},
-    domains::Hierarchy.ActiveInfo,
+    domains::Hierarchical.ActiveInfo,
     num_subdivisions::NTuple{manifold_dim, Int},
     truncated::Bool=true,
     simplified::Bool=false;
@@ -238,7 +238,7 @@ function HierarchicalFiniteElementSpace(
     S <: AbstractFESpace{manifold_dim, num_components, num_patches},
     T <: AbstractTwoScaleOperator,
 }
-    domains = Hierarchy.ActiveInfo(domains_per_level)
+    domains = Hierarchical.ActiveInfo(domains_per_level)
 
     return HierarchicalFiniteElementSpace(
         spaces, two_scale_operators, domains, num_subdivisions, truncated, simplified
@@ -278,7 +278,7 @@ end
     get_active_objects_and_nested_domains(
 		spaces::Vector{S},
 		two_scale_operators::Vector{T},
-		domains::Hierarchy.ActiveInfo,
+		domains::Hierarchical.ActiveInfo,
 		simplified::Bool,
 	) where {S <: AbstractFESpace, T <: AbstractTwoScaleOperator}
 
@@ -296,23 +296,23 @@ applied to determine the active elements.
 	element spaces at each level.
 - `two_scale_operators::Vector{AbstractTwoScaleOperator}`: Two scale operators relating the
     finite element spaces at each level.
-- `domains::Hierarchy.ActiveInfo`: Nested domains where the support of active basis is
+- `domains::Hierarchical.ActiveInfo`: Nested domains where the support of active basis is
     determined.
 
 # Returns
-- `active_elements::Hierarchy.ActiveInfo`: Active elements at each level.
-- `active_basis::Hierarchy.ActiveInfo`: Active basis at each level.
-- `nested_domains::Hierarchy.ActiveInfo`: Information about the nested domains at each
+- `active_elements::Hierarchical.ActiveInfo`: Active elements at each level.
+- `active_basis::Hierarchical.ActiveInfo`: Active basis at each level.
+- `nested_domains::Hierarchical.ActiveInfo`: Information about the nested domains at each
     level. This is the usual definition of Ωₗ in the literature. See
-    [`Hierarchy.ActiveInfo`](@ref).
+    [`Hierarchical.ActiveInfo`](@ref).
 """
 function get_active_objects_and_nested_domains(
     spaces::Vector{S},
     two_scale_operators::Vector{T},
-    domains::Hierarchy.ActiveInfo,
+    domains::Hierarchical.ActiveInfo,
     simplified::Bool,
 ) where {S <: AbstractFESpace, T <: AbstractTwoScaleOperator}
-    num_levels = Hierarchy.get_num_levels(domains)
+    num_levels = Hierarchical.get_num_levels(domains)
     active_elements_per_level = [collect(1:get_num_elements(spaces[1]))]
     active_basis_per_level = [collect(1:get_num_basis(spaces[1]))]
     nested_domains_per_level = [collect(1:get_num_elements(spaces[1]))]
@@ -320,7 +320,7 @@ function get_active_objects_and_nested_domains(
     # refinement domains contain proper subsets of a given element's
     # children as refined.
     if !simplified
-        new_domains = [Hierarchy.get_level_ids(domains, level) for level in 1:num_levels]
+        new_domains = [Hierarchical.get_level_ids(domains, level) for level in 1:num_levels]
         for level in num_levels:-1:2
             if isempty(new_domains[level])
                 continue
@@ -340,11 +340,11 @@ function get_active_objects_and_nested_domains(
             union!(new_domains[level - 1], parents)
         end
 
-        domains = Hierarchy.ActiveInfo(new_domains)
+        domains = Hierarchical.ActiveInfo(new_domains)
     end
 
     for level in 1:(num_levels - 1)
-        next_level_domain = Set(Hierarchy.get_level_ids(domains, level + 1))
+        next_level_domain = Hierarchical.get_level_set(domains, level + 1)
         elements_to_remove = Int[]
         elements_to_add = Int[]
         basis_to_remove = Int[]
@@ -424,9 +424,9 @@ function get_active_objects_and_nested_domains(
 
     map(elements -> sort!(elements), active_elements_per_level)
     map(basis -> sort!(basis), active_basis_per_level)
-    active_elements = Hierarchy.ActiveInfo(active_elements_per_level)
-    active_basis = Hierarchy.ActiveInfo(active_basis_per_level)
-    nested_domains = Hierarchy.ActiveInfo(nested_domains_per_level)
+    active_elements = Hierarchical.ActiveInfo(active_elements_per_level)
+    active_basis = Hierarchical.ActiveInfo(active_basis_per_level)
+    nested_domains = Hierarchical.ActiveInfo(nested_domains_per_level)
 
     return active_elements, active_basis, nested_domains
 end
@@ -435,8 +435,8 @@ end
     get_multilevel_extraction(
         spaces::Vector{S},
         two_scale_operators::Vector{T},
-        active_elements::Hierarchy.ActiveInfo,
-        active_basis::Hierarchy.ActiveInfo,
+        active_elements::Hierarchical.ActiveInfo,
+        active_basis::Hierarchical.ActiveInfo,
         truncated::Bool,
     ) where {manifold_dim, num_components, num_patches, S <: AbstractFESpace{manifold_dim, num_components, num_patches}, T <: AbstractTwoScaleOperator}
 
@@ -450,8 +450,8 @@ The extraction coefficients depend on whether the hierarchical space is `truncat
 - `spaces::Vector{AbstractFESpace{manifold_dim, num_components, num_patches}}`: finite element spaces at each level.
 - `two_scale_operators::Vector{AbstractTwoScaleOperator}`: two scale operators relating the
     finite element spaces at each level.
-- `active_elements::Hierarchy.ActiveInfo`: active elements on each level.
-- `active_basis::Hierarchy.ActiveInfo`: active basis on each level.
+- `active_elements::Hierarchical.ActiveInfo`: active elements on each level.
+- `active_basis::Hierarchical.ActiveInfo`: active basis on each level.
 - `truncated`: flag for a truncated hierarchical space.
 
 # Returns
@@ -465,8 +465,8 @@ The extraction coefficients depend on whether the hierarchical space is `truncat
 function get_multilevel_extraction(
     spaces::Vector{S},
     two_scale_operators::Vector{T},
-    active_elements::Hierarchy.ActiveInfo,
-    active_basis::Hierarchy.ActiveInfo,
+    active_elements::Hierarchical.ActiveInfo,
+    active_basis::Hierarchical.ActiveInfo,
     truncated::Bool,
 ) where {
     manifold_dim,
@@ -474,7 +474,7 @@ function get_multilevel_extraction(
     S <: AbstractFESpace{manifold_dim, num_components},
     T <: AbstractTwoScaleOperator,
 }
-    # First, we determines which elements contain basis functions from multiple levels.
+    # First, we determine which elements contain basis functions from multiple levels.
     multilevel_information = get_multilevel_information(
         spaces, two_scale_operators, active_elements, active_basis
     )
@@ -482,7 +482,7 @@ function get_multilevel_extraction(
     num_multilevel_elements = length(multilevel_keys)
     # Skip trivial case
     if num_multilevel_elements == 0
-        return SparseArrays.spzeros(Int, Hierarchy.get_num_objects(active_elements)),
+        return SparseArrays.spzeros(Int, Hierarchical.get_num_objects(active_elements)),
         NTuple{num_components, Matrix{Float64}}[],
         [Int[]]
     end
@@ -519,7 +519,7 @@ function get_multilevel_extraction(
         # Convert and store multi-level basis ids
         basis_hier_ids = map(
             basis_level_id ->
-                Hierarchy.convert_to_hier_id(active_basis, level, basis_level_id),
+                Hierarchical.convert_to_hier_id(active_basis, level, basis_level_id),
             basis_level_ids[active_local_ids],
         )
         multilevel_basis_ids[ml_id_count] = append!(
@@ -533,7 +533,7 @@ function get_multilevel_extraction(
         end
 
         # Add multilevel element specific index
-        multilevel_element_indices[ml_id_count] = Hierarchy.convert_to_hier_id(
+        multilevel_element_indices[ml_id_count] = Hierarchical.convert_to_hier_id(
             active_elements, level, element_level_id
         )
         ml_id_count += 1
@@ -542,7 +542,7 @@ function get_multilevel_extraction(
     multilevel_elements = SparseArrays.sparsevec(
         multilevel_element_indices,
         1:num_multilevel_elements,
-        Hierarchy.get_num_objects(active_elements),
+        Hierarchical.get_num_objects(active_elements),
     )
 
     return multilevel_elements, multilevel_extraction_coeffs, multilevel_basis_ids
@@ -552,8 +552,8 @@ end
     get_multilevel_information(
         spaces::Vector{S},
         two_scale_operators::Vector{T},
-        active_elements::Hierarchy.ActiveInfo,
-        active_basis::Hierarchy.ActiveInfo,
+        active_elements::Hierarchical.ActiveInfo,
+        active_basis::Hierarchical.ActiveInfo,
     ) where {manifold_dim, num_components, num_patches, S <: AbstractFESpace{manifold_dim, num_components, num_patches}, T <: AbstractTwoScaleOperator}
 
 Computes which active elements are multilevel elements, i.e. elements where basis from
@@ -564,8 +564,8 @@ active on those elements.
 - `spaces::Vector{AbstractFESpace{manifold_dim, num_components, num_patches}}`: finite element spaces at each level.
 - `two_scale_operators::Vector{AbstractTwoScaleOperator}`: two scale operators relating the
     finite element spaces at each level.
-- `active_elements::Hierarchy.ActiveInfo`: active elements on each level.
-- `active_basis::Hierarchy.ActiveInfo`: active basis on each level.
+- `active_elements::Hierarchical.ActiveInfo`: active elements on each level.
+- `active_basis::Hierarchical.ActiveInfo`: active basis on each level.
 
 # Returns
 - `multilevel_information::Dict{Tuple{Int, Int}, Vector{Tuple{Int, Int}}}`: information
@@ -576,24 +576,28 @@ active on those elements.
 function get_multilevel_information(
     spaces::Vector{S},
     two_scale_operators::Vector{T},
-    active_elements::Hierarchy.ActiveInfo,
-    active_basis::Hierarchy.ActiveInfo,
+    active_elements::Hierarchical.ActiveInfo,
+    active_basis::Hierarchical.ActiveInfo,
 ) where {S <: AbstractFESpace, T <: AbstractTwoScaleOperator}
-    L = Hierarchy.get_num_levels(active_elements)
+    L = Hierarchical.get_num_levels(active_elements)
     multilevel_information = Dict{Tuple{Int, Int}, Vector{Tuple{Int, Int}}}()
     # Above, first tuple is level and id of ml element, second tuple
     # is level and id of ml basis in that element
     # TODO: Change the storage so that entry of a given key stores all the basis
     # for a given level.
     for level in 1:(L - 1)
-        level_active_elements = Set(Hierarchy.get_level_ids(active_elements, level))
-        level_active_basis = Hierarchy.get_level_ids(active_basis, level)
+        level_active_elements = Hierarchical.get_level_set(active_elements, level)
+        level_active_basis = Hierarchical.get_level_ids(active_basis, level)
+        level_space = spaces[level]
         for basis in level_active_basis
-            support = get_support(spaces[level], basis)
-            inactive_elements = [!(element ∈ level_active_elements) for element in support]
-            for inactive_element in support[inactive_elements]
+            support = get_support(level_space, basis)
+            for element in support
+                if element in level_active_elements
+                    continue
+                end
+
                 active_children = get_element_active_children(
-                    active_elements, level, inactive_element, two_scale_operators
+                    active_elements, level, element, two_scale_operators
                 )
                 for (child_level, child_id) in active_children
                     if haskey(multilevel_information, (child_level, child_id))
@@ -615,7 +619,7 @@ function get_active_basis_matrix(space, element_level_id, level, active_basis)
     full_level_indices = get_basis_indices(space, element_level_id)
     # Find which basis functions of the space are active at the element
     active_local_ids = findall(
-        basis_id -> basis_id in Hierarchy.get_level_ids(active_basis, level),
+        basis_id -> basis_id in Hierarchical.get_level_ids(active_basis, level),
         full_level_indices,
     )
     num_basis = length(full_level_indices)
@@ -657,7 +661,7 @@ function get_refinement_data(
             element_id,
             truncated,
         )
-        multilevel_basis_hier_ids[ml_basis_count] = Hierarchy.convert_to_hier_id(
+        multilevel_basis_hier_ids[ml_basis_count] = Hierarchical.convert_to_hier_id(
             active_basis, basis_level, basis_level_id
         )
         ml_basis_count += 1
@@ -680,22 +684,48 @@ function get_multilevel_basis_evaluation(
     element_level_id,
     truncated::Bool,
 )
-    local_subdiv_matrix = LinearAlgebra.I
+    # local_subdiv_matrix = LinearAlgebra.I
     current_child_element = element_level_id
-    for level in element_level:-1:(basis_level + 1)
+    level = element_level
+    current_parent_element = get_element_parent(
+        two_scale_operators[level - 1], current_child_element
+    )
+    current_subdiv_matrix = copy(
+        view_scaling_matrix(
+            two_scale_operators[level - 1], current_parent_element, current_child_element
+        ),
+    )
+    if truncated
+        full_level_indices = get_basis_indices(fe_spaces[level], current_child_element)
+        active_indices = findall(
+            basis_id -> basis_id in Hierarchical.get_level_set(active_basis, level),
+            full_level_indices,
+        )
+        if !isempty(active_indices)
+            current_subdiv_matrix = current_subdiv_matrix
+            current_subdiv_matrix[active_indices, :] .= 0.0
+        end
+    end
+
+    local_subdiv_matrix = copy(current_subdiv_matrix)
+    current_child_element = current_parent_element
+    for level in (element_level - 1):-1:(basis_level + 1)
         current_parent_element = get_element_parent(
             two_scale_operators[level - 1], current_child_element
         )
-        current_subdiv_matrix = get_local_subdiv_matrix(
+        current_subdiv_matrix = view_scaling_matrix(
             two_scale_operators[level - 1], current_parent_element, current_child_element
         )
         if truncated
             full_level_indices = get_basis_indices(fe_spaces[level], current_child_element)
             active_indices = findall(
-                basis_id -> basis_id in Hierarchy.get_level_ids(active_basis, level),
+                basis_id -> basis_id in Hierarchical.get_level_set(active_basis, level),
                 full_level_indices,
             )
-            current_subdiv_matrix[active_indices, :] .= 0.0
+            if !isempty(active_indices)
+                current_subdiv_matrix = copy(current_subdiv_matrix)
+                current_subdiv_matrix[active_indices, :] .= 0.0
+            end
         end
 
         local_subdiv_matrix *= current_subdiv_matrix
@@ -743,14 +773,14 @@ function compute_dof_partition(spaces, active_basis, L)
     for patch in eachindex(dof_partition)
         dof_partition[patch] = Vector{Vector{Int}}(undef, n_partitions[patch])
         for level in 1:L
-            level_active_basis = Set(Hierarchy.get_level_ids(active_basis, level))
+            level_active_basis = Hierarchical.get_level_set(active_basis, level)
             for partition in eachindex(dof_partition[patch])
                 active_level_dofs = filter(
                     basis -> basis in level_active_basis,
                     level_partition[level][patch][partition],
                 )
                 dof_ids = map(
-                    og_id -> Hierarchy.convert_to_hier_id(active_basis, level, og_id),
+                    og_id -> Hierarchical.convert_to_hier_id(active_basis, level, og_id),
                     active_level_dofs,
                 )
                 if level == 1
@@ -872,21 +902,21 @@ end
 ############################################################################################	
 
 """
-	refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo)
+	refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchical.ActiveInfo)
 
 Returns a refined hierarchical space, given an original `space` and a set of hierarchically
 nested `domains`.
 
 # Arguments
 - `space::HierarchicalFiniteElementSpace`: The original hierarchical space.
-- `domains::Hierarchy.ActiveInfo`: Information about the nested domains at each level. This
-	is the usual definition of Ωₗ in the literature. See [`Hierarchy.ActiveInfo`](@ref).
+- `domains::Hierarchical.ActiveInfo`: Information about the nested domains at each level. This
+	is the usual definition of Ωₗ in the literature. See [`Hierarchical.ActiveInfo`](@ref).
 
 # Returns
 - `refine_space::HierarchicalFiniteElementSpace`: A refined hierarchical space.
 """
-function refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchy.ActiveInfo)
-    L = Hierarchy.get_num_levels(domains)
+function refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchical.ActiveInfo)
+    L = Hierarchical.get_num_levels(domains)
     spaces = get_spaces(space)
     two_scale_operators = get_two_scale_operators(space)
     while L > length(spaces)
@@ -939,7 +969,7 @@ function refine_space(
         )
         push!(spaces, new_space)
         push!(two_scale_operators, new_ts)
-        Hierarchy.add_level!(domains)
+        Hierarchical.add_level!(domains)
     end
 
     refine_domains!(domains, two_scale_operators, marked_elements_per_level)
@@ -957,7 +987,7 @@ end
 
 """
 	refine_domains!(
-	    domains::Hierarchy.ActiveInfo,
+	    domains::Hierarchical.ActiveInfo,
 	    two_scale_operators,
 	    marked_elements_per_level::Vector{Vector{Int}},
 	)
@@ -966,17 +996,17 @@ Refines `domains` in-place, by extracting the children of the `marked_elements_p
 using `two_scale_operators`.
 
 # Arguments
-- `domains::Hierarchy.ActiveInfo`: The hierarchical domains to be refined.
+- `domains::Hierarchical.ActiveInfo`: The hierarchical domains to be refined.
 - `two_scale_operators`: The two-scale operators used to extract the children of the marked
 	elements.
 - `marked_elements_per_level::Vector{Vector{Int}}`: The elements marked for refinement at
 	each level, which will be used to refine the nested domains.
 
 # Returns
-- `domains::Hierarchy.ActiveInfo`: The refined `domains`.
+- `domains::Hierarchical.ActiveInfo`: The refined `domains`.
 """
 function refine_domains!(
-    domains::Hierarchy.ActiveInfo,
+    domains::Hierarchical.ActiveInfo,
     two_scale_operators,
     marked_elements_per_level::Vector{Vector{Int}},
 )
@@ -1004,7 +1034,7 @@ function refine_domains!(domains, two_scale_operators, marked_elements, level)
     refined_elements = mapreduce(
         el -> get_element_children(two_scale_operators[level], el), vcat, marked_elements
     )
-    Hierarchy.update!(domains, level, marked_elements, refined_elements)
+    Hierarchical.update!(domains, level, marked_elements, refined_elements)
 
     return domains
 end
@@ -1042,15 +1072,15 @@ function is_simplified(space::HierarchicalFiniteElementSpace)
 end
 
 function get_num_levels(space::HierarchicalFiniteElementSpace)
-    return Hierarchy.get_num_levels(get_active_elements(space))
+    return Hierarchical.get_num_levels(get_active_elements(space))
 end
 
 function get_num_elements(space::HierarchicalFiniteElementSpace)
-    return Hierarchy.get_num_objects(get_active_elements(space))
+    return Hierarchical.get_num_objects(get_active_elements(space))
 end
 
 function get_num_basis(space::HierarchicalFiniteElementSpace)
-    return Hierarchy.get_num_objects(get_active_basis(space))
+    return Hierarchical.get_num_objects(get_active_basis(space))
 end
 
 function get_num_subdivisions(space::HierarchicalFiniteElementSpace)
@@ -1073,19 +1103,19 @@ function get_max_local_dim(space::HierarchicalFiniteElementSpace)
 end
 
 function get_element_level(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.get_level(get_active_elements(space), hier_id)
+    return Hierarchical.get_level(get_active_elements(space), hier_id)
 end
 
 function get_basis_level(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.get_level(get_active_basis(space), hier_id)
+    return Hierarchical.get_level(get_active_basis(space), hier_id)
 end
 
 function get_element_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.get_level_ids(get_active_elements(space), hier_id)
+    return Hierarchical.get_level_ids(get_active_elements(space), hier_id)
 end
 
 function get_basis_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.get_level_ids(get_active_basis(space), hier_id)
+    return Hierarchical.get_level_ids(get_active_basis(space), hier_id)
 end
 
 function get_space(space::HierarchicalFiniteElementSpace, level::Int)
@@ -1097,15 +1127,15 @@ function get_twoscale_operator(space::HierarchicalFiniteElementSpace, level::Int
 end
 
 function get_level_element_ids(space::HierarchicalFiniteElementSpace, level::Int)
-    return Hierarchy.get_level_ids(get_active_elements(space), level)
+    return Hierarchical.get_level_ids(get_active_elements(space), level)
 end
 
 function get_level_basis_ids(space::HierarchicalFiniteElementSpace, level::Int)
-    return Hierarchy.get_level_ids(get_active_basis(space), level)
+    return Hierarchical.get_level_ids(get_active_basis(space), level)
 end
 
 function get_level_domain(space::HierarchicalFiniteElementSpace, level::Int)
-    return Hierarchy.get_level_ids(get_nested_domains(space), level)
+    return Hierarchical.get_level_ids(get_nested_domains(space), level)
 end
 
 function get_multilevel_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
@@ -1117,7 +1147,7 @@ function get_multilevel_basis_indices(space::HierarchicalFiniteElementSpace)
 end
 
 function get_element_active_children(
-    active_elements::Hierarchy.ActiveInfo,
+    active_elements::Hierarchical.ActiveInfo,
     level::Int,
     level_id::Int,
     two_scale_operators::Vector{T},
@@ -1132,7 +1162,7 @@ function get_element_active_children(
         for level_id in current_level_ids
             children = get_element_children(two_scale_operators[current_level], level_id)
             children_check =
-                children .∈ [Hierarchy.get_level_ids(active_elements, current_level + 1)]
+                children .∈ [Hierarchical.get_level_set(active_elements, current_level + 1)]
             for child_level_id in children[children_check]
                 push!(active_children, (current_level + 1, child_level_id))
             end
@@ -1155,33 +1185,33 @@ end
 function convert_to_element_hier_id(
     space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
 )
-    return Hierarchy.convert_to_hier_id(get_active_elements(space), level, level_id)
+    return Hierarchical.convert_to_hier_id(get_active_elements(space), level, level_id)
 end
 
 function convert_to_element_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.convert_to_level_id(get_active_elements(space), hier_id)
+    return Hierarchical.convert_to_level_id(get_active_elements(space), hier_id)
 end
 
 function convert_to_element_level_and_level_id(
     space::HierarchicalFiniteElementSpace, hier_id::Int
 )
-    return Hierarchy.convert_to_level_and_level_id(get_active_elements(space), hier_id)
+    return Hierarchical.convert_to_level_and_level_id(get_active_elements(space), hier_id)
 end
 
 function convert_to_basis_hier_id(
     space::HierarchicalFiniteElementSpace, level::Int, level_id::Int
 )
-    return Hierarchy.convert_to_hier_id(get_active_basis(space), level, level_id)
+    return Hierarchical.convert_to_hier_id(get_active_basis(space), level, level_id)
 end
 
 function convert_to_basis_level_id(space::HierarchicalFiniteElementSpace, hier_id::Int)
-    return Hierarchy.convert_to_level_id(get_active_basis(space), hier_id)
+    return Hierarchical.convert_to_level_id(get_active_basis(space), hier_id)
 end
 
 function convert_to_basis_level_and_level_id(
     space::HierarchicalFiniteElementSpace, hier_id::Int
 )
-    return Hierarchy.convert_to_level_and_level_id(get_active_basis(space), hier_id)
+    return Hierarchical.convert_to_level_and_level_id(get_active_basis(space), hier_id)
 end
 
 """
@@ -1242,9 +1272,7 @@ function _compute_thb_parametric_geometry_coeffs(
     id_count = 1
     for level in 1:num_levels
         greville_points = get_greville_points(get_space(space, level))
-
-        level_active_basis = get_level_basis_ids(space, level)
-
+        level_active_basis = Hierarchical.get_level_set(get_active_basis(space), level)
         for (point_id, point) in enumerate(Iterators.product(greville_points...))
             if point_id ∈ level_active_basis
                 coeffs[id_count, :] .= point

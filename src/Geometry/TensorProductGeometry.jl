@@ -88,8 +88,11 @@ end
 TensorProducts.get_factors(geometry::TensorProductGeometry) = get_factor_geometries(geometry)
 
 function TensorProducts.get_factor_ids(geometry::TensorProductGeometry, element_id::Int)
-    return get_factor_element_ids(geometry, element_id)
+    # first to remove patch id
+    return first(get_factor_element_ids(geometry, element_id))
 end
+
+TensorProducts.get_lin_ids(geometry::TensorProductGeometry) = get_lin_num_elements(geometry)
 
 """
     get_factor_geometries(geometry::TensorProductGeometry)

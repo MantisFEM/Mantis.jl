@@ -341,31 +341,45 @@ function get_breakpoints(space::BSplineSpace)
 end
 
 function assemble_global_extraction_matrix(space::BSplineSpace)
-    # Number of global basis functions
-    num_global_basis = get_num_basis(space)
-    # Number of elements
-    nel = get_num_elements(space)
-    # Number of local basis functions
-    num_local_basis = (get_polynomial_degree(get_polynomials(space)) + 1) .* ones(Int, nel)
-    num_local_basis_offset = cumsum([0; num_local_basis])
-    # Initialize the global extraction matrix
-    global_extraction_matrix = zeros(Float64, num_local_basis_offset[end], num_global_basis)
+    num_basis = get_num_basis(space)
+    num_elements = get_num_elements(space)
+    p = get_polynomial_degree(space)
+    pp = p + 1
 
-    # Loop over all elements
-    for el_id in 1:nel
-        # get extraction on this element
-        extraction_coefficients = get_extraction_coefficients(space, el_id)
-        global_basis_indices = get_basis_indices(space, el_id)
-        # get local basis indices
-        local_basis_indices =
-            (num_local_basis_offset[el_id] + 1):num_local_basis_offset[el_id + 1]
-
-        # Assemble the global extraction matrix
-        global_extraction_matrix[local_basis_indices, global_basis_indices] =
-            extraction_coefficients
+    # Matrix size (m, n)
+    m = pp * num_elements
+    n = num_basis
+    # Pre-allocate sparse array storage
+    nnz = m * pp
+    I = Vector{Int}(undef, nnz)
+    J = Vector{Int}(undef, nnz)
+    V = Vector{Float64}(undef, nnz)
+    k = 0
+    @inbounds for element in 1:num_elements
+        C = get_extraction_coefficients(space, element)
+        bi = get_basis_indices(space, element)
+        base_row = pp * (element - 1)
+        for li in 1:pp # Loop over the local basis indices on `element`
+            row = base_row + li
+            for gi in 1:pp # Loop over the global basis indices on `element`
+                col = bi[gi]
+                val = C[li, gi]
+                if !iszero(val)
+                    k += 1
+                    I[k] = row
+                    J[k] = col
+                    V[k] = val
+                end
+            end
+        end
     end
 
-    return SparseArrays.sparse(global_extraction_matrix)
+    # Remove unused nnz
+    I = I[1:k]
+    J = J[1:k]
+    V = V[1:k]
+
+    return SparseArrays.sparse(I, J, V, m, n)
 end
 
 """

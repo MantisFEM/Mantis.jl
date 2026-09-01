@@ -62,5 +62,6 @@ abstract type AbstractInputs end
 
 include("WeakFormulations/WeakFormulations.jl")
 include("GlobalAssemblers.jl")
+include("Hierarchical/Hierarchical.jl")
 
 end
