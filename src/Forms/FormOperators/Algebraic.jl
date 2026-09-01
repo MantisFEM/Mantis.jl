@@ -20,7 +20,7 @@ Unary, algebraic transformation of an `AbstractRealValuedOperator`.
 - `transformation::T`: The transformation to apply to the operator.
 
 # Type parameters
-- `manifold_dim`: See [AbstractRealValuedOperator](@ref) for the details.
+- `manifold_dim`: See [`AbstractRealValuedOperator`](@ref) for the details.
 - `O <: AbstractRealValuedOperator{manifold_dim}`: Type of the original real-valued
   operator.
 - `T <: Function`: Function defining the algebraic transformation.
@@ -65,7 +65,7 @@ Binary, algebraic transformation acting on two real-valued operators.
 - `transformation::T`: The transformation to apply to the operators.
 
 # Type parameters
-- `manifold_dim`: See [AbstractRealValuedOperator](@ref) for the details.
+- `manifold_dim`: See [`AbstractRealValuedOperator`](@ref) for the details.
 - `O1 <: AbstractRealValuedOperator{manifold_dim}`: The type of the first operator.
 - `O2 <: AbstractRealValuedOperator{manifold_dim}`: The type of the second operator.
 - `T <: Function`: The type of the algebraic transformation.
@@ -133,7 +133,7 @@ Unary, algebraic transformation of a differential form expression.
 - `label::L`: The label to associate with the resulting transformed form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `F <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the original
     form expression .
 - `T <: Function`: The type of the algebraic transformation.
@@ -213,7 +213,7 @@ true
 - `label::L`: The label to associate to the resulting differential form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the first
     form expression.
 - `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the second

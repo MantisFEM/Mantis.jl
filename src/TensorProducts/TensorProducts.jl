@@ -1,12 +1,12 @@
 """
     module TensorProducts
 
-Utilities for constructing and working with tensor products of sets.
+Utilities for constructing and working with tensor-products of sets.
 
-A `TensorProduct` represents the Cartesian product of multiple factor sets, providing
-efficient conversion between linear indices and Cartesian indices of the product space. The
-module assumes that each factor set implements `get_num_objects`, which returns the number of
-objects contained in that set.
+A `TensorProduct` represents the tensor-product of multiple, lower-dimensional factor sets,
+providing efficient conversion between linear indices and Cartesian indices of the product
+space. This module provides the shared infrastructure for this pattern: a generic interface
+for creating and indexing tensor-products of arbitrary sets.
 """
 module TensorProducts
 

@@ -41,7 +41,7 @@ true
 - `label::L`: The hodge star label. This is a concatenation of "★" with the label of `form`.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `F <: Forms.AbstractForm{manifold_dim, manifold_dim-form_rank, expression_rank}`: The
     type of `form`.
 - `L <: AbstractString`: The type of the label. Since a "★" is added to the label, this

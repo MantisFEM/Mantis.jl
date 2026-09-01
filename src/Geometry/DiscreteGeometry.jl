@@ -13,7 +13,7 @@ manifold dimension.
 # Fields
 - `evaluable_function::F`: Function that, given an `element_id` and local coordinates `xi`,
     returns values and derivatives in the same nested format as a finite element space
-    (see [FunctionSpaces](@ref)). In particular, the output structure must be compatible
+    (see [`FunctionSpaces`](@ref)). In particular, the output structure must be compatible
     with `FunctionSpaces.AbstractFESpace` so that geometry evaluations and Jacobians can be
     computed element-wise.
 - `num_elements::Int`: Total number of elements in the discrete geometry.

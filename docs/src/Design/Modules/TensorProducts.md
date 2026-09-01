@@ -4,11 +4,6 @@ CurrentModule = Mantis
 
 # [TensorProducts](@id DocTensorProductsModule)
 
-Many objects in Mantis — geometries, function spaces, evaluation points — are constructed by
-combining lower-dimensional components along independent coordinate directions. The
-`TensorProducts` module provides the shared infrastructure for this pattern: a generic
-interface for creating and indexing Cartesian products of arbitrary sets.
-
 ```@docs
 TensorProducts
 ```
@@ -17,16 +12,16 @@ The module is intentionally minimal. Its only task is to take any tuple of facto
 pre-compute the bijection between a global linear index and the tuple of per-set indices,
 and provide utilities to traverse and map over the factors. Modules such as [Geometry](@ref)
 and [FunctionSpaces](@ref) implement a small interface and delegate all index bookkeeping to
-[TensorProducts](@ref), keeping the tensor-product logic in one place rather than scattered
+[`TensorProducts`](@ref), keeping the tensor-product logic in one place rather than scattered
 across the codebase.
 
 ```@meta
 CurrentModule = Mantis.TensorProducts
 ```
 
-## [The [TensorProduct](@ref) Type](@id TensorProductsType)
+## [The [`TensorProduct`](@ref) Type](@id TensorProductsType)
 
-The central type in this module is [TensorProduct](@ref).
+The central type in this module is [`TensorProduct`](@ref).
 
 ```@docs
 TensorProduct
@@ -40,11 +35,11 @@ For convenience, the module exports the symbolic operator `⊗`:
 
 Two or more sets can also be freely composed. These compositions are automatically
 flattened: `(A ⊗ B) ⊗ C` and `A ⊗ (B ⊗ C)` are both equivalent to `A ⊗ B ⊗ C`, producing a
-single [TensorProduct](@ref) with three factors rather than a nested pair.
+single [`TensorProduct`](@ref) with three factors rather than a nested pair.
 
 ## [The `get_num_objects` requirement](@id TensorProductsRequirement)
 
-For a set to be used in a [TensorProduct](@ref), it must implement one function:
+For a set to be used in a [`TensorProduct`](@ref), it must implement one function:
 
 ```@docs
 get_num_objects
@@ -52,13 +47,13 @@ get_num_objects
 
 This is the only requirement imposed by the module. Standard Julia containers (`Tuple` and
 `AbstractArray`) satisfy it out of the box using `length`. Custom types — such as
-[Mantis.Geometry.AbstractGeometry](@ref) or [Mantis.FunctionSpaces.AbstractFESpace](@ref) —
+[`Mantis.Geometry.AbstractGeometry`](@ref) or [`Mantis.FunctionSpaces.AbstractFESpace`](@ref) —
 implement this function to expose their element or basis count, respectively. This keeps the
 `TensorProducts` module free of any dependency on the rest of Mantis.
 
 ## [Index Bookkeeping](@id TensorProductsIndexing)
 
-The central service provided by a [TensorProduct](@ref) is the efficient bidirectional mapping
+The central service provided by a [`TensorProduct`](@ref) is the efficient bidirectional mapping
 between a single linear index and a tuple of per-factor indices. This mapping is
 pre-computed once at construction time and stored internally. `Mantis` has a few helpers for
 this purpose:
@@ -97,15 +92,15 @@ Base.map(f, tp::TensorProduct, args...)
 ## [Usage in Other Modules](@id TensorProductsUsage)
 
 `TensorProducts` is used by several modules in Mantis. The two most prominent use-cases are
-[Mantis.Geometry.TensorProductGeometry](@ref) and
-[Mantis.FunctionSpaces.TensorProductSpace](@ref).
+[`Mantis.Geometry.TensorProductGeometry`](@ref) and
+[`Mantis.FunctionSpaces.TensorProductSpace`](@ref).
 
 ### [Tensor-Product Geometry](@id TensorProductsGeometry)
 
-In [Geometry](@ref), a [Mantis.Geometry.TensorProductGeometry](@ref) is formed by assembling
+In [Geometry](@ref), a [`Mantis.Geometry.TensorProductGeometry`](@ref) is formed by assembling
 lower-dimensional geometries along independent coordinate directions. The interface with
-[TensorProducts](@ref) is valid since [Mantis.Geometry.AbstractGeometry](@ref) implements
-[get\_num\_objects](@ref) as an alias of [Mantis.Geometry.get\_num\_elements](@ref). As a
+[`TensorProducts`](@ref) is valid since [`Mantis.Geometry.AbstractGeometry`](@ref) implements
+[`get_num_objects`](@ref) as an alias of [`Mantis.Geometry.get_num_elements`](@ref). As a
 result, a global element ID in the product geometry can be decomposed into per-factor element
 IDs, and geometry evaluation, Jacobian computation, and Hessian computation all reduce to
 per-factor operations with no special-casing.
@@ -123,10 +118,10 @@ Geometry.get_factor_num_elements(geo)
 
 ### [Tensor-Product Function Spaces](@id TensorProductsSpaces)
 
-In [FunctionSpaces](@ref), a [Mantis.FunctionSpaces.TensorProductSpace](@ref) assembles a
+In [FunctionSpaces](@ref), a [`Mantis.FunctionSpaces.TensorProductSpace`](@ref) assembles a
 multi-dimensional finite element space from lower-dimensional ones. Here the
 `TensorProducts` interface uses the number of basis functions, aliasing
-[get\_num\_objects](@ref) with [Mantis.FunctionSpaces.get\_num\_basis](@ref). As such, a
+[`get_num_objects`](@ref) with [`Mantis.FunctionSpaces.get_num_basis`](@ref). As such, a
 global basis ID decomposes into per-factor basis IDs. 
 
 The local basis functions on a product element are assembled via Kronecker products of the

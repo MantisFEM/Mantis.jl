@@ -39,14 +39,14 @@ You can create two main types of `Forms`: [FormSpaces](@ref FormsSpaces) and [Fo
 
 ### [FormSpaces](@id FormsSpaces)
 A `FormSpace` allows you to distinguish between functions and forms. 
-A `FormSpace` is build on top of a [FunctionSpaces.AbstractFESpace](@ref), which acts as its basis.
+A `FormSpace` is build on top of a [`FunctionSpaces.AbstractFESpace`](@ref), which acts as its basis.
 However, it is the `FormSpace` that dictates the behaviour of the form.
 ```@docs
 FormSpace
 ```
 As explained on the [differential form theory page](@ref TheoryForms), differential forms are more expressive than functions.
 By using a `FormSpace`, this expressiveness becomes available within your code.
-For example, if we start by creating a simple 2D [FunctionSpaces.BSplineSpace](@ref) using the helper [FunctionSpaces.create\_bspline\_space](@ref) (on a unit square with ``4 \times 4`` elements, degree ``3`` and regularity ``2``),
+For example, if we start by creating a simple 2D [`FunctionSpaces.BSplineSpace`](@ref) using the helper [`FunctionSpaces.create_bspline_space`](@ref) (on a unit square with ``4 \times 4`` elements, degree ``3`` and regularity ``2``),
 ```@repl CreatingFormSpaces
 using Mantis
 B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (4, 4), (3, 3), (2, 2))
@@ -171,19 +171,19 @@ The sharp operator takes a ``1``-form and returns the proxy vector field.
 Sharp
 ♯
 ```
-The sharp operator also has its own evaluate function, which, like the [evaluate](@ref) on forms, evaluates in the canonical domain.
+The sharp operator also has its own evaluate function, which, like the [`evaluate`](@ref) on forms, evaluates in the canonical domain.
 ```@docs
 evaluate(::Sharp{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_dim}) where {manifold_dim}
 ```
 
 ### [Pushforward](@id FormsPushforward)
-As explained above, the [Sharp](@ref) turns a ``1``-form into a vector field, but its evaluate still returns values in the canonical domain. 
+As explained above, the [`Sharp`](@ref) turns a ``1``-form into a vector field, but its evaluate still returns values in the canonical domain. 
 To get values in the physical domain, the vector has to be pushforwarded. 
 Note that this is not a structure in `Mantis`, just a function.
 ```@docs
 evaluate_pushforward
 ```
-Because the [Sharp](@ref) and pushforward are often used in combination, there is a convenience function to call both operators directly.
+Because the [`Sharp`](@ref) and pushforward are often used in combination, there is a convenience function to call both operators directly.
 ```@docs
 evaluate_sharp_pushforward
 ```
@@ -205,7 +205,7 @@ The integral has its own evaluate function, which only takes the integral and an
 evaluate(::Integral{manifold_dim, F, Q}, ::Int) where {manifold_dim, form_rank, expression_rank, F <: AbstractForm{manifold_dim, form_rank, expression_rank}, Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim}}
 ```
 
-You can retrieve the underlying quadrature rule and the underlying number of evaluation elements (see the docs page of [Quadrature](@ref) for this terminology) with the following functions.
+You can retrieve the underlying quadrature rule and the underlying number of evaluation elements (see the docs page of [`Quadrature`](@ref) for this terminology) with the following functions.
 ```@docs
 get_quadrature_rule
 get_num_evaluation_elements
@@ -245,7 +245,7 @@ It is also possible to immediately obtain the number of elements in the underlyi
 get_num_elements
 ```
 
-Most forms also have an underlying [FunctionSpaces.AbstractFESpace](@ref).
+Most forms also have an underlying [`FunctionSpaces.AbstractFESpace`](@ref).
 To obtain this function space, use the following getter.
 ```@docs
 get_fe_space

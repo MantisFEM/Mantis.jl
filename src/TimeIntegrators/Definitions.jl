@@ -322,7 +322,7 @@ Explicit time integration scheme.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
-- `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
+- `num_stages`, `num_steps`: See [`AbstractTimeIntegrator`](@ref) for the details.
 - `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
@@ -376,7 +376,7 @@ Diagonally implicit time integration scheme.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
-- `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
+- `num_stages`, `num_steps`: See [`AbstractTimeIntegrator`](@ref) for the details.
 - `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
@@ -430,7 +430,7 @@ Implicit time integration scheme
 - `order::Int`: Order of the scheme.
 
 # Type parameters
-- `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
+- `num_stages`, `num_steps`: See [`AbstractTimeIntegrator`](@ref) for the details.
 - `NT`: Element type of the `A`, `B`, `U`, `V` matrices, and `C` vector.
 - `AA`, `AE`, `EE`: Number of entries in `A`, (`B` and `U`), and `V`, respectively.
 """
@@ -474,7 +474,7 @@ which are diagonally implicit.
 - `order::Int`: Order of the scheme.
 
 # Type parameters
-- `num_stages`, `num_steps`: See [AbstractTimeIntegrator](@ref) for the details.
+- `num_stages`, `num_steps`: See [`AbstractTimeIntegrator`](@ref) for the details.
 - `NT`: Element type of the `A_IM`, `A_EX`, `B_IM` `B_EX`, `U`, and `V` matrices, and
     `C_IM`, and `C_EX` vectors.
 - `AA`, `AE`, `EE`: Number of entries in (`A_IM` and `A_EX`), (`B_IM`, `B_EX` and `U`),

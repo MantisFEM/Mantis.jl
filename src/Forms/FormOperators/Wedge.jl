@@ -39,7 +39,7 @@ true
 - `label::L`: A label for the wedge.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `F1 <: Forms.AbstractForm`: The type of `form_1`.
 - `F2 <: Forms.AbstractForm`: The type of `form_2`.
 - `L <: AbstractString`: The type of the label. Since a "∧" is added to the label, this

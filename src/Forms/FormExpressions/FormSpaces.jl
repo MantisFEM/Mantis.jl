@@ -7,7 +7,7 @@
 
 Differential forms with a basis.
 
-A `FormSpace` relies on a [FunctionSpaces.AbstractFESpace](@ref) to represent a
+A `FormSpace` relies on a [`FunctionSpaces.AbstractFESpace`](@ref) to represent a
 differential form with the function space as basis. While the function space provides a
 basis, the `form_rank` of the `FormSpace` will dictate the behaviour of the form (i.e. is
 it a ``0``-form, ``1``-form, etc.) and thus its properties.
@@ -27,7 +27,7 @@ julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
 ```
 
 # Fields
-- `fem_space::F`: The finite element space [FunctionSpaces.AbstractFESpace](@ref) used as
+- `fem_space::F`: The finite element space [`FunctionSpaces.AbstractFESpace`](@ref) used as
     basis for this form. From this space, the `manifold_dim` and geometry are inherited.
     Additionally, the `num_components` of the function space must be consistent with the
     provided `form_rank` and the `manifold_dim`, i.e., a real-valued ``0``-form has 1
@@ -36,8 +36,8 @@ julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
     plotting functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
-- `F`: Type of the finite element space (a [FunctionSpaces.AbstractFESpace](@ref)).
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
+- `F`: Type of the finite element space (a [`FunctionSpaces.AbstractFESpace`](@ref)).
 - `L`: Type of the label (an `AbstractString`).
 """
 struct FormSpace{manifold_dim, form_rank, F, L} <:

@@ -163,7 +163,7 @@ See [Gerritsma2011](@cite) for more details.
 - `nodes::NT`: Nodes between which the polynomial should be histapolating. The length of
     the `nodes` vector dictates the degree.
 - `lagrange_polynomial::Lagrange{NT, T}`: The underlying Lagrange polynomial. See
-    [Lagrange](@ref) for the details.
+    [`Lagrange`](@ref) for the details.
 """
 struct Edge{NT, T} <: AbstractEdgePolynomials
     p::Int

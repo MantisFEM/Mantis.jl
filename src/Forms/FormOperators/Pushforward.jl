@@ -11,7 +11,7 @@ The pushforward is the action of the Jacobian of the field on the field itself.
 - `vfield::Vector{Matrix{Float64}}`: A pointwise evaluated vector field.
 - `jacobian::AbstractVector`: The Jacobian of the vector field evaluated at the same points
     as `vfield`. Each entry in the vector should contain the evaluated Jacobian at that
-    point. This is also the default output of [Geometry.jacobian](@ref).
+    point. This is also the default output of [`Geometry.jacobian`](@ref).
 - `manifold_dim::Int`: The dimension of the embedding manifold.
 
 # Returns
@@ -46,13 +46,13 @@ end
     ) where {manifold_dim}
 
 Compute the pushforward of the sharp of a differential 1-form. Note that the output vector-
-field is defined in physical coordinates. See [Sharp](@ref) and
-[evaluate_pushforward](@ref) for the details.
+field is defined in physical coordinates. See [`Sharp`](@ref) and
+[`evaluate_pushforward`](@ref) for the details.
 
 # Arguments
 - `form::AbstractForm{manifold_dim, 1, 0}`: An expression representing
     the 1-form on the manifold.
-- `element_id::Int`, `xi::Points.AbstractPoints{manifold_dim}`: See [evaluate](@ref).
+- `element_id::Int`, `xi::Points.AbstractPoints{manifold_dim}`: See [`evaluate`](@ref).
 
 # Returns
 - `evaluated_pushforward::Vector{Matrix{Float64}}`: Each component of the vector, stores the

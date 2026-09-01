@@ -198,7 +198,7 @@ end
 
 Returns the geometry of the given form expression.
 
-Will recurse using [get_form](@ref) to find the geometry.
+Will recurse using [`get_form`](@ref) to find the geometry.
 """
 function get_geometry(form::AbstractForm)
     return get_geometry(get_form(form))
@@ -357,9 +357,9 @@ Evaluate any form (expression) on the given `element_id` at the given points `xi
 
 # Arguments
 - `form::AbstractForm{manifold_dim}`: The differential form space.
-- `element_id::Int`: The global element id. See [Geometry](@ref) for the details.
+- `element_id::Int`: The global element id. See [`Geometry`](@ref) for the details.
 - `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
-    evaluate the form. See [Geometry](@ref) and [Points](@ref) for more details on the
+    evaluate the form. See [`Geometry`](@ref) and [`Points`](@ref) for more details on the
     canonical domain and point structure.
 
 # Returns
@@ -407,7 +407,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    throw(MethodError(evaluate, (form, element_id, xi)))
+    return throw(MethodError(evaluate, (form, element_id, xi)))
 end
 
 ############################################################################################

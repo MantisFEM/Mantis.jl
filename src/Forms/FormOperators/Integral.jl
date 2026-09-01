@@ -39,7 +39,7 @@ true
 ```
 
 The `Integral` is more commonly used to represent inner products in combination with the
-[Wedge](@ref) and [Hodge](@ref) operators:
+[`Wedge`](@ref) and [`Hodge`](@ref) operators:
 ```jldoctest
 julia> using Mantis
 

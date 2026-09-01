@@ -32,7 +32,7 @@ using Mantis
 # This is implemented as follows.
 #
 # !!! note "Make sure to overwrite the first argument (here called `output`)."
-#     As explained in the [TimeIntegrators.`TimeIntegrationOperators`](@ref) docstring,
+#     As explained in the [`TimeIntegrators.TimeIntegrationOperators`](@ref) docstring,
 #     the evaluate function for an explicit ODE should have three input arguments, and the
 #     first one must be overwritten. Not overwriting the first argument will lead to
 #     incorrect results.

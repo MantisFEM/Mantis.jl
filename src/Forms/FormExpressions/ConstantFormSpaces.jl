@@ -26,7 +26,7 @@ julia> Λ²ₕ = Forms.ConstantFormSpace(2, geometry, "2-form");  # 2-form const
 ```
 
 # Fields
-- `geometry::G`: The geometry [Geometry.AbstractGeometry](@ref) on which the
+- `geometry::G`: The geometry [`Geometry.AbstractGeometry`](@ref) on which the
     `ConstantFormSpace` should be created. The `manifold_dim` will be inherited from this
     geometry.
 - `label::L`: Label for the constant form space. This will be used in export and plotting
@@ -35,7 +35,7 @@ julia> Λ²ₕ = Forms.ConstantFormSpace(2, geometry, "2-form");  # 2-form const
 # Type parameters
 - `manifold_dim`: Dimension of the manifold.
 - `form_rank`: Rank of the differential form.
-- `G`: Type of the geometry (a [Geometry.AbstractGeometry](@ref)).
+- `G`: Type of the geometry (a [`Geometry.AbstractGeometry`](@ref)).
 - `L`: Type of the label (an `AbstractString`).
 """
 struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:

@@ -110,7 +110,7 @@ julia> α²ₕ = Forms.AnalyticalFormField(2, my_form_expression, geometry, "Ana
 - `label::AbstractString`: Label for the form field.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `G`: Type of the geometry.
 - `E`: Type of the expression.
 - `L`: Type of the label (an `AbstractString`).
@@ -223,10 +223,10 @@ Internal function to evaluate an analytical form field, by first pulling back th
 the canonical domain. The used pull-back is dictated by the `form_rank`.
 
 # Arguments
-- See [evaluate](@ref) for the details.
+- See [`evaluate`](@ref) for the details.
 
 # Returns
-- See [evaluate](@ref) for the details.
+- See [`evaluate`](@ref) for the details.
 """
 function _evaluate(
     form_field::AnalyticalFormField{manifold_dim, 0},

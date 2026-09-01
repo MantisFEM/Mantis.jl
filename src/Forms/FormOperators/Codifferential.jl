@@ -14,8 +14,8 @@ mapping ``k``-forms to ``k-1``-forms. On manifolds without boundaries, it is the
 ``(\\alpha^{k-1}, \\delta\\beta^k) = (d\\alpha^{k-1}, \\beta^k)``, where
 ``(\\cdot, \\cdot)`` is an ``L^2`` inner-product.
 
-The codifferential can (formally) be defined in terms of the [ExteriorDerivative](@ref) and
-[Hodge](@ref). We then have (with ``n`` the manifold dimension and ``k`` the form rank)
+The codifferential can (formally) be defined in terms of the [`ExteriorDerivative`](@ref) and
+[`Hodge`](@ref). We then have (with ``n`` the manifold dimension and ``k`` the form rank)
 ```math
 \\delta = (-1)^{n(k+1)+1} \\star d \\star\\;.
 ```
@@ -58,7 +58,7 @@ true
 - `label::L`: The codifferential label. Adds "δ" to the label of `form`.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [AbstractForm](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
 - `F <: Forms.AbstractForm{manifold_dim, form_rank+1, expression_rank}`: The type of `form`.
 - `L <: AbstractString`: The type of the label. Since a "δ" is added to the label, this
     type may differ from the label type of the underlying form.
