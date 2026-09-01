@@ -119,13 +119,14 @@ elements within a two-scale operator.
 - `::Matrix{Float64}`: The local subdivision matrix corresponding to the specified coarse
     and fine elements.
 """
-function get_local_subdiv_matrix(
+function view_scaling_matrix(
     operator::AbstractTwoScaleOperator, parent_element_id::Int, child_element_id::Int
 )
     child_basis_indices = get_basis_indices(get_child_space(operator), child_element_id)
     parent_basis_indices = get_basis_indices(get_parent_space(operator), parent_element_id)
+    gsm = get_global_subdiv_matrix(operator)
 
-    return get_global_subdiv_matrix(operator)[child_basis_indices, parent_basis_indices]
+    return view(gsm, child_basis_indices, parent_basis_indices)
 end
 
 function get_parent_child_relations(operator::AbstractTwoScaleOperator)

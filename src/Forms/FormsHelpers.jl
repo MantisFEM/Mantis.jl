@@ -513,8 +513,8 @@ See also [`FunctionSpaces.refine_space`](@ref).
 # Arguments
 - `complex::C`: The hierarchical B-spline de Rham complex.
 - `data`: The information used for refinement. Examples include domains denoting active
-    elements, of type [`Hierarchy.ActiveInfo`](@ref), or elements marked for refinement, of
-    type `Vector{Vector{Int}}`.
+    elements, of type [`Hierarchical.ActiveInfo`](@ref), or elements marked for refinement,
+    of type `Vector{Vector{Int}}`.
 
 # Returns
 - `new_complex<:NTuple{num_forms, AbstractFormSpace}`:A tuple with the `manifold_dim + 1`

@@ -10,7 +10,7 @@ using StaticArrays
 
 import ..Points
 import ..GeneralHelpers
-import ..Hierarchy
+using ..Hierarchical
 using ..TensorProducts
 
 """
@@ -635,10 +635,11 @@ include("TensorProductGeometry.jl")
 include("EvaluationMask/EvaluationMask.jl")
 include("MaskedGeometry.jl")
 include("UnstructuredGeometry.jl")
-include("HierarchicalGeometry.jl")
 include("Metric.jl")
 
 include("./GeometryConversions.jl")
+
+include("Hierarchical/Hierarchical.jl")
 
 # helper functions for convenience
 include("./GeometryHelpers.jl")
