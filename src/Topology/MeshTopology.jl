@@ -23,211 +23,211 @@ edges, faces, volumes), and the determination of topological neighbors. Supports
     patch connectivities (vertex indices).
 """
 
-struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches, patch_type} <:
-       AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, patch_type}
-    incidence_relations::NTuple{
-        incidence_relations_dim, NTuple{incidence_relations_dim, Vector{Vector{Int}}}
-    }  # incidence relations between the geometric objects
-    n_geometric_objects::Vector{Int} # number of geometric objects in each dimension
-    reference_patch::patch_type
+# struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches, patch_type} <:
+#        AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, patch_type}
+#     incidence_relations::NTuple{
+#         incidence_relations_dim, NTuple{incidence_relations_dim, Vector{Vector{Int}}}
+#     }  # incidence relations between the geometric objects
+#     n_geometric_objects::Vector{Int} # number of geometric objects in each dimension
+#     reference_patch::patch_type
 
-    function MeshTopology(patch_vertices::Vector{Vector{Int}}, patch::Elements.Line)
-        # Determine the manifold dimension from the type of the patches
-        # We consider only:
-        # - line segments: 1D patches
-        # - quadrilaterals: 2D patches
-        # - hexahedra: 3D patches
+#     function MeshTopology(patch_vertices::Vector{Vector{Int}}, patch::Elements.Line)
+#         # Determine the manifold dimension from the type of the patches
+#         # We consider only:
+#         # - line segments: 1D patches
+#         # - quadrilaterals: 2D patches
+#         # - hexahedra: 3D patches
 
-        # Number of vertices in the first patch (assumed to be the same for all)
-        # Defines the geometry of patches
-        # 2: line segments
-        # 4: quads
-        # 8: hexahedra
-        n_patch_vertices = length(patches[1])
+#         # Number of vertices in the first patch (assumed to be the same for all)
+#         # Defines the geometry of patches
+#         # 2: line segments
+#         # 4: quads
+#         # 8: hexahedra
+#         n_patch_vertices = length(patches[1])
 
-        # Get the number of geometric objects of each dimension [#vertices, #edges, #facets]
-        # The local incidence relations between
-        #    i) edges and vertices
-        #   ii) faces and vertices
-        manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex = get_local_incidence_relations(
-            n_patch_vertices
-        )
+#         # Get the number of geometric objects of each dimension [#vertices, #edges, #facets]
+#         # The local incidence relations between
+#         #    i) edges and vertices
+#         #   ii) faces and vertices
+#         manifold_dim, patch_type, n_local_geometric_objects, local_edge2vertex, local_face2vertex = get_local_incidence_relations(
+#             n_patch_vertices
+#         )
 
-        # Preallocate memory for the total number of geometric objects in each dimension
-        n_geometric_objects = Vector{Int}(undef, manifold_dim + 1)
+#         # Preallocate memory for the total number of geometric objects in each dimension
+#         n_geometric_objects = Vector{Int}(undef, manifold_dim + 1)
 
-        # Preallocate memory for incidence relations
-        incidence_relations_dim = manifold_dim + 1
-        incidence_relations = ntuple(
-            _ -> ntuple(_ -> Vector{Vector{Int}}(), incidence_relations_dim),
-            incidence_relations_dim,
-        )
+#         # Preallocate memory for incidence relations
+#         incidence_relations_dim = manifold_dim + 1
+#         incidence_relations = ntuple(
+#             _ -> ntuple(_ -> Vector{Vector{Int}}(), incidence_relations_dim),
+#             incidence_relations_dim,
+#         )
 
-        # The geometric objects present depend on the manifold dimension
-        #   1D: vertices, lines [patches]
-        #   2D: vertices, lines [facets], surfaces [patches]
-        #   3D: vertices, lines [edges], surfaces [facets], volumes [patches]
-        #
-        # The steps to get all incidence relations are:
-        # 1. Compute incidence relation between patches and vertices, i.e, (manifold_dim + 1, 1)
-        # 2. Compute incidence relation between patches and facets, i.e, (manifold_dim + 1, manifold_dim)
-        #    - In 1D this is not needed, so we skip it.
-        #    - In 2D this is the incidence relation between patches and edges, i.e, (3, 2)
-        #    - In 3D this is the incidence relation between patches and faces, i.e, (4, 3)
-        # 3. Compute incidence relation between edges and vertices, i.e, (manifold_dim - 1, 1) (only in 3D)
-        # 4. Compute incidence relation between patches and edges, i.e, (manifold_dim + 1, manifold_dim - 1) (only in 3D)
-        # 5. Compute incidence relation between edges and patches, i.e, (manifold_dim - 1, manifold_dim + 1) (only in 3D)
-        # 6. Compute incidence relation between facets and edges, i.e, (manifold_dim, manifold_dim - 1) (only in 3D)
-        # 7. Compute incidence relation between edges and facets, i.e, (manifold_dim - 1, manifold_dim) (only in 3D)
+#         # The geometric objects present depend on the manifold dimension
+#         #   1D: vertices, lines [patches]
+#         #   2D: vertices, lines [facets], surfaces [patches]
+#         #   3D: vertices, lines [edges], surfaces [facets], volumes [patches]
+#         #
+#         # The steps to get all incidence relations are:
+#         # 1. Compute incidence relation between patches and vertices, i.e, (manifold_dim + 1, 1)
+#         # 2. Compute incidence relation between patches and facets, i.e, (manifold_dim + 1, manifold_dim)
+#         #    - In 1D this is not needed, so we skip it.
+#         #    - In 2D this is the incidence relation between patches and edges, i.e, (3, 2)
+#         #    - In 3D this is the incidence relation between patches and faces, i.e, (4, 3)
+#         # 3. Compute incidence relation between edges and vertices, i.e, (manifold_dim - 1, 1) (only in 3D)
+#         # 4. Compute incidence relation between patches and edges, i.e, (manifold_dim + 1, manifold_dim - 1) (only in 3D)
+#         # 5. Compute incidence relation between edges and patches, i.e, (manifold_dim - 1, manifold_dim + 1) (only in 3D)
+#         # 6. Compute incidence relation between facets and edges, i.e, (manifold_dim, manifold_dim - 1) (only in 3D)
+#         # 7. Compute incidence relation between edges and facets, i.e, (manifold_dim - 1, manifold_dim) (only in 3D)
 
-        # Find the number of vertices by checking the maximum vertex id present in the definition of patches
-        n_vertices = reduce(
-            max, (vertex_id for patch in patches for vertex_id in patch); init=0
-        )
-        n_geometric_objects[1] = n_vertices  # number of vertices
+#         # Find the number of vertices by checking the maximum vertex id present in the definition of patches
+#         n_vertices = reduce(
+#             max, (vertex_id for patch in patches for vertex_id in patch); init=0
+#         )
+#         n_geometric_objects[1] = n_vertices  # number of vertices
 
-        # Find the number of patches
-        n_patches = length(patches)
-        n_geometric_objects[manifold_dim + 1] = n_patches  # number of patches
+#         # Find the number of patches
+#         n_patches = length(patches)
+#         n_geometric_objects[manifold_dim + 1] = n_patches  # number of patches
 
-        # We need to start by initializing the incidence relation between n_manifold_dim geometrical objects
-        # (patches) and the vertices. This is just the definition of patches that is given as input by the user.
-        # We need to pass this into MeshCore to generate the incidence relation in the proper data structure so
-        # that we can extract the other incidence relations from it.
-        vertex_collection = MeshCore.ShapeColl(MeshCore.P1, n_vertices)  # generate the collection of vertices (this is just logical)
-        patch_collection = MeshCore.ShapeColl(patch_type, n_patches)  # generate the collection of patches (this is just logical)
-        patch2vertex = MeshCore.IncRel(patch_collection, vertex_collection, patches)  # the incidence relation between patches and vertices
-        for patch_id in 1:n_patches
-            push!(
-                incidence_relations[manifold_dim + 1][1], collect(patch2vertex._v[patch_id])
-            )
-        end
+#         # We need to start by initializing the incidence relation between n_manifold_dim geometrical objects
+#         # (patches) and the vertices. This is just the definition of patches that is given as input by the user.
+#         # We need to pass this into MeshCore to generate the incidence relation in the proper data structure so
+#         # that we can extract the other incidence relations from it.
+#         vertex_collection = MeshCore.ShapeColl(MeshCore.P1, n_vertices)  # generate the collection of vertices (this is just logical)
+#         patch_collection = MeshCore.ShapeColl(patch_type, n_patches)  # generate the collection of patches (this is just logical)
+#         patch2vertex = MeshCore.IncRel(patch_collection, vertex_collection, patches)  # the incidence relation between patches and vertices
+#         for patch_id in 1:n_patches
+#             push!(
+#                 incidence_relations[manifold_dim + 1][1], collect(patch2vertex._v[patch_id])
+#             )
+#         end
 
-        # Now we can compute the incidence relations between the vertices and the patches (1, manifold_dim + 1)
-        vertex2patch = MeshCore.ir_transpose(patch2vertex)  # (1, manifold_dim + 1)
-        for vertex_id in 1:n_vertices
-            push!(
-                incidence_relations[1][manifold_dim + 1],
-                collect(vertex2patch._v[vertex_id]),
-            )
-        end
+#         # Now we can compute the incidence relations between the vertices and the patches (1, manifold_dim + 1)
+#         vertex2patch = MeshCore.ir_transpose(patch2vertex)  # (1, manifold_dim + 1)
+#         for vertex_id in 1:n_vertices
+#             push!(
+#                 incidence_relations[1][manifold_dim + 1],
+#                 collect(vertex2patch._v[vertex_id]),
+#             )
+#         end
 
-        if manifold_dim > 1
-            # Compute the face incidence relations
-            # First face to vertex (manifold_dim, 1)
-            face2vertex = MeshCore.ir_skeleton(patch2vertex)  # (manifold_dim, 1)
-            n_faces = MeshCore.nrelations(face2vertex)  # number of faces
-            n_geometric_objects[manifold_dim] = n_faces  # number of faces
+#         if manifold_dim > 1
+#             # Compute the face incidence relations
+#             # First face to vertex (manifold_dim, 1)
+#             face2vertex = MeshCore.ir_skeleton(patch2vertex)  # (manifold_dim, 1)
+#             n_faces = MeshCore.nrelations(face2vertex)  # number of faces
+#             n_geometric_objects[manifold_dim] = n_faces  # number of faces
 
-            for face_id in 1:n_faces
-                push!(
-                    incidence_relations[manifold_dim][1], collect(face2vertex._v[face_id])
-                )
-            end
+#             for face_id in 1:n_faces
+#                 push!(
+#                     incidence_relations[manifold_dim][1], collect(face2vertex._v[face_id])
+#                 )
+#             end
 
-            # Together with the vertex2face incidence relation (1, manifold_dim)
-            vertex2face = MeshCore.ir_transpose(face2vertex)  # (1, manifold_dim)
-            for vertex_id in 1:n_vertices
-                push!(
-                    incidence_relations[1][manifold_dim], collect(vertex2face._v[vertex_id])
-                )
-            end
+#             # Together with the vertex2face incidence relation (1, manifold_dim)
+#             vertex2face = MeshCore.ir_transpose(face2vertex)  # (1, manifold_dim)
+#             for vertex_id in 1:n_vertices
+#                 push!(
+#                     incidence_relations[1][manifold_dim], collect(vertex2face._v[vertex_id])
+#                 )
+#             end
 
-            # Second the patch to face (manifold_dim + 1, manifold)
-            patch2face = MeshCore.ir_bbyfacets(patch2vertex, face2vertex)  # (manifold_dim + 1, manifold)
-            for patch_id in 1:n_patches
-                push!(
-                    incidence_relations[manifold_dim + 1][manifold_dim],
-                    collect(patch2face._v[patch_id]),
-                )
-                if manifold_dim > 2
-                    # Meshcore uses a different definition for the internal faces
-                    # Due to this difference, internal faces 1, 4, and 5 need to flip their orientation
-                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][1] *= -1
-                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][4] *= -1
-                    incidence_relations[manifold_dim + 1][manifold_dim][patch_id][5] *= -1
-                end
-            end
+#             # Second the patch to face (manifold_dim + 1, manifold)
+#             patch2face = MeshCore.ir_bbyfacets(patch2vertex, face2vertex)  # (manifold_dim + 1, manifold)
+#             for patch_id in 1:n_patches
+#                 push!(
+#                     incidence_relations[manifold_dim + 1][manifold_dim],
+#                     collect(patch2face._v[patch_id]),
+#                 )
+#                 if manifold_dim > 2
+#                     # Meshcore uses a different definition for the internal faces
+#                     # Due to this difference, internal faces 1, 4, and 5 need to flip their orientation
+#                     incidence_relations[manifold_dim + 1][manifold_dim][patch_id][1] *= -1
+#                     incidence_relations[manifold_dim + 1][manifold_dim][patch_id][4] *= -1
+#                     incidence_relations[manifold_dim + 1][manifold_dim][patch_id][5] *= -1
+#                 end
+#             end
 
-            # Third the face to patch (manifold_dim, manifold + 1)
-            face2patch = MeshCore.ir_transpose(patch2face)  # (manifold_dim, manifold + 1)
-            for face_id in 1:n_faces
-                push!(
-                    incidence_relations[manifold_dim][manifold_dim + 1],
-                    collect(face2patch._v[face_id]),
-                )
-            end
+#             # Third the face to patch (manifold_dim, manifold + 1)
+#             face2patch = MeshCore.ir_transpose(patch2face)  # (manifold_dim, manifold + 1)
+#             for face_id in 1:n_faces
+#                 push!(
+#                     incidence_relations[manifold_dim][manifold_dim + 1],
+#                     collect(face2patch._v[face_id]),
+#                 )
+#             end
 
-            if manifold_dim > 2
-                # Compute the edge incidence relations
-                # First edge to vertex (manifold_dim - 1, 1)
-                edge2vertex = MeshCore.ir_skeleton(face2vertex)  # (manifold_dim, 1)  --ir_skeleton--> (manifold_dim - 1, 1)
-                n_edges = MeshCore.nrelations(edge2vertex)  # number of edges
-                n_geometric_objects[manifold_dim - 1] = n_edges  # number of edges
+#             if manifold_dim > 2
+#                 # Compute the edge incidence relations
+#                 # First edge to vertex (manifold_dim - 1, 1)
+#                 edge2vertex = MeshCore.ir_skeleton(face2vertex)  # (manifold_dim, 1)  --ir_skeleton--> (manifold_dim - 1, 1)
+#                 n_edges = MeshCore.nrelations(edge2vertex)  # number of edges
+#                 n_geometric_objects[manifold_dim - 1] = n_edges  # number of edges
 
-                for edge_id in 1:n_edges
-                    push!(
-                        incidence_relations[manifold_dim - 1][1],
-                        collect(edge2vertex._v[edge_id]),
-                    )
-                end
+#                 for edge_id in 1:n_edges
+#                     push!(
+#                         incidence_relations[manifold_dim - 1][1],
+#                         collect(edge2vertex._v[edge_id]),
+#                     )
+#                 end
 
-                # Together with the vertex2edge incidence relation (1, manifold_dim - 1)
-                vertex2edge = MeshCore.ir_transpose(edge2vertex)  # (1, manifold_dim - 1)
-                for vertex_id in 1:n_vertices
-                    push!(
-                        incidence_relations[1][manifold_dim - 1],
-                        collect(vertex2edge._v[vertex_id]),
-                    )
-                end
+#                 # Together with the vertex2edge incidence relation (1, manifold_dim - 1)
+#                 vertex2edge = MeshCore.ir_transpose(edge2vertex)  # (1, manifold_dim - 1)
+#                 for vertex_id in 1:n_vertices
+#                     push!(
+#                         incidence_relations[1][manifold_dim - 1],
+#                         collect(vertex2edge._v[vertex_id]),
+#                     )
+#                 end
 
-                # Second the patch to edge (manifold_dim + 1, manifold_dim - 1)
-                patch2edge = MeshCore.ir_bbyridges(patch2vertex, edge2vertex)  # (manifold_dim + 1, 1), (manifold_dim - 1, 1) --ir_bbydridges--> (manifold_dim + 1, manifold_dim - 1): (4, 1) + (2, 1) --ir_bbyridges--> (4, 2)
-                for patch_id in 1:n_patches
-                    push!(
-                        incidence_relations[manifold_dim + 1][manifold_dim - 1],
-                        collect(patch2edge._v[patch_id]),
-                    )
-                end
+#                 # Second the patch to edge (manifold_dim + 1, manifold_dim - 1)
+#                 patch2edge = MeshCore.ir_bbyridges(patch2vertex, edge2vertex)  # (manifold_dim + 1, 1), (manifold_dim - 1, 1) --ir_bbydridges--> (manifold_dim + 1, manifold_dim - 1): (4, 1) + (2, 1) --ir_bbyridges--> (4, 2)
+#                 for patch_id in 1:n_patches
+#                     push!(
+#                         incidence_relations[manifold_dim + 1][manifold_dim - 1],
+#                         collect(patch2edge._v[patch_id]),
+#                     )
+#                 end
 
-                # Third the edge to patch (manifold_dim - 1, manifold_dim + 1)
-                edge2patch = MeshCore.ir_transpose(patch2edge)  # (manifold_dim + 1, manifold_dim - 1) --ir_transpose--> (manifold_dim - 1, manifold_dim + 1)
-                for edge_id in 1:n_edges
-                    push!(
-                        incidence_relations[manifold_dim - 1][manifold_dim + 1],
-                        collect(edge2patch._v[edge_id]),
-                    )
-                end
+#                 # Third the edge to patch (manifold_dim - 1, manifold_dim + 1)
+#                 edge2patch = MeshCore.ir_transpose(patch2edge)  # (manifold_dim + 1, manifold_dim - 1) --ir_transpose--> (manifold_dim - 1, manifold_dim + 1)
+#                 for edge_id in 1:n_edges
+#                     push!(
+#                         incidence_relations[manifold_dim - 1][manifold_dim + 1],
+#                         collect(edge2patch._v[edge_id]),
+#                     )
+#                 end
 
-                # Fourth the face to edge (manifold_dim, manifold_dim - 1)
-                face2edge = MeshCore.ir_bbyfacets(face2vertex, edge2vertex)  # (manifold_dim, 1), (manifold_dim - 1, 1) --ir_bbyridges--> (manifold_dim, manifold_dim - 1)
-                for face_id in 1:n_faces
-                    push!(
-                        incidence_relations[manifold_dim][manifold_dim - 1],
-                        collect(face2edge._v[face_id]),
-                    )
-                end
+#                 # Fourth the face to edge (manifold_dim, manifold_dim - 1)
+#                 face2edge = MeshCore.ir_bbyfacets(face2vertex, edge2vertex)  # (manifold_dim, 1), (manifold_dim - 1, 1) --ir_bbyridges--> (manifold_dim, manifold_dim - 1)
+#                 for face_id in 1:n_faces
+#                     push!(
+#                         incidence_relations[manifold_dim][manifold_dim - 1],
+#                         collect(face2edge._v[face_id]),
+#                     )
+#                 end
 
-                # Fifth the edge to face (manifold_dim - 1, manifold_dim)
-                edge2face = MeshCore.ir_transpose(face2edge)  # (manifold_dim, manifold_dim - 1) --ir_transpose--> (manifold_dim - 1, manifold_dim)
-                for edge_id in 1:n_edges
-                    push!(
-                        incidence_relations[manifold_dim - 1][manifold_dim],
-                        collect(edge2face._v[edge_id]),
-                    )
-                end
-            end
-        end
+#                 # Fifth the edge to face (manifold_dim - 1, manifold_dim)
+#                 edge2face = MeshCore.ir_transpose(face2edge)  # (manifold_dim, manifold_dim - 1) --ir_transpose--> (manifold_dim - 1, manifold_dim)
+#                 for edge_id in 1:n_edges
+#                     push!(
+#                         incidence_relations[manifold_dim - 1][manifold_dim],
+#                         collect(edge2face._v[edge_id]),
+#                     )
+#                 end
+#             end
+#         end
 
-        return new{manifold_dim, incidence_relations_dim, n_patches}(
-            incidence_relations,
-            n_geometric_objects,
-            n_local_geometric_objects,
-            local_edge2vertex,
-            local_face2vertex,
-        )
-    end
-end
+#         return new{manifold_dim, incidence_relations_dim, n_patches}(
+#             incidence_relations,
+#             n_geometric_objects,
+#             n_local_geometric_objects,
+#             local_edge2vertex,
+#             local_face2vertex,
+#         )
+#     end
+# end
 
 # ====================================================
 
