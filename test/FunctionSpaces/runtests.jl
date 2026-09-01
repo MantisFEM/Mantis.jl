@@ -14,4 +14,8 @@ end
     include("AdaptiveRefinement/runtests.jl")
 end
 
+@testset verbose = true "Hierarchical" begin
+    include("Hierarchical/runtests.jl")
+end
+
 end

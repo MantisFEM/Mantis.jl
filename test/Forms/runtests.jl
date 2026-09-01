@@ -13,5 +13,8 @@ end
 @testset "ConstantFormSpaces" verbose = true begin
     include("ConstantFormSpaceTests.jl")
 end
+@testset "FormsHelpers" verbose = true begin
+    include("FormsHelpersTests.jl")
+end
 
 end
