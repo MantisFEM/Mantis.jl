@@ -14,7 +14,7 @@ import ToeplitzMatrices
 using ..Geometry
 using ..Points
 using ..GeneralHelpers
-using ..Hierarchy
+using ..Hierarchical
 using ..TensorProducts
 
 """
@@ -78,7 +78,9 @@ end
 TensorProducts.get_num_objects(space::AbstractFESpace) = get_num_basis(space)
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
-include("AdaptiveRefinement/AdaptiveRefinement.jl")
+#include("AdaptiveRefinement/AdaptiveRefinement.jl")
+
+include("Hierarchical/Hierarchical.jl")
 
 # helper functions for convenience
 include("./FunctionSpaceHelpers.jl")

@@ -83,26 +83,44 @@ function _build_polar_extraction_and_dof_partition(
         extraction_coefficients, basis_indices, num_elements, space_dim
     )
 
-    # TODO: the following only uses the partitioning of the first component tp_space, this
-    # is wrong for multicomponent spaces
+    # construct dof partitioning for the polar spline space
     dof_partition = Vector{Vector{Vector{Int}}}(undef, 1)
     # dof partitioning for the tensor product space
-    dof_partition_tp = get_dof_partition(tp_space[1])
-    n_partn = length(dof_partition_tp[1])
-    dof_partition[1] = Vector{Vector{Int}}(undef, n_partn)
-    if two_poles
-        for i in 1:n_partn
-            dof_partition[1][i] = []
+    dof_partition_tp = ntuple(
+        component_id -> get_dof_partition(tp_space[component_id]), num_components
+    )
+    num_partition_tp = ntuple(
+        component_id -> length(dof_partition_tp[component_id][1]), num_components
+    )
+    for i in 1:num_components
+        if num_partition_tp[i] != 9
+            throw(
+                ArgumentError(
+                    "All dof partitions must have 9 pieces for two-dimensional tensor product spaces; got $(num_partition_tp[i]) for component $i instead.",
+                ),
+            )
         end
-    else
-        for i in 1:n_partn
-            if length(dof_partition_tp[1][i]) == 0
-                dof_partition[1][i] = []
-            else
-                # TODO!!
-                dof_partition[1][i] = []
-            end
-        end
+    end
+
+    dof_partition[1] = Vector{Vector{Int}}(undef, num_partition_tp[1])
+    for i in 1:num_partition_tp[1]
+        dof_partition[1][i] = []
+    end
+
+    if !two_poles
+        # get dofs on the top boundary of patch for each component
+        component_boundary_dofs = ntuple(
+            component_id -> vcat(dof_partition_tp[component_id][1][7:9]...), num_components
+        )
+        # convert them to dofs for the polar spline space using the extraction operator
+        polar_boundary_dofs = ntuple(
+            component_id -> SparseArrays.findnz(
+                E[component_id][:, component_boundary_dofs[component_id]]
+            )[1],
+            num_components,
+        )
+        dof_partition[1][8] = unique(vcat(polar_boundary_dofs...))
+        dof_partition[1][5] = setdiff(1:space_dim, dof_partition[1][8])
     end
 
     # return data needed for building polar splines
@@ -261,7 +279,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
         end
 
         # first, build extraction operator and control triangle
-        E, control_triangle = extract_scalar_polar_splines_to_tensorproduct(
+        ET, control_triangle = extract_scalar_polar_splines_to_tensorproduct(
             degenerate_control_points, n_r, two_poles, zero_at_poles
         )
 
@@ -274,7 +292,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
 
         # build polar spline extraction operator and dof partitioning
         extraction_op, dof_partition = _build_polar_extraction_and_dof_partition(
-            patch_spaces, (E,), two_poles
+            patch_spaces, (ET,), two_poles
         )
 
         return new{
@@ -289,7 +307,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             extraction_op,
             dof_partition,
             regularity,
-            (E,),
+            (permutedims(ET),),
             control_triangle,
             two_poles,
             zero_at_poles,
@@ -402,13 +420,21 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
         end
 
         # first, build extraction operator and control triangle
-        E, control_triangle = extract_vector_polar_splines_to_tensorproduct(
+        ET, control_triangle = extract_vector_polar_splines_to_tensorproduct(
             degenerate_control_points, n_r, two_poles
+        )
+
+        # next, apply Curry-Schoenberg scaling to matrices to get correct normalization
+        int_dp_r = LinearAlgebra.kron(ones(n_r), get_basis_integrals(dspace_p))
+        int_p_dr = LinearAlgebra.kron(get_basis_integrals(dspace_r), ones(n_p))
+        ET = (
+            ET[1] * LinearAlgebra.Diagonal(1 ./ int_dp_r),
+            ET[2] * LinearAlgebra.Diagonal(1 ./ int_p_dr),
         )
 
         # build polar spline extraction operator and dof partitioning
         extraction_op, dof_partition = _build_polar_extraction_and_dof_partition(
-            patch_spaces, E, two_poles
+            patch_spaces, ET, two_poles
         )
 
         regularity = 0
@@ -424,7 +450,7 @@ struct PolarSplineSpace{num_components, T, TD, TE, TI, TJ, G, GP} <:
             extraction_op,
             dof_partition,
             regularity,
-            E,
+            permutedims.(ET),
             control_triangle,
             two_poles,
             false,
@@ -448,12 +474,14 @@ function PolarSplineSpace(
     PS <: NTuple{num_components, TensorProductSpace{2, 1}},
     G <: Geometry.AbstractGeometry{2},
 }
+    parametric_geometry = get_parametric_geometry(degenerate_space)
+
     return PolarSplineSpace(
         patch_spaces,
         degenerate_control_points,
         degenerate_space,
         geometry,
-        geometry,
+        parametric_geometry,
         two_poles,
         zero_at_poles,
     )
@@ -466,6 +494,7 @@ function PolarSplineSpace(
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
 ) where {num_components, PS <: NTuple{num_components, TensorProductSpace{2, 1}}}
+    parametric_geometry = get_parametric_geometry(degenerate_space)
     geometry = DiscreteGeometry(degenerate_space, reshape(degenerate_control_points, :, 2))
 
     return PolarSplineSpace(
@@ -473,6 +502,7 @@ function PolarSplineSpace(
         degenerate_control_points,
         degenerate_space,
         geometry,
+        parametric_geometry,
         two_poles,
         zero_at_poles,
     )
@@ -515,7 +545,7 @@ function extract_scalar_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )
@@ -658,7 +688,7 @@ function extract_vector_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )
@@ -818,7 +848,7 @@ end
 function assemble_global_extraction_matrix(
     space::PolarSplineSpace{num_components}
 ) where {num_components}
-    return permutedims(SparseArrays.sparse_hcat(space.global_extraction_matrix...))
+    return SparseArrays.sparse_vcat(space.global_extraction_matrix...)
 end
 
 function get_degenerate_control_points(space::PolarSplineSpace)
@@ -828,3 +858,53 @@ end
 function get_degenerate_space(space::PolarSplineSpace)
     return space.degenerate_space
 end
+
+function get_element_lengths(space::PolarSplineSpace, element_id::Int)
+    return get_element_lengths(get_patch_spaces(space)[1], element_id)
+end
+
+function get_element_vertices(space::PolarSplineSpace, element_id::Int)
+    return get_element_vertices(get_patch_spaces(space)[1], element_id)
+end
+
+function get_support(
+    space::PolarSplineSpace{num_components}, basis_id::Int
+) where {num_components}
+    # find which tensor-product bases contribute to the polar basis
+    basis_indices = [
+        SparseArrays.findnz(view(space.global_extraction_matrix[c], :, basis_id))[1] for
+        c in 1:num_components
+    ]
+    support = Int[]
+    for c in 1:num_components
+        if length(basis_indices[c]) > 0
+            union!(
+                support, get_support.(Ref(get_patch_spaces(space)[c]), basis_indices[c])...
+            )
+        end
+    end
+    return support
+end
+
+# function get_support(
+#     space::PolarSplineSpace{num_components}, basis_id::Int
+# ) where {num_components}
+#     patch_indices = ntuple(
+#         c -> SparseArrays.findnz(view(space.global_extraction_matrix[c], :, basis_id))[1],
+#         num_components,
+#     )
+#     #=
+#     For each patch, we `union` all the supports of all the basis indices found for that
+#     patch space.
+#     =#
+#     support::Vector{Int} = mapreduce(
+#         pair -> begin
+#             bi, ps = pair
+#             return mapreduce(b -> collect(get_support(ps, b)), union, bi)
+#         end,
+#         union,
+#         zip(patch_indices, get_patch_spaces(space)),
+#     )
+#
+#     return support
+# end

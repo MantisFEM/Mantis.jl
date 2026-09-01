@@ -615,11 +615,7 @@ degrees of freedom to the local degrees of freedom.
 - `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
 """
 function assemble_global_extraction_matrix(space::AbstractFESpace)
-    throw(
-        ArgumentError(
-            "'assemble_global_extraction_matrix' not implemented for $(typeof(space))"
-        ),
-    )
+    return throw(MethodError(assemble_global_extraction_matrix, (space,)))
 end
 
 """
@@ -748,7 +744,4 @@ include("TensorProductSpaces/TensorProductSpaces.jl")
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
 
-include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
-
-include("Hierarchical/Hierarchical.jl")
-
+#include("TwoScaleRelations/AbstractTwoScaleRelations.jl")

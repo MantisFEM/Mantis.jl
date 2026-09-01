@@ -7,7 +7,7 @@ include("GeneralHelpers/GeneralHelpers.jl")
 include("Mesh/Mesh.jl")
 include("TensorProducts/TensorProducts.jl")
 include("Points/Points.jl")
-include("Hierarchy/Hierarchy.jl")
+include("Hierarchical/Hierarchical.jl")
 include("Geometry/Geometry.jl")
 include("FunctionSpaces/FunctionSpaces.jl")
 include("Quadrature/Quadrature.jl")
@@ -25,7 +25,7 @@ export Mesh,
     Points,
     Quadrature,
     TensorProducts,
-    Hierarchy,
+    Hierarchical,
     FunctionSpaces,
     Geometry,
     Forms,

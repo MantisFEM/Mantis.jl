@@ -15,6 +15,8 @@ format_docstrings = false
 format_markdown = false
 # Stops pipes from being converted to function calls
 pipe_to_function_call = false
+
+preserve_single_line_blocks = true
 # Since the `formart_markdown` can break markdown blocks in the docs, it is best to ignore
 # the docs folder.
 ignore = ["docs"]

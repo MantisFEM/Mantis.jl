@@ -776,8 +776,8 @@ end
 Generate degenerate control points for a given number of poloidal and radial divisions.
 
 # Arguments
-- n_p::Int: Number of poloidal divisions.
-- n_r::Int: Number of radial divisions.
+- n_θ::Int: Number of poloidal control points.
+- n_r::Int: Number of radial control points.
 - R::Float64: Radius of the polar domain.
 
 # Returns
@@ -785,14 +785,14 @@ Generate degenerate control points for a given number of poloidal and radial div
 - radii::Vector{Float64}: The radii values.
 - theta::Vector{Float64}: The theta values.
 """
-function _build_standard_degenerate_control_points(n_p::Int, n_r::Int, R::Float64)
+function _build_standard_degenerate_control_points(n_θ::Int, n_r::Int, R::Float64)
     radii = LinRange(0.0, R, n_r)
-    theta = 2 * pi .+ (1 .- 2 .* (1:n_p)) .* pi / n_p
-    degenerate_control_points = zeros(Float64, n_p, n_r, 2)
+    theta = LinRange(0.0, 2π, n_θ+1)
+    degenerate_control_points = zeros(Float64, n_θ, n_r, 2)
     # the control points that are identical to the tensor-product control points
-    for idx in Iterators.product(1:n_p, 1:n_r)
-        degenerate_control_points[idx[1], idx[2], 1] = radii[idx[2]] * cos(theta[idx[1]])
-        degenerate_control_points[idx[1], idx[2], 2] = radii[idx[2]] * sin(theta[idx[1]])
+    for (t, r) in Iterators.product(1:n_θ, 1:n_r)
+        degenerate_control_points[t, r, 1] = radii[r] * cos(theta[t])
+        degenerate_control_points[t, r, 2] = radii[r] * sin(theta[t])
     end
 
     return degenerate_control_points, radii, theta

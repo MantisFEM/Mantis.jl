@@ -70,6 +70,45 @@ DS_TP1mTPR1mTP1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mB1
 # 3-component, three distinct spaces, 2D, multi-element, single-patch
 DS_TPB1mTPR1mTPBR1m = FunctionSpaces.DirectSumSpace((TP_B1mB1m, TP_R1mR1m, TP_B1mR1m))
 
+# Hierarchical
+ref_space_h2(s) = FunctionSpaces.refinement_uniform(s, 2)
+ref_geo_h2(s) = Geometry.refinement_uniform(s, 2)
+ref_space_p1(s) = FunctionSpaces.refinement_degree(s, 1)
+scal_space_p1(p, c) = FunctionSpaces.scaling_matrix_degree(p, c, 1)
+scal_space_h2 = FunctionSpaces.scaling_matrix_uniform
+SelStd = FunctionSpaces.SelectionStandard()
+SelSimp = FunctionSpaces.SelectionSimple()
+HB = FunctionSpaces.HB()
+THB = FunctionSpaces.THB()
+
+geo_l1 = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 6),))
+geo_l2 = Hierarchical.Refinement(geo_l1, ref_geo_h2)()
+geo_l3 = Hierarchical.Refinement(geo_l2, ref_geo_h2)()
+geo_scal_1 = Geometry.scaling_uniform(geo_l1, geo_l2, 2)
+geo_scal_2 = Geometry.scaling_uniform(geo_l2, geo_l3, 2)
+
+active = Hierarchical.ActiveInfo([[1, 2], [7, 8, 9, 10], [9, 10, 11, 12]])
+hgeo = Geometry.HierarchicalGeometry(
+    Hierarchical.NestedHierarchy(active, geo_scal_1, geo_scal_2)
+)
+
+bsp_l1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (5,), (1,), (0,))
+bsp_l12 = Hierarchical.Refinement(bsp_l1, ref_space_h2)()
+bsp_l2 = Hierarchical.Refinement(bsp_l12, ref_space_p1)()
+bsp_l22 = Hierarchical.Refinement(bsp_l2, ref_space_h2)()
+bsp_l3 = Hierarchical.Refinement(bsp_l22, ref_space_p1)()
+bsp_scal_1 = Hierarchical.MatrixScaling(
+    (bsp_l1, bsp_l12, bsp_l2), scal_space_h2, scal_space_p1
+)
+bsp_scal_2 = Hierarchical.MatrixScaling(
+    (bsp_l2, bsp_l22, bsp_l3), scal_space_h2, scal_space_p1
+)
+scalings = (bsp_scal_1, bsp_scal_2)
+HB_Std1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelStd, HB)
+HB_Simp1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelSimp, HB)
+THB_Std1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelStd, THB)
+THB_Simp1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelSimp, THB)
+
 spaces = (
     B1,
     B1multi,
@@ -90,6 +129,10 @@ spaces = (
     DS_TP1mTP1m,
     DS_TP1mTPR1mTP1m,
     DS_TPB1mTPR1mTPBR1m,
+    HB_Std1,
+    HB_Simp1,
+    THB_Std1,
+    THB_Simp1,
 )
 
 # Note that JET only uses the types of the inputs, so which numbers we pick
@@ -186,6 +229,9 @@ for space in spaces
         @test_opt FunctionSpaces.get_support(space, basis_id)
         @test_opt FunctionSpaces.get_dof_offsets(space)
         @test_opt FunctionSpaces.get_dof_offsets(space, component_id)
+    elseif typeof(space) <: FunctionSpaces.HierarchicalSpace
+        @test_opt FunctionSpaces.get_support(space, element_id)
+        @test_call FunctionSpaces.get_support(space, element_id)
     else
         println("No methods specific to ", typeof(space), ".")
     end
