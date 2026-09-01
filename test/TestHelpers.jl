@@ -4,6 +4,16 @@ const COLOR_GREEN = "\x1b[32m"
 const COLOR_RED = "\x1b[31m"
 const COLOR_RESET = "\x1b[0m"
 
+function _print_dict(name, keys, test_func)
+    println("$(name) = Dict(")
+    for key in keys
+        println("\t$(key) => $(test_func(key)),")
+    end
+    println(")")
+
+    return nothing
+end
+
 macro expected(expected_dict, test_func, match_op=isequal)
     return esc(
         quote
