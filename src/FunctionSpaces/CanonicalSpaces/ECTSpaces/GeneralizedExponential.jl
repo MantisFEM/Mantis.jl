@@ -80,23 +80,6 @@ function _evaluate(ect_space::GeneralizedExponential, xi::Float64, nderivatives:
 end
 
 """
-    evaluate(ect_space::GeneralizedExponential, ξ::Vector{Float64})
-
-Compute all basis function values at `ξ` in ``[0.0, 1.0]``.
-
-# Arguments
-- `ect_space::GeneralizedExponential`:  Generalized Exponential section space.
-- `xi::Vector{Float64}`: vector of evaluation points ``in [0.0, 1.0]``.
-"""
-function evaluate(ect_space::GeneralizedExponential, xi::Vector{Float64})
-    return evaluate(ect_space, xi, 0)
-end
-
-function evaluate(ect_space::GeneralizedExponential, xi::Float64)
-    return evaluate(ect_space, [xi], 0)
-end
-
-"""
     gexp_representation(p::Int, w::Float64, t::Bool, m::Int)
 
 Build representation matrix for Generalized Exponential section space of degree `p`, weight

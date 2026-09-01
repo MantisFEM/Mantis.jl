@@ -144,12 +144,14 @@ function build_two_scale_matrix(
     # get bisected canonical space
     bisected_canonical_space = get_bisected_canonical_space(canonical_space)
     # evaluate points on the finer elements
-    ξ = collect(LinRange(0.0, 1.0, p + 1))
+    ξ = Points.PointSet((LinRange(0.0, 1.0, p + 1),))
+    ξ_L = Points.PointSet((LinRange(0.0, 0.5, p + 1),))
+    ξ_R = Points.PointSet((LinRange(0.5, 1.0, p + 1),))
     # evaluate all fine basis functions at the Greville points
     fine_eval = evaluate(bisected_canonical_space, ξ)[1][1]
     # evaluate all coarse basis functions on the left and right elements
-    coarse_eval_L = evaluate(canonical_space, ξ ./ 2)[1][1]
-    coarse_eval_R = evaluate(canonical_space, 0.5 .+ (ξ ./ 2))[1][1]
+    coarse_eval_L = evaluate(canonical_space, ξ_L)[1][1]
+    coarse_eval_R = evaluate(canonical_space, ξ_R)[1][1]
     # bisection matrix
     bisection_matrix = SparseArrays.sparse(
         [

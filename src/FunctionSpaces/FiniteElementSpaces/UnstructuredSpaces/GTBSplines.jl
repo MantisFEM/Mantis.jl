@@ -39,6 +39,7 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
     regularity::Vector{Int}
     num_dofs_left::Int
     num_dofs_right::Int
+    gtb_spline_to_b_spline_map::Vector{AbstractVector{Int}}
 
     function GTBSplineSpace(
         patch_spaces::T,
@@ -86,7 +87,9 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
         end
 
         # Create the extraction operator
-        extraction_op = extract_gtbspline_to_bspline(patch_spaces, regularity)
+        extraction_op, gtb_spline_to_b_spline_map =
+            extract_and_relate_gtbspline_to_bspline(patch_spaces, regularity)
+
         # number of element offsets per patch
         num_elements_offset = cumsum([0; collect(get_num_elements.(patch_spaces))])
 
@@ -176,6 +179,7 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
             regularity,
             num_dofs_left,
             num_dofs_right,
+            gtb_spline_to_b_spline_map,
         )
     end
 end
@@ -186,6 +190,18 @@ function get_num_local_basis_per_patch(
     return ntuple(num_patches) do i
         return get_num_basis(get_patch_spaces(space)[i])
     end
+end
+
+function get_element_lengths(space::GTBSplineSpace, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
+
+    return get_element_lengths(get_patch_spaces(space)[patch_id], local_element_id)
+end
+
+function get_element_vertices(space::GTBSplineSpace, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
+
+    return get_element_vertices(get_patch_spaces(space)[patch_id], local_element_id)
 end
 
 function get_local_basis(
@@ -219,6 +235,22 @@ function get_derivative_space(space::GTBSplineSpace{num_patches}) where {num_pat
         max(space.num_dofs_left - 1, -1),
         max(space.num_dofs_right - 1, -1),
     )
+end
+
+function get_support(space::GTBSplineSpace, basis_id::Int)
+    # get the B-splines that form this GTB-spline
+    bspline_ids = space.gtb_spline_to_b_spline_map[basis_id]
+    # Number of local basis functions
+    num_local_basis = get_num_local_basis_per_patch(space)
+    num_local_basis_offset = cumsum([0; num_local_basis...])
+
+    # find the supports of B-splines
+    function _get_bspline_support(basis_id::Int)
+        patch_id = findlast(c -> c < basis_id, num_local_basis_offset)
+        basis_id -= num_local_basis_offset[patch_id]
+        return get_global_element_id.(Ref(space), Ref(patch_id), get_support(get_patch_spaces(space)[patch_id], basis_id))
+    end
+    return union!(_get_bspline_support.(bspline_ids)...)
 end
 
 function assemble_global_extraction_matrix(
@@ -256,3 +288,13 @@ end
 get_constructor_num_dofs_left(space::GTBSplineSpace) = space.num_dofs_left
 get_constructor_num_dofs_right(space::GTBSplineSpace) = space.num_dofs_right
 get_patch_interface_regularities(space::GTBSplineSpace) = space.regularity
+
+function get_basis_integrals(
+    space::GTBSplineSpace{num_patches}, element_id::Int
+) where {num_patches}
+    patch_id, local_element_id = get_patch_and_local_element_id(space, element_id)
+    local_basis_integrals = get_basis_integrals(get_patch_spaces(space)[patch_id], local_element_id)
+    extraction_coefficients = get_extraction_coefficients(space, element_id)
+    
+    return extraction_coefficients' * local_basis_integrals 
+end

@@ -271,7 +271,7 @@ function extract_bspline_to_section_space(
 end
 
 """
-    extract_gtbspline_to_bspline(
+    extract_and_relate_gtbspline_to_bspline(
         spline_spaces::NTuple{m, F}, regularity::Vector{Int}
     ) where {m, F <: Union{BSplineSpace, RationalFESpace}}
 
@@ -285,8 +285,10 @@ B-spline basis functions.
 # Returns
 - `ExtractionOperator{Indices{1, TE, TI, TJ}}`: The extraction operator containing the
     coefficients. See [`ExtractionOperator`](@ref) for the details.
+- `Vector{Vector{Int}}`: A mapping that stores which GTB-splines are linear combinations
+    of which B-splines.
 """
-function extract_gtbspline_to_bspline(
+function extract_and_relate_gtbspline_to_bspline(
     spline_spaces::NTuple{m, F}, regularity::Vector{Int}
 ) where {m, F <: Union{BSplineSpace, RationalFESpace}}
     # Construct cumulative sum of all B-spline dimensions
@@ -393,6 +395,7 @@ function extract_gtbspline_to_bspline(
 
     # Convert global extraction matrix to element local extractions.
     # The matrix is transposed so that [spline_spaces] * [extraction] = [GTB-splines].
+    HT = permutedims(H)
     extraction_coefficients = Vector{Tuple{Matrix{Float64}}}(undef, nel)
     basis_indices = Vector{Indices{1, Vector{Int}, UnitRange{Int}}}(undef, nel)
     count = 0
@@ -406,14 +409,19 @@ function extract_gtbspline_to_bspline(
             # Matrix of coefficients
             extraction_coefficients[count + 1] = (
                 Matrix(
-                    H[get_basis_indices(basis_indices[count + 1]), cols_ij .+ spl_dims[i]]
-                )',
+                    HT[cols_ij .+ spl_dims[i], get_basis_indices(basis_indices[count+1])]
+                ),
             )
             count += 1
         end
     end
+    # Store which GTB-splines are linear combinations of which B-splines
+    gtb_spline_to_b_spline_map = [
+        SparseArrays.findnz(view(HT, :, i))[1] for i in 1:size(HT, 2)
+    ]
 
-    return ExtractionOperator(extraction_coefficients, basis_indices, nel, size(H, 1))
+    return ExtractionOperator(extraction_coefficients, basis_indices, nel, size(HT, 2)),
+        gtb_spline_to_b_spline_map
 end
 
 """
