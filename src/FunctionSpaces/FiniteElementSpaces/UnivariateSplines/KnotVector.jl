@@ -12,6 +12,7 @@ struct KnotVector{G, TM}
     geometry::G
     polynomial_degree::Int
     multiplicity::TM
+    cumsum_multiplicity::Vector{Int}
 
     function KnotVector(
         geometry::G, polynomial_degree::Int, multiplicity::TM
@@ -53,7 +54,7 @@ struct KnotVector{G, TM}
             )
         end
 
-        return new{G, TM}(geometry, polynomial_degree, multiplicity)
+        return new{G, TM}(geometry, polynomial_degree, multiplicity, cumsum(multiplicity))
     end
 end
 
@@ -64,6 +65,8 @@ function KnotVector(
 end
 
 get_geometry(knot_vector::KnotVector) = knot_vector.geometry
+
+get_cumsum_multiplicity(knot_vector::KnotVector) = knot_vector.cumsum_multiplicity
 
 get_knot_vector_types(::KnotVector{G, TM}) where {G, TM} = G, TM
 
@@ -179,7 +182,12 @@ index of the vector where every `breakpoint[i]` appears `knot_vector.multiplicit
 - `::Int`: Index of breakpoint corresponding to `knot_index`.
 """
 function convert_knot_to_breakpoint_idx(knot_vector::KnotVector, knot_index::Int)
-    return findfirst(idx -> idx >= knot_index, cumsum(knot_vector.multiplicity))
+    cumsum_multiplicity = get_cumsum_multiplicity(knot_vector)
+    if knot_index < 1 || knot_index > last(cumsum_multiplicity)
+        throw(BoundsError(knot_vector, knot_index))
+    end
+
+    return searchsortedfirst(get_cumsum_multiplicity(knot_vector), knot_index)
 end
 
 """
@@ -195,7 +203,7 @@ Get the index of the first knot corresponding to a given breakpoint.
 - `::Int`: Index of the first knot for the given breakpoint.
 """
 function get_first_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
-    return cumsum(knot_vector.multiplicity)[breakpoint_index] -
+    return get_cumsum_multiplicity(knot_vector)[breakpoint_index] -
            knot_vector.multiplicity[breakpoint_index] + 1
 end
 
@@ -212,7 +220,7 @@ Get the index of the last knot corresponding to a given breakpoint.
 - `::Int`: Index of the last knot for the given breakpoint.
 """
 function get_last_knot_index(knot_vector::KnotVector, breakpoint_index::Int)
-    return cumsum(knot_vector.multiplicity)[breakpoint_index]
+    return get_cumsum_multiplicity(knot_vector)[breakpoint_index]
 end
 
 """
@@ -267,7 +275,7 @@ Returns the local knot vector necessary to characterize the B-spline identified 
 """
 function get_local_knot_vector(knot_vector::KnotVector, basis_id::Int)
     deg = get_polynomial_degree(knot_vector)
-    knot_cum_sum = cumsum(get_multiplicity(knot_vector))
+    knot_cum_sum = get_cumsum_multiplicity(knot_vector)
     first_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_id)
     last_breakpoint_idx = convert_knot_to_breakpoint_idx(knot_vector, basis_id + deg + 1)
     first_knot_mult = knot_cum_sum[first_breakpoint_idx] - basis_id + 1
