@@ -1,7 +1,7 @@
 """
     TensorProductTwoScaleOperator{
-        manifold_dim, num_components, num_patches, num_spaces, P, C, TS, R
-    } <: AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
+        manifold_dim, num_patches, num_spaces, P, C, TS, R
+    } <: AbstractTwoScaleOperator{manifold_dim, num_patches}
 
 A structure representing a two-scale operator for tensor product spaces, defining the
 relationships between coarse and fine tensor product spaces.
@@ -13,9 +13,8 @@ relationships between coarse and fine tensor product spaces.
     matrix for the tensor product space.
 - `twoscale_operators::TS`: A tuple of two-scale operators for each factor space.
 """
-struct TensorProductTwoScaleOperator{
-    manifold_dim, num_components, num_patches, num_spaces, P, C, TS, R
-} <: AbstractTwoScaleOperator{manifold_dim, num_components, num_patches}
+struct TensorProductTwoScaleOperator{manifold_dim, num_patches, num_spaces, P, C, TS, R} <:
+       AbstractTwoScaleOperator{manifold_dim, 1, num_patches}
     parent_space::P
     child_space::C
     global_subdiv_matrix::SparseArrays.SparseMatrixCSC{Float64, Int}
@@ -26,11 +25,10 @@ struct TensorProductTwoScaleOperator{
         parent_space::P, child_space::C, twoscale_operators::TS
     ) where {
         manifold_dim,
-        num_components,
         num_patches,
         num_spaces,
-        P <: TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
-        C <: TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
+        P <: TensorProductSpace{manifold_dim, num_patches, num_spaces},
+        C <: TensorProductSpace{manifold_dim, num_patches, num_spaces},
         TS <: NTuple{num_spaces, AbstractTwoScaleOperator},
     }
         gm = kron(
@@ -44,9 +42,7 @@ struct TensorProductTwoScaleOperator{
                 child -> get_basis_parents(operator_ref[], child),
             )
             R = typeof(parent_child_relations)
-            operator = new{
-                manifold_dim, num_components, num_patches, num_spaces, P, C, TS, R
-            }(
+            operator = new{manifold_dim, num_patches, num_spaces, P, C, TS, R}(
                 parent_space, child_space, gm, twoscale_operators, parent_child_relations
             )
             operator_ref[] = operator
@@ -65,11 +61,9 @@ function get_factor_twoscale_operators(operator::TensorProductTwoScaleOperator)
 end
 
 function get_factor_element_children(
-    operator::TensorProductTwoScaleOperator{
-        manifold_dim, num_components, num_patches, num_spaces
-    },
+    operator::TensorProductTwoScaleOperator{manifold_dim, num_patches, num_spaces},
     element_id::Int,
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_element_ids, _ = get_factor_element_ids(get_parent_space(operator), element_id)
     twoscale_operators = get_factor_twoscale_operators(operator)
     factor_children = map(get_element_children, twoscale_operators, factor_element_ids)
@@ -78,11 +72,9 @@ function get_factor_element_children(
 end
 
 function get_factor_element_parent(
-    operator::TensorProductTwoScaleOperator{
-        manifold_dim, num_components, num_patches, num_spaces
-    },
+    operator::TensorProductTwoScaleOperator{manifold_dim, num_patches, num_spaces},
     element_id::Int,
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_element_ids, _ = get_factor_element_ids(get_child_space(operator), element_id)
     twoscale_operators = get_factor_twoscale_operators(operator)
     factor_parent = map(get_element_parent, twoscale_operators, factor_element_ids)
@@ -91,11 +83,9 @@ function get_factor_element_parent(
 end
 
 function get_factor_basis_children(
-    operator::TensorProductTwoScaleOperator{
-        manifold_dim, num_components, num_patches, num_spaces
-    },
+    operator::TensorProductTwoScaleOperator{manifold_dim, num_patches, num_spaces},
     basis_id::Int,
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_basis_ids = get_factor_basis_ids(get_parent_space(operator), basis_id)
     twoscale_operators = get_factor_twoscale_operators(operator)
     factor_children = map(get_basis_children, twoscale_operators, factor_basis_ids)
@@ -104,11 +94,9 @@ function get_factor_basis_children(
 end
 
 function get_factor_basis_parent(
-    operator::TensorProductTwoScaleOperator{
-        manifold_dim, num_components, num_patches, num_spaces
-    },
+    operator::TensorProductTwoScaleOperator{manifold_dim, num_patches, num_spaces},
     basis_id::Int,
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_basis_ids = get_factor_basis_ids(get_child_space(operator), basis_id)
     twoscale_operators = get_factor_twoscale_operators(operator)
     factor_parents = map(get_basis_parents, twoscale_operators, factor_basis_ids)
@@ -221,11 +209,10 @@ end
 
 """
     subdivide_space(
-        space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
+        space::TensorProductSpace{manifold_dim, num_patches, T},
         nsubdivisions::NTuple{num_spaces, Int}
     ) where {
         manifold_dim,
-        num_components,
         num_patches,
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
@@ -244,9 +231,9 @@ finer tensor product space.
 - `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
 """
 function subdivide_space(
-    space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
+    space::TensorProductSpace{manifold_dim, num_patches, num_spaces},
     num_subdivisions::NTuple{num_spaces, Int},
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_spaces = get_factor_spaces(space)
     subdivided_spaces = ntuple(
         space -> subdivide_space(factor_spaces[space], num_subdivisions[space]), num_spaces
@@ -257,11 +244,10 @@ end
 
 """
     build_two_scale_operator(
-        space::TensorProductSpace{manifold_dim, num_components, num_patches, T},
+        space::TensorProductSpace{manifold_dim, num_patches, T},
         nsubdivisions::NTuple{num_spaces, Int}
     ) where {
         manifold_dim,
-        num_components,
         num_patches,
         num_spaces,
         T <: NTuple{num_spaces, AbstractFESpace},
@@ -280,9 +266,9 @@ finite element space.
 - `::TensorProductSpace`: The resulting finer tensor product space after subdivision.
 """
 function build_two_scale_operator(
-    parent_space::TensorProductSpace{manifold_dim, num_components, num_patches, num_spaces},
+    parent_space::TensorProductSpace{manifold_dim, num_patches, num_spaces},
     num_subdivisions::NTuple{num_spaces, Int},
-) where {manifold_dim, num_components, num_patches, num_spaces}
+) where {manifold_dim, num_patches, num_spaces}
     factor_parent_spaces = get_factor_spaces(parent_space)
     twoscale_data = ntuple(
         space ->

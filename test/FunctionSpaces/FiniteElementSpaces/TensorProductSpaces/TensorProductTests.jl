@@ -138,11 +138,17 @@ function basic_tests(space, answers, element_id=1, component_id=1)
 
     @test all(FunctionSpaces.get_component_spaces(space) .== answers[4])
     @test FunctionSpaces.get_extraction(space, element_id, component_id) == answers[5]
+    # `component_id` should be 1
+    @test_throws ArgumentError FunctionSpaces.get_extraction(space, element_id, 2)
     @test FunctionSpaces.get_extraction_coefficients(space, element_id, component_id) ==
         answers[6]
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+        space, element_id, 2
+    )
     @test FunctionSpaces.get_basis_indices(space, element_id) == answers[7]
     @test FunctionSpaces.get_basis_permutation(space, element_id, component_id) ==
         answers[8]
+    @test_throws ArgumentError FunctionSpaces.get_basis_permutation(space, element_id, 2)
     @test FunctionSpaces.get_num_basis(space) == answers[9]
     @test FunctionSpaces.get_num_basis(space, element_id) == answers[10]
     @test FunctionSpaces.get_dof_partition(space) == answers[11]
@@ -223,9 +229,7 @@ basic_tests(TP_B1_b, answers_1b)
 # Reduction test, single-patch, single element, 1D, Cartesian, degree 3 Lagrange.
 nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(4)))[1]
 ll_polynomial = FunctionSpaces.Lagrange(nodes)
-L3 = FunctionSpaces.BSplineSpace(
-    geometry1, geometry1, ll_polynomial, [-1, -1]
-)
+L3 = FunctionSpaces.BSplineSpace(geometry1, geometry1, ll_polynomial, [-1, -1])
 TP_L3 = FunctionSpaces.TensorProductSpace((L3,))
 answers_L3 = (
     1,
