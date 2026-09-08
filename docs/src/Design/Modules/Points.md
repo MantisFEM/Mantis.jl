@@ -69,7 +69,7 @@ TensorProductPoints
 ```
 
 Tensor-product points are the natural choice whenever the evaluation sites themselves have a
-tensor-product structure — for instance, the nodes of a [Quadrature](@ref) rule on a
+tensor-product structure — for instance, the nodes of a [Quadrature](@ref DocQuadratureModule) rule on a
 multidimensional element.
 
 This concrete type has methods that help interface with [TensorProducts](@ref DocTensorProductsModule):
@@ -96,7 +96,7 @@ DocTensorProductsModule), and is used by every module that requires evaluation:
 - **[Forms](@ref)**: in the most general case, evaluates from a canonical set of points,
   using both parametric information from the underlying function spaces, and information
   from the physical geometry for pullbacks.
-- [Quadrature](@ref): quadrature rules store their nodes as `AbstractPoints`. The
+- [Quadrature](@ref DocQuadratureModule): quadrature rules store their nodes as `AbstractPoints`. The
   `TensorProductPoints` type is particularly useful here, as most multidimensional rules are
   formed from 1D factor rules.
 - [Plot](@ref): uses points to build visualisations written to VTK output.
