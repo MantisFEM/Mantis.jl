@@ -98,6 +98,50 @@ Supertype for all real-valued operators.
 """
 abstract type AbstractRealValuedOperator{manifold_dim} end
 
+"""
+    AbstractPullbackLocation
+
+Indicates the locations used when performing pullbacks (both the source and destination).
+Only has abstract subtypes.
+"""
+abstract type AbstractPullbackLocation end
+
+"""
+    Physical
+
+Indicates the physical domain. This domain is described be the geometry on which a form is
+defined.
+"""
+abstract type Physical <: AbstractPullbackLocation end
+
+"""
+    Parametric
+
+Indicates the parametric domain. This domain is only a linear map away from the canonical
+domain and the domain in which an [`FunctionSpaces.AbstractFESpace`](@ref) is evaluated.
+"""
+abstract type Parametric <: AbstractPullbackLocation end
+
+"""
+    Canonical
+
+Indicates the canonical domain. This is the domain where an
+[`FunctionSpaces.AbstractCanonicalSpace`](@ref) is evaluated. This is also the domain in
+which quadrature is performed and where all other computations happen.
+"""
+abstract type Canonical <: AbstractPullbackLocation end
+
+"""
+    AbstractPullback{manifold_dim, form_rank, expression_rank, S, D} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank}
+
+Generic pullback type. Since the pullback of a form is still a form, it is also a subtype
+of [`AbstractForm`](@ref). The type parameters `S` and `D` indicate the source and
+destination of a pullback, using the [`AbstractPullbackLocation`](@ref) types.
+"""
+abstract type AbstractPullback{manifold_dim, form_rank, expression_rank, S, D} <:
+              AbstractForm{manifold_dim, form_rank, expression_rank} end
+
 ############################################################################################
 #                                  Type parameter methods                                  #
 ############################################################################################
@@ -187,6 +231,33 @@ end
 
 function get_form_space_tree(::AbstractFormField)
     return ()
+end
+
+"""
+    get_pullback_type(form::AbstractForm)
+
+Returns the type of pullback ([`AbstractPullback`](@ref)) used to pull back the `form`.
+Note that this obtains the type of pullback for the underlying form.
+"""
+function get_pullback_type(form::AbstractForm)
+    return get_pullback_type(get_form(form))
+end
+
+"""
+    get_pullback(form::AbstractForm, ::Type{D}=Canonical) where {D}
+
+Returns the pullback object used to pull back the `form` to the given
+[`AbstractPullbackLocation`](@ref) `D` (defaults to Canonical).
+
+See [`AbstractPullback`](@ref) or [`FormPullback`](@ref) for more details.
+"""
+function get_pullback(form::AbstractForm, ::Type{D}=Canonical) where {D}
+    # Since any form operator inherits the pullback from the underlying space or field, we
+    # first get the pullback type from there. Then, since these operators work with pulled-
+    # back values in the canonical domain, we return a pullback with the canonical domain
+    # as source.
+    PB = get_pullback_type(form)
+    return PB(form, Canonical, D)
 end
 
 ############################################################################################
@@ -385,9 +456,10 @@ end
 Evaluate any form (expression) on the given `element_id` at the given points `xi`.
 
 !!! note "Evaluation in the canonical domain."
-    The evaluation of a form (expression) is always done in the canonical domain, not the
-    physical domain. See the [documentation on the Geometry module](@ref DocGeometryModule)
-    for more details on these domains.
+    The evaluation of a form (expression) is always done in the canonical domain through a 
+    [`AbstractPullback`](@ref), not the physical domain. See the 
+    [documentation on the Geometry module](@ref DocGeometryModule) for more details on 
+    these domains.
 
 # Arguments
 - `form::AbstractForm{manifold_dim}`: The differential form space.
@@ -448,6 +520,7 @@ end
 #                                         Includes                                         #
 ############################################################################################
 
+include("./FormOperators/Pullback.jl")
 include("./FormExpressions/FormExpressions.jl")
 include("./FormOperators/FormOperators.jl")
 include("./FormsHelpers.jl")

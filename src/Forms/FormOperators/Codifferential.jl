@@ -191,12 +191,12 @@ function _evaluate_codifferential(
     form_space::FormSpace{1, 1}, element_id::Int, xi::Points.AbstractPoints{1}
 )
     # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
-        form_space, element_id, xi, 1
-    )
+    fe_space = get_fe_space(form_space)
+    fem_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
+    pb = get_pullback(form_space)
     T = eltype(fem_evals[1][1][1][1])
     # n_coderivative_form_components = 1
-    n_basis_functions = length(form_basis_indices[1])
+    n_basis_functions = length(form_basis_indices)
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
     codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
@@ -211,6 +211,8 @@ function _evaluate_codifferential(
     # sign: (-1)^{n(k+1)+1}, n = manifold_dim, k = form_rank. 1-forms -> always -1.
     sign = -one(T)
     idx_du = FunctionSpaces.get_derivative_idx((1,))
+    pullback!(fem_evals[1][1], pb, element_id, xi)
+    pullback!(fem_evals[2][idx_du], pb, element_id, xi)
     for b in axes(codiff_eval[1], 2)
         for i in axes(codiff_eval[1], 1)
             inv_sqrtg = one(T) / sqrt_g[i]
@@ -224,7 +226,7 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, form_basis_indices
+    return codiff_eval, [form_basis_indices]
 end
 
 # 1D 1-forms where the 1-form is the exterior derivative of a 0-form (Laplacian).
@@ -275,11 +277,11 @@ function _evaluate_codifferential(
     form_space::FormSpace{2, 1}, element_id::Int, xi::Points.AbstractPoints{2}
 )
     # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
-        form_space, element_id, xi, 1
-    )
+    fe_space = get_fe_space(form_space)
+    fem_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
+    pb = get_pullback(form_space)
     T = eltype(fem_evals[1][1][1][1])
-    n_basis_functions = length(form_basis_indices[1])
+    n_basis_functions = length(form_basis_indices)
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
     codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
@@ -294,6 +296,9 @@ function _evaluate_codifferential(
     sign = -one(T)
     idx_du = FunctionSpaces.get_derivative_idx((1, 0))
     idx_dv = FunctionSpaces.get_derivative_idx((0, 1))
+    pullback!(fem_evals[1][1], pb, element_id, xi)
+    pullback!(fem_evals[2][idx_du], pb, element_id, xi)
+    pullback!(fem_evals[2][idx_dv], pb, element_id, xi)
     for b in axes(codiff_eval[1], 2)
         for i in axes(codiff_eval[1], 1)
             one_div_sqrtg = one(T) / sqrt_g[i]
@@ -317,7 +322,7 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, form_basis_indices
+    return codiff_eval, [form_basis_indices]
 end
 
 # Specialised version for the exterior derivative of 0-forms to 1-forms in 2D.

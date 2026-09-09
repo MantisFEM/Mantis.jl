@@ -89,7 +89,9 @@ function get_analytical_maxwell_eig(
     num_eig::Int, geom::G, scale_factors::NTuple{2, Float64}
 ) where {G <: Geometry.AbstractGeometry{2}}
     eig_vals = Vector{Float64}(undef, (num_eig + 1)^2)
-    eig_funcs = Vector{Forms.AnalyticalFormField{2, 1, typeof(geom)}}(
+    eig_funcs = Vector{
+        Forms.AnalyticalFormField{2, 1, Forms.FormPullback, Forms.Physical, typeof(geom)}
+    }(
         undef, (num_eig + 1)^2
     )
     eig_count = 1

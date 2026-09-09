@@ -62,8 +62,8 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
                         ") must match the number of basis functions (",
                         get_num_basis(form_space),
                         ") in the space, but doesn't.",
-                    )
-                )
+                    ),
+                ),
             )
         end
 
@@ -74,18 +74,27 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
 end
 
 """
-    AnalyticalFormField{manifold_dim, form_rank, G, E, L} <:
+    AnalyticalFormField{manifold_dim, form_rank, PB, S, G, E, L} <:
     AbstractFormField{manifold_dim, form_rank}
 
 Represents an analytical differential form field.
 
-The analytical `expression` should be a Julia function defining the form in the *physical*
-domain. See the [documentation on the Geometry module](@ref DocGeometryModule) for the
-difference between the domains used in `Mantis`.
+The pullback and source location can be changed. By default, these is the standard
+[`FormPullback`](@ref) from the physical domain. See the
+[documentation on the Geometry module](@ref DocGeometryModule) for the difference between
+the domains.
 
 # Constructors
-- `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::AbstractString)`:
-    General constructor for analytical form fields.
+- `AnalyticalFormField(
+        form_rank::Int,
+        expression::E,
+        geometry::G,
+        label::AbstractString,
+        ::Type{PB}=FormPullback,
+        ::Type{S}=Physical,
+    ) where {
+        manifold_dim, E <: Function, G <: Geometry.AbstractGeometry{manifold_dim}, PB, S
+    }`: General constructor for analytical form fields.
 
 # Example
 ```jldoctest
@@ -110,21 +119,30 @@ julia> α²ₕ = Forms.AnalyticalFormField(2, my_form_expression, geometry, "Ana
 - `label::AbstractString`: Label for the form field.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref).
+- `PB`: Type of the pullback used, see [`AbstractPullback`](@ref).
+- `S`: Type of the domain used, see [`AbstractPullbackLocation`](@ref).
 - `G`: Type of the geometry.
 - `E`: Type of the expression.
 - `L`: Type of the label (an `AbstractString`).
 """
-struct AnalyticalFormField{manifold_dim, form_rank, G, E, L} <:
+struct AnalyticalFormField{manifold_dim, form_rank, PB, S, G, E, L} <:
        AbstractFormField{manifold_dim, form_rank}
     geometry::G
     expression::E
     label::L
 
     function AnalyticalFormField(
-        form_rank::Int, expression::E, geometry::G, label::AbstractString
-    ) where {manifold_dim, E <: Function, G <: Geometry.AbstractGeometry{manifold_dim}}
-        return new{manifold_dim, form_rank, G, E, typeof(label)}(
+        form_rank::Int,
+        expression::E,
+        geometry::G,
+        label::AbstractString,
+        ::Type{PB}=FormPullback,
+        ::Type{S}=Physical,
+    ) where {
+        manifold_dim, E <: Function, G <: Geometry.AbstractGeometry{manifold_dim}, PB, S
+    }
+        return new{manifold_dim, form_rank, PB, S, G, E, typeof(label)}(
             geometry, expression, label
         )
     end
@@ -178,6 +196,26 @@ get_expression(form_field::AnalyticalFormField) = form_field.expression
 
 get_geometry(form_field::AnalyticalFormField) = form_field.geometry
 
+function get_pullback_type(
+    form::AnalyticalFormField{manifold_dim, form_rank, PB}
+) where {manifold_dim, form_rank, PB}
+    return PB
+end
+
+function get_pullback(
+    form::FormField{manifold_dim, form_rank, FS}, ::Type{D}=Canonical
+) where {
+    manifold_dim, form_rank, PB, S, D, F, FS <: FormSpace{manifold_dim, form_rank, PB, S, F}
+}
+    return PB(form, S, D)
+end
+
+function get_pullback(
+    form::AnalyticalFormField{manifold_dim, form_rank, PB, S}, ::Type{D}=Canonical
+) where {manifold_dim, form_rank, PB, S, D}
+    return PB(form, S, D)
+end
+
 ############################################################################################
 #                                    Evaluation methods                                    #
 ############################################################################################
@@ -188,10 +226,9 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, FS}
     n_form_components = binomial(manifold_dim, form_rank)
-    form_basis_eval, form_basis_indices = evaluate(
-        get_form(form_field), element_idx, xi
-    )
-    form_eval = Vector{Vector{Float64}}(undef, n_form_components)
+    form_basis_eval, form_basis_indices = evaluate(get_form(form_field), element_idx, xi)
+    TT = eltype(eltype(form_basis_eval))
+    form_eval = Vector{Vector{TT}}(undef, n_form_components)
     form_field_coefficients = get_coefficients(form_field)
     for form_component_idx in 1:n_form_components
         form_eval[form_component_idx] =
@@ -205,89 +242,23 @@ function evaluate(
 end
 
 function evaluate(
-    form_field::AnalyticalFormField{manifold_dim},
+    form::AnalyticalFormField{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    return _evaluate(form_field, element_id, xi)
+    return evaluate(get_pullback(form), element_id, xi)
 end
 
-"""
-    _evaluate(
-        form_field::AnalyticalFormField{manifold_dim, form_rank},
-        element_idx::Int,
-        xi::Points.AbstractPoints{manifold_dim},
-    ) where {manifold_dim}
-
-Internal function to evaluate an analytical form field, by first pulling back the form to
-the canonical domain. The used pull-back is dictated by the `form_rank`.
-
-# Arguments
-- See [`evaluate`](@ref) for the details.
-
-# Returns
-- See [`evaluate`](@ref) for the details.
-"""
-function _evaluate(
-    form_field::AnalyticalFormField{manifold_dim, 0},
-    element_idx::Int,
+function evaluate(
+    form::FormPullback{manifold_dim, form_rank, expression_rank, S, D, F},
+    element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
-    x = Geometry.evaluate(get_geometry(form_field), element_idx, xi)
-    form_eval = get_expression(form_field)(x)
+) where {manifold_dim, form_rank, expression_rank, S, D, F <: AnalyticalFormField}
+    form_field = get_form(form)
+    x = Geometry.evaluate(get_geometry(form_field), element_id, xi)
+    evaluations = get_expression(form_field)(x)
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges
-    return form_eval, [[1]]
-end
+    pullback!(evaluations, form, element_id, xi)
 
-function _evaluate(
-    form_field::AnalyticalFormField{manifold_dim, manifold_dim},
-    element_idx::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
-    geometry = get_geometry(form_field)
-    if Geometry.get_image_dim(geometry) != manifold_dim
-        throw("Image manifold must have the same dimension as the domain manifold.")
-    end
-
-    x = Geometry.evaluate(geometry, element_idx, xi)
-    J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
-    form_eval = get_expression(form_field)(x)
-    form_eval[1][:] .*= LinearAlgebra.det.(J)
-
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges
-    return form_eval, [[1]]
-end
-
-function _evaluate(
-    form_field::AnalyticalFormField{manifold_dim, 1},
-    element_idx::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
-    geometry = get_geometry(form_field)
-    x = Geometry.evaluate(geometry, element_idx, xi)
-    J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
-    form_eval = get_expression(form_field)(x)
-    num_eval_points = size(x, 1)
-    image_dim = Geometry.get_image_dim(geometry)
-    form_pullback = Vector{Vector{Float64}}(undef, manifold_dim)
-    for j in 1:manifold_dim
-        form_pullback[j] = zeros(num_eval_points)
-    end
-
-    a = zeros(num_eval_points, manifold_dim)
-    for j in 1:image_dim
-        for i in 1:num_eval_points
-            a[i, :] .+= form_eval[j][i] .* J[i][j, :]
-        end
-    end
-
-    for j in 1:manifold_dim
-        form_pullback[j] = a[:, j]
-    end
-
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
-    return form_pullback, [[1]]
+    return evaluations, [[1]]
 end
