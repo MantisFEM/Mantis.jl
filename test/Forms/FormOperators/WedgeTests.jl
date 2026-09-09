@@ -14,9 +14,12 @@ function test_inner_prod_equality(
 ) where {manifold_dim, Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim}}
     for rank in 0:manifold_dim
         # Generate the form space ϵᵏ, or form rank k, and matching hodge and form field.
-        ϵ = complex[rank + 1]
+        ϵ = Forms.FormPullback(complex[rank + 1], Forms.Canonical)
         ★ϵ = ★(ϵ)
-        α⁰ = Forms.AnalyticalFormField(0, zero_form_expression, Forms.get_geometry(ϵ), "α⁰")
+        α⁰ = Forms.FormPullback(
+            Forms.AnalyticalFormField(0, zero_form_expression, Forms.get_geometry(ϵ), "α⁰"),
+            Forms.Canonical,
+        )
         ∫ϵ = ∫(ϵ ∧ ★(ϵ), dΩ)
         integral_triple = ∫((ϵ ∧ ★(ϵ)) ∧ α⁰, dΩ)
 
@@ -54,9 +57,10 @@ end
 function test_combinations_2d(complex, q_rule)
 
     # Create the form spaces.
-    ϵ⁰ = complex[1]
-    ϵ¹ = complex[2]
-    ϵ² = complex[3]
+    ϵ⁰np, ϵ¹np, ϵ²np = complex
+    ϵ⁰ = Forms.FormPullback(ϵ⁰np, Forms.Canonical)
+    ϵ¹ = Forms.FormPullback(ϵ¹np, Forms.Canonical)
+    ϵ² = Forms.FormPullback(ϵ²np, Forms.Canonical)
 
     # Create the form fields.
     ε⁰ = Forms.FormField(ϵ⁰)
@@ -132,10 +136,11 @@ end
 function test_combinations_3d(complex, q_rule)
 
     # Create form spaces
-    ϵ⁰ = complex[1]
-    ϵ¹ = complex[2]
-    ϵ² = complex[3]
-    ϵ³ = complex[4]
+    ϵ⁰np, ϵ¹np, ϵ²np, ϵ³np = complex
+    ϵ⁰ = Forms.FormPullback(ϵ⁰np, Forms.Canonical)
+    ϵ¹ = Forms.FormPullback(ϵ¹np, Forms.Canonical)
+    ϵ² = Forms.FormPullback(ϵ²np, Forms.Canonical)
+    ϵ³ = Forms.FormPullback(ϵ³np, Forms.Canonical)
 
     # Create the form fields
     ε⁰ = Forms.FormField(ϵ⁰)
@@ -265,12 +270,7 @@ cart_complex_2d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, degrees_2d, regularities_2d
 )
 curv_complex_2d = Forms.create_curvilinear_tensor_product_bspline_de_rham_complex(
-    starting_point_2d,
-    box_size_2d,
-    num_elements_2d,
-    degrees_2d,
-    regularities_2d;
-    c=c,
+    starting_point_2d, box_size_2d, num_elements_2d, degrees_2d, regularities_2d; c=c
 )
 
 # The canonical quadrature information.

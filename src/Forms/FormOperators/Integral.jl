@@ -6,6 +6,10 @@
 
 Integral of a form over a manifold.
 
+The input form should have the [`Canonical`](@ref) domain as source location. If not, the
+`Integral` will use a [`FormPullback`](@ref) to make this happen. Because the
+`Integral` is itself not an `AbstractForm`, it does not have its own source location.
+
 # Constructors
 - `Integral(
         form::F, quad_rule::Q
@@ -22,7 +26,9 @@ julia> using Mantis
 
 julia> B = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 2), (2, 2), (1, 1));
 
-julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form space with B as basis.
+julia> Λ²ₕ_parametric = Forms.FormSpace(2, B, "2-form");  # 2-form space with B as basis.
+
+julia> Λ²ₕ = Forms.FormPullback(Λ²ₕ_parametric, Forms.Canonical);
 
 julia> canonical_qrule = Quadrature.tensor_product_rule((3, 3), Quadrature.gauss_legendre);
 
@@ -31,9 +37,6 @@ julia> dΩ = Quadrature.StandardQuadrature(canonical_qrule, 4);
 julia> integral = ∫(Λ²ₕ, dΩ);
 
 julia> isa(integral, Forms.Integral{2})
-true
-
-julia> isa(Forms.get_form(integral), Forms.FormSpace{2, 2})
 true
 
 ```
@@ -74,11 +77,14 @@ true
 struct Integral{manifold_dim, F, Q} <: AbstractRealValuedOperator{manifold_dim}
     form::F
     quad_rule::Q
+
     function Integral(
         form::F, quad_rule::Q
     ) where {
         manifold_dim,
-        F <: AbstractForm{manifold_dim, manifold_dim},
+        expression_rank,
+        S <: Canonical,
+        F <: AbstractForm{manifold_dim, manifold_dim, expression_rank, S},
         Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
     }
         geom = get_geometry(form)

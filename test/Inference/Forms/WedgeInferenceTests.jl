@@ -200,6 +200,7 @@ for wedge in wedges
     @test_opt Forms.get_label(wedge)
     @test_opt Forms.get_form(wedge)
     @test_opt Forms.get_form_space_tree(wedge)
+    @test_opt Forms.get_source_location(wedge)
     @test_opt Forms.get_geometry(wedge)
     @test_opt Forms.get_num_elements(wedge)
     @test_opt Forms.get_estimated_nnz_per_elem(wedge)
