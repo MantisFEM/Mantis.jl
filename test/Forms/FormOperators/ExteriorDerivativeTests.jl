@@ -167,8 +167,12 @@ const spaces_2D = (TP_Space_2d_cart_geo, TP_Space_2d_tp_geo, TP_Space_2d_crazy_g
             dsTP_1_form_2d = FunctionSpaces.DirectSumSpace((space, space))
 
             # Create form spaces
-            zero_form_space = Forms.FormSpace(0, space, "ν")
-            one_form_space = Forms.FormSpace(1, dsTP_1_form_2d, "η")
+            zero_form_space = Forms.FormPullback(
+                Forms.FormSpace(0, space, "ν"), Forms.Canonical
+            )
+            one_form_space = Forms.FormPullback(
+                Forms.FormSpace(1, dsTP_1_form_2d, "η"), Forms.Canonical
+            )
 
             # Generate the form expressions
             # 0-form: constant
@@ -223,8 +227,12 @@ const spaces_2D = (TP_Space_2d_cart_geo, TP_Space_2d_tp_geo, TP_Space_2d_crazy_g
             dsTP_1_form_2d = FunctionSpaces.DirectSumSpace((space, space))
 
             # Create form spaces
-            zero_form_space = Forms.FormSpace(0, space, "ν")
-            one_form_space = Forms.FormSpace(1, dsTP_1_form_2d, "η")
+            zero_form_space = Forms.FormPullback(
+                Forms.FormSpace(0, space, "ν"), Forms.Canonical
+            )
+            one_form_space = Forms.FormPullback(
+                Forms.FormSpace(1, dsTP_1_form_2d, "η"), Forms.Canonical
+            )
 
             # Generate the form expressions
             # 0-form: constant
