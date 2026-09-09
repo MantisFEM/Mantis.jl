@@ -30,6 +30,7 @@ for form in forms
     @test_opt Forms.get_label(hodge)
     @test_opt Forms.get_form(hodge)
     @test_opt Forms.get_form_space_tree(hodge)
+    @test_opt Forms.get_source_location(hodge)
     @test_opt Forms.get_geometry(hodge)
     @test_opt Forms.get_num_elements(hodge)
     @test_opt Forms.get_estimated_nnz_per_elem(hodge)

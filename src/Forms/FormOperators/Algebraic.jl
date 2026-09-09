@@ -113,10 +113,14 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
 end
 
 """
-    UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L} <:
-    AbstractForm{manifold_dim, form_rank, expression_rank}
+    UnaryFormTransformation{manifold_dim, form_rank, expression_rank, S, F, T, L} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank, S}
 
 Unary, algebraic transformation of a differential form expression.
+
+Will always inherent the source location from the input `form`. Furthermore, the unary
+transformation satisfies the following property with respect to the pullback:
+Phi(f(`form`)) = f(Phi(`form`)), which f the transformation and Phi the pullback.
 
 # Constructors
 - `UnaryFormTransformation(form::F, transformation::T, label::String)`:
@@ -133,14 +137,15 @@ Unary, algebraic transformation of a differential form expression.
 - `label::L`: The label to associate with the resulting transformed form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`, `S`: See [`AbstractForm`](@ref) for the
+    details.
 - `F <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the original
     form expression .
 - `T <: Function`: The type of the algebraic transformation.
 - `L <: AbstractString`: The type of the label.
 """
-struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank}
+struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, S, F, T, L} <:
+       AbstractForm{manifold_dim, form_rank, expression_rank, S}
     form::F
     transformation::T
     label::L
@@ -151,12 +156,13 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L
         manifold_dim,
         form_rank,
         expression_rank,
-        F <: AbstractForm{manifold_dim, form_rank, expression_rank},
+        S,
+        F <: AbstractForm{manifold_dim, form_rank, expression_rank, S},
         T <: Function,
     }
         label = "(" * label * get_label(form) * ")"
 
-        return new{manifold_dim, form_rank, expression_rank, F, T, typeof(label)}(
+        return new{manifold_dim, form_rank, expression_rank, S, F, T, typeof(label)}(
             form, transformation, label
         )
     end
@@ -174,19 +180,33 @@ struct UnaryFormTransformation{manifold_dim, form_rank, expression_rank, F, T, L
     end
 end
 
+function FormPullback(
+    form::UnaryFormTransformation, ::Type{D}
+) where {D <: AbstractPullbackLocation}
+    transformation = get_transformation(form)
+
+    return transformation(FormPullback(get_form(form), D))
+end
+
 """
-    BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T, L} <:
-    AbstractForm{manifold_dim, form_rank, expression_rank}
+    BinaryFormTransformation{manifold_dim, form_rank, expression_rank, S, F1, F2, T, L} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank, S}
 
 Binary, algebraic transformation acting on two differential form expressions.
 
+Will always inherent the source location from the input forms. Furthermore, the binary
+transformation satisfies the following property with respect to the pullback:
+Phi(f(`form_1`, `form_2`)) = f(Phi(`form_1`, `form_2`)), which f the transformation and Phi
+the pullback.
+
 !!! warning "Compatibility of forms"
     When using these binary operations, you have to ensure that the operation makes sense
-    for the given input. This is **not** checked!
+    for the given input. Only the source locations are checked. All other things are
+    **not** checked!
 
 # Constructors
 - `BinaryFormTransformation(form_1::F1, form_2::F2, transformation::T, label::AbstractString)`: General
-    constructor.
+    constructor. Expects the source locations to match.
 - `Base.:+(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise sum of two forms.
 - `Base.:-(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise difference of two froms.
 - `Base.:*(form_1::AbstractForm, form_2::AbstractForm)`: Point-wise product of two forms.
@@ -213,7 +233,8 @@ true
 - `label::L`: The label to associate to the resulting differential form.
 
 # Type parameters
-- `manifold_dim`, `form_rank`, `expression_rank`: See [`AbstractForm`](@ref) for the details.
+- `manifold_dim`, `form_rank`, `expression_rank`, `S`: See [`AbstractForm`](@ref) for the
+    details.
 - `F1 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the first
     form expression.
 - `F2 <: AbstractForm{manifold_dim, form_rank, expression_rank}`: The type of the second
@@ -221,8 +242,9 @@ true
 - `T <: Function`: The type of the algebraic transformation.
 - `L <: AbstractString`: The type of the label.
 """
-struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2, T, L} <:
-       AbstractForm{manifold_dim, form_rank, expression_rank}
+struct BinaryFormTransformation{
+    manifold_dim, form_rank, expression_rank, S, F1, F2, T, L
+} <: AbstractForm{manifold_dim, form_rank, expression_rank, S}
     form_1::F1
     form_2::F2
     transformation::T
@@ -234,8 +256,9 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
         manifold_dim,
         form_rank,
         expression_rank,
-        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank},
-        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank},
+        S,
+        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, S},
+        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, S},
         T <: Function,
     }
         check_geometry(form_1, form_2)
@@ -255,8 +278,39 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
             typeof(label), "(" * get_label(form_1) * label * get_label(form_2) * ")"
         )
 
-        return new{manifold_dim, form_rank, expression_rank, F1, F2, T, typeof(new_label)}(
+        return new{
+            manifold_dim, form_rank, expression_rank, S, F1, F2, T, typeof(new_label)
+        }(
             form_1, form_2, transformation, new_label
+        )
+    end
+
+    function BinaryFormTransformation(
+        form_1::F1, form_2::F2, transformation::T, label::AbstractString
+    ) where {
+        manifold_dim,
+        form_rank,
+        expression_rank,
+        S1,
+        S2,
+        F1 <: AbstractForm{manifold_dim, form_rank, expression_rank, S1},
+        F2 <: AbstractForm{manifold_dim, form_rank, expression_rank, S2},
+        T <: Function,
+    }
+
+        # In this constructor, the provided forms do not have the same source. In this
+        # case, we default to pulling back to the 'lowest' domain. The hierarchy is
+        # Physical -> Parametric -> Canonical.
+        if S1 <: Canonical || S2 <: Canonical
+            S = Canonical
+        elseif S1 <: Parametric || S2 <: Parametric
+            S = Parametric
+        else
+            S = Physical
+        end
+
+        return BinaryFormTransformation(
+            FormPullback(form_1, S), FormPullback(form_2, S), transformation, label
         )
     end
 
@@ -271,6 +325,15 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
     function Base.:*(form_1::AbstractForm, form_2::AbstractForm)
         return BinaryFormTransformation(form_1, form_2, (x, y) -> x * y, "*")
     end
+end
+
+function FormPullback(
+    form::BinaryFormTransformation, ::Type{D}
+) where {D <: AbstractPullbackLocation}
+    form1, form2 = get_forms(form)
+    transformation = get_transformation(form)
+
+    return transformation(FormPullback(form1, D), FormPullback(form2, D))
 end
 
 ############################################################################################
