@@ -14,6 +14,7 @@ using ..Points
 using ..Geometry
 using ..FunctionSpaces
 using ..Forms
+using ..Topology
 
 # core functionality
 include("./PlotKernel.jl")

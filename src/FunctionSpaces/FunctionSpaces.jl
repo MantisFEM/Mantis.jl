@@ -11,6 +11,7 @@ import Memoization
 import SparseArrays
 import ToeplitzMatrices
 
+using ..Topology
 using ..Geometry
 using ..Points
 using ..GeneralHelpers
