@@ -48,22 +48,6 @@ struct DiscreteGeometry{manifold_dim, image_dim, num_patches, F, L, NP} <:
     end
 end
 
-function DiscreteGeometry(
-    manifold_dim::Int,
-    num_elements::Int,
-    evaluable_function::Function,
-    element_length_function::Function,
-)
-    return DiscreteGeometry(
-        manifold_dim,
-        manifold_dim,
-        num_elements,
-        (num_elements,),
-        evaluable_function,
-        element_length_function,
-    )
-end
-
 ############################################################################################
 #                                         Getters                                          #
 ############################################################################################
