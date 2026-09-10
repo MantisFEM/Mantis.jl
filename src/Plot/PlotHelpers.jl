@@ -120,6 +120,7 @@ end
 
 # Only usable if Makie is also loaded.
 function plot_solution end
+function plot_topology end
 function plot_basis end
 
 # Pad for 1D.
