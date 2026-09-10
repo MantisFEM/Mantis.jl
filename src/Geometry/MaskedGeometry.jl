@@ -7,7 +7,7 @@
 
 A masked geometry obtained by a pseudo-refinement of another geometry. The
 geometry `base_geometry` is the original geometry and it is composed with the evaluation
-mask `eval_mask`.
+mask `eval_mask`. As such, it will always inherit the topology from its `base_geometry`.
 
 # Fields
 - `base_geometry::G`: The base geometry.
@@ -39,12 +39,27 @@ struct MaskedGeometry{manifold_dim, image_dim, num_patches, G, M} <:
     end
 end
 
+function Base.eltype(
+    ::Type{MaskedGeometry{manifold_dim, image_dim, num_patches, G, M}}
+) where {manifold_dim, image_dim, num_patches, G, M}
+    return eltype(G)
+end
+
 ############################################################################################
 #                                         Getters                                          #
 ############################################################################################
 
 get_base_geometry(geometry::MaskedGeometry) = geometry.base_geometry
 get_evaluation_mask(geometry::MaskedGeometry) = geometry.eval_mask
+get_topology(geometry::MaskedGeometry) = get_topology(get_base_geometry(geometry))
+
+function get_element_id(geometry::MaskedGeometry, patch_id, local_vertex_id)
+    base_element_id = get_element_id(get_base_geometry(geometry), patch_id, local_vertex_id)
+    # Convert to mask element id
+    # We need to get the number of elements per dim on this patch, or at least the correct
+    # global element id of the refinement.
+    return nothing
+end
 
 function get_num_elements(geometry::MaskedGeometry)
     return get_num_elements(get_evaluation_mask(geometry))
