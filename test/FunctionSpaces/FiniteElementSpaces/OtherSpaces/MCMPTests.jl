@@ -35,7 +35,9 @@ function _edge_number_to_dofpart_division(edge_number::Int)
 end
 
 function create_multi_patch_c0_space(
-    function_spaces::T, patch_connectivity::NTuple{num_patches, NTuple{4, NTuple{2, Int}}}
+    function_spaces::T,
+    patch_connectivity::NTuple{num_patches, NTuple{4, NTuple{2, Int}}},
+    topology,
 ) where {num_patches, T <: NTuple{num_patches, FunctionSpaces.AbstractFESpace{2, 1, 1}}}
     # Compute the total number of elements and the offsets for each patch.
     num_elements = 0
@@ -53,7 +55,7 @@ function create_multi_patch_c0_space(
     elems_per_patch_offset = vcat(0, cumsum(elems_per_patch[1:(end - 1)]))
 
     factor_geometries = map(FunctionSpaces.get_geometry, function_spaces)
-    geometry = Geometry.UnstructuredGeometry(factor_geometries)
+    geometry = Geometry.UnstructuredGeometry(factor_geometries, topology)
 
     # Create the dof partition, accounting for shared dofs.
     global_dof = 1
@@ -333,11 +335,12 @@ B2 = FunctionSpaces.BSplineSpace(patch, p[2], [-1, 1, 1, 1, -1])
 patch_1_con = ((0, 0), (2, 4), (0, 0), (0, 0))
 patch_2_con = ((0, 0), (0, 0), (0, 0), (1, 2))
 mesh_con_2patch = (patch_1_con, patch_2_con)
+topology_2patch = Topology.MeshTopology(((1, 2, 3, 4), (2, 5, 6, 3)), Topology.QUAD)
 
 TP1 = FunctionSpaces.TensorProductSpace((B1, B1))
-C0TP1 = create_multi_patch_c0_space((TP1, TP1), mesh_con_2patch)
+C0TP1 = create_multi_patch_c0_space((TP1, TP1), mesh_con_2patch, topology_2patch)
 TP2 = FunctionSpaces.TensorProductSpace((B2, B2))
-C0TP2 = create_multi_patch_c0_space((TP2, TP2), mesh_con_2patch)
+C0TP2 = create_multi_patch_c0_space((TP2, TP2), mesh_con_2patch, topology_2patch)
 
 function basic_tests(space, answers)
     # Type-based getters

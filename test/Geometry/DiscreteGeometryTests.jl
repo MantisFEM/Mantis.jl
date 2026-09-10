@@ -1,283 +1,1034 @@
-module DiscreteGeometryTests
+module FEGeometryTests
 
 using Mantis
 
-import ReadVTK
 import LinearAlgebra
 
 using Test
 
-# Refer to the following file for method and variable definitions.
-include("GeometryTestsHelpers.jl")
+include("../TestHelpers.jl")
 
-function run_tests(geometry, file_name; degree=4)
-    output_file_path = Mantis.GeneralHelpers.export_path(output_directory_tree, file_name)
-    Plot.plot(geometry; vtk_filename=output_file_path, degree=degree)
-    reference_points, reference_cells = get_point_cell_data(
-        reference_directory_tree, file_name * ".vtu"
+@testset "Single-patch 2D: Annulus" verbose=true begin
+    Bθ, Br = FunctionSpaces.create_dim_wise_bspline_spaces(
+        (0.0, 0.0),
+        (4.0, 1.0),
+        (4, 1),
+        (FunctionSpaces.GeneralizedTrigonometric(2, pi/2), FunctionSpaces.Bernstein(1)),
+        (1, -1);
+        n_dofs_left=(1, 1),
+        n_dofs_right=(1, 1),
     )
-    output_points, output_cells = get_point_cell_data(output_file_path * ".vtu")
-    @test all(isapprox.(reference_points, output_points; atol=atol))
-    @test all(isequal.(reference_cells, output_cells))
+    Bθ_periodic = FunctionSpaces.GTBSplineSpace((Bθ,), [1])
+    TP = FunctionSpaces.TensorProductSpace((Bθ_periodic, Br))
 
-    return nothing
+    geom_coeffs_0 = [
+        +1.0 -1.0
+        +1.0 +1.0
+        -1.0 +1.0
+        -1.0 -1.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0
+        geom_coeffs_0 .* 2.0
+    ]
+
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
+
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 2
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_2D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 4
+    @test Geometry.get_num_elements_per_patch(geometry) == (4,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
+
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            1.0 5.551115123125783e-17
+            0.8660254037844386 0.4999999999999998
+            0.5 0.8660254037844384
+            -5.551115123125783e-17 1.0
+            1.5 1.1102230246251565e-16
+            1.2990381056766578 0.7499999999999998
+            0.75 1.2990381056766576
+            -8.326672684688674e-17 1.5
+            2.0 1.1102230246251565e-16
+            1.7320508075688772 0.9999999999999997
+            1.0 1.7320508075688767
+            -1.1102230246251565e-16 2.0
+        ],
+        2 => [
+            -5.551115123125783e-17 1.0
+            -0.4999999999999999 0.8660254037844387
+            -0.8660254037844384 0.5
+            -1.0 -5.551115123125783e-17
+            -1.1102230246251565e-16 1.5
+            -0.7499999999999999 1.299038105676658
+            -1.2990381056766576 0.75
+            -1.5 -8.326672684688674e-17
+            -1.1102230246251565e-16 2.0
+            -0.9999999999999999 1.7320508075688772
+            -1.7320508075688767 1.0
+            -2.0 -1.1102230246251565e-16
+        ],
+        3 => [
+            -1.0 -5.551115123125783e-17
+            -0.8660254037844387 -0.4999999999999999
+            -0.5 -0.8660254037844384
+            5.551115123125783e-17 -1.0
+            -1.5 -1.1102230246251565e-16
+            -1.299038105676658 -0.7499999999999999
+            -0.75 -1.2990381056766576
+            8.326672684688674e-17 -1.5
+            -2.0 -1.1102230246251565e-16
+            -1.7320508075688772 -0.9999999999999999
+            -1.0 -1.7320508075688767
+            1.1102230246251565e-16 -2.0
+        ],
+        4 => [
+            5.551115123125783e-17 -1.0
+            0.4999999999999999 -0.8660254037844387
+            0.8660254037844384 -0.5
+            1.0 5.551115123125783e-17
+            1.1102230246251565e-16 -1.5
+            0.7499999999999999 -1.299038105676658
+            1.2990381056766576 -0.75
+            1.5 8.326672684688674e-17
+            1.1102230246251565e-16 -2.0
+            0.9999999999999999 -1.7320508075688772
+            1.7320508075688767 -1.0
+            2.0 1.1102230246251565e-16
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [1.1102230246251565e-16 1.5707963267948961; 1.0 0.0],
+            [-0.7853981633974482 1.360349523175663; 0.8660254037844385 0.5],
+            [-1.3603495231756633 0.7853981633974481; 0.5 0.8660254037844384],
+            [-1.5707963267948966 1.1102230246251565e-16; -5.551115123125783e-17 1.0],
+            [1.1102230246251565e-16 2.3561944901923444; 1.0 0.0],
+            [-1.1780972450961724 2.0405242847634946; 0.8660254037844385 0.5],
+            [-2.040524284763495 1.1780972450961722; 0.5 0.8660254037844384],
+            [-2.356194490192345 1.6653345369377348e-16; -5.551115123125783e-17 1.0],
+            [2.220446049250313e-16 3.1415926535897922; 1.0 0.0],
+            [-1.5707963267948963 2.720699046351326; 0.8660254037844385 0.5],
+            [-2.720699046351326 1.5707963267948961; 0.5 0.8660254037844384],
+            [-3.141592653589793 2.220446049250313e-16; -5.551115123125783e-17 1.0],
+        ],
+        2 => [
+            [-1.5707963267948961 1.1102230246251565e-16; 0.0 1.0],
+            [-1.360349523175663 -0.7853981633974483; -0.5 0.8660254037844386],
+            [-0.7853981633974481 -1.3603495231756633; -0.8660254037844384 0.5],
+            [-1.1102230246251565e-16 -1.5707963267948966; -1.0 -5.551115123125783e-17],
+            [-2.3561944901923444 1.1102230246251565e-16; 0.0 1.0],
+            [-2.0405242847634946 -1.1780972450961724; -0.5 0.8660254037844386],
+            [-1.1780972450961722 -2.040524284763495; -0.8660254037844384 0.5],
+            [-1.6653345369377348e-16 -2.356194490192345; -1.0 -5.551115123125783e-17],
+            [-3.1415926535897922 2.220446049250313e-16; 0.0 1.0],
+            [-2.720699046351326 -1.5707963267948966; -0.5 0.8660254037844386],
+            [-1.5707963267948961 -2.720699046351326; -0.8660254037844384 0.5],
+            [-2.220446049250313e-16 -3.141592653589793; -1.0 -5.551115123125783e-17],
+        ],
+        3 => [
+            [-1.1102230246251565e-16 -1.5707963267948961; -1.0 0.0],
+            [0.7853981633974483 -1.360349523175663; -0.8660254037844386 -0.5],
+            [1.3603495231756633 -0.7853981633974481; -0.5 -0.8660254037844384],
+            [1.5707963267948966 -1.1102230246251565e-16; 5.551115123125783e-17 -1.0],
+            [-1.1102230246251565e-16 -2.3561944901923444; -1.0 0.0],
+            [1.1780972450961724 -2.0405242847634946; -0.8660254037844386 -0.5],
+            [2.040524284763495 -1.1780972450961722; -0.5 -0.8660254037844384],
+            [2.356194490192345 -1.6653345369377348e-16; 5.551115123125783e-17 -1.0],
+            [-2.220446049250313e-16 -3.1415926535897922; -1.0 0.0],
+            [1.5707963267948966 -2.720699046351326; -0.8660254037844386 -0.5],
+            [2.720699046351326 -1.5707963267948961; -0.5 -0.8660254037844384],
+            [3.141592653589793 -2.220446049250313e-16; 5.551115123125783e-17 -1.0],
+        ],
+        4 => [
+            [1.5707963267948961 -1.1102230246251565e-16; 0.0 -1.0],
+            [1.360349523175663 0.7853981633974483; 0.5 -0.8660254037844386],
+            [0.7853981633974481 1.3603495231756633; 0.8660254037844384 -0.5],
+            [1.1102230246251565e-16 1.5707963267948966; 1.0 5.551115123125783e-17],
+            [2.3561944901923444 -1.1102230246251565e-16; 0.0 -1.0],
+            [2.0405242847634946 1.1780972450961724; 0.5 -0.8660254037844386],
+            [1.1780972450961722 2.040524284763495; 0.8660254037844384 -0.5],
+            [1.6653345369377348e-16 2.356194490192345; 1.0 5.551115123125783e-17],
+            [3.1415926535897922 -2.220446049250313e-16; 0.0 -1.0],
+            [2.720699046351326 1.5707963267948966; 0.5 -0.8660254037844386],
+            [1.5707963267948961 2.720699046351326; 0.8660254037844384 -0.5],
+            [2.220446049250313e-16 3.141592653589793; 1.0 5.551115123125783e-17],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
 end
 
-############################################################################################
-#                                         Annulus                                          #
-############################################################################################
+@testset "Single-patch 2D: Square with hole (Lagrange-Bernstein)" verbose=true begin
+    nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(2)))[1]
+    l = FunctionSpaces.Lagrange(nodes)
+    B1 = FunctionSpaces.BSplineSpace(
+        Geometry.CartesianGeometry(([0.0, 1.0, 2.0, 3.0, 4.0],)), l, [-1, 0, 0, 0, -1]
+    )
+    GB = FunctionSpaces.GTBSplineSpace((B1,), [0])
+    B2 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry(([0.0, 1.0],)), 1, [-1, -1])
+    TP = FunctionSpaces.TensorProductSpace((GB, B2))
 
-starting_points = (0.0, 0.0)
-box_sizes = (4.0, 1.0)
-num_elements = (4, 1)
-deg = (2, 1)
-Wt = pi / 2
-section_spaces = (
-    FunctionSpaces.GeneralizedTrigonometric(deg[1], Wt), FunctionSpaces.Bernstein(deg[2])
-)
-regularities = (1, -1)
+    geom_coeffs_0 = [
+        +1.0 -1.0
+        +1.0 +1.0
+        -1.0 +1.0
+        -1.0 -1.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0
+        geom_coeffs_0 .* 2.0
+    ]
 
-# create tensor-product space
-Bθ, Br = FunctionSpaces.create_dim_wise_bspline_spaces(
-    starting_points,
-    box_sizes,
-    num_elements,
-    section_spaces,
-    regularities;
-    n_dofs_left=(1, 1),
-    n_dofs_right=(1, 1),
-)
-Bθ_periodic = FunctionSpaces.GTBSplineSpace((Bθ,), [1])
-TP = FunctionSpaces.TensorProductSpace((Bθ_periodic, Br))
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0
-    geom_coeffs_0 .* r1
-]
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 2
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_2D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 4
+    @test Geometry.get_num_elements_per_patch(geometry) == (4,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
 
-# create DiscreteGeometry
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-# Generate the plot
-file_name = "fem_geometry_annulus_test"
-run_tests(geom, file_name)
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            1.0 -1.0
+            0.9999999999999999 -0.33333333333333337
+            0.9999999999999998 0.3333333333333332
+            1.0 1.0
+            1.5 -1.5
+            1.5 -0.5000000000000001
+            1.4999999999999998 0.4999999999999998
+            1.5 1.5
+            2.0 -2.0
+            1.9999999999999998 -0.6666666666666667
+            1.9999999999999996 0.6666666666666664
+            2.0 2.0
+        ],
+        2 => [
+            1.0 1.0
+            0.33333333333333337 0.9999999999999999
+            -0.3333333333333332 0.9999999999999998
+            -1.0 1.0
+            1.5 1.5
+            0.5000000000000001 1.5
+            -0.4999999999999998 1.4999999999999998
+            -1.5 1.5
+            2.0 2.0
+            0.6666666666666667 1.9999999999999998
+            -0.6666666666666664 1.9999999999999996
+            -2.0 2.0
+        ],
+        3 => [
+            -1.0 1.0
+            -0.9999999999999999 0.33333333333333337
+            -0.9999999999999998 -0.3333333333333332
+            -1.0 -1.0
+            -1.5 1.5
+            -1.5 0.5000000000000001
+            -1.4999999999999998 -0.4999999999999998
+            -1.5 -1.5
+            -2.0 2.0
+            -1.9999999999999998 0.6666666666666667
+            -1.9999999999999996 -0.6666666666666664
+            -2.0 -2.0
+        ],
+        4 => [
+            -1.0 -1.0
+            -0.33333333333333337 -0.9999999999999999
+            0.3333333333333332 -0.9999999999999998
+            1.0 -1.0
+            -1.5 -1.5
+            -0.5000000000000001 -1.5
+            0.4999999999999998 -1.4999999999999998
+            1.5 -1.5
+            -2.0 -2.0
+            -0.6666666666666667 -1.9999999999999998
+            0.6666666666666664 -1.9999999999999996
+            2.0 -2.0
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
 
-############################################################################################
-#                          Lagrange-Bernstein (Square with hole)                           #
-############################################################################################
-deg = 1
-nodes = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_lobatto(deg+1)))[1]
-b = FunctionSpaces.Lagrange(nodes)
-B1 = FunctionSpaces.BSplineSpace(
-    Geometry.CartesianGeometry(([0.0, 1.0, 2.0, 3.0, 4.0],)), b, [-1, 0, 0, 0, -1]
-)
-GB = FunctionSpaces.GTBSplineSpace((B1,), [0])
-B2 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry(([0.0, 1.0],)), 1, [-1, -1])
-TP = FunctionSpaces.TensorProductSpace((GB, B2))
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0
-    geom_coeffs_0 .* r1
-]
-geom = Mantis.FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-file_name = "fem_geometry_lagrange_square_test"
-run_tests(geom, file_name; degree=1)
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [0.0 2.0; 1.0 -1.0],
+            [0.0 1.9999999999999998; 0.9999999999999999 -0.33333333333333337],
+            [0.0 1.9999999999999996; 0.9999999999999998 0.3333333333333332],
+            [0.0 2.0; 1.0 1.0],
+            [0.0 3.0; 1.0 -1.0],
+            [0.0 2.9999999999999996; 0.9999999999999999 -0.33333333333333337],
+            [0.0 2.999999999999999; 0.9999999999999998 0.3333333333333332],
+            [0.0 3.0; 1.0 1.0],
+            [0.0 4.0; 1.0 -1.0],
+            [0.0 3.9999999999999996; 0.9999999999999999 -0.33333333333333337],
+            [0.0 3.999999999999999; 0.9999999999999998 0.3333333333333332],
+            [0.0 4.0; 1.0 1.0],
+        ],
+        2 => [
+            [-2.0 0.0; 1.0 1.0],
+            [-1.9999999999999998 0.0; 0.33333333333333337 0.9999999999999999],
+            [-1.9999999999999996 0.0; -0.3333333333333332 0.9999999999999998],
+            [-2.0 0.0; -1.0 1.0],
+            [-3.0 0.0; 1.0 1.0],
+            [-2.9999999999999996 0.0; 0.33333333333333337 0.9999999999999999],
+            [-2.999999999999999 0.0; -0.3333333333333332 0.9999999999999998],
+            [-3.0 0.0; -1.0 1.0],
+            [-4.0 0.0; 1.0 1.0],
+            [-3.9999999999999996 0.0; 0.33333333333333337 0.9999999999999999],
+            [-3.999999999999999 0.0; -0.3333333333333332 0.9999999999999998],
+            [-4.0 0.0; -1.0 1.0],
+        ],
+        3 => [
+            [0.0 -2.0; -1.0 1.0],
+            [0.0 -1.9999999999999998; -0.9999999999999999 0.33333333333333337],
+            [0.0 -1.9999999999999996; -0.9999999999999998 -0.3333333333333332],
+            [0.0 -2.0; -1.0 -1.0],
+            [0.0 -3.0; -1.0 1.0],
+            [0.0 -2.9999999999999996; -0.9999999999999999 0.33333333333333337],
+            [0.0 -2.999999999999999; -0.9999999999999998 -0.3333333333333332],
+            [0.0 -3.0; -1.0 -1.0],
+            [0.0 -4.0; -1.0 1.0],
+            [0.0 -3.9999999999999996; -0.9999999999999999 0.33333333333333337],
+            [0.0 -3.999999999999999; -0.9999999999999998 -0.3333333333333332],
+            [0.0 -4.0; -1.0 -1.0],
+        ],
+        4 => [
+            [2.0 0.0; -1.0 -1.0],
+            [1.9999999999999998 0.0; -0.33333333333333337 -0.9999999999999999],
+            [1.9999999999999996 0.0; 0.3333333333333332 -0.9999999999999998],
+            [2.0 0.0; 1.0 -1.0],
+            [3.0 0.0; -1.0 -1.0],
+            [2.9999999999999996 0.0; -0.33333333333333337 -0.9999999999999999],
+            [2.999999999999999 0.0; 0.3333333333333332 -0.9999999999999998],
+            [3.0 0.0; 1.0 -1.0],
+            [4.0 0.0; -1.0 -1.0],
+            [3.9999999999999996 0.0; -0.33333333333333337 -0.9999999999999999],
+            [3.999999999999999 0.0; 0.3333333333333332 -0.9999999999999998],
+            [4.0 0.0; 1.0 -1.0],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
 
-############################################################################################
-#                                          Spiral                                          #
-############################################################################################
-deg = 2
-Wt = pi / 2
-b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Geometry.CartesianGeometry(breakpoints)
-GB = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
+@testset "Single-patch 1D-in-3D: Spiral" verbose=true begin
+    geo = Geometry.CartesianGeometry(LinRange(0.0, 4.0, 5))
+    GB = FunctionSpaces.BSplineSpace(
+        geo, FunctionSpaces.GeneralizedTrigonometric(2, pi/2), [-1, 1, 1, 1, -1]
+    )
 
-# control points for geometry
-geom_coeffs = [
-    +0.0 -1.0 0.0
-    +1.0 -1.0 0.25
-    +1.0 +1.0 0.5
-    -1.0 +1.0 0.75
-    -1.0 -1.0 1.0
-    +0.0 -1.0 1.25
-]
-geom = FunctionSpaces.DiscreteGeometry(GB, geom_coeffs)
-file_name = "fem_geometry_spiral_test"
-run_tests(geom, file_name)
+    geom_coeffs = [
+        +0.0 -1.0 0.0
+        +1.0 -1.0 0.25
+        +1.0 +1.0 0.5
+        -1.0 +1.0 0.75
+        -1.0 -1.0 1.0
+        +0.0 -1.0 1.25
+    ]
+    geometry = FunctionSpaces.FEGeometry(GB, geom_coeffs)
 
-############################################################################################
-#                                       Wavy surface                                       #
-############################################################################################
-deg = 2
-Wt = pi / 2
-b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Geometry.CartesianGeometry(breakpoints)
-B = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
-GB = FunctionSpaces.GTBSplineSpace((B,), [1])
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
-TP = FunctionSpaces.TensorProductSpace((GB, b1))
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
-]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-file_name = "fem_geometry_wavy_surface_test"
-run_tests(geom, file_name)
+    @test Geometry.get_manifold_dim(geometry) == 1
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_1D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 4
+    @test Geometry.get_num_elements_per_patch(geometry) == (4,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0,)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0),)
 
-############################################################################################
-#                                  NURBS quarter annulus                                   #
-############################################################################################
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4),))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            0.0 -1.0 0.0
+            0.5 -0.8660254037844387 0.14174682452694512
+            0.8660254037844384 -0.5 0.2790063509461096
+            1.0 0.0 0.375
+        ],
+        2 => [
+            1.0 0.0 0.375
+            0.8660254037844387 0.5 0.45424682452694515
+            0.5 0.8660254037844384 0.5457531754730548
+            0.0 1.0 0.625
+        ],
+        3 => [
+            0.0 1.0 0.625
+            -0.5 0.8660254037844387 0.7042468245269452
+            -0.8660254037844384 0.5 0.7957531754730548
+            -1.0 0.0 0.875
+        ],
+        4 => [
+            -1.0 0.0 0.875
+            -0.8660254037844386 -0.5 0.9709936490538903
+            -0.5 -0.8660254037844384 1.1082531754730547
+            0.0 -1.0 1.25
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
 
-deg = 2
-b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
-B = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
-TP = FunctionSpaces.TensorProductSpace((B, b1))
-# control points for geometry
-geom_coeffs_0 = [
-    0.0 1.0
-    1.0 1.0
-    1.0 0.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 zeros(3)
-    geom_coeffs_0 .* r1 zeros(3)
-]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-file_name = "fem_geometry_nurbs_quarter_annulus_test"
-# run_tests(geom, file_name)
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [1.5707963267948963; 0.0; 0.3926990816987241;;],
+            [1.3603495231756633; 0.7853981633974483; 0.43826215121859685;;],
+            [0.7853981633974481; 1.3603495231756633; 0.36639323124631995;;],
+            [0.0; 1.5707963267948966; 0.1963495408493621;;],
+        ],
+        2 => [
+            [0.0; 1.5707963267948961; 0.19634954084936207;;],
+            [-0.7853981633974483; 1.360349523175663; 0.2682184608216389;;],
+            [-1.360349523175663; 0.7853981633974481; 0.26821846082163897;;],
+            [-1.5707963267948966; 0.0; 0.19634954084936213;;],
+        ],
+        3 => [
+            [-1.5707963267948961; 0.0; 0.19634954084936207;;],
+            [-1.360349523175663; -0.7853981633974483; 0.26821846082163897;;],
+            [-0.7853981633974481; -1.360349523175663; 0.268218460821639;;],
+            [0.0; -1.5707963267948966; 0.19634954084936218;;],
+        ],
+        4 => [
+            [0.0; -1.5707963267948961; 0.19634954084936218;;],
+            [0.7853981633974482; -1.360349523175663; 0.36639323124632006;;],
+            [1.360349523175663; -0.7853981633974481; 0.4382621512185969;;],
+            [1.5707963267948963; 0.0; 0.39269908169872436;;],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
 
-############################################################################################
-#                                      NURBS annulus                                       #
-############################################################################################
+@testset "Single-patch 2D-in-3D: Wavy surface" verbose=true begin
+    b = FunctionSpaces.GeneralizedTrigonometric(2, pi/2)
+    B = FunctionSpaces.BSplineSpace(
+        Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), b, [-1, 1, 1, 1, -1]
+    )
+    GB = FunctionSpaces.GTBSplineSpace((B,), [1])
+    b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+    TP = FunctionSpaces.TensorProductSpace((GB, b1))
 
-deg = 2
-b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
-br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-B = (br, br, br, br)
-GB = FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
-TP = FunctionSpaces.TensorProductSpace((GB, b1))
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 zeros(4)
-    geom_coeffs_0 .* r1 zeros(4)
-]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-file_name = "fem_geometry_nurbs_annulus_test"
-# run_tests(geom, file_name)
+    geom_coeffs_0 = [
+        +1.0 -1.0
+        +1.0 +1.0
+        -1.0 +1.0
+        -1.0 -1.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0 [-1.0, 1.0, -1.0, 1.0]
+        geom_coeffs_0 .* 2.0 [1.0, -1.0, 1.0, -1.0]
+    ]
 
-############################################################################################
-#                                   NURBS wavy surface                                     #
-############################################################################################
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 
-deg = 2
-b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
-br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-B = (br, br, br, br)
-GB = FunctionSpaces.GTBSplineSpace(B, [1, 1, 1, 1])
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
-TP = FunctionSpaces.TensorProductSpace((GB, b1))
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
-    geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
-]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
-file_name = "fem_geometry_nurbs_wavy_surface_test"
-# run_tests(geom, file_name)
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_2D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 4
+    @test Geometry.get_num_elements_per_patch(geometry) == (4,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
 
-############################################################################################
-#                                NURBS vs GTB basis annulus                               #
-############################################################################################
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            1.0 5.551115123125783e-17 5.551115123125783e-17
+            0.8660254037844386 0.4999999999999998 0.3660254037844385
+            0.5 0.8660254037844384 0.3660254037844384
+            -5.551115123125783e-17 1.0 -5.551115123125783e-17
+            1.5 1.1102230246251565e-16 0.0
+            1.2990381056766578 0.7499999999999998 0.0
+            0.75 1.2990381056766576 0.0
+            -8.326672684688674e-17 1.5 0.0
+            2.0 1.1102230246251565e-16 -5.551115123125783e-17
+            1.7320508075688772 0.9999999999999997 -0.36602540378443843
+            1.0 1.7320508075688767 -0.3660254037844384
+            -1.1102230246251565e-16 2.0 5.551115123125783e-17
+        ],
+        2 => [
+            -5.551115123125783e-17 1.0 -5.551115123125783e-17
+            -0.4999999999999999 0.8660254037844387 -0.3660254037844386
+            -0.8660254037844384 0.5 -0.3660254037844384
+            -1.0 -5.551115123125783e-17 5.551115123125783e-17
+            -1.1102230246251565e-16 1.5 0.0
+            -0.7499999999999999 1.299038105676658 -5.551115123125783e-17
+            -1.2990381056766576 0.75 0.0
+            -1.5 -8.326672684688674e-17 0.0
+            -1.1102230246251565e-16 2.0 5.551115123125783e-17
+            -0.9999999999999999 1.7320508075688772 0.36602540378443854
+            -1.7320508075688767 1.0 0.3660254037844384
+            -2.0 -1.1102230246251565e-16 -5.551115123125783e-17
+        ],
+        3 => [
+            -1.0 -5.551115123125783e-17 5.551115123125783e-17
+            -0.8660254037844387 -0.4999999999999999 0.3660254037844386
+            -0.5 -0.8660254037844384 0.3660254037844384
+            5.551115123125783e-17 -1.0 -5.551115123125783e-17
+            -1.5 -1.1102230246251565e-16 0.0
+            -1.299038105676658 -0.7499999999999999 5.551115123125783e-17
+            -0.75 -1.2990381056766576 0.0
+            8.326672684688674e-17 -1.5 0.0
+            -2.0 -1.1102230246251565e-16 -5.551115123125783e-17
+            -1.7320508075688772 -0.9999999999999999 -0.36602540378443854
+            -1.0 -1.7320508075688767 -0.3660254037844384
+            1.1102230246251565e-16 -2.0 5.551115123125783e-17
+        ],
+        4 => [
+            5.551115123125783e-17 -1.0 -5.551115123125783e-17
+            0.4999999999999999 -0.8660254037844387 -0.3660254037844386
+            0.8660254037844384 -0.5 -0.3660254037844384
+            1.0 5.551115123125783e-17 5.551115123125783e-17
+            1.1102230246251565e-16 -1.5 0.0
+            0.7499999999999999 -1.299038105676658 -5.551115123125783e-17
+            1.2990381056766576 -0.75 0.0
+            1.5 8.326672684688674e-17 0.0
+            1.1102230246251565e-16 -2.0 5.551115123125783e-17
+            0.9999999999999999 -1.7320508075688772 0.36602540378443854
+            1.7320508075688767 -1.0 0.3660254037844384
+            2.0 1.1102230246251565e-16 -5.551115123125783e-17
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
 
-# B-spline and NURBS GTB spline spaces on the circle
-deg = 2
-b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
-br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-Bsp = FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
-Nurbs = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [1.1102230246251565e-16 0.0; 1.0 1.5707963267948961; 1.5707963267948961 -1.1102230246251565e-16],
+            [-0.7853981633974482 0.5; 0.8660254037844385 0.5749513597782149; 1.360349523175663 -0.732050807568877],
+            [-1.3603495231756633 0.8660254037844384; 0.5 -0.5749513597782152; 0.7853981633974481 -0.7320508075688767],
+            [-1.5707963267948966 1.0; -5.551115123125783e-17 -1.5707963267948966; 1.1102230246251565e-16 1.1102230246251565e-16],
+            [1.1102230246251565e-16 0.0; 1.0 0.0; 2.3561944901923444 -1.1102230246251565e-16],
+            [-1.1780972450961724 0.5; 0.8660254037844385 0.0; 2.0405242847634946 -0.732050807568877],
+            [-2.040524284763495 0.8660254037844384; 0.5 0.0; 1.1780972450961722 -0.7320508075688767],
+            [-2.356194490192345 1.0; -5.551115123125783e-17 0.0; 1.6653345369377348e-16 1.1102230246251565e-16],
+            [2.220446049250313e-16 0.0; 1.0 -1.5707963267948961; 3.1415926535897922 -1.1102230246251565e-16],
+            [-1.5707963267948963 0.5; 0.8660254037844385 -0.5749513597782149; 2.720699046351326 -0.732050807568877],
+            [-2.720699046351326 0.8660254037844384; 0.5 0.5749513597782152; 1.5707963267948961 -0.7320508075688767],
+            [-3.141592653589793 1.0; -5.551115123125783e-17 1.5707963267948966; 2.220446049250313e-16 1.1102230246251565e-16],
+        ],
+        2 => [
+            [-1.5707963267948961 1.0; 0.0 -1.5707963267948961; 1.1102230246251565e-16 1.1102230246251565e-16],
+            [-1.360349523175663 0.8660254037844386; -0.5 -0.5749513597782148; -0.7853981633974483 0.7320508075688772],
+            [-0.7853981633974481 0.5; -0.8660254037844384 0.5749513597782152; -1.3603495231756633 0.7320508075688767],
+            [-1.1102230246251565e-16 -5.551115123125783e-17; -1.0 1.5707963267948966; -1.5707963267948966 -1.1102230246251565e-16],
+            [-2.3561944901923444 1.0; 0.0 0.0; 1.1102230246251565e-16 1.1102230246251565e-16],
+            [-2.0405242847634946 0.8660254037844386; -0.5 0.0; -1.1780972450961724 0.7320508075688772],
+            [-1.1780972450961722 0.5; -0.8660254037844384 0.0; -2.040524284763495 0.7320508075688767],
+            [-1.6653345369377348e-16 -5.551115123125783e-17; -1.0 0.0; -2.356194490192345 -1.1102230246251565e-16],
+            [-3.1415926535897922 1.0; 0.0 1.5707963267948961; 2.220446049250313e-16 1.1102230246251565e-16],
+            [-2.720699046351326 0.8660254037844386; -0.5 0.5749513597782148; -1.5707963267948966 0.7320508075688772],
+            [-1.5707963267948961 0.5; -0.8660254037844384 -0.5749513597782152; -2.720699046351326 0.7320508075688767],
+            [-2.220446049250313e-16 -5.551115123125783e-17; -1.0 -1.5707963267948966; -3.141592653589793 -1.1102230246251565e-16],
+        ],
+        3 => [
+            [-1.1102230246251565e-16 0.0; -1.0 1.5707963267948961; -1.5707963267948961 -1.1102230246251565e-16],
+            [0.7853981633974483 -0.5; -0.8660254037844386 0.5749513597782148; -1.360349523175663 -0.7320508075688772],
+            [1.3603495231756633 -0.8660254037844384; -0.5 -0.5749513597782152; -0.7853981633974481 -0.7320508075688767],
+            [1.5707963267948966 -1.0; 5.551115123125783e-17 -1.5707963267948966; -1.1102230246251565e-16 1.1102230246251565e-16],
+            [-1.1102230246251565e-16 0.0; -1.0 0.0; -2.3561944901923444 -1.1102230246251565e-16],
+            [1.1780972450961724 -0.5; -0.8660254037844386 0.0; -2.0405242847634946 -0.7320508075688772],
+            [2.040524284763495 -0.8660254037844384; -0.5 0.0; -1.1780972450961722 -0.7320508075688767],
+            [2.356194490192345 -1.0; 5.551115123125783e-17 0.0; -1.6653345369377348e-16 1.1102230246251565e-16],
+            [-2.220446049250313e-16 0.0; -1.0 -1.5707963267948961; -3.1415926535897922 -1.1102230246251565e-16],
+            [1.5707963267948966 -0.5; -0.8660254037844386 -0.5749513597782148; -2.720699046351326 -0.7320508075688772],
+            [2.720699046351326 -0.8660254037844384; -0.5 0.5749513597782152; -1.5707963267948961 -0.7320508075688767],
+            [3.141592653589793 -1.0; 5.551115123125783e-17 1.5707963267948966; -2.220446049250313e-16 1.1102230246251565e-16],
+        ],
+        4 => [
+            [1.5707963267948961 -1.0; 0.0 -1.5707963267948961; -1.1102230246251565e-16 1.1102230246251565e-16],
+            [1.360349523175663 -0.8660254037844386; 0.5 -0.5749513597782148; 0.7853981633974483 0.7320508075688772],
+            [0.7853981633974481 -0.5; 0.8660254037844384 0.5749513597782152; 1.3603495231756633 0.7320508075688767],
+            [1.1102230246251565e-16 5.551115123125783e-17; 1.0 1.5707963267948966; 1.5707963267948966 -1.1102230246251565e-16],
+            [2.3561944901923444 -1.0; 0.0 0.0; -1.1102230246251565e-16 1.1102230246251565e-16],
+            [2.0405242847634946 -0.8660254037844386; 0.5 0.0; 1.1780972450961724 0.7320508075688772],
+            [1.1780972450961722 -0.5; 0.8660254037844384 0.0; 2.040524284763495 0.7320508075688767],
+            [1.6653345369377348e-16 5.551115123125783e-17; 1.0 0.0; 2.356194490192345 -1.1102230246251565e-16],
+            [3.1415926535897922 -1.0; 0.0 1.5707963267948961; -2.220446049250313e-16 1.1102230246251565e-16],
+            [2.720699046351326 -0.8660254037844386; 0.5 0.5749513597782148; 1.5707963267948966 0.7320508075688772],
+            [1.5707963267948961 -0.5; 0.8660254037844384 -0.5749513597782152; 2.720699046351326 0.7320508075688767],
+            [2.220446049250313e-16 5.551115123125783e-17; 1.0 -1.5707963267948966; 3.141592653589793 -1.1102230246251565e-16],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
 
-# GTB spline space on the radial direction
-Wt = pi / 2
-gt = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-B = FunctionSpaces.BSplineSpace(
-    Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
-)
-GTB = FunctionSpaces.GTBSplineSpace((B,), [1])
+@testset "Single-patch 2D-in-3D: NURBS quarter annulus" verbose=true begin
+    b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 2, [-1, -1])
+    B = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
+    b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+    TP = FunctionSpaces.TensorProductSpace((B, b1))
 
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+    geom_coeffs_0 = [
+        0.0 1.0
+        1.0 1.0
+        1.0 0.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0 zeros(3)
+        geom_coeffs_0 .* 2.0 zeros(3)
+    ]
 
-TP_bsp = FunctionSpaces.TensorProductSpace((Bsp, b1))
-TP_nurbs = FunctionSpaces.TensorProductSpace((Nurbs, b1))
-TP_gtb = FunctionSpaces.TensorProductSpace((GTB, b1))
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 zeros(4)
-    geom_coeffs_0 .* r1 zeros(4)
-]
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_2D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 1
+    @test Geometry.get_num_elements(geometry, 1) == 1
+    @test Geometry.get_num_elements_per_patch(geometry) == (1,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
 
-# NURBS annulus with B-spline and NURBS bases
-geom = FunctionSpaces.DiscreteGeometry(TP_nurbs, geom_coeffs)
-file_name = "fem_geometry_nurbs_bsp_basis_test"
-# run_tests(geom, file_name)
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            0.0 1.0 0.0
+            0.48904167641086815 0.872260419102717 0.0
+            0.872260419102717 0.48904167641086826 0.0
+            1.0 0.0 0.0
+            0.0 1.5 0.0
+            0.7335625146163023 1.3083906286540754 0.0
+            1.3083906286540756 0.7335625146163025 0.0
+            1.5 0.0 0.0
+            0.0 2.0 0.0
+            0.9780833528217363 1.744520838205434 0.0
+            1.744520838205434 0.9780833528217365 0.0
+            2.0 0.0 0.0
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
 
-geom = FunctionSpaces.DiscreteGeometry(TP_gtb, geom_coeffs)
-file_name = "fem_geometry_nurbs_gtb_basis_test"
-# run_tests(geom, file_name)
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [1.414213562373095 1.0; 0.0 0.0; 0.0 0.0],
+            [1.36634567171691 0.8722604191027169; 0.48904167641086815 0.0; -0.7767603141773711 0.0],
+            [0.7767603141773715 0.48904167641086826; 0.872260419102717 0.0; -1.3663456717169093 0.0],
+            [0.0 0.0; 1.0 0.0; -1.414213562373095 0.0],
+            [2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [2.049518507575365 0.8722604191027169; 0.48904167641086815 0.0; -1.1651404712660567 0.0],
+            [1.1651404712660571 0.48904167641086826; 0.872260419102717 0.0; -2.049518507575364 0.0],
+            [0.0 0.0; 1.0 0.0; -2.1213203435596424 0.0],
+            [2.82842712474619 1.0; 0.0 0.0; 0.0 0.0],
+            [2.73269134343382 0.8722604191027169; 0.48904167641086815 0.0; -1.5535206283547423 0.0],
+            [1.553520628354743 0.48904167641086826; 0.872260419102717 0.0; -2.7326913434338187 0.0],
+            [0.0 0.0; 1.0 0.0; -2.82842712474619 0.0],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
+
+@testset "Multi-patch 2D-in-3D: NURBS annulus" verbose=true begin
+    b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 2, [-1, -1])
+    br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
+    GB = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+    b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+    TP = FunctionSpaces.TensorProductSpace((GB, b1))
+
+    geom_coeffs_0 = [
+        +1.0 -1.0
+        +1.0 +1.0
+        -1.0 +1.0
+        -1.0 -1.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0 zeros(4)
+        geom_coeffs_0 .* 2.0 zeros(4)
+    ]
+
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
+
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 4
+    @test Geometry.get_topology(geometry) == Topology.TensorProductTopology(
+        Topology.MeshTopology(((1, 2), (2, 3), (3, 4), (4, 1)), Topology.LINE),
+        Topology.SINGLE_PATCH_TOPOLOGY_1D,
+    )
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 1
+    @test Geometry.get_num_elements_per_patch(geometry) == (1, 1, 1, 1)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
+    @test Geometry.get_patch_id(geometry, 3) == 3
+    @test Geometry.get_patch_and_local_element_id(geometry, 3) == (3, 1)
+    @test Geometry.get_global_element_id(geometry, 3, 1) == 3
+
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.0
+            0.48904167641086826 0.872260419102717 0.0
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 0.0
+            0.9780833528217365 1.744520838205434 0.0
+            0.0 2.0 0.0
+        ],
+        2 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.0
+            0.48904167641086826 0.872260419102717 0.0
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 0.0
+            0.9780833528217365 1.744520838205434 0.0
+            0.0 2.0 0.0
+        ],
+        3 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.0
+            0.48904167641086826 0.872260419102717 0.0
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 0.0
+            0.9780833528217365 1.744520838205434 0.0
+            0.0 2.0 0.0
+        ],
+        4 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.0
+            0.48904167641086826 0.872260419102717 0.0
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 0.0
+            0.9780833528217365 1.744520838205434 0.0
+            0.0 2.0 0.0
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [0.0 0.0; 1.0 0.0; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.0; 1.36634567171691 0.0],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 0.0; 0.7767603141773713 0.0],
+            [-1.414213562373095 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 0.0],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 0.0],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 0.0; 2.73269134343382 0.0],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.0; 1.5535206283547427 0.0],
+            [-2.82842712474619 1.0; 0.0 0.0; 0.0 0.0],
+        ],
+        2 => [
+            [0.0 0.0; 1.0 0.0; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.0; 1.36634567171691 0.0],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 0.0; 0.7767603141773713 0.0],
+            [-1.414213562373095 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 0.0],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 0.0],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 0.0; 2.73269134343382 0.0],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.0; 1.5535206283547427 0.0],
+            [-2.82842712474619 1.0; 0.0 0.0; 0.0 0.0],
+        ],
+        3 => [
+            [0.0 0.0; 1.0 0.0; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.0; 1.36634567171691 0.0],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 0.0; 0.7767603141773713 0.0],
+            [-1.414213562373095 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 0.0],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 0.0],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 0.0; 2.73269134343382 0.0],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.0; 1.5535206283547427 0.0],
+            [-2.82842712474619 1.0; 0.0 0.0; 0.0 0.0],
+        ],
+        4 => [
+            [0.0 0.0; 1.0 0.0; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.0; 1.36634567171691 0.0],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 0.0; 0.7767603141773713 0.0],
+            [-1.414213562373095 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 0.0],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 0.0],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 0.0; 2.73269134343382 0.0],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.0; 1.5535206283547427 0.0],
+            [-2.82842712474619 1.0; 0.0 0.0; 0.0 0.0],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
+
+@testset "Multi-patch 2D-in-3D: NURBS wavy surface" verbose=true begin
+    b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 2, [-1, -1])
+    br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
+    GB = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+    b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+    TP = FunctionSpaces.TensorProductSpace((GB, b1))
+
+    geom_coeffs_0 = [
+        +1.0 -1.0
+        +1.0 +1.0
+        -1.0 +1.0
+        -1.0 -1.0
+    ]
+    geom_coeffs = [
+        geom_coeffs_0 .* 1.0 [-1.0, 1.0, -1.0, 1.0]
+        geom_coeffs_0 .* 2.0 [1.0, -1.0, 1.0, -1.0]
+    ]
+
+    geometry = FunctionSpaces.FEGeometry(TP, geom_coeffs)
+
+    @test Geometry.get_manifold_dim(geometry) == 2
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 4
+    @test Geometry.get_topology(geometry) == Topology.TensorProductTopology(
+        Topology.MeshTopology(((1, 2), (2, 3), (3, 4), (4, 1)), Topology.LINE),
+        Topology.SINGLE_PATCH_TOPOLOGY_1D,
+    )
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 1
+    @test Geometry.get_num_elements_per_patch(geometry) == (1, 1, 1, 1)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0, 1.0)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0), (0.0, 1.0))
+    @test Geometry.get_patch_id(geometry, 3) == 3
+    @test Geometry.get_patch_and_local_element_id(geometry, 3) == (3, 1)
+    @test Geometry.get_global_element_id(geometry, 3, 1) == 3
+
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3)))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.3613020955135852
+            0.48904167641086826 0.872260419102717 0.3613020955135853
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 -0.36130209551358516
+            0.9780833528217365 1.744520838205434 -0.3613020955135853
+            0.0 2.0 0.0
+        ],
+        2 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.3613020955135852
+            0.48904167641086826 0.872260419102717 0.3613020955135853
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 -0.36130209551358516
+            0.9780833528217365 1.744520838205434 -0.3613020955135853
+            0.0 2.0 0.0
+        ],
+        3 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.3613020955135852
+            0.48904167641086826 0.872260419102717 0.3613020955135853
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 -0.36130209551358516
+            0.9780833528217365 1.744520838205434 -0.3613020955135853
+            0.0 2.0 0.0
+        ],
+        4 => [
+            1.0 0.0 0.0
+            0.872260419102717 0.4890416764108681 0.3613020955135852
+            0.48904167641086826 0.872260419102717 0.3613020955135853
+            0.0 1.0 0.0
+            1.5 0.0 0.0
+            1.3083906286540754 0.7335625146163022 0.0
+            0.7335625146163024 1.3083906286540756 0.0
+            0.0 1.5 0.0
+            2.0 0.0 0.0
+            1.7445208382054338 0.9780833528217363 -0.36130209551358516
+            0.9780833528217365 1.744520838205434 -0.3613020955135853
+            0.0 2.0 0.0
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [0.0 0.0; 1.0 1.414213562373095; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.5895853575395387; 1.36634567171691 -0.7226041910271703],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 -0.5895853575395382; 0.7767603141773713 -0.7226041910271706],
+            [-1.414213562373095 1.0; 0.0 -1.414213562373095; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 -0.7226041910271703],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 -0.7226041910271706],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 -1.414213562373095; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 -0.5895853575395387; 2.73269134343382 -0.7226041910271703],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.5895853575395382; 1.5535206283547427 -0.7226041910271706],
+            [-2.82842712474619 1.0; 0.0 1.414213562373095; 0.0 0.0],
+        ],
+        2 => [
+            [0.0 0.0; 1.0 1.414213562373095; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.5895853575395387; 1.36634567171691 -0.7226041910271703],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 -0.5895853575395382; 0.7767603141773713 -0.7226041910271706],
+            [-1.414213562373095 1.0; 0.0 -1.414213562373095; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 -0.7226041910271703],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 -0.7226041910271706],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 -1.414213562373095; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 -0.5895853575395387; 2.73269134343382 -0.7226041910271703],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.5895853575395382; 1.5535206283547427 -0.7226041910271706],
+            [-2.82842712474619 1.0; 0.0 1.414213562373095; 0.0 0.0],
+        ],
+        3 => [
+            [0.0 0.0; 1.0 1.414213562373095; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.5895853575395387; 1.36634567171691 -0.7226041910271703],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 -0.5895853575395382; 0.7767603141773713 -0.7226041910271706],
+            [-1.414213562373095 1.0; 0.0 -1.414213562373095; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 -0.7226041910271703],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 -0.7226041910271706],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 -1.414213562373095; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 -0.5895853575395387; 2.73269134343382 -0.7226041910271703],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.5895853575395382; 1.5535206283547427 -0.7226041910271706],
+            [-2.82842712474619 1.0; 0.0 1.414213562373095; 0.0 0.0],
+        ],
+        4 => [
+            [0.0 0.0; 1.0 1.414213562373095; 1.414213562373095 0.0],
+            [-0.7767603141773711 0.48904167641086804; 0.8722604191027168 0.5895853575395387; 1.36634567171691 -0.7226041910271703],
+            [-1.3663456717169093 0.872260419102717; 0.48904167641086826 -0.5895853575395382; 0.7767603141773713 -0.7226041910271706],
+            [-1.414213562373095 1.0; 0.0 -1.414213562373095; 0.0 0.0],
+            [0.0 0.0; 1.0 0.0; 2.1213203435596424 0.0],
+            [-1.165140471266057 0.48904167641086804; 0.8722604191027168 0.0; 2.049518507575365 -0.7226041910271703],
+            [-2.049518507575364 0.872260419102717; 0.48904167641086826 0.0; 1.1651404712660571 -0.7226041910271706],
+            [-2.1213203435596424 1.0; 0.0 0.0; 0.0 0.0],
+            [0.0 0.0; 1.0 -1.414213562373095; 2.82842712474619 0.0],
+            [-1.5535206283547423 0.48904167641086804; 0.8722604191027168 -0.5895853575395387; 2.73269134343382 -0.7226041910271703],
+            [-2.7326913434338187 0.872260419102717; 0.48904167641086826 0.5895853575395382; 1.5535206283547427 -0.7226041910271706],
+            [-2.82842712474619 1.0; 0.0 1.414213562373095; 0.0 0.0],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
+
+# ############################################################################################
+# #                                NURBS vs GTB basis annulus                               #
+# ############################################################################################
+
+# # B-spline and NURBS GTB spline spaces on the circle
+# deg = 2
+# b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
+# br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
+# Bsp = FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
+# Nurbs = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+
+# # GTB spline space on the radial direction
+# Wt = pi / 2
+# gt = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
+# B = FunctionSpaces.BSplineSpace(
+#     Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
+# )
+# GTB = FunctionSpaces.GTBSplineSpace((B,), [1])
+
+# b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+
+# TP_bsp = FunctionSpaces.TensorProductSpace((Bsp, b1))
+# TP_nurbs = FunctionSpaces.TensorProductSpace((Nurbs, b1))
+# TP_gtb = FunctionSpaces.TensorProductSpace((GTB, b1))
+
+# # control points for geometry
+# geom_coeffs_0 = [
+#     +1.0 -1.0
+#     +1.0 +1.0
+#     -1.0 +1.0
+#     -1.0 -1.0
+# ]
+# r0 = 1
+# r1 = 2
+# geom_coeffs = [
+#     geom_coeffs_0 .* r0 zeros(4)
+#     geom_coeffs_0 .* r1 zeros(4)
+# ]
+
+# # NURBS annulus with B-spline and NURBS bases
+# geom = FunctionSpaces.FEGeometry(TP_nurbs, geom_coeffs)
+# file_name = "fem_geometry_nurbs_bsp_basis_test"
+# # run_tests(geom, file_name)
+
+# geom = FunctionSpaces.FEGeometry(TP_gtb, geom_coeffs)
+# file_name = "fem_geometry_nurbs_gtb_basis_test"
+# # run_tests(geom, file_name)
 
 end
