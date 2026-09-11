@@ -1,3 +1,14 @@
+"""
+    module Quadrature
+
+Provides quadrature rules, i.e. sets of nodes and weights that approximate integrals by
+weighted sums.
+
+Rules are defined on the canonical domain ``[0, 1]^n``, matching the convention used by
+[Points](@ref DocPointsModule) and [Geometry](@ref DocGeometryModule), so that a single rule
+can be reused on every element of a mesh. The module distinguishes rules on a single element
+from rules covering a whole domain, and is used by [Forms](@ref) to evaluate integrals.
+"""
 module Quadrature
 
 import FastGaussQuadrature
