@@ -4,7 +4,6 @@
 
 A multi-component space that is the direct sum of `num_components` scalar function spaces.
 Consequently, their basis functions are evaluated independently and arranged in a
-using Base: COMPILETIME_PREFERENCES
 block-diagonal matrix. Each scalar function space contributes to a separate component of
 the multi-component space.
 
