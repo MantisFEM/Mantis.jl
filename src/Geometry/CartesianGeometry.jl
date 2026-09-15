@@ -1,3 +1,6 @@
+############################################################################################
+#                                        Structure                                         #
+############################################################################################
 """
     CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
         AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -48,11 +51,11 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
         B <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
         T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
     }
-        foreach(breakpoints) do patch_breakpoints
+        for patch_breakpoints in breakpoints
             unique_breakpoints = map(unique, patch_breakpoints)
             are_unique = map(isequal, patch_breakpoints, unique_breakpoints)
             if !all(are_unique)
-                index = findfirst(x -> x == false, are_unique)
+                index = findfirst(x -> x == false, are_unique)::Int
                 throw(
                     ArgumentError(
                         LazyString(
@@ -69,7 +72,7 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
             sorted_breakpoints = map(sort, patch_breakpoints)
             are_sorted = map(isequal, patch_breakpoints, sorted_breakpoints)
             if !all(are_sorted)
-                index = findfirst(x -> x == false, are_sorted)
+                index = findfirst(x -> x == false, are_sorted)::Int
                 throw(
                     ArgumentError(
                         LazyString(
@@ -110,15 +113,31 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
 
     # Convenience constructor for single patch geometries.
     function CartesianGeometry(
-        breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
-    ) where {manifold_dim, NT <: Number}
-        topo = Topology.MeshTopology([collect(1:(2 ^ manifold_dim))])
-        return CartesianGeometry((breakpoints,), topo)
+        breakpoints::NTuple{3, AbstractVector{NT}}
+    ) where {NT <: Number}
+        topology = Topology.MeshTopology([(1, 2, 3, 4, 5, 6, 7, 8)], Topology.HEX)
+        return CartesianGeometry((breakpoints,), topology)
+    end
+
+    function CartesianGeometry(
+        breakpoints::NTuple{2, AbstractVector{NT}}
+    ) where {NT <: Number}
+        topology = Topology.MeshTopology([(1, 2, 3, 4)], Topology.QUAD)
+        return CartesianGeometry((breakpoints,), topology)
+    end
+
+    function CartesianGeometry(
+        breakpoints::NTuple{1, AbstractVector{NT}}
+    ) where {NT <: Number}
+        topology = Topology.MeshTopology([(1, 2)], Topology.LINE)
+        return CartesianGeometry((breakpoints,), topology)
     end
 
     # Convenience constructor for 1D, single patch geometries.
     function CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}
-        return CartesianGeometry(((breakpoints,),), Topology.MeshTopology([[1, 2]]))
+        return CartesianGeometry(
+            ((breakpoints,),), Topology.MeshTopology([(1, 2)], Topology.LINE)
+        )
     end
 end
 
@@ -153,24 +172,9 @@ Returns a LinearIndices iterator of all elements in the patch indicated by `patc
 get_lin_num_elements(geometry::CartesianGeometry, patch_id::Int=1) =
     geometry.lin_num_elements[patch_id]
 
-# Getters for factors.
-function get_factor_element_ids(geometry::CartesianGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return Tuple(get_cart_num_elements(geometry, patch_id)[local_element_id]), patch_id
-end
-
-function get_factor_num_elements(geometry::CartesianGeometry, patch_id::Int)
-    # The cartesian number of elements is always ordered and created with the number of
-    # elements in each factor. So, its last entry is the total number of elements per
-    # factor. This means we don't have to search for its maximum.
-    return Tuple(last(get_cart_num_elements(geometry, patch_id)))
-end
-
-function get_factor_num_elements(geometry::CartesianGeometry)
-    return (get_factor_num_elements(geometry, i) for i in 1:get_num_patches(geometry))
-end
-
-# Getters using topological information
+############################################################################################
+#                                  Topological information                                 #
+############################################################################################
 function get_elements(
     geometry::CartesianGeometry,
     patch_id::Int,
@@ -179,12 +183,14 @@ function get_elements(
     rotation::Int=0,
     orientation::Int=1,
 )
-    position = Topology.id2position(
-        get_manifold_dim(geometry), geometric_dim, local_object_id
+    position = Topology.id_to_position(
+        Topology.get_topological_patch(get_topology(geometry)),
+        geometric_dim,
+        local_object_id,
     )
 
     # Compute the element_ids on this patch from the topological position.
-    num_elements_per_dim = get_constituent_num_elements(geometry, patch_id)
+    num_elements_per_dim = get_factor_num_elements(geometry, patch_id)
     mask = ntuple(get_manifold_dim(geometry)) do i
         if position[i] == 0
             return 1:num_elements_per_dim[i]
@@ -204,14 +210,24 @@ function get_elements(
         offset += get_num_elements(geometry, i)
     end
 
-    # Drops the dimensions that have only one element, to get
-    # an array of minimal dimension, i.e., an array of dimension
-    # geometric_dim
+    # Drops the dimensions that have only one element, to get an array of minimal
+    # dimension, i.e., an array of dimension geometric_dim
     dims_to_drop = Tuple(findall(i -> length(mask[i]) == 1, 1:length(mask)))
+    @show element_ids
     element_ids = dropdims(element_ids .+ offset; dims=dims_to_drop)
+    @show element_ids
+    # dims_to_drop = findall(i -> length(mask[i]) == 1, 1:length(mask))
+    # @show dims_to_drop
+    # @show element_ids .+ offset
+    # element_ids .+= offset
+    # reverse!(dims_to_drop)
+    # for dim_to_drop in dims_to_drop
+    #     element_ids = dropdims(element_ids; dims=dim_to_drop)
+    # end
+    # @show element_ids
 
-    # We now need to match the element numbers depending on the
-    # rotation and orientation requested
+    # We now need to match the element numbers depending on the rotation and orientation
+    # requested
     if orientation == -1
         # Transpose if orientation must be reversed
         element_ids = transpose(element_ids)
@@ -226,76 +242,86 @@ function get_elements(
     return vec(element_ids)
 end
 
-# Getters for consituents.
-function get_constituent_element_id(geometry::CartesianGeometry, element_id::Int)
-    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
-    return Tuple(get_cart_num_elements(geometry, patch_id)[local_element_id]), patch_id
-end
-
-function get_constituent_num_elements(
+############################################################################################
+#                                     Factor information                                   #
+############################################################################################
+function get_factor_num_elements(
     geometry::CartesianGeometry{manifold_dim},
-    patch_id::Int;
+    patch_id::Int,
     local_object_id::Int=1,
     geometric_dim::Int=manifold_dim,
 ) where {manifold_dim}
     # The cartesian number of elements is always ordered and created with the number of
-    # elements in each constituent. So, its last entry is the total number of elements per
-    # constituent. This means we don't have to search for its maximum.
+    # elements in each factor. So, its last entry is the total number of elements per
+    # factor. This means we don't have to search for its maximum.
     num_elements_per_dimension = Tuple(last(get_cart_num_elements(geometry, patch_id)))
 
-    # Check which the position/definition of the local object
-    position = Topology.id2position(manifold_dim, geometric_dim, local_object_id)
+    if geometric_dim == manifold_dim && local_object_id == 1
+        return num_elements_per_dimension
+    else
+        position = Topology.id_to_position(
+            Topology.get_topological_patch(get_topology(geometry)),
+            geometric_dim,
+            local_object_id,
+        )
 
-    # Compute the element_ids on this patch from the topological position.
+        is_0 = map(iszero, position)
+        constituent_num_elements = num_elements_per_dimension[[is_0...]]
 
-    # Code below will break if not ran in sequence, which is not guaranteed
-    # in julia.
-    # position_id = Ref(1)
-    # constituent_num_elements = ntuple(geometric_dim) do k
-    #     while position[position_id[]] != 0
-    #         position_id[] += 1
-    #     end
-    #     position_id[] += 1
-    #     num_elements_per_dimension[position_id[] - 1]
-    # end
-    # return constituent_num_elements
-
-    constituent_num_elements = Vector{Int}(undef, geometric_dim)
-    position_id = 1
-    for k in 1:geometric_dim
-        while position[position_id] != 0
-            position_id += 1
-        end
-        constituent_num_elements[k] = num_elements_per_dimension[position_id]
-        position_id += 1
+        return constituent_num_elements::NTuple{geometric_dim, Int}
     end
-    return NTuple{geometric_dim, Int}(constituent_num_elements)
 end
 
-function get_constituent_num_elements(
-    geometry::CartesianGeometry{manifold_dim};
-    local_object_id::Int=1,
-    geometric_dim::Int=manifold_dim,
-) where {manifold_dim}
-    return (
-        get_constituent_num_elements(
-            geometry, i; local_object_id=local_object_id, geometric_dim=geometric_dim
-        ) for i in 1:get_num_patches(geometry)
-    )
+# function get_factor_num_elements(
+#     geometry::CartesianGeometry{manifold_dim},
+#     local_object_id::Int=1,
+#     geometric_dim::Int=manifold_dim,
+# ) where {manifold_dim}
+#     return (
+#         get_factor_num_elements(geometry, i, local_object_id, geometric_dim) for
+#         i in 1:get_num_patches(geometry)
+#     )
+# end
+
+function get_factor_num_elements(geometry::CartesianGeometry)
+    return (get_factor_num_elements(geometry, i) for i in 1:get_num_patches(geometry))
 end
 
-# Getters for numbers, sizes, shapes, lengths, etc.
+function get_factor_element_ids(geometry::CartesianGeometry, element_id::Int)
+    patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)
+    return Tuple(get_cart_num_elements(geometry, patch_id)[local_element_id]), patch_id
+end
+
+function get_factor_manifold_indices(::CartesianGeometry{manifold_dim}) where {manifold_dim}
+    return ntuple(i -> (i,), manifold_dim)
+end
+
+function get_factor_evaluation_points(
+    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, image_dim, num_patches}
+    factor_manifold_indices = get_factor_manifold_indices(geometry)
+    factor_points = Points.get_input_points(xi)
+    factor_xi = ntuple(manifold_dim) do geo
+        factor_indices = factor_manifold_indices[geo]
+        factor_range = factor_indices[1]:factor_indices[end]
+
+        return Points.TensorProductPoints(factor_points[factor_range])
+    end
+
+    return factor_xi
+end
+
+############################################################################################
+#                               Sizes, shapes, lengths, etc.                               #
+############################################################################################
 function get_num_elements(
     geometry::CartesianGeometry{manifold_dim},
     patch_id::Int;
     local_object_id::Int=1,
     geometric_dim::Int=manifold_dim,
 ) where {manifold_dim}
-    return prod(
-        get_constituent_num_elements(
-            geometry, patch_id; local_object_id=local_object_id, geometric_dim=geometric_dim
-        ),
-    )
+    return prod(get_factor_num_elements(geometry, patch_id, local_object_id, geometric_dim))
 end
 
 function get_num_elements(
@@ -346,27 +372,9 @@ function get_element_measure(geometry::CartesianGeometry, element_id::Int)
     return prod(get_element_lengths(geometry, element_id))
 end
 
-function get_factor_manifold_indices(::CartesianGeometry{manifold_dim}) where {manifold_dim}
-    return ntuple(i -> (i,), manifold_dim)
-end
-
-function get_factor_evaluation_points(
-    geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, image_dim, num_patches}
-    factor_manifold_indices = get_factor_manifold_indices(geometry)
-    factor_points = Points.get_input_points(xi)
-    factor_xi = ntuple(manifold_dim) do geo
-        factor_indices = factor_manifold_indices[geo]
-        factor_range = factor_indices[1]:factor_indices[end]
-
-        return Points.TensorProductPoints(factor_points[factor_range])
-    end
-
-    return factor_xi
-end
-
-# Evaluations and derivatives.
+############################################################################################
+#                                Evaluations and derivatives                               #
+############################################################################################
 function evaluate(
     geometry::CartesianGeometry{manifold_dim, image_dim, num_patches},
     element_id::Int,

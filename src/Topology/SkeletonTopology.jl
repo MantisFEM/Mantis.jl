@@ -153,7 +153,7 @@ function get_patch_parents(
         parent_topology,
         parent_patch_id,
         local_patch_id,
-        patch_dim;
-        include_local_patch=true,
+        patch_dim,
+        true,
     )
 end

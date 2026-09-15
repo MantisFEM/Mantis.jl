@@ -190,3 +190,48 @@ function Base.getindex(
 
     return ntuple(dim -> input_points[dim][i[dim]], manifold_dim)
 end
+
+function get_canonical_points(
+    topology::Topology.AbstractTopology{manifold_dim},
+    patch_id::Int,
+    local_object_id::Int,
+    geometric_dim::Int,
+    points_per_dim::Int=5,
+    ::Type{T}=Float64,
+) where {manifold_dim, T}
+    # global_object_id = Topology.get_global_id(
+    #     topology, patch_id, local_object_id, geometric_dim
+    # )
+    # shifts = Topology._cyclic_position(
+    #     global_object_id, topology[manifold_dim + 1, 1][patch_id]
+    # )
+    # @show local_object_id
+    # @show shifts
+    # if shifts+1 != local_object_id
+    #     num_vertices = 1:Topology.get_local_size(topology, geometric_dim + 1)
+    #     @show num_vertices
+    #     shifted_local_ids = circshift(num_vertices, shifts)
+    #     @show shifted_local_ids
+    #     new_local_id = findfirst(==(local_object_id), shifted_local_ids)
+    #     @show new_local_id
+    # else
+    #     new_local_id = local_object_id
+    # end
+
+    # iteration_order = circshift(ntuple(k -> k, manifold_dim), shifts)
+    patch = Topology.get_topological_patch(topology)
+    position = Topology.id_to_position(patch, geometric_dim, local_object_id)
+    # @show position
+    return TensorProductPoints(
+        ntuple(Topology.get_manifold_dim(topology)) do i
+            if position[i] == 1
+                return LinRange(one(T), one(T), 1)
+            elseif position[i] == -1
+                return LinRange(zero(T), zero(T), 1)
+            else
+                return LinRange(zero(T), one(T), points_per_dim)
+            end
+        end;
+        # iteration_order=iteration_order,
+    )
+end

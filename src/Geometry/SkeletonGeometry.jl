@@ -207,7 +207,7 @@ function skeleton_element_to_parent_element_coords(
     # the skeleton element spans the ξ axis at the position η = 1.
     # Hence, a point (σ,) in the skeleton element (after orientation taken
     # into account) will be evaluated as (σ, 1) in the parent element.
-    position = Topology.id2position(manifold_dim + 1, manifold_dim, local_geometric_object)
+    position = Topology.id_to_position(manifold_dim + 1, manifold_dim, local_geometric_object)
 
     constituent_points = Vector{eltype(σ)}(undef, manifold_dim + 1)
 
@@ -285,7 +285,7 @@ function skeleton_element_to_parent_element_coords(
     # the skeleton element spans the ξ and ζ axis at the position η = 1.
     # Hence, a point (σ, τ) in the skeleton element (after rotation and orientation taken
     # into account) will be evaluated as (σ, 1, τ) in the parent element.
-    position = Topology.id2position(manifold_dim + 1, manifold_dim, local_geometric_object)
+    position = Topology.id_to_position(manifold_dim + 1, manifold_dim, local_geometric_object)
 
     constituent_points = Vector{eltype(σ_τ)}(undef, manifold_dim + 1)
 

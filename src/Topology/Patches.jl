@@ -1,13 +1,5 @@
-############################################################################################
-#                                      Abstract Types                                      #
-############################################################################################
-abstract type AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices} end
-abstract type AbstractTensorProductPatch{
-    manifold_dim, incidence_relations_dim, num_patch_vertices
-} <: AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices} end
-
 """
-    ID2POSITION_DICT
+    id_to_position_DICT
 
 Dictionary mapping a local geometric object identifier to its reference-element position.
 
@@ -43,19 +35,16 @@ encoding the position of the object along each reference axis (ξ, η, ζ):
 - Volume 1: key `(3, 3, 1)` → position `(0, 0, 0)` (extends along the three axis, ξ, η, and ζ)
 
 # Notes
-- Supported element types are line segments (1D), quadrilaterals (2D), and hexahedra (3D).
 - The position tuple has a unique entry for each geometric object in the reference element,
   and can therefore be used as an alternative identifier to the local index.
-- See also [`get_local_incidence_relations`](@ref) for the local vertex numbering conventions
-  that determine the correspondence between local indices and positions.
 
 
-      id2position(manifold_dim::Int, object_dim::Int, object_local_id::Int)
+      id_to_position(manifold_dim::Int, object_dim::Int, object_local_id::Int)
 
   Return the reference-element position tuple of a geometric object identified by its
   local index.
 
-  This is a lookup into [`ID2POSITION_DICT`](@ref). The position tuple encodes the location
+  This is a lookup into [`id_to_position_DICT`](@ref). The position tuple encodes the location
   of the object in the reference element along each axis (ξ, η, ζ) using the following
   conventions:
   - `-1`: object is located at the minimum of that axis.
@@ -76,25 +65,25 @@ encoding the position of the object along each reference axis (ξ, η, ζ):
   # Examples
 
   **1D element:**
-  - `id2position(1, 0, 1)` → `(-1,)` (vertex at ξ = -1)
-  - `id2position(1, 0, 2)` → `(1,)`  (vertex at ξ = +1)
-  - `id2position(1, 1, 1)` → `(0,)`  (edge extending along ξ)
+  - `id_to_position(1, 0, 1)` → `(-1,)` (vertex at ξ = -1)
+  - `id_to_position(1, 0, 2)` → `(1,)`  (vertex at ξ = +1)
+  - `id_to_position(1, 1, 1)` → `(0,)`  (edge extending along ξ)
 
   **2D element:**
-  - `id2position(2, 0, 1)` → `(-1, -1)` (vertex at ξ = -1, η = -1)
-  - `id2position(2, 1, 1)` → `(-1, 0)`  (edge at ξ = -1, extending along η)
-  - `id2position(2, 1, 3)` → `(0, -1)`  (edge extending along ξ, at η = -1)
-  - `id2position(2, 2, 1)` → `(0, 0)`   (face, i.e. the element itself)
+  - `id_to_position(2, 0, 1)` → `(-1, -1)` (vertex at ξ = -1, η = -1)
+  - `id_to_position(2, 1, 1)` → `(-1, 0)`  (edge at ξ = -1, extending along η)
+  - `id_to_position(2, 1, 3)` → `(0, -1)`  (edge extending along ξ, at η = -1)
+  - `id_to_position(2, 2, 1)` → `(0, 0)`   (face, i.e. the element itself)
 
   **3D element:**
-  - `id2position(3, 0, 1)` → `(-1, -1, -1)` (vertex at ξ = -1, η = -1, ζ = -1)
-  - `id2position(3, 1, 4)` → `(0, 1, -1)`   (edge extending along ξ, at η = +1, ζ = -1)
-  - `id2position(3, 2, 1)` → `(-1, 0, 0)`   (face at ξ = -1, extending along η and ζ)
-  - `id2position(3, 3, 1)` → `(0, 0, 0)`    (volume, i.e. the element itself)
+  - `id_to_position(3, 0, 1)` → `(-1, -1, -1)` (vertex at ξ = -1, η = -1, ζ = -1)
+  - `id_to_position(3, 1, 4)` → `(0, 1, -1)`   (edge extending along ξ, at η = +1, ζ = -1)
+  - `id_to_position(3, 2, 1)` → `(-1, 0, 0)`   (face at ξ = -1, extending along η and ζ)
+  - `id_to_position(3, 3, 1)` → `(0, 0, 0)`    (volume, i.e. the element itself)
 
   # Notes
   - Supported element types are line segments (1D), quadrilaterals (2D), and hexahedra (3D).
-  - See [`ID2POSITION_DICT`](@ref) for the full mapping.
+  - See [`id_to_position_DICT`](@ref) for the full mapping.
   - See [`get_local_incidence_relations`](@ref) for the local vertex numbering conventions.
 
 
@@ -150,21 +139,17 @@ encoding the position of the object along each reference axis (ξ, η, ζ):
 #                                        Structures                                        #
 ############################################################################################
 """
-**1D line element (L2, 2 vertices, 1 edge)**
+    Line{MCT} <: AbstractTensorProductPatch{1, 2, 2}
 
-Vertices:
-```
-1 --------- 2 --- ξ
-```
-Edge 1 is the element itself, oriented 1 → 2.
+Topological line patch. See [`LINE`](@ref) for the details.
 """
 struct Line{MCT} <: AbstractTensorProductPatch{1, 2, 2}
     MeshCorePatch::MCT
     incidence_relations::NTuple{2, NTuple{2, Vector{Vector{Int}}}}
     n_geometric_objects::NTuple{2, Int}
-    map_id_to_position::Dict{NTuple{3, Int}, NTuple{1, Int}}
+    map_id_to_position::Dict{NTuple{2, Int}, NTuple{1, Int}}
     map_position_to_id::Dict{NTuple{1, Int}, Int}
-    dof_placement::Dict{NTuple{3, Int}, Int}
+    dof_placement::Dict{NTuple{2, Int}, Int}
 
     function Line()
         incidence_relations = (
@@ -181,10 +166,10 @@ struct Line{MCT} <: AbstractTensorProductPatch{1, 2, 2}
 
         map_id_to_position = Dict(
             # Vertex numbering
-            (1, 0, 1) => (-1,),
-            (1, 0, 2) => (1,),
+            (0, 1) => (-1,),
+            (0, 2) => (1,),
             # Edge numbering
-            (1, 1, 1) => (0,),
+            (1, 1) => (0,),
         )
 
         map_position_to_id = Dict(
@@ -197,10 +182,10 @@ struct Line{MCT} <: AbstractTensorProductPatch{1, 2, 2}
 
         dof_placement = Dict(
             # Vertex numbering
-            (1, 0, 1) => 1,
-            (1, 0, 2) => 3,
+            (0, 1) => 1,
+            (0, 2) => 3,
             # Edge numbering
-            (1, 1, 1) => 2,
+            (1, 1) => 2,
         )
 
         return new{typeof(MeshCore.L2)}(
@@ -215,7 +200,118 @@ struct Line{MCT} <: AbstractTensorProductPatch{1, 2, 2}
 end
 
 """
-**2D quadrilateral element (Q4, 4 vertices, 4 edges, 1 face)**
+    LINE
+
+The constant instance of [`Line`](@ref). Can be used to indicate the patch type in a given
+[`MeshTopology`](@ref).
+
+# Orientation and local numbering
+
+Vertices:
+```
+1 --------- 2 --- ξ
+```
+Edge 1 is the element itself, oriented 1 → 2.
+"""
+const LINE = Line()
+
+"""
+     Quad{MCT} <: AbstractTensorProductPatch{2, 3, 4}
+
+Topological square (quadrilateral) patch. See [`QUAD`](@ref) for the details.
+"""
+struct Quad{MCT} <: AbstractTensorProductPatch{2, 3, 4}
+    MeshCorePatch::MCT
+    incidence_relations::NTuple{3, NTuple{3, Vector{Vector{Int}}}}
+    n_geometric_objects::NTuple{3, Int}
+    map_id_to_position::Dict{NTuple{2, Int}, NTuple{2, Int}}
+    map_position_to_id::Dict{NTuple{2, Int}, Int}
+    dof_placement::Dict{NTuple{2, Int}, Int}
+
+    function Quad()
+        incidence_relations = (
+            (
+                Vector{Vector{Int}}(),            # [1][1]: vertex to vertex
+                [[1, 3], [2, 3], [2, 4], [1, 4]], # [1][2]: vertex to edge
+                [[1], [1], [1], [1]],             # [1][3]: vertex to face
+            ),
+            (
+                [[1, 4], [2, 3], [1, 2], [4, 3]],  # [2][1]: edge to vertex
+                Vector{Vector{Int}}(),             # [2][2]: edge to edge
+                [[1], [1], [1], [1]],              # [2][3]: edge to face
+            ),
+            (
+                [[1, 2, 3, 4]],         # [3][1]: face to vertex
+                [[1, 2, 3, 4]],         # [3][2]: face to edge
+                Vector{Vector{Int}}(),  # [3][3]: face to face
+            ),
+        )
+
+        n_geometric_objects = (4, 4, 1)
+
+        map_id_to_position = Dict(
+            # Vertex numbering
+            (0, 1) => (-1, -1),
+            (0, 2) => (1, -1),
+            (0, 3) => (1, 1),
+            (0, 4) => (-1, 1),
+            # Edge numbering
+            (1, 1) => (-1, 0),
+            (1, 2) => (1, 0),
+            (1, 3) => (0, -1),
+            (1, 4) => (0, 1),
+            # Face numbering
+            (2, 1) => (0, 0),
+        )
+
+        map_position_to_id = Dict(
+            # Vertex numbering
+            (-1, -1) => 1,
+            (1, -1) => 2,
+            (1, 1) => 3,
+            (-1, 1) => 4,
+            # Edge numbering
+            (-1, 0) => 1,
+            (1, 0) => 2,
+            (0, -1) => 3,
+            (0, 1) => 4,
+            # Face numbering
+            (0, 0) => 1,
+        )
+
+        dof_placement = Dict(
+            # Vertex numbering
+            (0, 1) => 1,
+            (0, 2) => 3,
+            (0, 3) => 9,
+            (0, 4) => 7,
+            # Edge numbering
+            (1, 1) => 4,
+            (1, 2) => 6,
+            (1, 3) => 2,
+            (1, 4) => 8,
+            # Face numbering
+            (2, 1) => 5,
+        )
+
+        return new{typeof(MeshCore.Q4)}(
+            MeshCore.Q4,
+            incidence_relations,
+            n_geometric_objects,
+            map_id_to_position,
+            map_position_to_id,
+            dof_placement,
+        )
+    end
+end
+
+"""
+    QUAD
+
+The constant instance of [`Quad`](@ref). Can be used to indicate the patch type in a given
+[`MeshTopology`](@ref).
+
+# Orientation and local numbering
 
 Vertices:
 ```
@@ -247,157 +343,20 @@ Edges (arrows indicate orientation):
 
 Face 1 is the element itself, with cyclic vertex order 1 → 2 → 3 → 4.
 """
-struct Quad{MCT} <: AbstractTensorProductPatch{2, 3, 4}
-    MeshCorePatch::MCT
-    incidence_relations::NTuple{3, NTuple{3, Vector{Vector{Int}}}}
-    n_geometric_objects::NTuple{3, Int}
-    map_id_to_position::Dict{NTuple{3, Int}, NTuple{2, Int}}
-    map_position_to_id::Dict{NTuple{2, Int}, Int}
-    dof_placement::Dict{NTuple{3, Int}, Int}
-
-    function Quad()
-        incidence_relations = (
-            (
-                Vector{Vector{Int}}(),            # [1][1]: vertex to vertex
-                [[1, 3], [2, 3], [2, 4], [1, 4]], # [1][2]: vertex to edge
-                [[1], [1], [1], [1]],             # [1][3]: vertex to face
-            ),
-            (
-                [[1, 4], [2, 3], [1, 2], [4, 3]],  # [2][1]: edge to vertex
-                Vector{Vector{Int}}(),             # [2][2]: edge to edge
-                [[1], [1], [1], [1]],              # [2][3]: edge to face
-            ),
-            (
-                [[1, 2, 3, 4]],         # [3][1]: face to vertex
-                [[1, 2, 3, 4]],         # [3][2]: face to edge
-                Vector{Vector{Int}}(),  # [3][3]: face to face
-            ),
-        )
-
-        n_geometric_objects = (4, 4, 1)
-
-        map_id_to_position = Dict(
-            # Vertex numbering
-            (2, 0, 1) => (-1, -1),
-            (2, 0, 2) => (1, -1),
-            (2, 0, 3) => (1, 1),
-            (2, 0, 4) => (-1, 1),
-            # Edge numbering
-            (2, 1, 1) => (-1, 0),
-            (2, 1, 2) => (1, 0),
-            (2, 1, 3) => (0, -1),
-            (2, 1, 4) => (0, 1),
-            # Face numbering
-            (2, 2, 1) => (0, 0),
-        )
-
-        map_position_to_id = Dict(
-            # Vertex numbering
-            (-1, -1) => 1,
-            (1, -1) => 2,
-            (1, 1) => 3,
-            (-1, 1) => 4,
-            # Edge numbering
-            (-1, 0) => 1,
-            (1, 0) => 2,
-            (0, -1) => 3,
-            (0, 1) => 4,
-            # Face numbering
-            (0, 0) => 1,
-        )
-
-        dof_placement = Dict(
-            # Vertex numbering
-            (2, 0, 1) => 1,
-            (2, 0, 2) => 3,
-            (2, 0, 3) => 9,
-            (2, 0, 4) => 7,
-            # Edge numbering
-            (2, 1, 1) => 4,
-            (2, 1, 2) => 6,
-            (2, 1, 3) => 2,
-            (2, 1, 4) => 8,
-            # Face numbering
-            (2, 2, 1) => 5,
-        )
-
-        return new{typeof(MeshCore.Q4)}(
-            MeshCore.Q4,
-            incidence_relations,
-            n_geometric_objects,
-            map_id_to_position,
-            map_position_to_id,
-            dof_placement,
-        )
-    end
-end
+const QUAD = Quad()
 
 """
-**3D hexahedral element (H8, 8 vertices, 12 edges, 6 faces)**
+     Hex{MCT} <: AbstractTensorProductPatch{3, 4, 8}
 
-Vertices:
-```
-         ζ
-         |
-         |
-         5 --------- 8
-       / .         / |
-     /   .       /   |
-   6 --------- 7     |
-   |     1 . . | . . 4 --- η
-   |   .       |   /
-   | .         | /
-   2 --------- 3
-  /
-ξ
-```
-Edges (arrows indicate orientation):
-```
-         ζ
-         |
-         |
-         * ---e6----> *
-       / ↑          ↙ ↑
-     e2  e11      e1  |
-    ↙    .       /    e10
-   * ---e5----> *     |
-   ↑     *. e7 .↑. . →* --- η
-   e12  .       |    /
-   |  e3       e9  e4
-   | ↙          | ↙
-   * ----e8---> *
-  /
-ξ
-```
-- Edge 1: 8 → 7
-- Edge 2: 5 → 6
-- Edge 3: 1 → 2
-- Edge 4: 4 → 3
-- Edge 5: 6 → 7
-- Edge 6: 5 → 8
-- Edge 7: 1 → 4
-- Edge 8: 2 → 3
-- Edge 9: 3 → 7
-- Edge 10: 4 → 8
-- Edge 11: 1 → 5
-- Edge 12: 2 → 6
-
-Faces (cyclic vertex order indicates orientation, pointing outwards):
-
-- Face 1 (f1, back face, not visible): 1 → 5 → 8 → 4 (ξ = min)
-- Face 2 (f2, front face): 2 → 3 → 7 → 6 (ξ = max)
-- Face 3 (f3, left face): 1 → 2 → 6 → 5 (η = min)
-- Face 4 (f4, right face): 4 → 8 → 7 → 3 (η = max)
-- Face 5 (f5, bottom face): 1 → 4 → 3 → 2 (ζ = min)
-- Face 6 (f6, top face): 5 → 6 → 7 → 8 (ζ = max)
+Topological cube (hexagonal) patch. See [`HEX`](@ref) for the details.
 """
 struct Hex{MCT} <: AbstractTensorProductPatch{3, 4, 8}
     MeshCorePatch::MCT
     incidence_relations::NTuple{4, NTuple{4, Vector{Vector{Int}}}}
     n_geometric_objects::NTuple{4, Int}
-    map_id_to_position::Dict{NTuple{3, Int}, NTuple{3, Int}}
+    map_id_to_position::Dict{NTuple{2, Int}, NTuple{3, Int}}
     map_position_to_id::Dict{NTuple{3, Int}, Int}
-    dof_placement::Dict{NTuple{3, Int}, Int}
+    dof_placement::Dict{NTuple{2, Int}, Int}
 
     function Hex()
         incidence_relations = (
@@ -489,36 +448,36 @@ struct Hex{MCT} <: AbstractTensorProductPatch{3, 4, 8}
 
         map_id_to_position = Dict(
             # Vertex numbering
-            (3, 0, 1) => (-1, -1, -1),
-            (3, 0, 2) => (1, -1, -1),
-            (3, 0, 3) => (1, 1, -1),
-            (3, 0, 4) => (-1, 1, -1),
-            (3, 0, 5) => (-1, -1, 1),
-            (3, 0, 6) => (1, -1, 1),
-            (3, 0, 7) => (1, 1, 1),
-            (3, 0, 8) => (-1, 1, 1),
+            (0, 1) => (-1, -1, -1),
+            (0, 2) => (1, -1, -1),
+            (0, 3) => (1, 1, -1),
+            (0, 4) => (-1, 1, -1),
+            (0, 5) => (-1, -1, 1),
+            (0, 6) => (1, -1, 1),
+            (0, 7) => (1, 1, 1),
+            (0, 8) => (-1, 1, 1),
             # Edge numbering
-            (3, 1, 1) => (0, 1, 1),
-            (3, 1, 2) => (0, -1, 1),
-            (3, 1, 3) => (0, -1, -1),
-            (3, 1, 4) => (0, 1, -1),
-            (3, 1, 5) => (1, 0, 1),
-            (3, 1, 6) => (-1, 0, 1),
-            (3, 1, 7) => (-1, 0, -1),
-            (3, 1, 8) => (1, 0, -1),
-            (3, 1, 9) => (1, 1, 0),
-            (3, 1, 10) => (-1, 1, 0),
-            (3, 1, 11) => (-1, -1, 0),
-            (3, 1, 12) => (1, -1, 0),
+            (1, 1) => (0, 1, 1),
+            (1, 2) => (0, -1, 1),
+            (1, 3) => (0, -1, -1),
+            (1, 4) => (0, 1, -1),
+            (1, 5) => (1, 0, 1),
+            (1, 6) => (-1, 0, 1),
+            (1, 7) => (-1, 0, -1),
+            (1, 8) => (1, 0, -1),
+            (1, 9) => (1, 1, 0),
+            (1, 10) => (-1, 1, 0),
+            (1, 11) => (-1, -1, 0),
+            (1, 12) => (1, -1, 0),
             # Face numbering
-            (3, 2, 1) => (-1, 0, 0),
-            (3, 2, 2) => (1, 0, 0),
-            (3, 2, 3) => (0, -1, 0),
-            (3, 2, 4) => (0, 1, 0),
-            (3, 2, 5) => (0, 0, -1),
-            (3, 2, 6) => (0, 0, 1),
+            (2, 1) => (-1, 0, 0),
+            (2, 2) => (1, 0, 0),
+            (2, 3) => (0, -1, 0),
+            (2, 4) => (0, 1, 0),
+            (2, 5) => (0, 0, -1),
+            (2, 6) => (0, 0, 1),
             # Volume numbering
-            (3, 3, 1) => (0, 0, 0),
+            (3, 1) => (0, 0, 0),
         )
 
         map_position_to_id = Dict(
@@ -557,36 +516,36 @@ struct Hex{MCT} <: AbstractTensorProductPatch{3, 4, 8}
 
         dof_placement = Dict(
             # Vertex numbering
-            (3, 0, 1) => 1,
-            (3, 0, 2) => 3,
-            (3, 0, 3) => 9,
-            (3, 0, 4) => 7,
-            (3, 0, 5) => 19,
-            (3, 0, 6) => 21,
-            (3, 0, 7) => 27,
-            (3, 0, 8) => 25,
+            (0, 1) => 1,
+            (0, 2) => 3,
+            (0, 3) => 9,
+            (0, 4) => 7,
+            (0, 5) => 19,
+            (0, 6) => 21,
+            (0, 7) => 27,
+            (0, 8) => 25,
             # Edge numbering
-            (3, 1, 1) => 26,
-            (3, 1, 2) => 20,
-            (3, 1, 3) => 2,
-            (3, 1, 4) => 8,
-            (3, 1, 5) => 24,
-            (3, 1, 6) => 22,
-            (3, 1, 7) => 4,
-            (3, 1, 8) => 6,
-            (3, 1, 9) => 18,
-            (3, 1, 10) => 16,
-            (3, 1, 11) => 10,
-            (3, 1, 12) => 12,
+            (1, 1) => 26,
+            (1, 2) => 20,
+            (1, 3) => 2,
+            (1, 4) => 8,
+            (1, 5) => 24,
+            (1, 6) => 22,
+            (1, 7) => 4,
+            (1, 8) => 6,
+            (1, 9) => 18,
+            (1, 10) => 16,
+            (1, 11) => 10,
+            (1, 12) => 12,
             # Face numbering
-            (3, 2, 1) => 13,
-            (3, 2, 2) => 15,
-            (3, 2, 3) => 11,
-            (3, 2, 4) => 17,
-            (3, 2, 5) => 5,
-            (3, 2, 6) => 23,
+            (2, 1) => 13,
+            (2, 2) => 15,
+            (2, 3) => 11,
+            (2, 4) => 17,
+            (2, 5) => 5,
+            (2, 6) => 23,
             # Volume numbering
-            (3, 3, 1) => 14,
+            (3, 1) => 14,
         )
 
         return new{typeof(MeshCore.H8)}(
@@ -600,8 +559,74 @@ struct Hex{MCT} <: AbstractTensorProductPatch{3, 4, 8}
     end
 end
 
-const LINE = Line()
-const QUAD = Quad()
+"""
+    HEX
+
+The constant instance of [`Hex`](@ref). Can be used to indicate the patch type in a given
+[`MeshTopology`](@ref).
+
+# Orientation and local numbering
+
+Vertices:
+
+```
+         ζ
+         |
+         |
+         5 --------- 8
+       / .         / |
+     /   .       /   |
+   6 --------- 7     |
+   |     1 . . | . . 4 --- η
+   |   .       |   /
+   | .         | /
+   2 --------- 3
+  /
+ξ
+```
+
+Edges (arrows indicate orientation):
+
+```
+         ζ
+         |
+         |
+         * ---e6----> *
+       / ↑          ↙ ↑
+     e2  e11      e1  |
+    ↙    .       /    e10
+   * ---e5----> *     |
+   ↑     *. e7 .↑. . →* --- η
+   e12  .       |    /
+   |  e3       e9  e4
+   | ↙          | ↙
+   * ----e8---> *
+  /
+ξ
+```
+
+- Edge 1: 8 → 7
+- Edge 2: 5 → 6
+- Edge 3: 1 → 2
+- Edge 4: 4 → 3
+- Edge 5: 6 → 7
+- Edge 6: 5 → 8
+- Edge 7: 1 → 4
+- Edge 8: 2 → 3
+- Edge 9: 3 → 7
+- Edge 10: 4 → 8
+- Edge 11: 1 → 5
+- Edge 12: 2 → 6
+
+Faces (cyclic vertex order indicates orientation, normal using right hand rule):
+
+- Face 1 (f1, back face, ξ = min): 1 → 5 → 8 → 4
+- Face 2 (f2, front face, ξ = max): 2 → 3 → 7 → 6
+- Face 3 (f3, left face, η = min): 1 → 2 → 6 → 5
+- Face 4 (f4, right face, η = max): 4 → 8 → 7 → 3
+- Face 5 (f5, bottom face, ζ = min): 1 → 4 → 3 → 2
+- Face 6 (f6, top face, ζ = max): 5 → 6 → 7 → 8
+"""
 const HEX = Hex()
 
 ############################################################################################
@@ -627,9 +652,9 @@ Base.size(patch::AbstractTensorProductPatch, geometric_dim_id::Int) =
 ############################################################################################
 #                                   ID <-> position/dofs                                   #
 ############################################################################################
-function id2position(
-    patch::AbstractTensorProductPatch{manifold_dim}, object_dim::Int, object_local_id::Int
-) where {manifold_dim}
+function id_to_position(
+    patch::AbstractTensorProductPatch, object_dim::Int, object_local_id::Int
+)
     if object_local_id <= 0
         return throw(
             ArgumentError(
@@ -639,10 +664,11 @@ function id2position(
             ),
         )
     end
-    return patch.map_id_to_position[(manifold_dim, object_dim, object_local_id)]
+
+    return patch.map_id_to_position[(object_dim, object_local_id)]
 end
 
-function position2id(
+function position_to_id(
     patch::AbstractTensorProductPatch{manifold_dim}, position::NTuple{manifold_dim, Int}
 ) where {manifold_dim}
     return patch.map_position_to_id[position]
@@ -650,10 +676,11 @@ end
 
 # DOF placement per patch.
 function id_to_dof_division(
-    patch::AbstractTensorProductPatch{manifold_dim}, object_dim::Int, object_local_id::Int
-) where {manifold_dim}
+    patch::AbstractTensorProductPatch, object_dim::Int, object_local_id::Int
+)
     dof_placement = get_dof_placement(patch)
-    return dof_placement[(manifold_dim, object_dim, abs(object_local_id))]
+
+    return dof_placement[(object_dim, abs(object_local_id))]
 end
 
 ############################################################################################
