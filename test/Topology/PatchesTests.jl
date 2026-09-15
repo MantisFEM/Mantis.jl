@@ -53,7 +53,7 @@ end
 
 function position_to_id_conversion(expected, patch)
     for k in keys(expected)
-        val = Topology.position2id(patch, k)
+        val = Topology.position_to_id(patch, k)
         if !all(isequal.(val, expected[k]))
             println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
             return false
@@ -64,7 +64,7 @@ end
 
 function id_to_position_conversion(expected, patch)
     for k in keys(expected)
-        val = Topology.id2position(patch, k[1], k[2])
+        val = Topology.id_to_position(patch, k[1], k[2])
         if val != expected[k]
             println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
             return false

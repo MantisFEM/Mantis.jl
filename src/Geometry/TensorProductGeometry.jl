@@ -51,6 +51,38 @@ TensorProductGeometry(geometries...) = TensorProductGeometry(geometries)
 
 get_tensor_product(geometry::TensorProductGeometry) = geometry.tensor_product
 
+"""
+    get_topology(geometry::TensorProductGeometry)
+
+Return the topology of a tensor-product geometry.
+
+A product of single-patch factors is itself a single patch, whose topology is therefore the
+canonical one of the combined manifold dimension. Products with several patches would need
+the tensor product of the factor topologies, which `Topology` does not construct yet; their
+factor topologies remain reachable through [`get_factor_geometries`](@ref).
+"""
+function get_topology(
+    ::TensorProductGeometry{manifold_dim, image_dim, 1}
+) where {manifold_dim, image_dim}
+    return single_patch_topology(Val(manifold_dim))
+end
+
+function get_topology(
+    ::TensorProductGeometry{manifold_dim, image_dim, num_patches}
+) where {manifold_dim, image_dim, num_patches}
+    throw(
+        ArgumentError(
+            LazyString(
+                "The topology of a tensor-product geometry with ",
+                num_patches,
+                " patches is the tensor product of its factors' topologies, which Topology",
+                " does not construct yet. Reach the factor topologies through",
+                " get_factor_geometries instead.",
+            ),
+        ),
+    )
+end
+
 function get_num_elements(geometry::TensorProductGeometry)
     #=
     The `TensorProducts` module already implements a `get_num_objects` by checking the size

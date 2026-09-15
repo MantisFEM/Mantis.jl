@@ -26,7 +26,8 @@ function C0Space(
     # First number all interior dofs, these are never shared so this is just a matter of
     # assigning a number. These are always the manifold_dim sized containers, that is,
     # surfaces in 2D, volumes in 3D, etc.
-    interior_division = Topology.id_to_dof_division(manifold_dim, manifold_dim, 1)
+    topological_patch = Topology.get_topological_patch(Geometry.get_topology(geometry))
+    interior_division = Topology.id_to_dof_division(topological_patch, manifold_dim, 1)
     for (patch_id, space) in pairs(function_spaces)
         dof_partition[patch_id] = Vector{Vector{Int}}(undef, num_divisions)
 
@@ -61,7 +62,7 @@ function C0Space(
     for (dim, boundary_id) in boundaries
         patch_id = topology[dim+1, manifold_dim+1][boundary_id][1] # There is only one patch.
         local_boundary_id = abs(Topology.get_local_id(topology, patch_id, boundary_id, dim))
-        boundary_dof_division = Topology.id_to_dof_division(manifold_dim, dim, local_boundary_id)
+        boundary_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_boundary_id)
         for local_dof in get_dofs(function_spaces[patch_id], 1, dim, local_boundary_id)
             global_dof += 1
             push!(dof_partition[patch_id][boundary_dof_division], global_dof)
@@ -76,7 +77,7 @@ function C0Space(
         # Process the first patch in the list, here we assign the global dofs.
         patch_id = patch_ids[1]
         local_interface_id = abs(Topology.get_local_id(topology, patch_id, interface_id, dim))
-        first_interface_dof_division = Topology.id_to_dof_division(manifold_dim, dim, local_interface_id)
+        first_interface_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_interface_id)
         dofs_patch_1 = get_dofs(function_spaces[patch_id], 1, dim, local_interface_id)
         for local_dof in dofs_patch_1
             global_dof += 1
@@ -94,7 +95,7 @@ function C0Space(
         # to obtain the correspondence to the local dofs.
         for patch_id in patch_ids[2:end]
             local_interface_id = abs(Topology.get_local_id(topology, patch_id, interface_id, dim))
-            interface_dof_division = Topology.id_to_dof_division(manifold_dim, dim, local_interface_id)
+            interface_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_interface_id)
 
             dofs_patch_i = get_dofs(function_spaces[patch_id], 1, dim, local_interface_id)
 
@@ -161,7 +162,9 @@ function C0Space(
 
     E = ExtractionOperator(extraction_coefficients, basis_indices, num_elements, global_dof)
 
-    parametric_geometry = Geometry.UnstructuredGeometry(map(get_geometry, function_spaces))
+    parametric_geometry = Geometry.UnstructuredGeometry(
+        map(get_geometry, function_spaces), topology
+    )
 
     return C0Space{manifold_dim, num_patches, T, G, typeof(parametric_geometry), get_EIJ_types(E)...}(
         function_spaces,

@@ -111,34 +111,78 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
         )
     end
 
-    # Convenience constructor for single patch geometries.
+    # Convenience constructor for single patch geometries. A single patch has no
+    # connectivity to describe, so its topology is generated here.
     function CartesianGeometry(
-        breakpoints::NTuple{3, AbstractVector{NT}}
-    ) where {NT <: Number}
-        topology = Topology.MeshTopology([(1, 2, 3, 4, 5, 6, 7, 8)], Topology.HEX)
-        return CartesianGeometry((breakpoints,), topology)
-    end
-
-    function CartesianGeometry(
-        breakpoints::NTuple{2, AbstractVector{NT}}
-    ) where {NT <: Number}
-        topology = Topology.MeshTopology([(1, 2, 3, 4)], Topology.QUAD)
-        return CartesianGeometry((breakpoints,), topology)
-    end
-
-    function CartesianGeometry(
-        breakpoints::NTuple{1, AbstractVector{NT}}
-    ) where {NT <: Number}
-        topology = Topology.MeshTopology([(1, 2)], Topology.LINE)
-        return CartesianGeometry((breakpoints,), topology)
+        breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
+    ) where {manifold_dim, NT <: Number}
+        return CartesianGeometry((breakpoints,), single_patch_topology(Val(manifold_dim)))
     end
 
     # Convenience constructor for 1D, single patch geometries.
     function CartesianGeometry(breakpoints::AbstractVector{NT}) where {NT <: Number}
-        return CartesianGeometry(
-            ((breakpoints,),), Topology.MeshTopology([(1, 2)], Topology.LINE)
+        return CartesianGeometry((breakpoints,))
+    end
+
+    # A geometry given as a collection of patches carries connectivity only when there is
+    # more than one patch, and that does not follow from the breakpoints.
+    function CartesianGeometry(
+        breakpoints::NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}}
+    ) where {num_patches, manifold_dim, NT <: Number}
+        if num_patches == 1
+            return CartesianGeometry(breakpoints, single_patch_topology(Val(manifold_dim)))
+        end
+        throw(
+            ArgumentError(
+                LazyString(
+                    "A Cartesian geometry with ",
+                    num_patches,
+                    " patches needs an explicit topology, because the connectivity",
+                    " between patches does not follow from their breakpoints. Construct",
+                    " one with Topology.MeshTopology and pass it as",
+                    " CartesianGeometry(breakpoints, topology).",
+                ),
+            ),
         )
     end
+end
+
+"""
+    single_patch_topology(::Val{manifold_dim})
+
+Return the [`Topology.MeshTopology`](@ref) of a single patch of dimension `manifold_dim`.
+
+A geometry consisting of one patch has no connectivity to describe, so its topology is fully
+determined by the dimension and can be generated rather than supplied.
+
+# Throws
+- `ArgumentError`: If `manifold_dim` exceeds 3, for which `Topology` defines no patch.
+"""
+# There is exactly one single-patch topology per dimension, so build each once and share it.
+# Besides making construction cheap, this keeps single-patch geometries built from the same
+# breakpoints identical, rather than differing only by a freshly allocated topology.
+const SINGLE_PATCH_TOPOLOGIES = (
+    Topology.MeshTopology([(1, 2)], Topology.LINE),
+    Topology.MeshTopology([(1, 2, 3, 4)], Topology.QUAD),
+    Topology.MeshTopology([(1, 2, 3, 4, 5, 6, 7, 8)], Topology.HEX),
+)
+
+single_patch_topology(::Val{1}) = SINGLE_PATCH_TOPOLOGIES[1]
+single_patch_topology(::Val{2}) = SINGLE_PATCH_TOPOLOGIES[2]
+single_patch_topology(::Val{3}) = SINGLE_PATCH_TOPOLOGIES[3]
+function single_patch_topology(::Val{manifold_dim}) where {manifold_dim}
+    throw(
+        ArgumentError(
+            LazyString(
+                "Cartesian geometries are limited to manifold dimension 3, since Topology",
+                " defines no patch of dimension ",
+                manifold_dim,
+                ". Got ",
+                manifold_dim,
+                ".",
+            ),
+        ),
+    )
 end
 
 # Get types.
@@ -210,32 +254,24 @@ function get_elements(
         offset += get_num_elements(geometry, i)
     end
 
-    # Drops the dimensions that have only one element, to get an array of minimal
-    # dimension, i.e., an array of dimension geometric_dim
-    dims_to_drop = Tuple(findall(i -> length(mask[i]) == 1, 1:length(mask)))
-    @show element_ids
+    # Drop the dimensions the object is fixed along, so that the result is an array of
+    # dimension geometric_dim. The criterion has to be the topological position rather than
+    # the element count: a free dimension holding a single element must be kept, otherwise
+    # a one-element patch collapses the array further than geometric_dim.
+    dims_to_drop = Tuple(findall(!iszero, position))
     element_ids = dropdims(element_ids .+ offset; dims=dims_to_drop)
-    @show element_ids
-    # dims_to_drop = findall(i -> length(mask[i]) == 1, 1:length(mask))
-    # @show dims_to_drop
-    # @show element_ids .+ offset
-    # element_ids .+= offset
-    # reverse!(dims_to_drop)
-    # for dim_to_drop in dims_to_drop
-    #     element_ids = dropdims(element_ids; dims=dim_to_drop)
-    # end
-    # @show element_ids
 
-    # We now need to match the element numbers depending on the rotation and orientation
-    # requested
-    if orientation == -1
-        # Transpose if orientation must be reversed
-        element_ids = transpose(element_ids)
-    end
-
-    if rotation != 0
-        # Perform rotation of the numbers
-        element_ids = rotl90(element_ids, rotation)
+    # Match the element numbering to the requested rotation and orientation. A
+    # geometric_dim-dimensional object is traversed differently by each patch that shares
+    # it, and these two numbers say how.
+    if geometric_dim == 1
+        # An edge has a single direction, so reversing it reverses the element order.
+        orientation == -1 && (element_ids = reverse(element_ids))
+    elseif geometric_dim == 2
+        # A quadrilateral face is matched by transposing (reversed orientation) and then
+        # rotating by quarter turns.
+        orientation == -1 && (element_ids = transpose(element_ids))
+        rotation != 0 && (element_ids = rotl90(element_ids, rotation))
     end
 
     # Return flattened (as vector) numbers

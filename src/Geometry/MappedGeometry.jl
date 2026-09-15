@@ -226,7 +226,26 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
             topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
+
+    # Anything else built from more than one patch needs an explicit topology: only the
+    # single-patch case above can inherit one from its base geometry.
+    function MappedGeometry(::NTuple{num_patches, AbstractGeometry}, ::Any) where {num_patches}
+        return throw(ArgumentError(_MULTI_PATCH_TOPOLOGY_MESSAGE))
+    end
+
+    function MappedGeometry(
+        ::AbstractGeometry{manifold_dim, image_dim_base, num_patches_G}, ::Any
+    ) where {manifold_dim, image_dim_base, num_patches_G}
+        return throw(ArgumentError(_MULTI_PATCH_TOPOLOGY_MESSAGE))
+    end
 end
+
+const _MULTI_PATCH_TOPOLOGY_MESSAGE = """\
+A mapped geometry spanning several patches needs an explicit topology, because the \
+connectivity between patches does not follow from the geometries and mappings alone. \
+Construct one with Topology.MeshTopology and pass it as \
+MappedGeometry(geometry, mapping, topology).\
+"""
 
 function Base.eltype(
     ::Type{MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map}}
@@ -268,11 +287,13 @@ end
 """
     get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int)
     get_base_patch_and_element_id(
-        geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
+        geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+        element_id::Int,
     ) where {
         manifold_dim,
         image_dim,
         num_patches,
+        T,
         G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
         Map,
     }
@@ -288,11 +309,13 @@ function get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int
     return get_patch_and_local_element_id(geometry, element_id)
 end
 function get_base_patch_and_element_id(
-    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, G, Map}, element_id::Int
+    geometry::MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map},
+    element_id::Int,
 ) where {
     manifold_dim,
     image_dim,
     num_patches,
+    T,
     G <: AbstractGeometry{manifold_dim, image_dim, num_patches},
     Map,
 }

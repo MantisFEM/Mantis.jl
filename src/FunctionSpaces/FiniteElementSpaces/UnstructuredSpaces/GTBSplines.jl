@@ -51,9 +51,16 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
         # Create the multi-patch geometry from the geometries of the given spaces. Each of
         # those geometries is restricted to have only one patch.
         patch_geometries = map(get_geometry, patch_spaces)
-        geometry = Geometry.UnstructuredGeometry(patch_geometries) # General, but not ideal.
+        # The patches form a periodic chain: patch i meets patch i + 1, and the last meets
+        # the first. An interface is opened up by a regularity of -1, not by the topology.
+        topology = Topology.MeshTopology(
+            [(i, mod1(i + 1, num_patches)) for i in 1:num_patches], Topology.LINE
+        )
+        geometry = Geometry.UnstructuredGeometry(patch_geometries, topology)
         patch_parametric_geometries = map(get_parametric_geometry, patch_spaces)
-        parametric_geometry = Geometry.UnstructuredGeometry(patch_parametric_geometries)
+        parametric_geometry = Geometry.UnstructuredGeometry(
+            patch_parametric_geometries, topology
+        )
 
         # Check if the number of regularity conditions matches the number of interfaces
         if length(regularity) != num_patches

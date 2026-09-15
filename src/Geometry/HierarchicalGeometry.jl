@@ -60,6 +60,18 @@ function get_geometries(geometry::HierarchicalGeometry)
 end
 
 """
+    get_topology(geometry::HierarchicalGeometry)
+
+Return the topology of the geometries making up this hierarchy.
+
+Refining elements within a patch does not change how the patches connect, so every level of
+the hierarchy shares one topology and the first level is representative.
+"""
+function get_topology(geometry::HierarchicalGeometry)
+    return get_topology(first(get_geometries(geometry)))
+end
+
+"""
 	get_active_elements(geometry::HierarchicalGeometry)
 
 Returns the `Hierarchy.ActiveInfo` object defining the active elements of the hierarchical

@@ -85,41 +85,26 @@ answers_LR = (
 )
 basic_tests(geometryLR, answers_LR)
 
-# LinRange input. Single-patch, 4D.
-geometry1p4D = Geometry.CartesianGeometry((
+# Cartesian geometries above 3D are not representable, since Topology defines no patch of
+# dimension 4 or higher.
+@test_throws ArgumentError Geometry.CartesianGeometry((
     LinRange(0.5, 2.5, 5),
     LinRange(-0.75, 0.75, 3),
     LinRange(1.5, 2.5, 4),
     LinRange(10.5, 20.5, 6),
 ))
-answers_1p4D = (
-    (
-        LinRange(0.5, 2.5, 5),
-        LinRange(-0.75, 0.75, 3),
-        LinRange(1.5, 2.5, 4),
-        LinRange(10.5, 20.5, 6),
-    ),
-    [(4, 2, 3, 5)],
-    1,
-    120,
-    4,
-    4,
-    (120,),
-    120,
-    (0.5, 0.75, 1.0 / 3.0, 2.0),
-    0.25,
-    (1, 120),
-    120,
-    ((0.5, 1.0), (-0.75, 0.0), (1.5, 1.5 + 1 / 3), (10.5, 12.5)),
-)
-basic_tests(geometry1p4D, answers_1p4D)
+
 
 # Multi-patch input. 2 patches, 2D. Homogeneous input. First patch has more element than the
 # second.
-geometryMP2 = Geometry.CartesianGeometry((
-    (LinRange(-0.5, 2.5, 16), LinRange(-0.5, 2.5, 31)),
-    (LinRange(2.5, 3.0, 4), LinRange(-0.5, 2.5, 9)),
-))
+geometryMP2 = Geometry.CartesianGeometry(
+    (
+        (LinRange(-0.5, 2.5, 16), LinRange(-0.5, 2.5, 31)),
+        (LinRange(2.5, 3.0, 4), LinRange(-0.5, 2.5, 9)),
+    ),
+    # The patches meet along x = 2.5, so they share vertices 2 and 3.
+    Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD),
+)
 answers_MP2 = (
     ((LinRange(-0.5, 2.5, 16), LinRange(-0.5, 2.5, 31))),
     [(15, 30), (3, 8)],
@@ -138,10 +123,14 @@ answers_MP2 = (
 basic_tests(geometryMP2, answers_MP2)
 
 # Multi-patch input. 2 patches, 2D. Heterogeneous input.
-geometryMP = Geometry.CartesianGeometry((
-    (LinRange(0.5, 2.5, 5), [-0.75, 0.1, 0.75]),
-    (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 6)),
-))
+geometryMP = Geometry.CartesianGeometry(
+    (
+        (LinRange(0.5, 2.5, 5), [-0.75, 0.1, 0.75]),
+        (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 6)),
+    ),
+    # These patches share no boundary, so they share no vertices either.
+    Topology.MeshTopology([(1, 2, 3, 4), (5, 6, 7, 8)], Topology.QUAD),
+)
 answers_MP = (
     (([0.5, 1.0, 1.5, 2.0, 2.5], [-0.75, 0.1, 0.75])),
     [(4, 2), (3, 5)],
@@ -189,6 +178,7 @@ geometryMP100 = Geometry.CartesianGeometry(
     ntuple(100) do i
         return (LinRange((i - 1) * 1.0, i * 1.0, i + 1),)
     end,
+    Topology.MeshTopology([(i, i + 1) for i in 1:100], Topology.LINE),
 )
 answers_MP100 = (
     (LinRange(0.0, 1.0, 2),),

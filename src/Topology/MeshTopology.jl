@@ -217,6 +217,25 @@ function _process_ridges(face2vertex, patch2vertex)
 end
 
 ############################################################################################
+#                                     Value semantics                                      #
+############################################################################################
+# A topology is a value: two topologies built from the same patches describe the same mesh
+# and must compare equal. Julia's default `==` falls back to `===`, which would distinguish
+# them, because their incidence relations are freshly allocated vectors. Geometries store a
+# topology, so without this two otherwise identical geometries also compare unequal.
+function Base.:(==)(a::MeshTopology, b::MeshTopology)
+    return get_topological_patch(a) == get_topological_patch(b) &&
+           size(a) == size(b) &&
+           a.incidence_relations == b.incidence_relations
+end
+
+function Base.hash(topology::MeshTopology, h::UInt)
+    h = hash(get_topological_patch(topology), h)
+    h = hash(size(topology), h)
+    return hash(topology.incidence_relations, h)
+end
+
+############################################################################################
 #                                         Indexing                                         #
 ############################################################################################
 Base.IndexStyle(::Type{<:MeshTopology}) = IndexLinear()

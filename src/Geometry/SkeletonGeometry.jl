@@ -147,10 +147,11 @@ the element identified by `element_id` of a given `geometry`.
     size of the matrix is `(num_eval_points, image_dim)`.
 """
 function evaluate(
-    geometry::SkeletonGeometry{2, image_dim, num_patches, T, PG},
+    geometry::SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG},
     element_id::Int,
-    xi::Points.AbstractPoints{2},
+    xi::Points.AbstractPoints{manifold_dim},
 ) where {
+    manifold_dim,
     image_dim,
     num_patches,
     parent_manifold_dim,
@@ -165,9 +166,14 @@ function evaluate(
     # the skeleton element (the current element) into evaluation of the parent.
     parent_elements_ids, patch_parents = get_parent_elements(geometry, element_id)
 
-    # Evaluate the parent geometry at the location of the skeleton element
+    # Evaluate the parent geometry at the location of the skeleton element. The local
+    # objects of the skeleton are numbered by the patch of the parent topology, so that is
+    # the patch the coordinate mapping has to consult.
+    parent_patch = Topology.get_topological_patch(
+        Topology.get_parent_topology(get_topology(geometry))
+    )
     xi_parent = skeleton_element_to_parent_element_coords(
-        xi, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1]
+        xi, parent_patch, patch_parents[2, 1], patch_parents[3, 1], patch_parents[4, 1]
     )
 
     parent_geometry = get_parent_geometry(geometry)
@@ -180,14 +186,14 @@ end
 # For skeleton edges
 function skeleton_element_to_parent_element_coords(
     skeleton_points::P,
+    parent_patch::Topology.AbstractTensorProductPatch{2},
     local_geometric_object::Int,
     rotation::Int,  # named, even though unused in this method
     orientation::Int,
 ) where {P <: Points.TensorProductPoints{1}}
     manifold_dim = 1
-    parent_manifold = 3
     # Get the constituent points
-    skeleton_σ = Points.get_constituent_points(skeleton_points)
+    skeleton_σ = Points.get_input_points(skeleton_points)
 
     # Step 1: Apply orientation
     if orientation == -1
@@ -207,7 +213,7 @@ function skeleton_element_to_parent_element_coords(
     # the skeleton element spans the ξ axis at the position η = 1.
     # Hence, a point (σ,) in the skeleton element (after orientation taken
     # into account) will be evaluated as (σ, 1) in the parent element.
-    position = Topology.id_to_position(manifold_dim + 1, manifold_dim, local_geometric_object)
+    position = Topology.id_to_position(parent_patch, manifold_dim, local_geometric_object)
 
     constituent_points = Vector{eltype(σ)}(undef, manifold_dim + 1)
 
@@ -241,12 +247,16 @@ end
 
 # For skeleton faces
 function skeleton_element_to_parent_element_coords(
-    skeleton_points::P, local_geometric_object::Int, rotation::Int, orientation::Int
+    skeleton_points::P,
+    parent_patch::Topology.AbstractTensorProductPatch{3},
+    local_geometric_object::Int,
+    rotation::Int,
+    orientation::Int,
 ) where {P <: Points.TensorProductPoints{2}}
     manifold_dim = 2
 
     # Get the constituent points
-    skeleton_σ_τ = Points.get_constituent_points(skeleton_points)
+    skeleton_σ_τ = Points.get_input_points(skeleton_points)
 
     # Step 1: Apply orientation
     iteration_order_rotation = collect(1:manifold_dim)
@@ -285,7 +295,7 @@ function skeleton_element_to_parent_element_coords(
     # the skeleton element spans the ξ and ζ axis at the position η = 1.
     # Hence, a point (σ, τ) in the skeleton element (after rotation and orientation taken
     # into account) will be evaluated as (σ, 1, τ) in the parent element.
-    position = Topology.id_to_position(manifold_dim + 1, manifold_dim, local_geometric_object)
+    position = Topology.id_to_position(parent_patch, manifold_dim, local_geometric_object)
 
     constituent_points = Vector{eltype(σ_τ)}(undef, manifold_dim + 1)
 

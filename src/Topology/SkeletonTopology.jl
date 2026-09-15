@@ -83,6 +83,18 @@ function get_parent_topology(topology::SkeletonTopology)
 end
 
 ############################################################################################
+#                                     Value semantics                                      #
+############################################################################################
+# A skeleton is fully determined by the mesh it is the skeleton of.
+function Base.:(==)(a::SkeletonTopology, b::SkeletonTopology)
+    return get_parent_topology(a) == get_parent_topology(b)
+end
+
+function Base.hash(topology::SkeletonTopology, h::UInt)
+    return hash(get_parent_topology(topology), hash(SkeletonTopology, h))
+end
+
+############################################################################################
 #                                         Indexing                                         #
 ############################################################################################
 Base.IndexStyle(::Type{<:SkeletonTopology}) = IndexLinear()
@@ -150,10 +162,6 @@ function get_patch_parents(
     )
 
     return compute_neighbours(
-        parent_topology,
-        parent_patch_id,
-        local_patch_id,
-        patch_dim,
-        true,
+        parent_topology, parent_patch_id, local_patch_id, patch_dim; include_local_patch=true
     )
 end

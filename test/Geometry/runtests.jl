@@ -18,6 +18,10 @@ end
     include("UnstructuredGeometryTests.jl")
 end
 
+@testset "SkeletonGeometry" begin
+    include("SkeletonGeometryTests.jl")
+end
+
 @testset "HierarchicalGeometry" verbose = true begin
 	include("HierarchicalGeometryTests.jl")
 end

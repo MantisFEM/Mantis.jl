@@ -693,15 +693,15 @@ end
 
         # The centre patch has a neighbour across each of its four edges; the corner
         # patches have two.
-        @test size(Topology.compute_edge_neighbours(topology, 5, 1), 2) == 1
+        @test size(Topology.compute_neighbours(topology, 5, 1, 1), 2) == 1
         @test sum(
-            edge -> size(Topology.compute_edge_neighbours(topology, 5, edge), 2), 1:4
+            edge -> size(Topology.compute_neighbours(topology, 5, edge, 1), 2), 1:4
         ) == 4
         @test sum(
-            edge -> size(Topology.compute_edge_neighbours(topology, 1, edge), 2), 1:4
+            edge -> size(Topology.compute_neighbours(topology, 1, edge, 1), 2), 1:4
         ) == 2
         # The centre vertex of the grid is shared by four patches.
-        @test size(Topology.compute_vertex_neighbours(topology, 1, 3), 2) == 3
+        @test size(Topology.compute_neighbours(topology, 1, 3, 0), 2) == 3
 
         test_structural_invariants(topology)
         test_neighbour_invariants(topology)
@@ -1037,11 +1037,11 @@ end
 
         @test size(topology) == (12, 20, 11, 2)
 
-        neighbours = Topology.compute_face_neighbours(topology, 1, 2)
+        neighbours = Topology.compute_neighbours(topology, 1, 2, 2)
         @test neighbours == [2; local_face; rotation; -1;;]
 
         # Seen from the neighbour, the same shift has to be undone.
-        back = Topology.compute_face_neighbours(topology, 2, local_face)
+        back = Topology.compute_neighbours(topology, 2, local_face, 2)
         @test back[1, 1] == 1
         @test back[2, 1] == 2
         @test back[4, 1] == -1
@@ -1050,9 +1050,7 @@ end
         @test back[3, 1] == rotation
 
         # Relative to the global face the two patches must disagree on the direction.
-        with_self = Topology.compute_face_neighbours(
-            topology, 1, 2; include_local_patch=true
-        )
+        with_self = Topology.compute_neighbours(topology, 1, 2, 2; include_local_patch=true)
         @test sort(with_self[4, :]) == [-1, 1]
 
         test_structural_invariants(topology)
@@ -1078,21 +1076,21 @@ end
         # neighbours, sharing the centre vertex with all 7 others.
         for patch_id in 1:8
             @test sum(
-                face -> size(Topology.compute_face_neighbours(topology, patch_id, face), 2),
+                face -> size(Topology.compute_neighbours(topology, patch_id, face, 2), 2),
                 1:6,
             ) == 3
         end
         # Every shared face is traversed in opposite directions by the two patches that
         # share it, since all patches of the grid are consistently oriented.
         for patch_id in 1:8, face in 1:6
-            face_neighbours = Topology.compute_face_neighbours(topology, patch_id, face)
+            face_neighbours = Topology.compute_neighbours(topology, patch_id, face, 2)
             @test all(==(-1), face_neighbours[4, :])
         end
 
         # The centre vertex is local vertex 7 of the first patch.
-        @test size(Topology.compute_vertex_neighbours(topology, 1, 7), 2) == 7
+        @test size(Topology.compute_neighbours(topology, 1, 7, 0), 2) == 7
         @test size(
-            Topology.compute_vertex_neighbours(topology, 1, 7; include_local_patch=true), 2
+            Topology.compute_neighbours(topology, 1, 7, 0; include_local_patch=true), 2
         ) == 8
 
         test_structural_invariants(topology)
@@ -1194,10 +1192,10 @@ end
         @test_throws ArgumentError Topology.compute_neighbours(hex_topology, 4)
 
         # Edges are only shared from 2D on, faces only in 3D.
-        @test_throws ArgumentError Topology.compute_edge_neighbours(line_topology, 1, 1)
-        @test_throws ArgumentError Topology.compute_edge_neighbours(line_topology)
-        @test_throws ArgumentError Topology.compute_face_neighbours(quad_topology, 1, 1)
-        @test_throws ArgumentError Topology.compute_face_neighbours(quad_topology)
+        @test_throws ArgumentError Topology.compute_neighbours(line_topology, 1, 1, 1)
+        @test_throws ArgumentError Topology.compute_neighbours(line_topology, 1)
+        @test_throws ArgumentError Topology.compute_neighbours(quad_topology, 1, 1, 2)
+        @test_throws ArgumentError Topology.compute_neighbours(quad_topology, 2)
     end
 
     @testset "unknown ids" begin
@@ -1252,8 +1250,8 @@ end
         @test (@inferred topology[manifold_dim + 1, 1]) isa Vector{Vector{Int}}
         @test (@inferred Topology.get_global_id(topology, 1, 1, 0)) isa Int
         @test (@inferred Topology.get_local_id(topology, 1, 1, 0)) isa Int
-        @test (@inferred Topology.compute_vertex_neighbours(topology, 1, 1)) isa Matrix{Int}
-        @test (@inferred Topology.compute_vertex_neighbours(topology)) isa
+        @test (@inferred Topology.compute_neighbours(topology, 1, 1, 0)) isa Matrix{Int}
+        @test (@inferred Topology.compute_neighbours(topology, 0)) isa
             Matrix{Matrix{Int}}
         @test (@inferred Topology.get_boundaries_and_interfaces(topology)) isa
             Tuple{Vector{Tuple{Int, Int}}, Vector{Tuple{Int, Int}}}
@@ -1261,15 +1259,15 @@ end
             Vector{Tuple{Int, Int}}
 
         if manifold_dim >= 2
-            @test (@inferred Topology.compute_edge_neighbours(topology, 1, 1)) isa
+            @test (@inferred Topology.compute_neighbours(topology, 1, 1, 1)) isa
                 Matrix{Int}
-            @test (@inferred Topology.compute_edge_neighbours(topology)) isa
+            @test (@inferred Topology.compute_neighbours(topology, 1)) isa
                 Matrix{Matrix{Int}}
         end
         if manifold_dim == 3
-            @test (@inferred Topology.compute_face_neighbours(topology, 1, 1)) isa
+            @test (@inferred Topology.compute_neighbours(topology, 1, 1, 2)) isa
                 Matrix{Int}
-            @test (@inferred Topology.compute_face_neighbours(topology)) isa
+            @test (@inferred Topology.compute_neighbours(topology, 2)) isa
                 Matrix{Matrix{Int}}
         end
     end

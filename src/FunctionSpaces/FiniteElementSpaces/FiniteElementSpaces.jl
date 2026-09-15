@@ -218,7 +218,8 @@ function get_dofs(
     space::AbstractFESpace, patch_id::Int, object_dim::Int, object_local_id::Int
 )
     manifold_dim = get_manifold_dim(space)
-    dof_division = Topology.id_to_dof_division(manifold_dim, object_dim, object_local_id)
+    patch = Topology.tensor_product_patch(Val(manifold_dim))
+    dof_division = Topology.id_to_dof_division(patch, object_dim, object_local_id)
     return get_dof_partition(space)[patch_id][dof_division]
 end
 

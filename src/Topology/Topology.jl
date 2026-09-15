@@ -237,13 +237,13 @@ the `patch_id`, one can also specicfy the objects of other dimensions (e.g. (e.g
 ```jldoctest
 julia> using Mantis
 
-julia> topology = MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD);
+julia> topology = Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD);
 
-julia> get_global_id(topology, 5, 1, 2, 0) # 2nd vertex (dim 0) of the 5th edge (dim 1).
+julia> Topology.get_global_id(topology, 5, 1, 2, 0) # 2nd vertex (dim 0) of edge 5 (dim 1).
 3
 
-julia> get_global_id(topology, 2, 4, 0) # 4th vertex (dim 0) of the 2nd patch.
-4
+julia> Topology.get_global_id(topology, 2, 4, 0) # 4th vertex (dim 0) of patch 2.
+3
 ```
 """
 function get_global_id(
@@ -459,21 +459,50 @@ function _rotation_and_orientation(
 end
 
 """
-    _compute_object_neighbours(
-        topology, patch_id, object_local_id, object_dim, include_local_patch
+    compute_neighbours(
+        topology::AbstractTopology,
+        patch_id::Int,
+        object_local_id::Int,
+        object_dim::Int;
+        include_local_patch::Bool=false,
     )
 
-Return the `4 × N` neighbour matrix of the local object with dimension `object_dim` and
-local index `object_local_id` of patch `patch_id`. See [`compute_neighbours`](@ref) for the
-meaning of the rows.
+Return a `4 × N` matrix describing the patches that share the geometric object of dimension
+`object_dim` with local index `object_local_id` of patch `patch_id`.
+
+Each column describes one such patch, with the rows holding
+
+1. the neighbour patch id;
+2. the local id of the shared object in the neighbour patch (always positive);
+3. the **rotation**, i.e. the number of positions by which the neighbour's vertex sequence of
+   the shared object is cyclically shifted with respect to the reference one. It is always
+   `0` for vertices and edges, and is the number of 90° shifts for the quadrilateral faces of
+   a hexahedral mesh;
+4. the **orientation**, which is `1` when the neighbour traverses the shared object in the
+   same cyclic direction as the reference and `-1` otherwise. It is always `1` for vertices.
+   For edges, `-1` means that the edge degrees of freedom must be reversed to match; for
+   faces, that they must be transposed.
+
+Rotation and orientation are measured relative to a reference traversal of the shared object.
+By default this reference is the traversal prescribed by the current patch `patch_id`, which
+is itself excluded from the result. If `include_local_patch` is `true`, the current patch is
+included as one of the neighbours and the reference becomes the global definition of the
+shared object, so that all patches (including the current one) are described in a common
+frame.
+
+# Notes
+- Applicable to all supported topologies, with `0 ≤ object_dim < manifold_dim`.
+- Assumes consistent local object numbering across patches.
 """
-function compute_neighbours(#_compute_object_neighbours(
+function compute_neighbours(
     topology::AbstractTopology{manifold_dim},
     patch_id::Int,
     object_local_id::Int,
-    object_dim::Int,
+    object_dim::Int;
     include_local_patch::Bool=false,
 ) where {manifold_dim}
+    _check_object_dim(manifold_dim, object_dim)
+
     # The sign of a global id encodes orientation, which is recomputed below, so drop it.
     object_id = abs(get_global_id(topology, patch_id, object_local_id, object_dim))
     neighbour_patch_ids = topology[object_dim + 1, manifold_dim + 1][object_id]
@@ -534,136 +563,13 @@ function _compute_all_neighbours(
 
     neighbours = Matrix{Matrix{Int}}(undef, num_patches, num_local_objects)
     for object_local_id in 1:num_local_objects, patch_id in 1:num_patches
-        neighbours[patch_id, object_local_id] = _compute_object_neighbours(
-            topology, patch_id, object_local_id, object_dim, include_local_patch
+        neighbours[patch_id, object_local_id] = compute_neighbours(
+            topology, patch_id, object_local_id, object_dim; include_local_patch
         )
     end
 
     return neighbours
 end
-
-# """
-#     compute_vertex_neighbours(
-#         topology::AbstractTopology,
-#         patch_id::Int,
-#         vertex_local_id::Int;
-#         include_local_patch::Bool=false,
-#     )
-
-# Return a `4 × N` matrix describing the patches that share the vertex with local index
-# `vertex_local_id` of patch `patch_id`. See [`compute_neighbours`](@ref) for the meaning of
-# the rows and of `include_local_patch`.
-
-# Rows 3 and 4 are always `0` and `1`, since a vertex has neither rotation nor orientation.
-# """
-# function compute_vertex_neighbours(
-#     topology::AbstractTopology,
-#     patch_id::Int,
-#     vertex_local_id::Int;
-#     include_local_patch::Bool=false,
-# )
-#     return _compute_object_neighbours(
-#         topology, patch_id, vertex_local_id, 0, include_local_patch
-#     )
-# end
-
-# """
-#     compute_vertex_neighbours(topology::AbstractTopology; include_local_patch::Bool=false)
-
-# Return a `num_patches × num_local_vertices` matrix whose entry `[i, j]` holds the neighbour
-# matrix of the `j`-th vertex of patch `i`, as returned by
-# [`compute_vertex_neighbours(::AbstractTopology, ::Int, ::Int)`](@ref).
-# """
-# function compute_vertex_neighbours(
-#     topology::AbstractTopology; include_local_patch::Bool=false
-# )
-#     return _compute_all_neighbours(topology, 0, include_local_patch)
-# end
-
-# """
-#     compute_edge_neighbours(
-#         topology::AbstractTopology,
-#         patch_id::Int,
-#         edge_local_id::Int;
-#         include_local_patch::Bool=false,
-#     )
-
-# Return a `4 × N` matrix describing the patches that share the edge with local index
-# `edge_local_id` of patch `patch_id`. See [`compute_neighbours`](@ref) for the meaning of the
-# rows and of `include_local_patch`.
-
-# Row 3 is always `0`, since an edge has only two vertices and hence no rotation; row 4 is `-1`
-# when the neighbour traverses the edge in the opposite direction, meaning that its edge
-# degrees of freedom must be reversed to match.
-
-# Requires a topology of manifold dimension at least 2; in 1D the edges are the patches
-# themselves.
-# """
-# function compute_edge_neighbours(
-#     topology::AbstractTopology{manifold_dim},
-#     patch_id::Int,
-#     edge_local_id::Int;
-#     include_local_patch::Bool=false,
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, 1)
-#     return _compute_object_neighbours(
-#         topology, patch_id, edge_local_id, 1, include_local_patch
-#     )
-# end
-
-# """
-#     compute_edge_neighbours(topology::AbstractTopology; include_local_patch::Bool=false)
-
-# Return a `num_patches × num_local_edges` matrix whose entry `[i, j]` holds the neighbour
-# matrix of the `j`-th edge of patch `i`, as returned by
-# [`compute_edge_neighbours(::AbstractTopology, ::Int, ::Int)`](@ref).
-# """
-# function compute_edge_neighbours(
-#     topology::AbstractTopology{manifold_dim}; include_local_patch::Bool=false
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, 1)
-#     return _compute_all_neighbours(topology, 1, include_local_patch)
-# end
-
-# """
-#     compute_face_neighbours(
-#         topology::AbstractTopology,
-#         patch_id::Int,
-#         face_local_id::Int;
-#         include_local_patch::Bool=false,
-#     )
-
-# Return a `4 × N` matrix describing the patches that share the face with local index
-# `face_local_id` of patch `patch_id`. See [`compute_neighbours`](@ref) for the meaning of the
-# rows and of `include_local_patch`.
-
-# Requires a topology of manifold dimension 3; in 2D the faces are the patches themselves.
-# """
-# function compute_face_neighbours(
-#     topology::AbstractTopology{manifold_dim},
-#     patch_id::Int,
-#     face_local_id::Int;
-#     include_local_patch::Bool=false,
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, 2)
-#     return _compute_object_neighbours(
-#         topology, patch_id, face_local_id, 2, include_local_patch
-#     )
-# end
-
-# """
-#     compute_face_neighbours(topology::AbstractTopology; include_local_patch::Bool=false)
-
-# Return a `num_patches × num_local_faces` matrix whose entry `[i, j]` holds the neighbour
-# matrix of the `j`-th face of patch `i`, as returned by
-# [`compute_face_neighbours(::AbstractTopology, ::Int, ::Int)`](@ref).
-# """
-# function compute_face_neighbours(
-#     topology::AbstractTopology{manifold_dim}; include_local_patch::Bool=false
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, 2)
-#     return _compute_all_neighbours(topology, 2, include_local_patch)
-# end
 
 """
     _check_object_dim(manifold_dim::Int, object_dim::Int)
@@ -691,72 +597,23 @@ function _check_object_dim(manifold_dim::Int, object_dim::Int)
     return nothing
 end
 
-# """
-#     compute_neighbours(
-#         topology::AbstractTopology,
-#         patch_id::Int,
-#         local_object_id::Int,
-#         local_object_dim::Int;
-#         include_local_patch::Bool=false,
-#     )
+"""
+    compute_neighbours(
+        topology::AbstractTopology, object_dim::Int; include_local_patch::Bool=false
+    )
 
-# Return a `4 × N` matrix describing the patches that share the geometric object of dimension
-# `local_object_dim` with local index `local_object_id` of patch `patch_id`.
-
-# Each column describes one such patch, with the rows holding
-
-# 1. the neighbour patch id;
-# 2. the local id of the shared object in the neighbour patch (always positive);
-# 3. the **rotation**, i.e. the number of positions by which the neighbour's vertex sequence of
-#    the shared object is cyclically shifted with respect to the reference one. It is always
-#    `0` for vertices and edges, and is the number of 90° shifts for the quadrilateral faces of
-#    a hexahedral mesh;
-# 4. the **orientation**, which is `1` when the neighbour traverses the shared object in the
-#    same cyclic direction as the reference and `-1` otherwise. It is always `1` for vertices.
-#    For edges, `-1` means that the edge degrees of freedom must be reversed to match; for
-#    faces, that they must be transposed.
-
-# Rotation and orientation are measured relative to a reference traversal of the shared object.
-# By default, this reference is the traversal prescribed by the current patch `patch_id`, which
-# is itself excluded from the result. If `include_local_patch` is `true`, the current patch is
-# included as one of the neighbours and the reference becomes the global definition of the
-# shared object, so that all patches (including the current one) are described in a common
-# frame.
-
-# # Notes
-# - Applicable to all supported topologies, with `0 ≤ local_object_dim < manifold_dim`.
-# - Assumes consistent local object numbering across patches.
-# """
-# function compute_neighbours(
-#     topology::AbstractTopology{manifold_dim},
-#     patch_id::Int,
-#     local_object_id::Int,
-#     local_object_dim::Int,
-#     include_local_patch::Bool=false,
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, local_object_dim)
-#     return _compute_object_neighbours(
-#         topology, patch_id, local_object_id, local_object_dim, include_local_patch
-#     )
-# end
-
-# """
-#     compute_neighbours(
-#         topology::AbstractTopology, local_object_dim::Int; include_local_patch::Bool=false
-#     )
-
-# Return a `num_patches × num_local_objects` matrix whose entry `[i, j]` holds the neighbour
-# matrix of the `j`-th object of dimension `local_object_dim` of patch `i`, as returned by
-# [`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
-# """
-# function compute_neighbours(
-#     topology::AbstractTopology{manifold_dim},
-#     local_object_dim::Int,
-#     include_local_patch::Bool=false,
-# ) where {manifold_dim}
-#     _check_object_dim(manifold_dim, local_object_dim)
-#     return _compute_all_neighbours(topology, local_object_dim, include_local_patch)
-# end
+Return a `num_patches × num_local_objects` matrix whose entry `[i, j]` holds the neighbour
+matrix of the `j`-th object of dimension `object_dim` of patch `i`, as returned by
+[`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
+"""
+function compute_neighbours(
+    topology::AbstractTopology{manifold_dim},
+    object_dim::Int;
+    include_local_patch::Bool=false,
+) where {manifold_dim}
+    _check_object_dim(manifold_dim, object_dim)
+    return _compute_all_neighbours(topology, object_dim, include_local_patch)
+end
 
 include("Patches.jl")
 include("MeshTopology.jl")

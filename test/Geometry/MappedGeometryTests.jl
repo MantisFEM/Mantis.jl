@@ -171,6 +171,7 @@ basic_tests(geometry1, answers_1)
 geom_slanted_2patch = Geometry.MappedGeometry(
     (geom_cart_patch_1, geom_cart_patch_2),
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
+    Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD),
 )
 answers_geom_slanted_2patch = (
     2,
@@ -192,6 +193,7 @@ basic_tests(geom_slanted_2patch, answers_geom_slanted_2patch)
 geom_slanted_2patch_oneref = Geometry.MappedGeometry(
     Geometry.CartesianGeometry(((LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 7)),)),
     (mapping_patch_1_slanted, mapping_patch_2_slanted),
+    Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD),
 )
 answers_geom_slanted_2patch_oneref = (
     2,
@@ -218,6 +220,9 @@ geom_slanted_2patch_onemap = Geometry.MappedGeometry(
         Geometry.CartesianGeometry(((LinRange(0.75, 1.0, 6), LinRange(0.0, 1.0, 7)),)),
     ),
     mapping_patch_1_slanted,
+    Topology.MeshTopology(
+        [(1, 2, 3, 4), (2, 5, 6, 3), (5, 7, 8, 6), (7, 9, 10, 8)], Topology.QUAD
+    ),
 )
 answers_geom_slanted_2patch_onemap = (
     4,
@@ -263,12 +268,19 @@ end
 mapping_obj_2_geo2mapped = Geometry.Mapping(
     (2, 2), mapping_patch_2_geo2mapped, dmapping_patch_2_geo2mapped
 )
+geo2mapped_topology = Topology.MeshTopology(
+    [(1, 2, 3, 4), (1, 5, 6, 2)], Topology.QUAD
+)
 geo2mapped = Mantis.Geometry.MappedGeometry(
-    Mantis.Geometry.CartesianGeometry((
-        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
-        (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4)),
-    ),),
+    Mantis.Geometry.CartesianGeometry(
+        (
+            (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
+            (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4)),
+        ),
+        geo2mapped_topology,
+    ),
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
+    geo2mapped_topology,
 )
 answers_geo2mapped = (
     2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, (2, 6), ((0.0, 0.5), (0.0, 0.5))
@@ -281,6 +293,7 @@ geo2mapped2 = Mantis.Geometry.MappedGeometry(
         Mantis.Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 4))),
     ),
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
+    Topology.MeshTopology([(1, 2, 3, 4), (1, 5, 6, 2)], Topology.QUAD),
 )
 answers_geo2mapped2 = (
     2, 10, 2, 2, (4, 6), 4, (0.5, 0.5), 0.25, (2, 2), 6, (2, 2), ((0.0, 0.5), (0.0, 0.5))

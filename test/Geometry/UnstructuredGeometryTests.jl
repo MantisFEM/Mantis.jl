@@ -28,7 +28,11 @@ basic_tests(geometry1, answers_1)
 # LinRange input. Single-patch, 2D.
 cg1 = Geometry.CartesianGeometry((LinRange(0.5, 2.5, 5), LinRange(-0.75, 0.75, 3)))
 cg2 = Geometry.CartesianGeometry((LinRange(2.5, 5.0, 6), LinRange(-0.75, 0.75, 5)))
-geometry_2 = Geometry.UnstructuredGeometry((cg1, cg2))
+geometry_2 = Geometry.UnstructuredGeometry(
+    (cg1, cg2),
+    # The patches meet along x = 2.5, so they share vertices 2 and 3.
+    Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD),
+)
 answers_2 = (
     2,
     28,
