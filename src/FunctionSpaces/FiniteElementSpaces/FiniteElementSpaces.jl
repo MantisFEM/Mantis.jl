@@ -589,11 +589,11 @@ function evaluate(
         num_j_ders = GeneralHelpers.num_der_indices(manifold_dim, j)
         evaluations[j + 1] = Vector{Vector{Vector{Float64}}}(undef, num_j_ders)
         for der_idx in 1:num_j_ders
+            evaluations[j + 1][der_idx] = Vector{Vector{Float64}}(undef, num_components)
             for component_idx in 1:num_components
-                evaluations[j + 1][der_idx] = [
+                evaluations[j + 1][der_idx][component_idx] =
                     basis_evaluations[j + 1][der_idx][component_idx] *
-                    coefficients[basis_indices],
-                ]
+                    coefficients[basis_indices]
             end
         end
     end
