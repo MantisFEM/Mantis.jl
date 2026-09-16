@@ -39,7 +39,7 @@ end
 @testset verbose = true "Plot" begin
     include("Plot/runtests.jl")
 end
-@testset verbose=true "End to end" begin
+@testset verbose = true "End to end" begin
     include("EndToEnd/runtests.jl")
 end
 

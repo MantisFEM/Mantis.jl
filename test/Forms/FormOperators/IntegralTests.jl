@@ -81,6 +81,9 @@ function test_3d_evaluations(
     f¹ = Forms.FormPullback(
         Forms.AnalyticalFormField(1, vector_valued_3d_func, geometry, "f¹"), Forms.Canonical
     )
+    f² = Forms.FormPullback(
+        Forms.AnalyticalFormField(2, vector_valued_3d_func, geometry, "f²"), Forms.Canonical
+    )
     f³ = Forms.FormPullback(
         Forms.AnalyticalFormField(3, scalar_valued_3d_func, geometry, "f³"), Forms.Canonical
     )
@@ -89,11 +92,13 @@ function test_3d_evaluations(
     ∫¹ = ∫(u¹ ∧ ★(u¹), dΩ)
     ∫f⁰ = ∫(f⁰ ∧ ★(f⁰), dΩ)
     ∫f¹ = ∫(f¹ ∧ ★(f¹), dΩ)
+    ∫f² = ∫(f² ∧ ★(f²), dΩ)
     ∫f³ = ∫(f³ ∧ ★(f³), dΩ)
 
     ∫⁰_eval = 0.0
     ∫f⁰_eval = 0.0
     ∫f¹_eval = 0.0
+    ∫f²_eval = 0.0
     ∫f³_eval = 0.0
     integrated_metric_1 = zeros(manifold_dim, manifold_dim)
     for element_id in 1:Forms.get_num_elements(u⁰)
@@ -116,6 +121,7 @@ function test_3d_evaluations(
         @test isapprox(sum(Forms.evaluate(∫¹, element_id)[1]), reference_result, atol=1e-12)
         ∫f⁰_eval += Forms.evaluate(∫f⁰, element_id)[1][1]
         ∫f¹_eval += Forms.evaluate(∫f¹, element_id)[1][1]
+        ∫f²_eval += Forms.evaluate(∫f², element_id)[1][1]
         ∫f³_eval += Forms.evaluate(∫f³, element_id)[1][1]
     end
 
@@ -123,6 +129,7 @@ function test_3d_evaluations(
     @test isapprox(∫⁰_eval, 1.0, atol=atol)
     @test isapprox(∫f⁰_eval, int_val, atol=atol)
     @test isapprox(∫f¹_eval, 3 * int_val, atol=atol)
+    @test isapprox(∫f²_eval, 3 * int_val, atol=atol)
     @test isapprox(∫f³_eval, int_val, atol=atol)
 
     return nothing
@@ -242,7 +249,7 @@ canonical_qrule_3d = Quadrature.tensor_product_rule(
 dΩ₃ = Quadrature.StandardQuadrature(
     canonical_qrule_3d, Geometry.get_num_elements(Forms.get_geometry(cart_complex_3d...))
 )
-Plot.export_geometry_to_vtk(Forms.get_geometry(curv_complex_3d[1]), "curv_test")
+# Plot.export_geometry_to_vtk(Forms.get_geometry(curv_complex_3d[1]), "curv_test")
 
 # Test the different geometries.
 @testset "3D" verbose = true begin

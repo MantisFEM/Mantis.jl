@@ -27,9 +27,6 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(
         canonical_qrule, Geometry.get_num_elements(geom)
     )
-    dΩ = Mantis.Quadrature.StandardQuadrature(
-        canonical_qrule, Geometry.get_num_elements(geom)
-    )
 
     # Setup the form spaces, evaluate and check the results
     ξ = Points.TensorProductPoints(
@@ -137,9 +134,6 @@ surface_area = π * (r^2 - Δr^2) / 4
 function test_mapped(num_quad_points_per_dim::Int)
     canonical_qrule = Quadrature.tensor_product_rule(
         ntuple(i -> num_quad_points_per_dim, manifold_dim), Quadrature.gauss_legendre
-    )
-    dΩ = Mantis.Quadrature.StandardQuadrature(
-        canonical_qrule, Geometry.get_num_elements(mapped_geometry)
     )
     dΩ = Mantis.Quadrature.StandardQuadrature(
         canonical_qrule, Geometry.get_num_elements(mapped_geometry)
