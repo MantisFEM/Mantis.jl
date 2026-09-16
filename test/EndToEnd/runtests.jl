@@ -19,6 +19,7 @@ end
 end
 @testset "n-form-TensorProduct-MixedLaplacianTests" begin
     include("n-form-TensorProduct-MixedLaplacianTests.jl")
+    include("n-form-3D-TensorProduct-MixedLaplacianTests.jl")
 end
 
 end
