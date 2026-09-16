@@ -589,11 +589,11 @@ function evaluate(
         num_j_ders = GeneralHelpers.num_der_indices(manifold_dim, j)
         evaluations[j + 1] = Vector{Vector{Vector{Float64}}}(undef, num_j_ders)
         for der_idx in 1:num_j_ders
+            evaluations[j + 1][der_idx] = Vector{Vector{Float64}}(undef, num_components)
             for component_idx in 1:num_components
-                evaluations[j + 1][der_idx] = [
+                evaluations[j + 1][der_idx][component_idx] =
                     basis_evaluations[j + 1][der_idx][component_idx] *
-                    coefficients[basis_indices],
-                ]
+                    coefficients[basis_indices]
             end
         end
     end
@@ -615,7 +615,7 @@ degrees of freedom to the local degrees of freedom.
 - `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
 """
 function assemble_global_extraction_matrix(space::AbstractFESpace)
-    throw(
+    return throw(
         ArgumentError(
             "'assemble_global_extraction_matrix' not implemented for $(typeof(space))"
         ),
@@ -751,4 +751,3 @@ include("UnstructuredSpaces/PolarSplines.jl")
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
 include("Hierarchical/Hierarchical.jl")
-
