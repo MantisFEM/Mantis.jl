@@ -58,7 +58,7 @@ function create_section_spaces(
 )
     nodes = ntuple(2) do i
         return Points.get_input_points(
-            Quadrature.get_nodes(Quadrature.gauss_lobatto(degree[i]+1))
+            Quadrature.get_nodes(Quadrature.gauss_lobatto(degree[i] + 1))
         )[1]
     end
     section_spaces = map(section_space, nodes)

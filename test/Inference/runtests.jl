@@ -18,11 +18,14 @@ end
     @testset "ExteriorDerivative" begin
         include("Forms/ExteriorDerivativeInferenceTests.jl")
     end
+    @testset "Hodge" begin
+        include("Forms/HodgeInferenceTests.jl")
+    end
     @testset "Integral" begin
         include("Forms/IntegralInferenceTests.jl")
     end
-    @testset "Hodge" begin
-        include("Forms/HodgeInferenceTests.jl")
+    @testset "Pullback" begin
+        include("Forms/PullbackInferenceTests.jl")
     end
     @testset "Sharp" begin
         include("Forms/SharpInferenceTests.jl")
