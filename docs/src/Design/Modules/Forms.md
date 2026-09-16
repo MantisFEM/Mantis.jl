@@ -57,7 +57,7 @@ we can use this function space to create two different spaces: one for a ``0``-f
 Λ²ₕ = Forms.FormSpace(2, B, "2-form")
 ```
 These two forms have the same basis `B`, but have different transformation properties. 
-This will result in the use of different pullbacks (see [How `FormSpaces` are evaluated](@ref FormsInternalEvaluateFormSpace) on how that is reflected in the implementation), and on the operations that you can apply to these forms (see [Operations on Forms](@ref FormsOperations)).
+This will result in the use of different [pullbacks](@ref FormsPullbacks) (dictated by the form rank), and on the operations that you can apply to these forms (see [Operations on Forms](@ref FormsOperations)).
 
 ### [ConstantFormSpaces](@id FormsConstantSpaces)
 Next to the conventional `FormSpace`, `Mantis` also provides a `ConstantFormSpace`. 
@@ -83,39 +83,57 @@ get_num_coefficients
 get_expression
 ```
 
+## [Pullbacks](@id FormsPullbacks)
+In the docstrings of the above spaces and fields, the pullback object already briefly appeared.
+One of the benefits of working with differential forms is the ability to pullback a form. 
+`Mantis` makes this pullback explicit using the following abstract type.
+```@docs
+AbstractPullback
+```
+The above forms (by default) are pulled back using the standard differential form pullback:
+```@docs
+FormPullback
+```
+
+You can always obtain the pullback using the following method.
+```@docs
+get_pullback
+```
+
+In the above pullbacks, the location of the source and destination need to be specified. 
+This is done using the following abstract types.
+```@docs
+AbstractPullbackLocation
+Physical
+Parametric
+Canonical
+```
+
+::: details Advanced usage: changing the pullback
+
+It is possible to change the pullback used for a form. 
+This should always be done with care. 
+Changing the pullback means that the form you are using is no longer a true differential form.
+As a result, many [operations](@ref FormsOperations) may no longer work out-of-the-box.
+
+Currently, `Mantis` provides one other pullback. 
+Note that operator support using this pullback may be limited.
+```@docs
+ComponentWisePullback
+```
+
+You can always obtain the pullback type using the following getter.
+```@docs
+get_pullback_type
+```
+
+:::
+
 ## [Evaluating Forms](@id FormsEvaluateFormSpace)
 As with any object in `Mantis`, evaluating a form is a matter of calling the `evaluate`-function:
 ```@docs
 evaluate(::AbstractForm{manifold_dim}, ::Int, ::Points.AbstractPoints{manifold_dim}) where {manifold_dim}
 ```
-
-
-### [Internals: How a `FormSpace` is evaluated](@id FormsInternalEvaluateFormSpace)
-!!! note "Internal behaviour"
-    We explain how a `FormSpace` is evaluated. However, this is considered an implementational detail.
-
-The evaluation of a `FormSpace` happens in the canonical domain and is done in two steps.
-Firstly, the underlying function space is evaluated. 
-This evaluation gives us the function values and the basis indices. 
-Secondly, the function space evaluation is pulled-back to the canonical domain. 
-What this pullback looks like is dictated by the `form_rank`.
-The evaluation then returns the pulled-back values and the basis indices (the indices for the form are the same as for the function space).
-This behaviour is encoded using the following two internal functions.
-```@docs
-_evaluate_form_in_canonical_coordinates
-_pullback_to_canonical_coordinates
-```
-
-### [Internals: How an `AnalyticalFormField` is evaluated](@id FormsInternalEvaluateAnalyticalFormField)
-!!! note "Internal behaviour"
-    We explain how an `AnalyticalFormField` is evaluated. However, this is considered an implementational detail.
-
-A user has to define the expression used in the `AnalyticalFormField` in the physical domain. However, in `Mantis`, forms are always evaluated in the canonical domain. This means that any `AnalyticalFormField` must always be pulled-back before the result can be used in other computations. 
-These pull-backs are determined by the `form_rank` of the `AnalyticalFormField`. 
-```@docs
-_evaluate(::AnalyticalFormField{manifold_dim, 0}, ::Int, ::Points.AbstractPoints{manifold_dim}) where {manifold_dim}
-```
-
 
 ## [Operations on Forms](@id FormsOperations)
 Now that we know how to create forms, we can look into the operators that we can use on these form objects. 
