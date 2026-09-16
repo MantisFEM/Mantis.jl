@@ -36,6 +36,8 @@ for form in forms
     @test_opt Forms.get_label(coder)
     @test_opt Forms.get_form(coder)
     @test_opt Forms.get_form_space_tree(coder)
+    @test_opt Forms.get_pullback(coder)
+    @test_opt Forms.get_pullback(coder, Forms.Parametric)
     @test_opt Forms.get_geometry(coder)
     @test_opt Forms.get_num_elements(coder)
     @test_opt Forms.get_estimated_nnz_per_elem(coder)

@@ -251,6 +251,10 @@ struct BinaryFormTransformation{manifold_dim, form_rank, expression_rank, F1, F2
             )
         end
 
+        if get_pullback_type(form_1) != get_pullback_type(form_2)
+            throw(ArgumentError("The pullback types of the input forms must match."))
+        end
+
         new_label = convert(
             typeof(label), "(" * get_label(form_1) * label * get_label(form_2) * ")"
         )
@@ -299,6 +303,12 @@ get_label(bin_form::BinaryFormTransformation) = bin_form.label
 Return both forms to which the binary form transformation is applied.
 """
 get_forms(bin_trans::BinaryFormTransformation) = bin_trans.form_1, bin_trans.form_2
+
+# The input forms of the BinaryFormTransformation are enforced to have the same pullback.
+# Therefore, we can use the information from the first forms here.
+function get_pullback_type(form::BinaryFormTransformation)
+    return get_pullback_type(first(get_forms(form)))
+end
 
 function get_geometry(bin_trans::BinaryFormTransformation)
     return get_geometry(first(get_forms(bin_trans)))

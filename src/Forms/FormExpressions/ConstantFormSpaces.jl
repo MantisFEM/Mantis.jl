@@ -12,7 +12,14 @@ This can, for instance, be used as a Lagrange multiplier enforcing a zero-averag
 constraint on another differential form.
 
 # Constructors
-- `ConstantFormSpace(form_rank::Int, geometry::G, label::L)`: Generic constructor.
+- `ConstantFormSpace(
+        form_rank::Int,
+        geometry::G,
+        label::AbstractString,
+        ::Type{PB}=FormPullback,
+        ::Type{S}=Physical,
+    ) where {manifold_dim, PB, S, G <: Geometry.AbstractGeometry{manifold_dim}}`: Generic
+        constructor.
 
 # Example
 ```jldoctest
@@ -33,20 +40,25 @@ julia> Λ²ₕ = Forms.ConstantFormSpace(2, geometry, "2-form");  # 2-form const
     functions to easily identify the form.
 
 # Type parameters
-- `manifold_dim`: Dimension of the manifold.
-- `form_rank`: Rank of the differential form.
+- `manifold_dim`, `form_rank`: See [`AbstractForm`](@ref).
+- `PB`: Type of the pullback used, see [`AbstractPullback`](@ref).
+- `S`: Type of the domain used, see [`AbstractPullbackLocation`](@ref).
 - `G`: Type of the geometry (a [`Geometry.AbstractGeometry`](@ref)).
 - `L`: Type of the label (an `AbstractString`).
 """
-struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
+struct ConstantFormSpace{manifold_dim, form_rank, PB, S, G, L} <:
        AbstractFormSpace{manifold_dim, form_rank}
     geometry::G
     label::L
 
     function ConstantFormSpace(
-        form_rank::Int, geometry::G, label::AbstractString
-    ) where {manifold_dim, G <: Geometry.AbstractGeometry{manifold_dim}}
-        if (form_rank ∉ Set([0, manifold_dim]))
+        form_rank::Int,
+        geometry::G,
+        label::AbstractString,
+        ::Type{PB}=FormPullback,
+        ::Type{S}=Physical,
+    ) where {manifold_dim, PB, S, G <: Geometry.AbstractGeometry{manifold_dim}}
+        if (form_rank != 0 && form_rank != manifold_dim)
             throw(
                 ArgumentError(
                     "Mantis.Forms.ConstantFormSpace: form_rank = $form_rank with " *
@@ -55,7 +67,7 @@ struct ConstantFormSpace{manifold_dim, form_rank, G, L} <:
                 ),
             )
         end
-        return new{manifold_dim, form_rank, G, typeof(label)}(geometry, label)
+        return new{manifold_dim, form_rank, PB, S, G, typeof(label)}(geometry, label)
     end
 end
 
@@ -73,16 +85,26 @@ get_estimated_nnz_per_elem(::ConstantFormSpace) = 1
 
 get_form(form::ConstantFormSpace) = form
 
-get_form_space_tree(form::ConstantFormSpace) = (get_form(form_space),)
+get_form_space_tree(form::ConstantFormSpace) = (form,)
 
 get_geometry(form::ConstantFormSpace) = form.geometry
 
 function get_fe_space(::ConstantFormSpace)
-    throw(
-        ArgumentError(
-            "ConstantFormSpace does not have an associated finite element space.",
-        ),
+    return throw(
+        ArgumentError("ConstantFormSpace does not have an associated finite element space.")
     )
+end
+
+function get_pullback_type(
+    form::ConstantFormSpace{manifold_dim, form_rank, PB}
+) where {manifold_dim, form_rank, PB}
+    return PB
+end
+
+function get_pullback(
+    form::ConstantFormSpace{manifold_dim, form_rank, PB, S}, ::Type{D}=Canonical
+) where {manifold_dim, form_rank, PB, S, D}
+    return PB(form, S, D)
 end
 
 ############################################################################################
@@ -90,23 +112,22 @@ end
 ############################################################################################
 
 function evaluate(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
-    num_evaluation_points = Points.get_num_points(xi)
-    return [ones(Float64, num_evaluation_points, 1)], [[1]]
-end
-
-function evaluate(
-    form_space::ConstantFormSpace{manifold_dim, manifold_dim},
+    form::ConstantFormSpace{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    num_evaluation_points = Points.get_num_points(xi)
-    _, sqrt_g = Geometry.metric(get_geometry(form_space), element_id, xi)  # Jₖⱼ = ∂Φᵏ\\∂ξⱼ
-    form_eval = [ones(Float64, num_evaluation_points, 1)]
-    form_eval[1][:] .*= sqrt_g
+    return evaluate(get_pullback(form), element_id, xi)
+end
 
-    return form_eval, [[1]]
+function evaluate(
+    form::FormPullback{manifold_dim, form_rank, expression_rank, S, D, F},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, form_rank, expression_rank, S, D, F <: ConstantFormSpace}
+    num_evaluation_points = Points.get_num_points(xi)
+    evaluations = [ones(Float64, num_evaluation_points, 1)]
+
+    pullback!(evaluations, form, element_id, xi)
+
+    return evaluations, [[1]]
 end

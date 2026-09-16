@@ -2,7 +2,7 @@ module FormOperatorTests
 
 using Test
 
-@testset "Algebraic.jl" verbose = true begin
+@testset "Algebraic" verbose = true begin
     include("Algebraic.jl")
 end
 @testset "Codifferential" verbose = true begin
