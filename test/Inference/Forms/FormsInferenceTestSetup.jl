@@ -252,6 +252,15 @@ forms_base_bin_min = (f - f for f in forms_base)
 forms_base_bin_plus = (f + f for f in forms_base)
 forms_base_bin_prod = (f * f for f in forms_base)
 
+const_form_spaces = (
+    Forms.ConstantFormSpace(0, Forms.get_geometry(zero_form_space_B1_1D), "01D"),
+    Forms.ConstantFormSpace(1, Forms.get_geometry(zero_form_space_B1_1D), "11D"),
+    Forms.ConstantFormSpace(0, Forms.get_geometry(zero_form_space_B1_2D), "02D"),
+    Forms.ConstantFormSpace(2, Forms.get_geometry(zero_form_space_B1_2D), "22D"),
+    Forms.ConstantFormSpace(0, Forms.get_geometry(zero_form_space_B1_3D), "03D"),
+    Forms.ConstantFormSpace(3, Forms.get_geometry(zero_form_space_B1_3D), "33D"),
+    )
+
 inner_prod = Forms.FormPullback(
     Forms.Wedge(one_form_space_BBB_3D, Forms.Hodge(one_form_field_BBB_3D)), Forms.Canonical
 )
@@ -264,4 +273,5 @@ forms = (
     forms_base_bin_plus...,
     forms_base_bin_prod...,
     inner_prod,
+    const_form_spaces...,
 )
