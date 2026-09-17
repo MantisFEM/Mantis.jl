@@ -630,16 +630,6 @@ Faces (cyclic vertex order indicates orientation, normal using right hand rule):
 const HEX = Hex()
 
 ############################################################################################
-#                                     Value semantics                                      #
-############################################################################################
-# A patch carries no per-instance state: two patches of the same kind describe the same
-# reference element and must compare equal. Julia's default `==` falls back to `===`, which
-# would distinguish them, because their incidence relations and lookup tables are allocated
-# per instance.
-Base.:(==)(::PT, ::PT) where {PT <: AbstractPatch} = true
-Base.hash(::PT, h::UInt) where {PT <: AbstractPatch} = hash(PT, h)
-
-############################################################################################
 #                                         Getters                                          #
 ############################################################################################
 get_meshcore_patch(patch::AbstractTensorProductPatch) = patch.MeshCorePatch
@@ -691,31 +681,6 @@ function id_to_dof_division(
     dof_placement = get_dof_placement(patch)
 
     return dof_placement[(object_dim, abs(object_local_id))]
-end
-
-"""
-    tensor_product_patch(::Val{manifold_dim})
-
-Return the [`AbstractTensorProductPatch`](@ref) of dimension `manifold_dim`, i.e. [`LINE`](@ref)
-in 1D, [`QUAD`](@ref) in 2D and [`HEX`](@ref) in 3D.
-
-Takes the dimension as a `Val` so that the returned patch type is known at compile time.
-This is for callers that need the reference patch but hold no topology, such as function
-spaces whose degree-of-freedom layout depends only on the patch shape.
-"""
-tensor_product_patch(::Val{1}) = LINE
-tensor_product_patch(::Val{2}) = QUAD
-tensor_product_patch(::Val{3}) = HEX
-function tensor_product_patch(::Val{manifold_dim}) where {manifold_dim}
-    throw(
-        ArgumentError(
-            LazyString(
-                "Mantis.Topology: there is no tensor-product patch of dimension ",
-                manifold_dim,
-                "; supported dimensions are 1, 2 and 3.",
-            ),
-        ),
-    )
 end
 
 ############################################################################################

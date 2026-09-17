@@ -24,23 +24,23 @@ import MeshCore
 #                                      Abstract Types                                      #
 ############################################################################################
 """
-    AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices}
+    AbstractPatch{manifold_dim, ir_dim, num_patch_vertices}
 
 Patch types that can be used to construct an [`AbstractTopology`](@ref).
 
 The type parameters represent the following data:
 - `manifold_dim`: The dimension of the patch (e.g. 1D, 2D, etc.).
-- `incidence_relations_dim`: The number of objects between which incidence_relations can be
-    created. Will always be `manifold_dim` + 1 (e.g. in 2D: vertices, edges, and faces).
+- `ir_dim`: The number of objects between which incidence_relations can be created. Will
+    always be `manifold_dim` + 1 (e.g. 3 objects in 2D: vertices, edges, and faces).
 - `num_patch_vertices`: The total number of vertices that make up a patch (e.g. 8 for a
-    cube).
+    cube in 3D).
 """
-abstract type AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices} end
+abstract type AbstractPatch{manifold_dim, ir_dim, num_patch_vertices} end
 
 """
     AbstractTensorProductPatch{
-        manifold_dim, incidence_relations_dim, num_patch_vertices
-    } <: AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices}
+        manifold_dim, ir_dim, num_patch_vertices
+    } <: AbstractPatch{manifold_dim, ir_dim, num_patch_vertices}
 
 Tensorial patch types that can be used to construct an [`AbstractTopology`](@ref). That is,
 it represents line, square, and cuboidal patches.
@@ -51,16 +51,12 @@ and [`position_to_id`](@ref) for the details.
 
 The type parameters are as defined in [`AbstractPatch`](@ref).
 """
-abstract type AbstractTensorProductPatch{
-    manifold_dim, incidence_relations_dim, num_patch_vertices
-} <: AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices} end
+abstract type AbstractTensorProductPatch{manifold_dim, ir_dim, num_patch_vertices} <:
+              AbstractPatch{manifold_dim, ir_dim, num_patch_vertices} end
 
 """
     AbstractTopology{
-        manifold_dim,
-        incidence_relations_dim,
-        num_patches,
-        PT <: AbstractPatch{manifold_dim, incidence_relations_dim},
+        manifold_dim, ir_dim, num_patches, PT <: AbstractPatch{manifold_dim, ir_dim}
     }
 
 Topology of an unstructured collection of patches (of equal shape) forming a mesh.
@@ -75,10 +71,7 @@ can be accessed using indexing as `topology[n + 1, m + 1]` (with `topology` an i
 `AbstractTopology`).
 """
 abstract type AbstractTopology{
-    manifold_dim,
-    incidence_relations_dim,
-    num_patches,
-    PT <: AbstractPatch{manifold_dim, incidence_relations_dim},
+    manifold_dim, ir_dim, num_patches, PT <: AbstractPatch{manifold_dim, ir_dim}
 } end
 
 ############################################################################################
@@ -87,34 +80,34 @@ abstract type AbstractTopology{
 get_manifold_dim(::AbstractPatch{manifold_dim}) where {manifold_dim} = manifold_dim
 
 function get_incidence_relations_dim(
-    ::AbstractPatch{manifold_dim, incidence_relations_dim}
-) where {manifold_dim, incidence_relations_dim}
-    return incidence_relations_dim
+    ::AbstractPatch{manifold_dim, ir_dim}
+) where {manifold_dim, ir_dim}
+    return ir_dim
 end
 
 function get_num_patch_vertices(
-    ::AbstractPatch{manifold_dim, incidence_relations_dim, num_patch_vertices}
-) where {manifold_dim, incidence_relations_dim, num_patch_vertices}
+    ::AbstractPatch{manifold_dim, ir_dim, num_patch_vertices}
+) where {manifold_dim, ir_dim, num_patch_vertices}
     return num_patch_vertices
 end
 
 get_manifold_dim(::AbstractTopology{manifold_dim}) where {manifold_dim} = manifold_dim
 
 function get_incidence_relations_dim(
-    ::AbstractTopology{manifold_dim, incidence_relations_dim}
-) where {manifold_dim, incidence_relations_dim}
-    return incidence_relations_dim
+    ::AbstractTopology{manifold_dim, ir_dim}
+) where {manifold_dim, ir_dim}
+    return ir_dim
 end
 
 function get_num_patches(
-    ::AbstractTopology{manifold_dim, incidence_relations_dim, num_patches}
-) where {manifold_dim, incidence_relations_dim, num_patches}
+    ::AbstractTopology{manifold_dim, ir_dim, num_patches}
+) where {manifold_dim, ir_dim, num_patches}
     return num_patches
 end
 
 function get_patch_type(
-    ::AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, PT}
-) where {manifold_dim, incidence_relations_dim, num_patches, PT}
+    ::AbstractTopology{manifold_dim, ir_dim, num_patches, PT}
+) where {manifold_dim, ir_dim, num_patches, PT}
     return PT
 end
 
@@ -158,9 +151,9 @@ end
 Return the tuple `(boundaries, interfaces)` classifying every geometric object of dimension
 lower than the manifold dimension of `topology`.
 
-Both are vectors of `(object_dim, global_object_id)` tuples: an object is a *boundary* object
-when it belongs to exactly one patch, and an *interface* object when it is shared by several.
-Objects are listed from the highest dimension down to vertices.
+Both are vectors of `(object_dim, global_object_id)` tuples: an object is a *boundary*
+object when it belongs to exactly one patch, and an *interface* object when it is shared by
+several. Objects are listed from the highest dimension down to vertices.
 """
 function get_boundaries_and_interfaces(
     topology::AbstractTopology{manifold_dim}
@@ -170,10 +163,10 @@ function get_boundaries_and_interfaces(
     for dim in (manifold_dim - 1):-1:0
         # Check which patches (of dimension manifold_dim) the current bounding objects
         # belong to.
-        object2patch = topology[dim + 1, manifold_dim + 1]
-        for object_id in eachindex(object2patch)
+        object_to_patch = topology[dim + 1, manifold_dim + 1]
+        for object_id in eachindex(object_to_patch)
             # If it is not shared, this object has only 1 patch in its list.
-            if length(object2patch[object_id]) == 1
+            if length(object_to_patch[object_id]) == 1
                 push!(boundaries, (dim, object_id))
             else
                 push!(interfaces, (dim, object_id))
@@ -237,12 +230,12 @@ the `patch_id`, one can also specicfy the objects of other dimensions (e.g. (e.g
 ```jldoctest
 julia> using Mantis
 
-julia> topology = Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD);
+julia> topology = MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD);
 
-julia> Topology.get_global_id(topology, 5, 1, 2, 0) # 2nd vertex (dim 0) of edge 5 (dim 1).
+julia> get_global_id(topology, 5, 1, 2, 0) # 2nd vertex (dim 0) of edge 5 (dim 1).
 3
 
-julia> Topology.get_global_id(topology, 2, 4, 0) # 4th vertex (dim 0) of patch 2.
+julia> get_global_id(topology, 2, 4, 0) # 4th vertex (dim 0) of patch 2.
 3
 ```
 """
@@ -361,6 +354,31 @@ end
 const NO_VERTICES = Int[]
 
 """
+    _check_object_dim(manifold_dim::Int, object_dim::Int)
+
+Return `true` if `0 ≤ object_dim < manifold_dim ≤ 3`. Throw an `ArgumentError` if not.
+"""
+function _check_object_dim(manifold_dim::Int, object_dim::Int)
+    if !(0 ≤ object_dim < manifold_dim ≤ 3)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Mantis.Topology: objects of dimension ",
+                    object_dim,
+                    " are not shared between the patches of a topology of manifold",
+                    " dimension ",
+                    manifold_dim,
+                    "; the dimension of a shared object must satisfy",
+                    " 0 <= object_dim < manifold_dim <= 3.",
+                ),
+            ),
+        )
+    end
+
+    return true
+end
+
+"""
     _object_vertices_in_patch(topology, patch_id, object_local_id, object_dim)
 
 Return the global vertex ids of the local object with dimension `object_dim` and local index
@@ -463,7 +481,7 @@ end
         topology::AbstractTopology,
         patch_id::Int,
         object_local_id::Int,
-        object_dim::Int;
+        object_dim::Int,
         include_local_patch::Bool=false,
     )
 
@@ -474,31 +492,27 @@ Each column describes one such patch, with the rows holding
 
 1. the neighbour patch id;
 2. the local id of the shared object in the neighbour patch (always positive);
-3. the **rotation**, i.e. the number of positions by which the neighbour's vertex sequence of
-   the shared object is cyclically shifted with respect to the reference one. It is always
-   `0` for vertices and edges, and is the number of 90° shifts for the quadrilateral faces of
-   a hexahedral mesh;
+3. the **rotation**, i.e. the number of positions by which the neighbour's vertex sequence
+    of the shared object is cyclically shifted with respect to the reference one. It is
+    always `0` for vertices and edges, and is the number of 90° shifts for the
+    quadrilateral faces of a hexahedral mesh;
 4. the **orientation**, which is `1` when the neighbour traverses the shared object in the
    same cyclic direction as the reference and `-1` otherwise. It is always `1` for vertices.
    For edges, `-1` means that the edge degrees of freedom must be reversed to match; for
    faces, that they must be transposed.
 
-Rotation and orientation are measured relative to a reference traversal of the shared object.
-By default this reference is the traversal prescribed by the current patch `patch_id`, which
-is itself excluded from the result. If `include_local_patch` is `true`, the current patch is
-included as one of the neighbours and the reference becomes the global definition of the
-shared object, so that all patches (including the current one) are described in a common
-frame.
-
-# Notes
-- Applicable to all supported topologies, with `0 ≤ object_dim < manifold_dim`.
-- Assumes consistent local object numbering across patches.
+Rotation and orientation are measured relative to a reference traversal of the shared
+object. By default this reference is the traversal prescribed by the current patch
+`patch_id`, which is itself excluded from the result. If `include_local_patch` is `true`,
+the current patch is included as one of the neighbours and the reference becomes the global
+definition of the shared object, so that all patches (including the current one) are
+described in a common frame.
 """
 function compute_neighbours(
     topology::AbstractTopology{manifold_dim},
     patch_id::Int,
     object_local_id::Int,
-    object_dim::Int;
+    object_dim::Int,
     include_local_patch::Bool=false,
 ) where {manifold_dim}
     _check_object_dim(manifold_dim, object_dim)
@@ -550,14 +564,21 @@ function compute_neighbours(
 end
 
 """
-    _compute_all_neighbours(topology, object_dim, include_local_patch)
+    compute_neighbours(
+        topology::AbstractTopology, object_dim::Int, include_local_patch::Bool=false
+    )
 
 Return a `num_patches × num_local_objects` matrix collecting the neighbour matrices of every
-local object of dimension `object_dim` of every patch.
+local object of dimension `object_dim` of every patch. See
+[`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
 """
-function _compute_all_neighbours(
-    topology::AbstractTopology{manifold_dim}, object_dim::Int, include_local_patch::Bool
+function compute_neighbours(
+    topology::AbstractTopology{manifold_dim},
+    object_dim::Int,
+    include_local_patch::Bool=false,
 ) where {manifold_dim}
+    _check_object_dim(manifold_dim, object_dim)
+
     num_local_objects = get_local_size(topology, object_dim + 1)
     num_patches = size(topology, manifold_dim + 1)
 
@@ -569,50 +590,6 @@ function _compute_all_neighbours(
     end
 
     return neighbours
-end
-
-"""
-    _check_object_dim(manifold_dim::Int, object_dim::Int)
-
-Throw an `ArgumentError` unless objects of dimension `object_dim` are shared between the
-patches of a topology of manifold dimension `manifold_dim`, i.e. unless
-`0 ≤ object_dim < manifold_dim ≤ 3`.
-"""
-function _check_object_dim(manifold_dim::Int, object_dim::Int)
-    if !(0 ≤ object_dim < manifold_dim ≤ 3)
-        throw(
-            ArgumentError(
-                LazyString(
-                    "Mantis.Topology: objects of dimension ",
-                    object_dim,
-                    " are not shared between the patches of a topology of manifold",
-                    " dimension ",
-                    manifold_dim,
-                    "; the dimension of a shared object must satisfy",
-                    " 0 <= object_dim < manifold_dim <= 3.",
-                ),
-            ),
-        )
-    end
-    return nothing
-end
-
-"""
-    compute_neighbours(
-        topology::AbstractTopology, object_dim::Int; include_local_patch::Bool=false
-    )
-
-Return a `num_patches × num_local_objects` matrix whose entry `[i, j]` holds the neighbour
-matrix of the `j`-th object of dimension `object_dim` of patch `i`, as returned by
-[`compute_neighbours(::AbstractTopology, ::Int, ::Int, ::Int)`](@ref).
-"""
-function compute_neighbours(
-    topology::AbstractTopology{manifold_dim},
-    object_dim::Int;
-    include_local_patch::Bool=false,
-) where {manifold_dim}
-    _check_object_dim(manifold_dim, object_dim)
-    return _compute_all_neighbours(topology, object_dim, include_local_patch)
 end
 
 include("Patches.jl")

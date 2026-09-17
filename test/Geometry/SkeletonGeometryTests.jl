@@ -31,7 +31,7 @@ end
 @testset "skeleton of a 2D geometry" begin
     # Two unit squares meeting along x = 1, so the mesh spans [0, 2] x [0, 1] and has
     # 7 edges: 3 vertical and 4 horizontal.
-    topology = Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD)
+    topology = Topology.MeshTopology([(1, 2, 3, 4), (2, 5, 6, 3)], Topology.QUAD, Val(2))
     parent = Geometry.CartesianGeometry(
         (
             (LinRange(0.0, 1.0, 3), LinRange(0.0, 1.0, 3)),
@@ -83,9 +83,9 @@ end
 ############################################################################################
 @testset "skeleton of a 3D geometry" begin
     # A single unit cube: its skeleton is the six faces of the cube.
-    parent = Geometry.CartesianGeometry(
-        (LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2))
-    )
+    parent = Geometry.CartesianGeometry((
+        LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 2)
+    ))
     skeleton = Geometry.SkeletonGeometry(parent)
 
     @test Geometry.get_manifold_dim(skeleton) == 2

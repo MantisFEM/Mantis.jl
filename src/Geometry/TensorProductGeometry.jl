@@ -14,8 +14,9 @@ as the number of elements; the ids then refer to element ids. See [`TensorProduc
 - `tensor_product::TP`: A `TensorProducts.TensorProduct` of the factor geometries.
 - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elements on each patch.
 """
-struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, TP} <:
+struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, TP} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
+    topology::T
     tensor_product::TP
     num_elements_per_patch::NTuple{num_patches, Int}
 
@@ -39,10 +40,21 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
             )
         end
 
+        if num_patches == 1
+            topology = Topology.single_patch_tensorproduct_topology(Val(manifold_dim))
+        else
+            throw(ArgumentError("Multi-patch TP geometries are not supported."))
+        end
+
         return new{
-            manifold_dim, image_dim, num_patches, num_geometries, typeof(tensor_product)
+            manifold_dim,
+            image_dim,
+            num_patches,
+            num_geometries,
+            typeof(topology),
+            typeof(tensor_product),
         }(
-            tensor_product, num_elements_per_patch
+            topology, tensor_product, num_elements_per_patch
         )
     end
 end
@@ -50,38 +62,6 @@ end
 TensorProductGeometry(geometries...) = TensorProductGeometry(geometries)
 
 get_tensor_product(geometry::TensorProductGeometry) = geometry.tensor_product
-
-"""
-    get_topology(geometry::TensorProductGeometry)
-
-Return the topology of a tensor-product geometry.
-
-A product of single-patch factors is itself a single patch, whose topology is therefore the
-canonical one of the combined manifold dimension. Products with several patches would need
-the tensor product of the factor topologies, which `Topology` does not construct yet; their
-factor topologies remain reachable through [`get_factor_geometries`](@ref).
-"""
-function get_topology(
-    ::TensorProductGeometry{manifold_dim, image_dim, 1}
-) where {manifold_dim, image_dim}
-    return single_patch_topology(Val(manifold_dim))
-end
-
-function get_topology(
-    ::TensorProductGeometry{manifold_dim, image_dim, num_patches}
-) where {manifold_dim, image_dim, num_patches}
-    throw(
-        ArgumentError(
-            LazyString(
-                "The topology of a tensor-product geometry with ",
-                num_patches,
-                " patches is the tensor product of its factors' topologies, which Topology",
-                " does not construct yet. Reach the factor topologies through",
-                " get_factor_geometries instead.",
-            ),
-        ),
-    )
-end
 
 function get_num_elements(geometry::TensorProductGeometry)
     #=
@@ -117,7 +97,8 @@ function get_num_geometries(
     return num_geometries
 end
 
-TensorProducts.get_factors(geometry::TensorProductGeometry) = get_factor_geometries(geometry)
+TensorProducts.get_factors(geometry::TensorProductGeometry) =
+    get_factor_geometries(geometry)
 
 function TensorProducts.get_factor_ids(geometry::TensorProductGeometry, element_id::Int)
     return get_factor_element_ids(geometry, element_id)
@@ -322,7 +303,8 @@ function evaluate(
     factor_num_points = map(Points.get_num_points, factor_eval_points)
     cart_num_points = CartesianIndices(factor_num_points)
     for geo_id in 1:num_geometries
-        factor_image_range = factor_image_indices[geo_id][1]:factor_image_indices[geo_id][end]
+        factor_image_range =
+            factor_image_indices[geo_id][1]:factor_image_indices[geo_id][end]
         for point in axes(eval, 1)
             eval[point, factor_image_range] .= @view factor_evaluations[geo_id][
                 cart_num_points[point][geo_id], :,
@@ -343,7 +325,8 @@ function evaluate(
     eval = zeros(num_points, image_dim)
     factor_image_indices = get_factor_image_indices(geometry)
     for geo_id in 1:num_geometries
-        factor_image_range = factor_image_indices[geo_id][1]:factor_image_indices[geo_id][end]
+        factor_image_range =
+            factor_image_indices[geo_id][1]:factor_image_indices[geo_id][end]
         for point in axes(eval, 1)
             eval[point, factor_image_range] .= @view factor_evaluations[geo_id][point, :]
         end
@@ -497,7 +480,10 @@ function _hessian_per_point(
                 factor_manifold_indices[geo_id[]][1]:factor_manifold_indices[geo_id[]][end]
             if !isnothing(factor_im_i)
                 setindex!(
-                    Hp[], hessian_i[factor_im_i], factor_manifold_range, factor_manifold_range
+                    Hp[],
+                    hessian_i[factor_im_i],
+                    factor_manifold_range,
+                    factor_manifold_range,
                 )
             end
             return geo_id[] += 1

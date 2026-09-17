@@ -193,7 +193,6 @@ end
 
 function get_canonical_points(
     topology::Topology.AbstractTopology{manifold_dim},
-    patch_id::Int,
     local_object_id::Int,
     geometric_dim::Int,
     points_per_dim::Int=5,

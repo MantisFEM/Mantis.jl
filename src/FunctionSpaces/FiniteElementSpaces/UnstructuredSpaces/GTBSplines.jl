@@ -54,7 +54,7 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
         # The patches form a periodic chain: patch i meets patch i + 1, and the last meets
         # the first. An interface is opened up by a regularity of -1, not by the topology.
         topology = Topology.MeshTopology(
-            [(i, mod1(i + 1, num_patches)) for i in 1:num_patches], Topology.LINE
+            Tuple((i, mod1(i + 1, num_patches)) for i in 1:num_patches), Topology.LINE
         )
         geometry = Geometry.UnstructuredGeometry(patch_geometries, topology)
         patch_parametric_geometries = map(get_parametric_geometry, patch_spaces)

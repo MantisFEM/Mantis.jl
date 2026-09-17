@@ -217,13 +217,13 @@ end
 function get_dofs(
     space::AbstractFESpace, patch_id::Int, object_dim::Int, object_local_id::Int
 )
-    manifold_dim = get_manifold_dim(space)
-    patch = Topology.tensor_product_patch(Val(manifold_dim))
+    patch = Topology.get_topological_patch(get_topology(space))
     dof_division = Topology.id_to_dof_division(patch, object_dim, object_local_id)
+
     return get_dof_partition(space)[patch_id][dof_division]
 end
 
-function get_interior_dofs(space::AbstractFESpace, patch_id)
+function get_interior_dofs(space::AbstractFESpace, patch_id::Int)
     return get_dofs(space, patch_id, get_manifold_dim(space), 1)
 end
 function get_interior_dofs(space::AbstractFESpace)
@@ -312,6 +312,15 @@ Get the geometry underlying the given `space`.
 """
 function get_geometry(space::AbstractFESpace)
     return space.geometry
+end
+
+"""
+    get_topology(space::AbstractFESpace)
+
+Get the topology of the geometry on which the given `space` is build.
+"""
+function get_topology(space::AbstractFESpace)
+    return Geometry.get_topology(get_geometry(space))
 end
 
 """

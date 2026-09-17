@@ -126,13 +126,13 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         image_dim_base,
         image_dim,
         num_patches,
-        incidence_relations_dim,
+        ir_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
-        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
+        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, T, G, M}(
@@ -152,10 +152,10 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         image_dim,
         num_patches,
         num_patches_G,
-        incidence_relations_dim,
+        ir_dim,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
-        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
+        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
     }
         if !(num_patches_G == 1 || num_patches_G == num_patches)
             throw(
@@ -193,13 +193,13 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         image_dim_base,
         image_dim,
         num_patches,
-        incidence_relations_dim,
+        ir_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         Map <: AbstractMapping{manifold_dim, image_dim},
-        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
+        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, T, G, Map}(
@@ -226,26 +226,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
             topology, geometry, mapping, sum(num_elements_per_patch), num_elements_per_patch
         )
     end
-
-    # Anything else built from more than one patch needs an explicit topology: only the
-    # single-patch case above can inherit one from its base geometry.
-    function MappedGeometry(::NTuple{num_patches, AbstractGeometry}, ::Any) where {num_patches}
-        return throw(ArgumentError(_MULTI_PATCH_TOPOLOGY_MESSAGE))
-    end
-
-    function MappedGeometry(
-        ::AbstractGeometry{manifold_dim, image_dim_base, num_patches_G}, ::Any
-    ) where {manifold_dim, image_dim_base, num_patches_G}
-        return throw(ArgumentError(_MULTI_PATCH_TOPOLOGY_MESSAGE))
-    end
 end
-
-const _MULTI_PATCH_TOPOLOGY_MESSAGE = """\
-A mapped geometry spanning several patches needs an explicit topology, because the \
-connectivity between patches does not follow from the geometries and mappings alone. \
-Construct one with Topology.MeshTopology and pass it as \
-MappedGeometry(geometry, mapping, topology).\
-"""
 
 function Base.eltype(
     ::Type{MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map}}
@@ -438,13 +419,11 @@ function hessian(
     Jm = jacobian(get_mapping(geometry, base_patch_id), x)
     Hm = hessian(get_mapping(geometry, base_patch_id), x)
 
-    return [
-        ntuple(image_dim) do i
-            Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
-            for j in 1:manifold_dim
-                Hp += Jm[p][i, j] * Hb[p][j]
-            end
-            return Hp
-        end for p in eachindex(Jb, Jm, Hm, Hb)
-    ]
+    return [ntuple(image_dim) do i
+        Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
+        for j in 1:manifold_dim
+            Hp += Jm[p][i, j] * Hb[p][j]
+        end
+        return Hp
+    end for p in eachindex(Jb, Jm, Hm, Hb)]
 end

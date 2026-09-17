@@ -81,7 +81,6 @@ geo2mapped = Mantis.Geometry.MappedGeometry(
     (mapping_obj_1_geo2mapped, mapping_obj_2_geo2mapped),
     Topology.MeshTopology([[1, 2, 3, 4], [1, 5, 6, 2]]),
 )
-<<<<<<< HEAD
 
 # fig = Mantis.Plot.plot_topology(geo2mapped)
 tp1_geo2mapped = FunctionSpaces.create_bspline_space(
@@ -131,9 +130,6 @@ dΩ_3D = Quadrature.StandardQuadrature(
     canonical_qrule_3D, Geometry.get_num_elements(geo3_2cube)
 );
 sol_3D = Assemblers.solve_zero_form_hodge_laplacian(formspace_3D, f⁰_3D, dΩ_3D);
-=======
-# fig = Mantis.Plot.plot_topology(geo2mapped)
->>>>>>> 5b116ff0 (test: add cylinder and mobius examples)
 
 geo3 = Mantis.Geometry.CartesianGeometry(
     (
@@ -292,3 +288,61 @@ rect_1patch = Mantis.Geometry.MappedGeometry(
 # fig = Mantis.Plot.plot_topology(cylinder_1patch)
 
 # display(fig)
+
+# 3-patch L-shape
+patch1 = (LinRange(0.0, 1.0, 5), LinRange(0.0, 1.0, 5))
+patch2 = (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 5))
+patch3 = (LinRange(0.0, 1.0, 4), LinRange(0.0, 1.0, 3))
+
+function mapping_patch_1_lshape(x)
+    return [x[1], x[2]]
+end
+function dmapping_patch_1_lshape(x)
+    return [
+        [1.0 0.0]
+        [0.0 1.0]
+    ]
+end
+mapping_obj_1_lshape = Geometry.Mapping(
+    (2, 2), mapping_patch_1_lshape, dmapping_patch_1_lshape
+)
+
+function mapping_patch_2_lshape(x)
+    return [-x[2], x[1]]
+end
+function dmapping_patch_2_lshape(x)
+    return [
+        [0.0 1.0]
+        [1.0 0.0]
+    ]
+end
+mapping_obj_2_lshape = Geometry.Mapping(
+    (2, 2), mapping_patch_2_lshape, dmapping_patch_2_lshape
+)
+
+function mapping_patch_3_lshape(x)
+    return [-x[1], -x[2]]
+end
+function dmapping_patch_3_lshape(x)
+    return [
+        [-1.0 0.0]
+        [0.0 -1.0]
+    ]
+end
+mapping_obj_3_lshape = Geometry.Mapping(
+    (2, 2), mapping_patch_3_lshape, dmapping_patch_3_lshape
+)
+
+topology_lshape = Topology.MeshTopology(
+    [(1, 2, 3, 4), (1, 4, 5, 6), (1, 6, 7, 8)], Topology.QUAD
+)
+
+lshape = Mantis.Geometry.MappedGeometry(
+    (
+        Mantis.Geometry.CartesianGeometry(patch1),
+        Mantis.Geometry.CartesianGeometry(patch2),
+        Mantis.Geometry.CartesianGeometry(patch3),
+    ),
+    (mapping_obj_1_lshape, mapping_obj_2_lshape, mapping_obj_3_lshape),
+    topology_lshape,
+)

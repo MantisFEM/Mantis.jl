@@ -4,134 +4,39 @@ using Test
 using Mantis
 import MeshCore
 
-############################################################################################
-#                                   Test functions setup                                   #
-############################################################################################
-function meshcore_patch(expected, patch)
-    for k in keys(expected)
-        val = Topology.get_meshcore_patch(patch)
-        if val != expected[k]
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function incidence_relations(expected, patch)
-    for k in keys(expected)
-        val = patch[k[1], k[2]]
-        if !all(isequal.(expected[k], val))
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function size_overload(expected, patch)
-    for k in keys(expected)
-        val = size(patch)
-        if !all(isequal.(expected[k], val))
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function size_per_dim(expected, patch)
-    for k in keys(expected)
-        val = size(patch, k)
-        if val != expected[k]
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function position_to_id_conversion(expected, patch)
-    for k in keys(expected)
-        val = Topology.position_to_id(patch, k)
-        if !all(isequal.(val, expected[k]))
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function id_to_position_conversion(expected, patch)
-    for k in keys(expected)
-        val = Topology.id_to_position(patch, k[1], k[2])
-        if val != expected[k]
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function id_to_dof_division_conversion(expected, patch)
-    for k in keys(expected)
-        val = Topology.id_to_dof_division(patch, k[1], k[2])
-        if val != expected[k]
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
-
-function skeleton_patch(expected, patch)
-    for k in keys(expected)
-        val = Topology.get_skeleton_patch(patch)
-        if isnothing(val)
-            if !isnothing(expected[k])
-                println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-                return false
-            end
-        elseif !(typeof(val) <: typeof(expected[k]))
-            # Here, we just check the type since the types are concrete are there is only
-            # one option type-wise.
-            println(stderr, "Error on key $(k): expected $(expected[k]), got $(val)")
-            return false
-        end
-    end
-    return true
-end
+include("../TestHelpers.jl")
 
 ############################################################################################
 #                                   Test per Patch Type                                    #
 ############################################################################################
 @testset "Line" begin
-    expected_meshcore_patch = Dict(Topology.LINE => MeshCore.L2)
     expected_ir = Dict(
         (1, 1) => Vector{Vector{Int}}(),
         (1, 2) => [[1], [1]],
         (2, 1) => [[1, 2]],
         (2, 2) => Vector{Vector{Int}}(),
     )
-    expected_size = Dict(Topology.LINE => (2, 1))
     expected_size_per_dim = Dict(1 => 2, 2 => 1)
     expected_id_to_position = Dict((0, 1) => (-1,), (0, 2) => (1,), (1, 1) => (0,))
     expected_position_to_id = Dict((-1,) => 1, (1,) => 2, (0,) => 1)
     expected_dof_division_to_id = Dict((0, 1) => 1, (0, 2) => 3, (1, 1) => 2)
-    expected_skeleton_patch = Dict(Topology.LINE => nothing)
 
-    @test meshcore_patch(expected_meshcore_patch, Topology.LINE)
-    @test incidence_relations(expected_ir, Topology.LINE)
-    @test size_overload(expected_size, Topology.LINE)
-    @test size_per_dim(expected_size_per_dim, Topology.LINE)
-    @test id_to_position_conversion(expected_id_to_position, Topology.LINE)
-    @test position_to_id_conversion(expected_position_to_id, Topology.LINE)
-    @test id_to_dof_division_conversion(expected_dof_division_to_id, Topology.LINE)
-    @test skeleton_patch(expected_skeleton_patch, Topology.LINE)
+    @test Topology.get_manifold_dim(Topology.LINE) == 1
+    @test Topology.get_incidence_relations_dim(Topology.LINE) == 2
+    @test Topology.get_num_patch_vertices(Topology.LINE) == 2
+    @test Topology.get_meshcore_patch(Topology.LINE) == MeshCore.L2
+    @test @expected expected_ir k -> Topology.LINE[k[1], k[2]]
+    @test size(Topology.LINE) == (2, 1)
+    @test @expected expected_size_per_dim k -> size(Topology.LINE, k)
+    @test @expected expected_id_to_position k ->
+        Topology.id_to_position(Topology.LINE, k[1], k[2])
+    @test @expected expected_position_to_id k -> Topology.position_to_id(Topology.LINE, k)
+    @test @expected expected_dof_division_to_id k ->
+        Topology.id_to_dof_division(Topology.LINE, k[1], k[2])
+    @test isnothing(Topology.get_skeleton_patch(Topology.LINE))
 end
 
 @testset "Quad" begin
-    expected_meshcore_patch = Dict(Topology.QUAD => MeshCore.Q4)
     expected_ir = Dict(
         (1, 1) => Vector{Vector{Int}}(),
         (1, 2) => [[1, 3], [2, 3], [2, 4], [1, 4]],
@@ -143,7 +48,6 @@ end
         (3, 2) => [[1, 2, 3, 4]],
         (3, 3) => Vector{Vector{Int}}(),
     )
-    expected_size = Dict(Topology.QUAD => (4, 4, 1))
     expected_size_per_dim = Dict(1 => 4, 2 => 4, 3 => 1)
     expected_id_to_position = Dict(
         (0, 1) => (-1, -1),
@@ -177,20 +81,23 @@ end
         (1, 4) => 8,
         (2, 1) => 5,
     )
-    expected_skeleton_patch = Dict(Topology.QUAD => Topology.LINE)
 
-    @test meshcore_patch(expected_meshcore_patch, Topology.QUAD)
-    @test incidence_relations(expected_ir, Topology.QUAD)
-    @test size_overload(expected_size, Topology.QUAD)
-    @test size_per_dim(expected_size_per_dim, Topology.QUAD)
-    @test id_to_position_conversion(expected_id_to_position, Topology.QUAD)
-    @test position_to_id_conversion(expected_position_to_id, Topology.QUAD)
-    @test id_to_dof_division_conversion(expected_dof_division_to_id, Topology.QUAD)
-    @test skeleton_patch(expected_skeleton_patch, Topology.QUAD)
+    @test Topology.get_manifold_dim(Topology.QUAD) == 2
+    @test Topology.get_incidence_relations_dim(Topology.QUAD) == 3
+    @test Topology.get_num_patch_vertices(Topology.QUAD) == 4
+    @test Topology.get_meshcore_patch(Topology.QUAD) == MeshCore.Q4
+    @test @expected expected_ir k -> Topology.QUAD[k[1], k[2]]
+    @test size(Topology.QUAD) == (4, 4, 1)
+    @test @expected expected_size_per_dim k -> size(Topology.QUAD, k)
+    @test @expected expected_id_to_position k ->
+        Topology.id_to_position(Topology.QUAD, k[1], k[2])
+    @test @expected expected_position_to_id k -> Topology.position_to_id(Topology.QUAD, k)
+    @test @expected expected_dof_division_to_id k ->
+        Topology.id_to_dof_division(Topology.QUAD, k[1], k[2])
+    @test Topology.get_skeleton_patch(Topology.QUAD) == Topology.LINE
 end
 
 @testset "Hex" begin
-    expected_meshcore_patch = Dict(Topology.HEX => MeshCore.H8)
     expected_ir = Dict(
         (1, 1) => Vector{Vector{Int}}(),
         (1, 2) => [
@@ -267,7 +174,6 @@ end
         (4, 3) => [[1, 2, 3, 4, 5, 6]],
         (4, 4) => Vector{Vector{Int}}(),
     )
-    expected_size = Dict(Topology.HEX => (8, 12, 6, 1))
     expected_size_per_dim = Dict(1 => 8, 2 => 12, 3 => 6, 4 => 1)
     expected_id_to_position = Dict(
         (0, 1) => (-1, -1, -1),
@@ -356,16 +262,20 @@ end
         (2, 6) => 23,
         (3, 1) => 14,
     )
-    expected_skeleton_patch = Dict(Topology.HEX => Topology.QUAD)
 
-    @test meshcore_patch(expected_meshcore_patch, Topology.HEX)
-    @test incidence_relations(expected_ir, Topology.HEX)
-    @test size_overload(expected_size, Topology.HEX)
-    @test size_per_dim(expected_size_per_dim, Topology.HEX)
-    @test id_to_position_conversion(expected_id_to_position, Topology.HEX)
-    @test position_to_id_conversion(expected_position_to_id, Topology.HEX)
-    @test id_to_dof_division_conversion(expected_dof_division_to_id, Topology.HEX)
-    @test skeleton_patch(expected_skeleton_patch, Topology.HEX)
+    @test Topology.get_manifold_dim(Topology.HEX) == 3
+    @test Topology.get_incidence_relations_dim(Topology.HEX) == 4
+    @test Topology.get_num_patch_vertices(Topology.HEX) == 8
+    @test Topology.get_meshcore_patch(Topology.HEX) == MeshCore.H8
+    @test @expected expected_ir k -> Topology.HEX[k[1], k[2]]
+    @test size(Topology.HEX) == (8, 12, 6, 1)
+    @test @expected expected_size_per_dim k -> size(Topology.HEX, k)
+    @test @expected expected_id_to_position k ->
+        Topology.id_to_position(Topology.HEX, k[1], k[2])
+    @test @expected expected_position_to_id k -> Topology.position_to_id(Topology.HEX, k)
+    @test @expected expected_dof_division_to_id k ->
+        Topology.id_to_dof_division(Topology.HEX, k[1], k[2])
+    @test Topology.get_skeleton_patch(Topology.HEX) == Topology.QUAD
 end
 
 end

@@ -328,8 +328,14 @@ function _plot_topology!(
             elements_on_edge = Geometry.get_elements(
                 geometry, patch_id, abs(local_edge_id), 1
             )
-            xi_elements = Geometry.get_canonical_points(
-                eltype(TPoint), geometry, abs(local_edge_id), 1, plot_points_per_element
+            @show elements_on_edge
+            xi_elements = Points.get_canonical_points(
+                topology,
+                patch_id,
+                abs(local_edge_id),
+                1,
+                plot_points_per_element,
+                eltype(TPoint),
             )
             for element_id in elements_on_edge
                 curved_edge_coordinates = Geometry.evaluate(
@@ -345,13 +351,13 @@ function _plot_topology!(
             num_elements_on_edge = length(elements_on_edge)
             if isodd(num_elements_on_edge)
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2) + 1]
-                xi = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, abs(local_edge_id), 1, 3
+                xi = Points.get_canonical_points(
+                    topology, patch_id, abs(local_edge_id), 1, 3, eltype(TPoint)
                 )
             else
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2)]
-                xi = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, abs(local_edge_id), 1, 2
+                xi = Points.get_canonical_points(
+                    topology, patch_id, abs(local_edge_id), 1, 2, eltype(TPoint)
                 )
             end
             curved_midpoint_coordinates = Geometry.evaluate(geometry, middle_element, xi)
@@ -400,32 +406,41 @@ function _plot_topology!(
 
     # Then plot the vertices (with global and local label) on top of this to make them more
     # visible.
-    vertex_coordinates = Geometry.get_vertex_coordinates(TPoint, geometry)
-    for vertex_id in eachindex(vertex_coordinates)
-        for patch_id in topology[1, manifold_dim + 1][vertex_id]
+    for vertex_id in 1:size(topology, 1)
+        local_labels = String[]
+        for patch_id_i in topology[1, manifold_dim + 1][vertex_id]
             # Go through all patches so that we know the global and local ids.
-            local_vertex_id = abs(Topology.get_local_id(topology, patch_id, vertex_id, 0))
-
-            coordinate_raw = vertex_coordinates[vertex_id]
-            coordinate = Mantis.Plot._pad_point(coordinate_raw)
-            scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)
-            text!(
-                coordinate;
-                text="($patch_id, $local_vertex_id)",
-                align=vertex_alignment[local_vertex_id],
-                color=vertex_color,
-            )
-            if patch_id == topology[1, manifold_dim + 1][vertex_id][1]
-                # Also add the global vertex number
-                text!(
-                    coordinate;
-                    text="Vertex $vertex_id",
-                    align=(:center, :center),
-                    color=vertex_color,
-                    offset=(0, 20),
-                )
-            end
+            local_vertex_id = abs(Topology.get_local_id(topology, patch_id_i, vertex_id, 0))
+            push!(local_labels, "($patch_id_i, $local_vertex_id)")
         end
+
+        @show vertex_id
+        patch_id = topology[1, manifold_dim + 1][vertex_id][1]
+        @show patch_id
+        local_vertex_id = abs(Topology.get_local_id(topology, patch_id, vertex_id, 0))
+        @show local_vertex_id
+        coordinate_raw = Geometry.get_vertex_coordinates(
+            geometry, patch_id, local_vertex_id, TPoint
+        )
+        @show coordinate_raw
+        coordinate = Mantis.Plot._pad_point(coordinate_raw)
+        scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)
+        # Add local ids text
+        text!(
+            coordinate;
+            text=join(local_labels, ", "),
+            align=(:center, :center),
+            color=vertex_color,
+            offset=(0, -10),
+        )
+        # Add global id text
+        text!(
+            coordinate;
+            text="Vertex $vertex_id",
+            align=(:center, :center),
+            color=vertex_color,
+            offset=(0, 10),
+        )
     end
 
     # Plot the faces
@@ -679,7 +694,7 @@ function _draw_elements!(ax, geometry, TPoint)
     manifold_dim = Geometry.get_manifold_dim(geometry)
     image_dim = Geometry.get_image_dim(geometry)
 
-    xi_element = Points.CartesianPoints(
+    xi_element = Points.TensorProductPoints(
         ntuple(manifold_dim) do i
             return LinRange(0.0, 1.0, 2)
         end,

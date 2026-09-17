@@ -34,10 +34,7 @@ struct SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG} <:
     }
         manifold_dim = parent_manifold_dim - 1
         topology = Topology.SkeletonTopology(Geometry.get_topology(parent_geometry))
-        num_patches = Topology.get_num_patches(topology)  # TODO: this is type unstable, either we
-        # use vectors or we must add
-        # (n_faces, n_patches)
-        # to the type parameters instead of only n_patches
+        num_patches = Topology.get_num_patches(topology)
 
         return new{manifold_dim, image_dim, num_patches, typeof(topology), PG}(
             topology, parent_geometry
@@ -45,38 +42,8 @@ struct SkeletonGeometry{manifold_dim, image_dim, num_patches, T, PG} <:
     end
 end
 
-function get_topology(geometry::SG) where {SG <: SkeletonGeometry}
-    return geometry.topology
-end
-
-function get_parent_geometry(geometry::SG) where {SG <: SkeletonGeometry}
+function get_parent_geometry(geometry::SkeletonGeometry)
     return geometry.parent_geometry
-end
-
-function get_num_elements(geometry::SkeletonGeometry)
-    return sum(get_num_elements_per_patch(geometry))
-end
-
-function get_num_elements(
-    geometry::SkeletonGeometry{manifold_dim, image_dim, num_patches}, patch_id::Int
-) where {manifold_dim, image_dim, num_patches}
-    # Get the current patch parents, i.e., the patches in the parent geometry that contain
-    # the current patch. Since all parents must have the same elements on the current patch
-    # of the skeleton, we can just pick any parent patch. We pick the first one.
-    parent_patch = Topology.get_patch_parents(get_topology(geometry), patch_id)[:, 1]
-
-    # Now we get the number of elements on the local geometric object of dimension
-    # patch_dim that coincides with our current patch, since the current patch must have the
-    # same element distribution.
-    parent_patch_id = parent_patch[1]
-    local_patch_id = parent_patch[2]
-
-    return get_num_elements(
-        get_parent_geometry(geometry),
-        parent_patch_id;
-        local_object_id=local_patch_id,
-        geometric_dim=manifold_dim,
-    )
 end
 
 function get_parent_elements(
@@ -96,9 +63,9 @@ function get_parent_elements(
             get_parent_geometry(geometry),
             patch_parents[1, k_parent],
             patch_parents[2, k_parent],
-            patch_dim;
-            rotation=patch_parents[3, k_parent],
-            orientation=patch_parents[4, k_parent],
+            patch_dim,
+            patch_parents[3, k_parent],
+            patch_parents[4, k_parent],
         )[local_element_id]
     end
     return parent_elements_ids, patch_parents
@@ -112,6 +79,29 @@ function get_parent_elements(
     return get_parent_elements(geometry, patch_id, local_element_id)
 end
 
+function get_num_elements(
+    geometry::SkeletonGeometry{manifold_dim, image_dim, num_patches}, patch_id::Int
+) where {manifold_dim, image_dim, num_patches}
+    # Get the current patch parents, i.e., the patches in the parent geometry that contain
+    # the current patch. Since all parents must have the same elements on the current patch
+    # of the skeleton, we can just pick any parent patch. We pick the first one.
+    parent_patch = Topology.get_patch_parents(get_topology(geometry), patch_id)[:, 1]
+
+    # Now we get the number of elements on the local geometric object of dimension
+    # patch_dim that coincides with our current patch, since the current patch must have the
+    # same element distribution.
+    parent_patch_id = parent_patch[1]
+    local_patch_id = parent_patch[2]
+
+    return get_num_elements(
+        get_parent_geometry(geometry), parent_patch_id, local_patch_id, manifold_dim
+    )
+end
+
+function get_num_elements(geometry::SkeletonGeometry)
+    return sum(get_num_elements_per_patch(geometry))
+end
+
 function get_num_elements_per_patch(
     geometry::SkeletonGeometry{manifold_dim, image_dim, num_patches}
 ) where {manifold_dim, image_dim, num_patches}
@@ -119,12 +109,6 @@ function get_num_elements_per_patch(
         return get_num_elements(geometry, patch_id)
     end
 end
-
-# function get_element_vertices(
-#     geometry::AbstractGeometry{manifold_dim, image_dim, num_patches}, element_id::Int
-# ) where {manifold_dim, image_dim, num_patches}
-#     throw(MethodError(get_element_vertices, (geometry, element_id)))
-# end
 
 """
     evaluate(
@@ -201,7 +185,7 @@ function skeleton_element_to_parent_element_coords(
     elseif orientation == 1
         σ = skeleton_σ
     else
-        throw(ArgumentError("orientation must be 1 or -1, got $orientation"))
+        throw(ArgumentError(LazyString("orientation must be 1 or -1, got ", orientation)))
     end
 
     # Step 2: Apply rotation

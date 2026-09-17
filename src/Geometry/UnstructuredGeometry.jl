@@ -29,12 +29,12 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GT} <:
         manifold_dim,
         image_dim,
         num_patches,
-        incidence_relations_dim,
+        ir_dim,
         GT <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}},
-        T <: Topology.MeshTopology{manifold_dim, incidence_relations_dim, num_patches},
+        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do i
-            get_num_elements(geometry_per_patch[i])
+            return get_num_elements(geometry_per_patch[i])
         end
         num_elements = sum(num_elements_per_patch)
 
@@ -43,8 +43,7 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GT} <:
         )
     end
 
-    # A single patch has no connectivity of its own, so its topology is inherited from the
-    # geometry it wraps.
+    # Single patch constructor, which can inherit the underlying topology.
     function UnstructuredGeometry(
         geometry_per_patch::GT
     ) where {
@@ -53,25 +52,6 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GT} <:
         GT <: NTuple{1, AbstractGeometry{manifold_dim, image_dim, 1}},
     }
         return UnstructuredGeometry(geometry_per_patch, get_topology(geometry_per_patch[1]))
-    end
-
-    # As for the other multi-patch geometries, the connectivity between patches does not
-    # follow from the patch geometries themselves.
-    function UnstructuredGeometry(
-        ::NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}}
-    ) where {num_patches, manifold_dim, image_dim}
-        throw(
-            ArgumentError(
-                LazyString(
-                    "An unstructured geometry with ",
-                    num_patches,
-                    " patches needs an explicit topology, because the connectivity between",
-                    " patches does not follow from the patch geometries. Construct one with",
-                    " Topology.MeshTopology and pass it as",
-                    " UnstructuredGeometry(geometry_per_patch, topology).",
-                ),
-            ),
-        )
     end
 end
 

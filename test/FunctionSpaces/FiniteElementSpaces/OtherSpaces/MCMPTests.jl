@@ -335,9 +335,7 @@ B2 = FunctionSpaces.BSplineSpace(patch, p[2], [-1, 1, 1, 1, -1])
 patch_1_con = ((0, 0), (2, 4), (0, 0), (0, 0))
 patch_2_con = ((0, 0), (0, 0), (0, 0), (1, 2))
 mesh_con_2patch = (patch_1_con, patch_2_con)
-# The same adjacency as mesh_con_2patch, expressed as a topology: patch 1's local edge 2
-# (local vertices 2 and 3) is patch 2's local edge 4 (local vertices 4 and 3).
-topology_2patch = Topology.MeshTopology([(1, 2, 3, 4), (5, 6, 3, 2)], Topology.QUAD)
+topology_2patch = Topology.MeshTopology(((1, 2, 3, 4), (2, 5, 6, 3)), Topology.QUAD)
 
 TP1 = FunctionSpaces.TensorProductSpace((B1, B1))
 C0TP1 = create_multi_patch_c0_space((TP1, TP1), mesh_con_2patch, topology_2patch)

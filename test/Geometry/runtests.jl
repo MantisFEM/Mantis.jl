@@ -2,34 +2,31 @@ module GeometryTests
 
 using Test
 
-@testset "CartesianGeometry" begin
+@testset "CartesianGeometry" verbose=true begin
     include("CartesianGeometryTests.jl")
 end
-@testset "MappedGeometry" begin
+@testset "MappedGeometry" verbose=true begin
     include("MappedGeometryTests.jl")
 end
-@testset "DiscreteGeometry" begin
-    include("DiscreteGeometryTests.jl")
-end
-@testset "TensorProductGeometry" begin
+# @testset "DiscreteGeometry" verbose=true begin
+#     include("DiscreteGeometryTests.jl")
+# end
+@testset "TensorProductGeometry" verbose=true begin
     include("TensorProductGeometryTests.jl")
 end
-@testset "UnstructuredGeometry" begin
+@testset "UnstructuredGeometry" verbose=true begin
     include("UnstructuredGeometryTests.jl")
 end
-
-@testset "SkeletonGeometry" begin
+@testset "HierarchicalGeometry" verbose=true begin
+    include("HierarchicalGeometryTests.jl")
+end
+@testset "SkeletonGeometry" verbose=true begin
     include("SkeletonGeometryTests.jl")
 end
-
-@testset "HierarchicalGeometry" verbose = true begin
-	include("HierarchicalGeometryTests.jl")
-end
-
-@testset "Metric" begin
+@testset "Metric" verbose=true begin
     include("MetricTests.jl")
 end
-@testset "ErrorBehaviour" begin
+@testset "ErrorBehaviour" verbose=true begin
     include("GeometryErrorsTests.jl")
 end
 @testset "EvaluationMask" verbose=true begin

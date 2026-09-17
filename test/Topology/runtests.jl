@@ -9,7 +9,6 @@ using Test
     @testset "MeshTopology" verbose=true begin
         include("MeshTopologyTests.jl")
     end
-    #include("TopologyTests.jl")
 end
 
 end

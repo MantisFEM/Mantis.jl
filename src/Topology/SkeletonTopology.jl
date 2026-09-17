@@ -3,8 +3,8 @@
 ############################################################################################
 """
     SkeletonTopology{
-        manifold_dim, incidence_relations_dim, num_patches, PT, parent_type <: MeshTopology
-    } <: AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, PT}
+        manifold_dim, ir_dim, num_patches, PT, parent_type <: MeshTopology
+    } <: AbstractTopology{manifold_dim, ir_dim, num_patches, PT}
 
 Topological structure of the skeleton of a mesh.
 
@@ -29,9 +29,8 @@ incidence relations. It also relates its geometric objects to the ones in the pa
     This is directly obtained from the topological patch of the `parent_topology`.
 - `parent_topology::parent_type`: The parent [`MeshTopology`](@ref).
 """
-struct SkeletonTopology{
-    manifold_dim, incidence_relations_dim, num_patches, PT, MT <: MeshTopology
-} <: AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, PT}
+struct SkeletonTopology{manifold_dim, ir_dim, num_patches, PT, MT <: MeshTopology} <:
+       AbstractTopology{manifold_dim, ir_dim, num_patches, PT}
     topological_patch::PT
     parent_topology::MT
 
@@ -51,8 +50,8 @@ struct SkeletonTopology{
                     LazyString(
                         "The skeleton of a topology of manifold dimension ",
                         manifold_dim_parent,
-                        " is a set of points, which is not a topology; a skeleton requires",
-                        " a parent of manifold dimension at least 2.",
+                        " does not form a topology; a skeleton requires a parent of ",
+                        "manifold dimension at least 2.",
                     ),
                 ),
             )
@@ -60,16 +59,10 @@ struct SkeletonTopology{
 
         topological_patch = get_skeleton_patch(get_topological_patch(parent_topology))
         manifold_dim = manifold_dim_parent - 1
-        incidence_relations_dim = manifold_dim + 1
+        ir_dim = manifold_dim + 1
         num_patches = size(parent_topology, manifold_dim + 1)
 
-        return new{
-            manifold_dim,
-            incidence_relations_dim,
-            num_patches,
-            typeof(topological_patch),
-            MT,
-        }(
+        return new{manifold_dim, ir_dim, num_patches, typeof(topological_patch), MT}(
             topological_patch, parent_topology
         )
     end
@@ -83,15 +76,16 @@ function get_parent_topology(topology::SkeletonTopology)
 end
 
 ############################################################################################
-#                                     Value semantics                                      #
+#                                        Equality                                          #
 ############################################################################################
-# A skeleton is fully determined by the mesh it is the skeleton of.
-function Base.:(==)(a::SkeletonTopology, b::SkeletonTopology)
-    return get_parent_topology(a) == get_parent_topology(b)
-end
-
+# Ensure that two skeleton topologies are equal if their parents are equal. We also hash
+# the type SkeletonTopology, to ensure that a skeleton and its parent are not equal to each
+# other.
 function Base.hash(topology::SkeletonTopology, h::UInt)
     return hash(get_parent_topology(topology), hash(SkeletonTopology, h))
+end
+function Base.:(==)(a::SkeletonTopology, b::SkeletonTopology)
+    return get_parent_topology(a) == get_parent_topology(b)
 end
 
 ############################################################################################
@@ -151,17 +145,16 @@ function get_patch_parents(
 ) where {manifold_dim}
     # Geometric dimension of the current (skeleton) patch, and of the parent patches that
     # it is part of the boundary of.
-    patch_dim = manifold_dim
-    parent_dim = patch_dim + 1
+    parent_dim = manifold_dim + 1
     parent_topology = get_parent_topology(topology)
 
     # Any parent patch containing the current one identifies it; pick the first.
-    parent_patch_id = parent_topology[patch_dim + 1, parent_dim + 1][patch_id][1]
-    local_patch_id = abs(
-        get_local_id(parent_topology, parent_patch_id, patch_id, patch_dim)
+    parent_patch_id = parent_topology[manifold_dim + 1, parent_dim + 1][patch_id][1]
+    local_parent_patch_id = abs(
+        get_local_id(parent_topology, parent_patch_id, patch_id, manifold_dim)
     )
 
     return compute_neighbours(
-        parent_topology, parent_patch_id, local_patch_id, patch_dim; include_local_patch=true
+        parent_topology, parent_patch_id, local_parent_patch_id, manifold_dim, true
     )
 end

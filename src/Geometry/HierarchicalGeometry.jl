@@ -11,6 +11,11 @@ determined by `active_elements`.
 
 See also [`Hierarchy.ActiveInfo`](@ref).
 
+!!! warning "Do not change the topology"
+    The topology underlying the level geometries should not become invalid during
+    refinement/coarsening. If you, for example, create a hole in the domain by deactivating
+    all elements, the topology will **not** be able to determine this.
+
 # Fiels
 - `geometries::G`: A tuple `G` such that `G <: NTuple{num_levels, AbstractGeometry}`, where
 `num_levels` is the number of levels in the hierarchy. As a consequence, `num_levels` is
@@ -42,6 +47,13 @@ struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, G} <:
             )
         end
 
+        topology1 = get_topology(first(geometries))
+        for geometry in geometries
+            if topology1 != get_topology(geometry)
+                throw(ArgumentError("The topology on each level must be the same."))
+            end
+        end
+
         return new{manifold_dim, image_dim, num_patches, G}(geometries, active_elements)
     end
 end
@@ -50,6 +62,10 @@ end
 #                                         Getters                                          #
 ############################################################################################
 
+function get_topology(geometry::HierarchicalGeometry)
+    return get_topology(first(get_geometries(geometry)))
+end
+
 """
 	get_geometries(geometry::HierarchicalGeometry)
 
@@ -57,18 +73,6 @@ Returns the tuple of level-wise geometries defining the hierarchical `geometry`.
 """
 function get_geometries(geometry::HierarchicalGeometry)
     return geometry.geometries
-end
-
-"""
-    get_topology(geometry::HierarchicalGeometry)
-
-Return the topology of the geometries making up this hierarchy.
-
-Refining elements within a patch does not change how the patches connect, so every level of
-the hierarchy shares one topology and the first level is representative.
-"""
-function get_topology(geometry::HierarchicalGeometry)
-    return get_topology(first(get_geometries(geometry)))
 end
 
 """

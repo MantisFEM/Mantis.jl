@@ -1,0 +1,7 @@
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Mantis = "45fd81cf-4570-4cb4-b51d-06adeaefc15d"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+
+[sources]
+Mantis = {path = "../.."}

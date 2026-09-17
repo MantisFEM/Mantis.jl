@@ -77,6 +77,11 @@ get_num_patches(
     ::AbstractGeometry{manifold_dim, image_dim, num_patches}
 ) where {manifold_dim, image_dim, num_patches} = num_patches
 
+"""
+    get_topology(geometry::AbstractGeometry)
+
+Returns the `geometry`'s topology (an [`Topology.AbstractTopology`](@ref)).
+"""
 get_topology(geometry::AbstractGeometry) = geometry.topology
 
 """

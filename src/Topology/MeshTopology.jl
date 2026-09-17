@@ -2,8 +2,8 @@
 #                                        Structure                                         #
 ############################################################################################
 """
-    MeshTopology{manifold_dim, incidence_relations_dim, num_patches, PT} <:
-       AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, PT}
+    MeshTopology{manifold_dim, ir_dim, num_patches, PT} <:
+       AbstractTopology{manifold_dim, ir_dim, num_patches, PT}
 
 Topological structure of a collection of patches (of equal shape) forming a mesh. See
 [`AbstractTopology`](@ref) for more details about the type parameters.
@@ -25,25 +25,33 @@ Topological structure of a collection of patches (of equal shape) forming a mesh
 # Fields
 - `topological_patch::PT`: The [`AbstractPatch`](@ref) object out of which the mesh is made.
 - `incidence_relations::NTuple{
-        incidence_relations_dim, NTuple{incidence_relations_dim, Vector{Vector{Int}}}
+        ir_dim, NTuple{ir_dim, Vector{Vector{Int}}}
     }`: The incidence relations between geometric objects of different dimensions.
-- `num_geometric_objects::NTuple{incidence_relations_dim, Int}`: Total number of global
+- `num_geometric_objects::NTuple{ir_dim, Int}`: Total number of global
     geometric objects per topological dimension.
 """
-struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches, PT} <:
-       AbstractTopology{manifold_dim, incidence_relations_dim, num_patches, PT}
+struct MeshTopology{manifold_dim, ir_dim, num_patches, PT} <:
+       AbstractTopology{manifold_dim, ir_dim, num_patches, PT}
     topological_patch::PT
-    incidence_relations::NTuple{
-        incidence_relations_dim, NTuple{incidence_relations_dim, Vector{Vector{Int}}}
-    }
-    num_geometric_objects::NTuple{incidence_relations_dim, Int}
+    incidence_relations::NTuple{ir_dim, NTuple{ir_dim, Vector{Vector{Int}}}}
+    num_geometric_objects::NTuple{ir_dim, Int}
+
+    function MeshTopology(
+        patches::NTuple{num_patches, NTuple{num_patch_vertices, Int}},
+        topological_patch::AbstractPatch{manifold_dim, ir_dim, num_patch_vertices},
+    ) where {num_patches, num_patch_vertices, manifold_dim, ir_dim}
+        # We have to turn the patches into a vector for MeshCore
+        patches_vec = [patch_i for patch_i in patches]
+        return MeshTopology(patches_vec, topological_patch, Val(num_patches))
+    end
 
     function MeshTopology(
         patches::Vector{NTuple{num_patch_vertices, Int}},
         topological_patch::AbstractPatch{1, 2, num_patch_vertices},
-    ) where {num_patch_vertices}
-        num_vertices, num_patches, patch2vertex, vertex2patch = _process_vertices(
-            patches, topological_patch
+        ::Val{num_patches},
+    ) where {num_patch_vertices, num_patches}
+        num_vertices, patch2vertex, vertex2patch = _process_vertices(
+            patches, topological_patch, num_patches
         )
 
         self_ir = Vector{Vector{Int}}()
@@ -58,9 +66,10 @@ struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches, PT} <:
     function MeshTopology(
         patches::Vector{NTuple{num_patch_vertices, Int}},
         topological_patch::AbstractPatch{2, 3, num_patch_vertices},
-    ) where {num_patch_vertices}
-        num_vertices, num_patches, patch2vertex, vertex2patch = _process_vertices(
-            patches, topological_patch
+        ::Val{num_patches},
+    ) where {num_patch_vertices, num_patches}
+        num_vertices, patch2vertex, vertex2patch = _process_vertices(
+            patches, topological_patch, num_patches
         )
 
         num_faces, face2vertex, vertex2face, patch2face, face2patch = _process_facets(
@@ -83,9 +92,10 @@ struct MeshTopology{manifold_dim, incidence_relations_dim, num_patches, PT} <:
     function MeshTopology(
         patches::Vector{NTuple{num_patch_vertices, Int}},
         topological_patch::AbstractPatch{3, 4, num_patch_vertices},
-    ) where {num_patch_vertices}
-        num_vertices, num_patches, patch2vertex, vertex2patch = _process_vertices(
-            patches, topological_patch
+        ::Val{num_patches},
+    ) where {num_patch_vertices, num_patches}
+        num_vertices, patch2vertex, vertex2patch = _process_vertices(
+            patches, topological_patch, num_patches
         )
 
         num_faces, face2vertex, vertex2face, patch2face, face2patch = _process_facets(
@@ -120,7 +130,20 @@ or larger.
 
 In table 1 of [Krysl2021](@cite) (for a 3D topology), this computes (3, 0) and (0, 3).
 """
-function _process_vertices(patches, topological_patch)
+function _process_vertices(patches, topological_patch, num_patches)
+    if length(patches) != num_patches
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The given number of patches: ",
+                    num_patches,
+                    ", should match the length of the provided vector of patch vertices: ",
+                    length(patches),
+                    ".",
+                ),
+            ),
+        )
+    end
     # First list all invalid vertex ids before throwing an error, so that the user is
     # immediately informed if multiple invalid ids are present.
     invalid_vertices = Vector{Tuple{Int, Int}}()
@@ -147,7 +170,6 @@ function _process_vertices(patches, topological_patch)
     end
 
     meshcore_patch = get_meshcore_patch(topological_patch)
-    num_patches = length(patches)
 
     vertex_collection = MeshCore.ShapeColl(MeshCore.P1, num_vertices)
     patch_collection = MeshCore.ShapeColl(meshcore_patch, num_patches)
@@ -169,7 +191,7 @@ function _process_vertices(patches, topological_patch)
         )
     end
 
-    return num_vertices, num_patches, patch2vertex, vertex2patch
+    return num_vertices, patch2vertex, vertex2patch
 end
 
 """
@@ -217,22 +239,22 @@ function _process_ridges(face2vertex, patch2vertex)
 end
 
 ############################################################################################
-#                                     Value semantics                                      #
+#                                        Equality                                          #
 ############################################################################################
-# A topology is a value: two topologies built from the same patches describe the same mesh
-# and must compare equal. Julia's default `==` falls back to `===`, which would distinguish
-# them, because their incidence relations are freshly allocated vectors. Geometries store a
-# topology, so without this two otherwise identical geometries also compare unequal.
-function Base.:(==)(a::MeshTopology, b::MeshTopology)
-    return get_topological_patch(a) == get_topological_patch(b) &&
-           size(a) == size(b) &&
-           a.incidence_relations == b.incidence_relations
-end
-
+# Ensure that two topologies are equal if their topological patches, sizes, and full
+# incidence relations match. Because the incidence relations are vectors, the default
+# isequal (whose fallback uses ===) would distinguish them. Setting up a hash with these
+# quantities ensures their equality.
 function Base.hash(topology::MeshTopology, h::UInt)
     h = hash(get_topological_patch(topology), h)
     h = hash(size(topology), h)
     return hash(topology.incidence_relations, h)
+end
+
+function Base.:(==)(a::MeshTopology, b::MeshTopology)
+    return get_topological_patch(a) == get_topological_patch(b) &&
+           size(a) == size(b) &&
+           a.incidence_relations == b.incidence_relations
 end
 
 ############################################################################################
@@ -256,3 +278,31 @@ end
 ############################################################################################
 Base.size(topology::MeshTopology) = topology.num_geometric_objects
 Base.size(topology::MeshTopology, geometric_dim_id::Int) = size(topology)[geometric_dim_id]
+
+############################################################################################
+#                           Single TensorProductPatch Topologies                           #
+############################################################################################
+const SINGLE_PATCH_TOPOLOGY_1D = Topology.MeshTopology(((1, 2),), Topology.LINE)
+const SINGLE_PATCH_TOPOLOGY_2D = Topology.MeshTopology(((1, 2, 3, 4),), Topology.QUAD)
+const SINGLE_PATCH_TOPOLOGY_3D = Topology.MeshTopology(
+    ((1, 2, 3, 4, 5, 6, 7, 8),), Topology.HEX
+)
+
+"""
+    single_patch_tensorproduct_topology(::Val{manifold_dim})
+
+Return the [`MeshTopology`](@ref) of a single patch of dimension `manifold_dim` using the
+appropriate [`AbstractTensorProductPatch`](@ref).
+"""
+single_patch_tensorproduct_topology(::Val{1}) = SINGLE_PATCH_TOPOLOGY_1D
+single_patch_tensorproduct_topology(::Val{2}) = SINGLE_PATCH_TOPOLOGY_2D
+single_patch_tensorproduct_topology(::Val{3}) = SINGLE_PATCH_TOPOLOGY_3D
+function single_patch_tensorproduct_topology(::Val{manifold_dim}) where {manifold_dim}
+    return throw(
+        ArgumentError(
+            LazyString(
+                "Topologies are limited to manifold dimension 3. Got ", manifold_dim, "."
+            ),
+        ),
+    )
+end

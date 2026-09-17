@@ -1,43 +1,52 @@
-struct C0Space{manifold_dim, num_patches, T, G, GP, TE, TI, TJ} <: AbstractFESpace{manifold_dim, 1, num_patches}
+struct C0Space{manifold_dim, num_patches, T, G, GP, TE, TI, TJ} <:
+       AbstractFESpace{manifold_dim, 1, num_patches}
     function_spaces::T
     geometry::G
     parametric_geometry::GP
     extraction_op::ExtractionOperator{1, TE, TI, TJ}
-    dof_partition::Vector{Vector{Vector{Int}}}
+    dof_partition::NTuple{num_patches, Vector{Vector{Int}}}
     global_to_local_dof_dict::Dict{Int, Dict{Int, Int}}
     local_to_global_dof_dict::Dict{Tuple{Int, Int}, Int}
 end
 
 function C0Space(
     function_spaces::T, geometry::G
-) where {manifold_dim, image_dim, num_patches, T <: NTuple{num_patches, AbstractFESpace{manifold_dim, 1, 1}}, G <: Geometry.AbstractGeometry{manifold_dim, image_dim, num_patches}}
+) where {
+    manifold_dim,
+    image_dim,
+    num_patches,
+    T <: NTuple{num_patches, AbstractFESpace{manifold_dim, 1, 1}},
+    G <: Geometry.AbstractGeometry{manifold_dim, image_dim, num_patches},
+}
     # Compute the total number of elements and the offsets for each patch.
-    num_elements = 0
     num_elements_per_patch = map(get_num_elements, function_spaces)
     num_elements = sum(num_elements_per_patch)
-    elems_per_patch_offset = vcat(0, [(cumsum(num_elements_per_patch[1:(end - 1)]))...])
+    # elems_per_patch_offset = vcat(0, [(cumsum(num_elements_per_patch[1:(end - 1)]))...])
+    elems_per_patch_offset = (0, cumsum(Base.front(num_elements_per_patch))...)
+
+    topology = Geometry.get_topology(geometry)
+    topological_patch = Topology.get_topological_patch(topology)
 
     # Create the dof partition, accounting for shared dofs.
     global_dof = 0
-    dof_partition = Vector{Vector{Vector{Int}}}(undef, num_patches)
+    num_divisions = 3^manifold_dim
+    dof_partition = ntuple(i -> Vector{Vector{Int}}(undef, num_divisions), num_patches)
     global_to_local_dof_dict = Dict{Int, Dict{Int, Int}}()
     local_to_global_dof_dict = Dict{Tuple{Int, Int}, Int}()
-    num_divisions = 3^manifold_dim
-    # First number all interior dofs, these are never shared so this is just a matter of
-    # assigning a number. These are always the manifold_dim sized containers, that is,
-    # surfaces in 2D, volumes in 3D, etc.
-    topological_patch = Topology.get_topological_patch(Geometry.get_topology(geometry))
+
+    # Step 1: number all interior dofs.
+    # These are never shared so this is just a matter of assigning a global number. These
+    # are always the manifold_dim sized containers, so, surfaces in 2D, volumes in 3D, etc.
     interior_division = Topology.id_to_dof_division(topological_patch, manifold_dim, 1)
     for (patch_id, space) in pairs(function_spaces)
-        dof_partition[patch_id] = Vector{Vector{Int}}(undef, num_divisions)
-
         local_interior_dofs = get_interior_dofs(space, 1)
         num_interior_dofs = length(local_interior_dofs)
 
-        global_interior_dofs = (global_dof+1):(global_dof+num_interior_dofs)
+        global_interior_dofs = (global_dof + 1):(global_dof + num_interior_dofs)
         dof_partition[patch_id][interior_division] = global_interior_dofs
 
-        for (local_dof, global_interior_dof) in zip(local_interior_dofs, global_interior_dofs)
+        for (local_dof, global_interior_dof) in
+            zip(local_interior_dofs, global_interior_dofs)
             local_to_global_dof_dict[(patch_id, local_dof)] = global_interior_dof
             global_to_local_dof_dict[global_interior_dof] = Dict{Int, Int}(
                 patch_id => local_dof
@@ -46,23 +55,28 @@ function C0Space(
 
         global_dof += num_interior_dofs
     end
+
+    # Step 2: number all boundaries. 
+    # Includes all topological objects of dimension manifold_dim-1 or less. The strict 
+    # definition of boundary (over interface) ensures that these are not shared either.
+
     # Makes sure we can assign the dofs by initialising the arrays.
     for i in eachindex(dof_partition)
         for j in eachindex(dof_partition[i])
-           if j != interior_division
-              dof_partition[i][j] = Int[]
-           end
+            if j != interior_division
+                dof_partition[i][j] = Int[]
+            end
         end
     end
-    # Then we number all bounding entities. So all topological objects of dimension
-    # manifold_dim-1 or less.
-    topology = Geometry.get_topology(geometry)
+
     boundaries, interfaces = Topology.get_boundaries_and_interfaces(topology)
-    # We start with the boundaries (these are not shared).
     for (dim, boundary_id) in boundaries
-        patch_id = topology[dim+1, manifold_dim+1][boundary_id][1] # There is only one patch.
+        # There is only one patch as boundaries are not shared.
+        patch_id = topology[dim + 1, manifold_dim + 1][boundary_id][1]
         local_boundary_id = abs(Topology.get_local_id(topology, patch_id, boundary_id, dim))
-        boundary_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_boundary_id)
+        boundary_dof_division = Topology.id_to_dof_division(
+            topological_patch, dim, local_boundary_id
+        )
         for local_dof in get_dofs(function_spaces[patch_id], 1, dim, local_boundary_id)
             global_dof += 1
             push!(dof_partition[patch_id][boundary_dof_division], global_dof)
@@ -70,14 +84,21 @@ function C0Space(
             global_to_local_dof_dict[global_dof] = Dict{Int, Int}(patch_id => local_dof)
         end
     end
-    # Finally, we number all interface dofs, these are shared.
+
+    # Step 3: number all interfaces. 
+    # Again includes all topological objects of dimension manifold_dim-1 or less. These, 
+    # however, are shared.
     for (dim, interface_id) in interfaces
-        patch_ids = topology[dim+1, manifold_dim+1][interface_id]
+        patch_ids = topology[dim + 1, manifold_dim + 1][interface_id]
 
         # Process the first patch in the list, here we assign the global dofs.
         patch_id = patch_ids[1]
-        local_interface_id = abs(Topology.get_local_id(topology, patch_id, interface_id, dim))
-        first_interface_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_interface_id)
+        local_interface_id = abs(
+            Topology.get_local_id(topology, patch_id, interface_id, dim)
+        )
+        first_interface_dof_division = Topology.id_to_dof_division(
+            topological_patch, dim, local_interface_id
+        )
         dofs_patch_1 = get_dofs(function_spaces[patch_id], 1, dim, local_interface_id)
         for local_dof in dofs_patch_1
             global_dof += 1
@@ -94,8 +115,12 @@ function C0Space(
         # Process the remaining patches. We already assigned to global dofs, so only need
         # to obtain the correspondence to the local dofs.
         for patch_id in patch_ids[2:end]
-            local_interface_id = abs(Topology.get_local_id(topology, patch_id, interface_id, dim))
-            interface_dof_division = Topology.id_to_dof_division(topological_patch, dim, local_interface_id)
+            local_interface_id = abs(
+                Topology.get_local_id(topology, patch_id, interface_id, dim)
+            )
+            interface_dof_division = Topology.id_to_dof_division(
+                topological_patch, dim, local_interface_id
+            )
 
             dofs_patch_i = get_dofs(function_spaces[patch_id], 1, dim, local_interface_id)
 
@@ -123,15 +148,13 @@ function C0Space(
                             " has ",
                             num_dofs_at_interface_patch_i,
                             " dofs on this interface. The spaces can't be stitched",
-                            " together if the number of dofs on an interface doesn't match.",
-                        )
-                    )
+                            " if the number of dofs on an interface doesn't match.",
+                        ),
+                    ),
                 )
             end
-            for (local_dof, global_dof) in zip(
-                dofs_patch_i,
-                dof_partition[patch_ids[1]][first_interface_dof_division]
-            )
+            for (local_dof, global_dof) in
+                zip(dofs_patch_i, dof_partition[patch_ids[1]][first_interface_dof_division])
                 push!(dof_partition[patch_id][interface_dof_division], global_dof)
                 local_to_global_dof_dict[(patch_id, local_dof)] = global_dof
                 global_to_local_dof_dict[global_dof][patch_id] = local_dof
@@ -166,7 +189,9 @@ function C0Space(
         map(get_geometry, function_spaces), topology
     )
 
-    return C0Space{manifold_dim, num_patches, T, G, typeof(parametric_geometry), get_EIJ_types(E)...}(
+    return C0Space{
+        manifold_dim, num_patches, T, G, typeof(parametric_geometry), get_EIJ_types(E)...
+    }(
         function_spaces,
         geometry,
         parametric_geometry,
