@@ -14,7 +14,8 @@ macro expected(expected_dict, test_func, match_op=isequal)
                 if !($match_op(val, exp_val))
                     println(
                         stderr,
-                        "$(COLOR_RED)Error on key $(k)$(COLOR_RESET).\n",
+                        "Error on key: ",
+                        "$(COLOR_RED)$(k)$(COLOR_RESET).\n",
                         "Expected: ",
                         "$(COLOR_GREEN)$(exp_val)$(COLOR_RESET)\n",
                         "Obtained: ",
@@ -30,4 +31,3 @@ macro expected(expected_dict, test_func, match_op=isequal)
 end
 
 export expected
-
