@@ -1,5 +1,5 @@
 """
-    UnstructuredGeometry{manifold_dim, image_dim, num_patches, GP} <: AbstractGeometry{
+    UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GP} <: AbstractGeometry{
         manifold_dim, image_dim, num_patches
     }
 
@@ -11,32 +11,47 @@ A geometry consisting of multiple patches, each with its own geometry.
     therefore a significant performance penalty.
 
 # Fields
+- `topology::T`: A [`Topology.MeshTopology`](@ref) specifying how the patches connect.
 - `geometry_per_patch::NTuple{GP, num_patches}`: The geometries for each patch.
 - `num_elements::Int`: The total number of elements in the geometry.
 - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elments per patch.
 """
-struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
+struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GT} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
+    topology::T
     geometry_per_patch::GT
     num_elements::Int
     num_elements_per_patch::NTuple{num_patches, Int}
 
     function UnstructuredGeometry(
-        geometry_per_patch::GT
+        geometry_per_patch::GT, topology::T
     ) where {
         manifold_dim,
         image_dim,
         num_patches,
+        ir_dim,
         GT <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}},
+        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do i
-            get_num_elements(geometry_per_patch[i])
+            return get_num_elements(geometry_per_patch[i])
         end
         num_elements = sum(num_elements_per_patch)
 
-        return new{manifold_dim, image_dim, num_patches, GT}(
-            geometry_per_patch, num_elements, num_elements_per_patch
+        return new{manifold_dim, image_dim, num_patches, T, GT}(
+            topology, geometry_per_patch, num_elements, num_elements_per_patch
         )
+    end
+
+    # Single patch constructor, which can inherit the underlying topology.
+    function UnstructuredGeometry(
+        geometry_per_patch::GT
+    ) where {
+        manifold_dim,
+        image_dim,
+        GT <: NTuple{1, AbstractGeometry{manifold_dim, image_dim, 1}},
+    }
+        return UnstructuredGeometry(geometry_per_patch, get_topology(geometry_per_patch[1]))
     end
 end
 

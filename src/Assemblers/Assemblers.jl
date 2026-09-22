@@ -6,7 +6,6 @@ import SparseArrays as spa
 using ..Geometry
 using ..Forms
 using ..Quadrature
-using ..Mesh
 using ..FunctionSpaces
 using ..Analysis
 

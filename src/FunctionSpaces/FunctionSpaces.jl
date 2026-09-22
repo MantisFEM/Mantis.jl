@@ -11,6 +11,7 @@ import Memoization
 import SparseArrays
 import ToeplitzMatrices
 
+using ..Topology
 using ..Geometry
 using ..Points
 using ..GeneralHelpers
@@ -77,6 +78,7 @@ end
 # TensorProducts module interface
 TensorProducts.get_num_objects(space::AbstractFESpace) = get_num_basis(space)
 
+include("FEGeometry.jl")
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
 include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
