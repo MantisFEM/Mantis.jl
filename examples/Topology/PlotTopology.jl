@@ -168,14 +168,16 @@ geo5 = Mantis.Geometry.CartesianGeometry(
 
 geo3d1 = Mantis.Geometry.CartesianGeometry(
     ((LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 6), LinRange(0.0, 1.0, 8)),),
-    Topology.MeshTopology([[1, 2, 3, 4, 5, 6, 7, 8]]),
+    Topology.MeshTopology([(1, 2, 3, 4, 5, 6, 7, 8)], Topology.HEX, Val(1)),
 )
 geo3d2 = Mantis.Geometry.CartesianGeometry(
     (
         (LinRange(0.0, 1.0, 4), LinRange(1.0, 3.0, 6), LinRange(0.0, 1.0, 8)),
         (LinRange(1.0, 3.0, 3), LinRange(1.0, 3.0, 4), LinRange(0.0, 1.0, 8)),
     ),
-    Topology.MeshTopology([[1, 2, 3, 4, 5, 6, 7, 8], [2, 9, 10, 3, 6, 11, 12, 7]]),
+    Topology.MeshTopology(
+        ((1, 2, 3, 4, 5, 6, 7, 8), (2, 9, 10, 3, 6, 11, 12, 7)), Topology.HEX
+    ),
 )
 # fig = Mantis.Plot.plot_topology(geo3d2)
 
@@ -206,7 +208,7 @@ function dmapping_mobius(x::AbstractVector{Float64})
         [v / 4 * cos(u / 2) 1 / 2 * sin(u / 2)]
     ]
 end
-mapping_obj_mobius = Geometry.Mapping((2, 3), mapping_mobius, dmapping_mobius)
+mapping_obj_mobius = Geometry.Mapping((2, 3), mapping_mobius, dmapping_mobius);
 
 mobius_1patch = Mantis.Geometry.MappedGeometry(
     (
@@ -215,8 +217,8 @@ mobius_1patch = Mantis.Geometry.MappedGeometry(
         )),
     ),
     mapping_obj_mobius,
-    Topology.MeshTopology([[1, 2, 4, 3]]),
-)
+    Topology.MeshTopology([(1, 2, 4, 3)], Topology.QUAD, Val(1)),
+);
 mobius_2patch = Mantis.Geometry.MappedGeometry(
     (
         Mantis.Geometry.CartesianGeometry((LinRange(0.0, pi, 9), LinRange(-1.0, 1.0, 9))),
@@ -225,8 +227,8 @@ mobius_2patch = Mantis.Geometry.MappedGeometry(
         )),
     ),
     mapping_obj_mobius,
-    Topology.MeshTopology([[1, 2, 3, 4], [2, 5, 6, 3]]),#[2, 4, 1, 3]]),
-)
+    Topology.MeshTopology(((1, 2, 3, 4), (2, 5, 6, 3)), Topology.QUAD),#[2, 4, 1, 3]]),
+);
 # fig = Mantis.Plot.plot_topology(mobius_2patch)
 
 function mapping_cylinder(x::AbstractVector{Float64})
@@ -240,7 +242,7 @@ function dmapping_cylinder(x::AbstractVector{Float64})
         [0.0 1.0]
     ]
 end
-mapping_obj_cylinder = Geometry.Mapping((2, 3), mapping_cylinder, dmapping_cylinder)
+mapping_obj_cylinder = Geometry.Mapping((2, 3), mapping_cylinder, dmapping_cylinder);
 
 cylinder_1patch = Mantis.Geometry.MappedGeometry(
     (
@@ -249,8 +251,8 @@ cylinder_1patch = Mantis.Geometry.MappedGeometry(
         )),
     ),
     mapping_obj_cylinder,
-    Topology.MeshTopology([[1, 2, 3, 4]]),
-)
+    Topology.MeshTopology([(1, 2, 3, 4)], Topology.QUAD, Val(1)),
+);
 cylinder_2patch = Mantis.Geometry.MappedGeometry(
     (
         Mantis.Geometry.CartesianGeometry((LinRange(0.0, pi, 9), LinRange(-1.0, 1.0, 9))),
@@ -259,8 +261,8 @@ cylinder_2patch = Mantis.Geometry.MappedGeometry(
         )),
     ),
     mapping_obj_cylinder,
-    Topology.MeshTopology([[1, 2, 3, 4], [2, 1, 4, 3]]),#[2, 4, 1, 3]]),
-)
+    Topology.MeshTopology(((1, 2, 3, 4), (2, 1, 4, 3)), Topology.QUAD),#[2, 4, 1, 3]]),
+);
 
 function mapping_rect(x::AbstractVector{Float64})
     # 0.0 <= x[1] <= 1.0 and 0.0 <= x[2] <= 1.0
@@ -334,7 +336,7 @@ mapping_obj_3_lshape = Geometry.Mapping(
 )
 
 topology_lshape = Topology.MeshTopology(
-    [(1, 2, 3, 4), (1, 4, 5, 6), (1, 6, 7, 8)], Topology.QUAD
+    [(1, 2, 3, 4), (1, 4, 5, 6), (1, 6, 7, 8)], Topology.QUAD, Val(3)
 )
 
 lshape = Mantis.Geometry.MappedGeometry(

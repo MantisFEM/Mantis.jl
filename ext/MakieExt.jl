@@ -159,7 +159,7 @@ end
 # 1D
 function Mantis.Plot.plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 1};
-    edge_color=:darkolivegreen3,
+    edge_color=:black,
     vertex_color=:orange,
     draw_elements=false,
 ) where {manifold_dim}
@@ -186,7 +186,7 @@ end
 # 2D
 function Mantis.Plot.plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 2};
-    edge_color=:darkolivegreen3,
+    edge_color=:black,
     vertex_color=:orange,
     face_color=(:purple, 0.2),
     draw_elements=false,
@@ -221,7 +221,7 @@ end
 # 3D
 function Mantis.Plot.plot_topology(
     geometry::Geometry.AbstractGeometry{manifold_dim, 3};
-    edge_color=:darkolivegreen3,
+    edge_color=:black,
     vertex_color=:orange,
     face_color=(:purple, 0.2),
     draw_elements=false,
@@ -298,26 +298,29 @@ function _plot_topology!(
     end
 
     # Then plot the edges (with label).
-    edge_coordinates = Geometry.get_edge_coordinates(TPoint, geometry)
+    # edge_coordinates = Geometry.get_edge_coordinates(TPoint, geometry)
     for edge_id in 1:size(topology, 2)
-        if image_dim == 1
+        if manifold_dim == 1
             # Edges and patches are equal, so are their ids.
             patch_ids = edge_id:edge_id
         else
             patch_ids = topology[2, manifold_dim + 1][edge_id]
         end
+
+        local_labels = String[]
         for patch_id in patch_ids
             # Go through all patches so that we know the global and local ids.
-            if image_dim == 1
+            if manifold_dim == 1
                 local_edge_id = 1
             else
-                local_edge_id = Topology.get_local_id(topology, patch_id, edge_id, 1)
+                local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
             end
+            push!(local_labels, "($patch_id, $local_edge_id)")
 
             # Recompute the edge coordinates using the current patch_id to get the
             # orientation on the patch.
             starting_coordinate_local_raw, final_coordinate_local_raw = Geometry.get_edge_coordinates(
-                TPoint, geometry, patch_id, abs(local_edge_id)
+                geometry, patch_id, local_edge_id, TPoint
             )
             starting_coordinate_local = Mantis.Plot._pad_point(
                 starting_coordinate_local_raw
@@ -325,17 +328,10 @@ function _plot_topology!(
             final_coordinate_local = Mantis.Plot._pad_point(final_coordinate_local_raw)
 
             # Compute the edge as a curve
-            elements_on_edge = Geometry.get_elements(
-                geometry, patch_id, abs(local_edge_id), 1
-            )
+            elements_on_edge = Geometry.get_elements(geometry, patch_id, local_edge_id, 1)
             @show elements_on_edge
             xi_elements = Points.get_canonical_points(
-                topology,
-                patch_id,
-                abs(local_edge_id),
-                1,
-                plot_points_per_element,
-                eltype(TPoint),
+                topology, local_edge_id, 1, plot_points_per_element, eltype(TPoint)
             )
             for element_id in elements_on_edge
                 curved_edge_coordinates = Geometry.evaluate(
@@ -352,12 +348,12 @@ function _plot_topology!(
             if isodd(num_elements_on_edge)
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2) + 1]
                 xi = Points.get_canonical_points(
-                    topology, patch_id, abs(local_edge_id), 1, 3, eltype(TPoint)
+                    topology, local_edge_id, 1, 3, eltype(TPoint)
                 )
             else
                 middle_element = elements_on_edge[div(num_elements_on_edge, 2)]
                 xi = Points.get_canonical_points(
-                    topology, patch_id, abs(local_edge_id), 1, 2, eltype(TPoint)
+                    topology, local_edge_id, 1, 2, eltype(TPoint)
                 )
             end
             curved_midpoint_coordinates = Geometry.evaluate(geometry, middle_element, xi)
@@ -380,7 +376,7 @@ function _plot_topology!(
             text!(
                 edge_midpoint;
                 text="($patch_id, $local_edge_id)",
-                align=edge_alignment[abs(local_edge_id)],
+                align=edge_alignment[local_edge_id],
                 color=edge_color,
             )
             arrows2d!(
@@ -414,15 +410,11 @@ function _plot_topology!(
             push!(local_labels, "($patch_id_i, $local_vertex_id)")
         end
 
-        @show vertex_id
         patch_id = topology[1, manifold_dim + 1][vertex_id][1]
-        @show patch_id
         local_vertex_id = abs(Topology.get_local_id(topology, patch_id, vertex_id, 0))
-        @show local_vertex_id
         coordinate_raw = Geometry.get_vertex_coordinates(
             geometry, patch_id, local_vertex_id, TPoint
         )
-        @show coordinate_raw
         coordinate = Mantis.Plot._pad_point(coordinate_raw)
         scatter!(coordinate; marker=:circle, markersize=10, color=vertex_color)
         # Add local ids text
@@ -463,8 +455,8 @@ function _plot_topology!(
                 elements_on_face = Geometry.get_elements(
                     geometry, patch_id, abs(local_face_id), 2
                 )
-                xi_elements = Geometry.get_canonical_points(
-                    eltype(TPoint), geometry, abs(local_face_id), 2, plot_points_per_element
+                xi_elements = Points.get_canonical_points(
+                    topology, abs(local_face_id), 2, plot_points_per_element, eltype(TPoint)
                 )
                 for element_id in elements_on_face
                     curved_face_coordinates = Geometry.evaluate(
@@ -690,7 +682,7 @@ function _plot_basis!(
     return fig
 end
 
-function _draw_elements!(ax, geometry, TPoint)
+function _draw_elements!(ax, geometry, TPoint; color=:silver)
     manifold_dim = Geometry.get_manifold_dim(geometry)
     image_dim = Geometry.get_image_dim(geometry)
 
@@ -711,17 +703,15 @@ function _draw_elements!(ax, geometry, TPoint)
             i in axes(element_vertices, 1)
         ]
         # Element lines in the x direction.
-        linesegments!(element_vertices_points; color=:black)
+        linesegments!(element_vertices_points; color=color)
         if image_dim == 1
             # Also add a vertical bar for the edges, otherwise they are invisble.
-            scatter!(
-                ax, element_vertices_points; marker=:vline, markersize=15, color=:black
-            )
+            scatter!(ax, element_vertices_points; marker=:vline, markersize=15, color=color)
         end
 
         # Element lines in the other directions.
         for dim in 1:(manifold_dim - 1)
-            linesegments!(ax, element_vertices_points[permutations[dim]]; color=:black)
+            linesegments!(ax, element_vertices_points[permutations[dim]]; color=color)
         end
     end
 end
