@@ -633,7 +633,7 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-    coefficients::Vector{Float64},
+    coefficients::AbstractVector{Float64},
 ) where {manifold_dim, num_components, num_patches}
     basis_indices = get_basis_indices(space, element_id)
 
