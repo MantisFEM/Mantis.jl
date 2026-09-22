@@ -683,7 +683,7 @@ function get_vertex_coordinates(
 ) where {VT}
     element_id = get_elements(geometry, patch_id, local_vertex_id, 0)[1]
     xi_vertex = Points.get_canonical_points(
-        get_topology(geometry), patch_id, local_vertex_id, 0, 1, eltype(VT)
+        get_topology(geometry), local_vertex_id, 0, 1, eltype(VT)
     )
     coord = NTuple{get_image_dim(geometry), eltype(VT)}(
         vec(evaluate(geometry, element_id, xi_vertex))
@@ -696,7 +696,12 @@ function get_vertex_coordinates(
     patch_id::Int,
     ::Type{VT}=NTuple{get_image_dim(geometry), eltype(geometry)},
 ) where {VT}
-    num_local_vertices = Topology.get_local_size(get_topology(geometry), 1)
+    # The MeshCore patch stores the number of vertices of a patch in the type. Using this
+    # ensures that the method is type-stable. If we use
+    # Topology.get_local_size(get_topology(geometry), 1) instead, then it won't be type-
+    # stable.
+    patch = Topology.get_topological_patch(get_topology(geometry))
+    num_local_vertices = Topology.MeshCore.nvertices(Topology.get_meshcore_patch(patch))
 
     return ntuple(num_local_vertices) do local_vertex_id
         return get_vertex_coordinates(geometry, patch_id, local_vertex_id, VT)
@@ -739,16 +744,14 @@ computes the coordinates for the patch-edges of patch `patch_id`. If both `patch
 Converts the output type of the coordinates to `VT` if given. `VT` defaults to
 `NTuple{get_image_dim(geometry), eltype(geometry)}`.
 """
-function get_edge_coordinates(geometry::AbstractGeometry, patch_id::Int, local_edge_id::Int)
-    return get_edge_coordinates(
-        NTuple{get_image_dim(geometry), eltype(geometry)}, geometry, patch_id, local_edge_id
-    )
-end
 function get_edge_coordinates(
-    ::Type{VT}, geometry::AbstractGeometry, patch_id::Int, local_edge_id::Int
+    geometry::AbstractGeometry,
+    patch_id::Int,
+    local_edge_id::Int,
+    ::Type{VT}=NTuple{get_image_dim(geometry), eltype(geometry)},
 ) where {VT}
     topology = get_topology(geometry)
-    if get_image_dim(geometry) == 1
+    if get_manifold_dim(geometry) == 1
         # The global and local ids are the same, and the edges are the patches.
         global_edge_id = patch_id
     else
@@ -769,48 +772,50 @@ function get_edge_coordinates(
     )
     return starting_vertex_coordinate, final_vertex_coordinate
 end
-function get_edge_coordinates(geometry::AbstractGeometry, patch_id::Int)
-    return get_edge_coordinates(
-        NTuple{get_image_dim(geometry), eltype(geometry)}, geometry, patch_id
-    )
-end
 function get_edge_coordinates(
-    ::Type{VT}, geometry::AbstractGeometry, patch_id::Int
+    geometry::AbstractGeometry,
+    patch_id::Int,
+    ::Type{VT}=NTuple{get_image_dim(geometry), eltype(geometry)},
 ) where {VT}
-    num_local_edges = Topology.get_local_size(get_topology(geometry), 2)
+    # The MeshCore patch stores the number of ridges of a patch in the type. Using this
+    # ensures that the method is type-stable. If we use
+    # Topology.get_local_size(get_topology(geometry), 2) instead, then it won't be type-
+    # stable.
+    patch = Topology.get_topological_patch(get_topology(geometry))
+    num_local_edges = Topology.MeshCore.nridges(Topology.get_meshcore_patch(patch))
 
     return ntuple(num_local_edges) do local_edge_id
-        return get_edge_coordinates(VT, geometry, patch_id, local_edge_id)
+        return get_edge_coordinates(geometry, patch_id, local_edge_id, VT)
     end
 end
-function get_edge_coordinates(geometry::AbstractGeometry)
-    return get_edge_coordinates(NTuple{get_image_dim(geometry), eltype(geometry)}, geometry)
-end
-function get_edge_coordinates(::Type{VT}, geometry::AbstractGeometry) where {VT}
-    topology = get_topology(geometry)
-    num_edges = size(topology, 2)
+# function get_edge_coordinates(geometry::AbstractGeometry)
+#     return get_edge_coordinates(NTuple{get_image_dim(geometry), eltype(geometry)}, geometry)
+# end
+# function get_edge_coordinates(::Type{VT}, geometry::AbstractGeometry) where {VT}
+#     topology = get_topology(geometry)
+#     num_edges = size(topology, 2)
 
-    manifold_dim = get_manifold_dim(geometry)
-    edge_coordinates = Vector{NTuple{2, VT}}(undef, num_edges)
-    for edge_id in eachindex(edge_coordinates)
-        # Get a patch_id of a patch on which this edge is supported. A patch is a
-        # (manifold_dim+1)-dimensional geometric object. We can simply take the first patch
-        # in this list, because the coordinate of the edge will not change.
-        if get_image_dim(geometry) == 1
-            # The edges are the patches, so no conversion needed
-            patch_id = edge_id
-            local_edge_id = 1
-        else
-            patch_id = topology[2, manifold_dim + 1][edge_id][1]
-            local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
-        end
-        edge_coordinates[edge_id] = get_edge_coordinates(
-            VT, geometry, patch_id, local_edge_id
-        )
-    end
+#     manifold_dim = get_manifold_dim(geometry)
+#     edge_coordinates = Vector{NTuple{2, VT}}(undef, num_edges)
+#     for edge_id in eachindex(edge_coordinates)
+#         # Get a patch_id of a patch on which this edge is supported. A patch is a
+#         # (manifold_dim+1)-dimensional geometric object. We can simply take the first patch
+#         # in this list, because the coordinate of the edge will not change.
+#         if get_manifold_dim(geometry) == 1
+#             # The edges are the patches, so no conversion needed
+#             patch_id = edge_id
+#             local_edge_id = 1
+#         else
+#             patch_id = topology[2, manifold_dim + 1][edge_id][1]
+#             local_edge_id = abs(Topology.get_local_id(topology, patch_id, edge_id, 1))
+#         end
+#         edge_coordinates[edge_id] = get_edge_coordinates(
+#             VT, geometry, patch_id, local_edge_id
+#         )
+#     end
 
-    return edge_coordinates
-end
+#     return edge_coordinates
+# end
 
 include("CartesianGeometry.jl")
 include("DiscreteGeometry.jl")
