@@ -9,6 +9,9 @@ using Test
     @testset "MeshTopology" verbose=true begin
         include("MeshTopologyTests.jl")
     end
+    @testset "SkeletonTopology" verbose=true begin
+        include("SkeletonTopologyTests.jl")
+    end
 end
 
 end

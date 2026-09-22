@@ -53,238 +53,238 @@ function hex_grid(nx, ny, nz)
     ]
 end
 
-"""
-    test_incidence_relations(topology, expected)
+# """
+#     test_incidence_relations(topology, expected)
 
-Check `topology[i, k] == expected[(i, k)]` for every key of `expected`.
-"""
-function test_incidence_relations(topology, expected)
-    @testset "incidence relation $key" for (key, value) in pairs(expected)
-        @test topology[key[1], key[2]] == value
-    end
-end
+# Check `topology[i, k] == expected[(i, k)]` for every key of `expected`.
+# """
+# function test_incidence_relations(topology, expected)
+#     @testset "incidence relation $key" for (key, value) in pairs(expected)
+#         @test topology[key[1], key[2]] == value
+#     end
+# end
 
-"""
-    test_global_ids(topology, expected)
+# """
+#     test_global_ids(topology, expected)
 
-Check `get_global_id` for every key `(container_id, container_dim, local_id, local_dim)` of
-`expected`, both through the five- and the four-argument method where applicable.
-"""
-function test_global_ids(topology, expected)
-    manifold_dim = Topology.get_manifold_dim(topology)
-    @testset "global id of $key" for (key, value) in pairs(expected)
-        container_id, container_dim, local_id, local_dim = key
-        @test Topology.get_global_id(
-            topology, container_id, container_dim, local_id, local_dim
-        ) == value
-        if container_dim == manifold_dim
-            @test Topology.get_global_id(topology, container_id, local_id, local_dim) ==
-                value
-        end
-    end
-end
+# Check `get_global_id` for every key `(container_id, container_dim, local_id, local_dim)` of
+# `expected`, both through the five- and the four-argument method where applicable.
+# """
+# function test_global_ids(topology, expected)
+#     manifold_dim = Topology.get_manifold_dim(topology)
+#     @testset "global id of $key" for (key, value) in pairs(expected)
+#         container_id, container_dim, local_id, local_dim = key
+#         @test Topology.get_global_id(
+#             topology, container_id, container_dim, local_id, local_dim
+#         ) == value
+#         if container_dim == manifold_dim
+#             @test Topology.get_global_id(topology, container_id, local_id, local_dim) ==
+#                 value
+#         end
+#     end
+# end
 
-"""
-    test_local_ids(topology, expected)
+# """
+#     test_local_ids(topology, expected)
 
-Check `get_local_id` for every key `(patch_id, global_object_id, object_dim)` of `expected`.
-"""
-function test_local_ids(topology, expected)
-    @testset "local id of $key" for (key, value) in pairs(expected)
-        @test Topology.get_local_id(topology, key[1], key[2], key[3]) == value
-    end
-end
+# Check `get_local_id` for every key `(patch_id, global_object_id, object_dim)` of `expected`.
+# """
+# function test_local_ids(topology, expected)
+#     @testset "local id of $key" for (key, value) in pairs(expected)
+#         @test Topology.get_local_id(topology, key[1], key[2], key[3]) == value
+#     end
+# end
 
-"""
-    test_neighbours(topology, object_dim, expected)
+# """
+#     test_neighbours(topology, object_dim, expected)
 
-Check `compute_neighbours` for every key `(patch_id, local_object_id, include_local_patch)`
-of `expected`, and check that the per-object and the whole-mesh methods agree.
-"""
-function test_neighbours(topology, object_dim, expected)
-    @testset "neighbours of $key" for (key, value) in pairs(expected)
-        patch_id, local_object_id, include_local_patch = key
-        @test Topology.compute_neighbours(
-            topology, patch_id, local_object_id, object_dim, include_local_patch
-        ) == value
-    end
+# Check `compute_neighbours` for every key `(patch_id, local_object_id, include_local_patch)`
+# of `expected`, and check that the per-object and the whole-mesh methods agree.
+# """
+# function test_neighbours(topology, object_dim, expected)
+#     @testset "neighbours of $key" for (key, value) in pairs(expected)
+#         patch_id, local_object_id, include_local_patch = key
+#         @test Topology.compute_neighbours(
+#             topology, patch_id, local_object_id, object_dim, include_local_patch
+#         ) == value
+#     end
 
-    @testset "whole-mesh neighbours, include_local_patch = $include_local_patch" for include_local_patch in
-                                                                                     (
-        false, true
-    )
-        all_neighbours = Topology.compute_neighbours(
-            topology, object_dim, include_local_patch
-        )
-        @test size(all_neighbours) == (
-            size(topology, Topology.get_manifold_dim(topology) + 1),
-            Topology.get_local_size(topology, object_dim + 1),
-        )
-        for patch_id in axes(all_neighbours, 1), local_id in axes(all_neighbours, 2)
-            @test all_neighbours[patch_id, local_id] == Topology.compute_neighbours(
-                topology, patch_id, local_id, object_dim, include_local_patch
-            )
-        end
-    end
-end
+#     @testset "whole-mesh neighbours, include_local_patch = $include_local_patch" for include_local_patch in
+#                                                                                      (
+#         false, true
+#     )
+#         all_neighbours = Topology.compute_neighbours(
+#             topology, object_dim, include_local_patch
+#         )
+#         @test size(all_neighbours) == (
+#             size(topology, Topology.get_manifold_dim(topology) + 1),
+#             Topology.get_local_size(topology, object_dim + 1),
+#         )
+#         for patch_id in axes(all_neighbours, 1), local_id in axes(all_neighbours, 2)
+#             @test all_neighbours[patch_id, local_id] == Topology.compute_neighbours(
+#                 topology, patch_id, local_id, object_dim, include_local_patch
+#             )
+#         end
+#     end
+# end
 
-"""
-    reconstruct_vertices(reference_vertices, rotation, orientation)
+# """
+#     reconstruct_vertices(reference_vertices, rotation, orientation)
 
-Return the vertex sequence obtained by traversing `reference_vertices` starting at
-`rotation` (0-based) and stepping in the direction given by `orientation`.
+# Return the vertex sequence obtained by traversing `reference_vertices` starting at
+# `rotation` (0-based) and stepping in the direction given by `orientation`.
 
-A neighbour's own vertex sequence for a shared object must be reproduced exactly this way
-from the reference sequence and the reported rotation and orientation; this is the defining
-property of the two values.
-"""
-function reconstruct_vertices(reference_vertices, rotation, orientation)
-    n = length(reference_vertices)
-    # For a two-vertex object the reported rotation is always 0 and the shift is folded into
-    # the orientation, because reversing a two-cycle and shifting it by one coincide.
-    if n == 2
-        return orientation == 1 ? collect(reference_vertices) : reverse(reference_vertices)
-    end
-    return [reference_vertices[mod1(rotation + 1 + orientation * (m - 1), n)] for m in 1:n]
-end
+# A neighbour's own vertex sequence for a shared object must be reproduced exactly this way
+# from the reference sequence and the reported rotation and orientation; this is the defining
+# property of the two values.
+# """
+# function reconstruct_vertices(reference_vertices, rotation, orientation)
+#     n = length(reference_vertices)
+#     # For a two-vertex object the reported rotation is always 0 and the shift is folded into
+#     # the orientation, because reversing a two-cycle and shifting it by one coincide.
+#     if n == 2
+#         return orientation == 1 ? collect(reference_vertices) : reverse(reference_vertices)
+#     end
+#     return [reference_vertices[mod1(rotation + 1 + orientation * (m - 1), n)] for m in 1:n]
+# end
 
-"""
-    test_neighbour_invariants(topology)
+# """
+#     test_neighbour_invariants(topology)
 
-Check the properties that any well-formed topology must satisfy: neighbourhood is symmetric,
-`include_local_patch` adds exactly the patch itself, and the reported rotation and
-orientation really do map the reference vertex sequence onto the neighbour's one.
-"""
-function test_neighbour_invariants(topology)
-    manifold_dim = Topology.get_manifold_dim(topology)
-    num_patches = size(topology, manifold_dim + 1)
+# Check the properties that any well-formed topology must satisfy: neighbourhood is symmetric,
+# `include_local_patch` adds exactly the patch itself, and the reported rotation and
+# orientation really do map the reference vertex sequence onto the neighbour's one.
+# """
+# function test_neighbour_invariants(topology)
+#     manifold_dim = Topology.get_manifold_dim(topology)
+#     num_patches = size(topology, manifold_dim + 1)
 
-    @testset "objects of dimension $object_dim" for object_dim in 0:(manifold_dim - 1)
-        num_local_objects = Topology.get_local_size(topology, object_dim + 1)
+#     @testset "objects of dimension $object_dim" for object_dim in 0:(manifold_dim - 1)
+#         num_local_objects = Topology.get_local_size(topology, object_dim + 1)
 
-        for patch_id in 1:num_patches, local_id in 1:num_local_objects
-            neighbours = Topology.compute_neighbours(
-                topology, patch_id, local_id, object_dim
-            )
-            with_self = Topology.compute_neighbours(
-                topology, patch_id, local_id, object_dim, true
-            )
+#         for patch_id in 1:num_patches, local_id in 1:num_local_objects
+#             neighbours = Topology.compute_neighbours(
+#                 topology, patch_id, local_id, object_dim
+#             )
+#             with_self = Topology.compute_neighbours(
+#                 topology, patch_id, local_id, object_dim, true
+#             )
 
-            # Including the local patch adds exactly one column, holding the patch itself.
-            @test size(with_self, 2) == size(neighbours, 2) + 1
-            @test count(
-                k -> with_self[1, k] == patch_id && with_self[2, k] == local_id,
-                axes(with_self, 2),
-            ) == 1
+#             # Including the local patch adds exactly one column, holding the patch itself.
+#             @test size(with_self, 2) == size(neighbours, 2) + 1
+#             @test count(
+#                 k -> with_self[1, k] == patch_id && with_self[2, k] == local_id,
+#                 axes(with_self, 2),
+#             ) == 1
 
-            for column in axes(neighbours, 2)
-                neighbour_id, neighbour_local_id, rotation, orientation = neighbours[
-                    :, column
-                ]
+#             for column in axes(neighbours, 2)
+#                 neighbour_id, neighbour_local_id, rotation, orientation = neighbours[
+#                     :, column
+#                 ]
 
-                @test neighbour_id != patch_id
-                @test orientation in (-1, 1)
-                @test 0 <= rotation < Topology.get_local_size(topology, 1)
+#                 @test neighbour_id != patch_id
+#                 @test orientation in (-1, 1)
+#                 @test 0 <= rotation < Topology.get_local_size(topology, 1)
 
-                # Neighbourhood is symmetric.
-                back = Topology.compute_neighbours(
-                    topology, neighbour_id, neighbour_local_id, object_dim
-                )
-                @test any(
-                    k -> back[1, k] == patch_id && back[2, k] == local_id, axes(back, 2)
-                )
+#                 # Neighbourhood is symmetric.
+#                 back = Topology.compute_neighbours(
+#                     topology, neighbour_id, neighbour_local_id, object_dim
+#                 )
+#                 @test any(
+#                     k -> back[1, k] == patch_id && back[2, k] == local_id, axes(back, 2)
+#                 )
 
-                # Both patches agree on which global object they share.
-                @test abs(
-                    Topology.get_global_id(topology, patch_id, local_id, object_dim)
-                ) == abs(
-                    Topology.get_global_id(
-                        topology, neighbour_id, neighbour_local_id, object_dim
-                    ),
-                )
+#                 # Both patches agree on which global object they share.
+#                 @test abs(
+#                     Topology.get_global_id(topology, patch_id, local_id, object_dim)
+#                 ) == abs(
+#                     Topology.get_global_id(
+#                         topology, neighbour_id, neighbour_local_id, object_dim
+#                     ),
+#                 )
 
-                # Rotation and orientation map the reference vertex sequence, i.e. the one
-                # of the current patch, onto the neighbour's one. Vertices have no vertex
-                # sequence of their own.
-                if object_dim > 0
-                    reference = Topology._object_vertices_in_patch(
-                        topology, patch_id, local_id, object_dim
-                    )
-                    neighbour_vertices = Topology._object_vertices_in_patch(
-                        topology, neighbour_id, neighbour_local_id, object_dim
-                    )
-                    @test reconstruct_vertices(reference, rotation, orientation) ==
-                        neighbour_vertices
-                end
-            end
-        end
-    end
-end
+#                 # Rotation and orientation map the reference vertex sequence, i.e. the one
+#                 # of the current patch, onto the neighbour's one. Vertices have no vertex
+#                 # sequence of their own.
+#                 if object_dim > 0
+#                     reference = Topology._object_vertices_in_patch(
+#                         topology, patch_id, local_id, object_dim
+#                     )
+#                     neighbour_vertices = Topology._object_vertices_in_patch(
+#                         topology, neighbour_id, neighbour_local_id, object_dim
+#                     )
+#                     @test reconstruct_vertices(reference, rotation, orientation) ==
+#                         neighbour_vertices
+#                 end
+#             end
+#         end
+#     end
+# end
 
-"""
-    test_structural_invariants(topology)
+# """
+#     test_structural_invariants(topology)
 
-Check the properties that relate the incidence relations of a topology to each other: sizes
-agree with the stored relations, transposed relations are consistent, and every object of a
-patch is listed by the patch.
-"""
-function test_structural_invariants(topology)
-    manifold_dim = Topology.get_manifold_dim(topology)
-    num_objects = size(topology)
+# Check the properties that relate the incidence relations of a topology to each other: sizes
+# agree with the stored relations, transposed relations are consistent, and every object of a
+# patch is listed by the patch.
+# """
+# function test_structural_invariants(topology)
+#     manifold_dim = Topology.get_manifold_dim(topology)
+#     num_objects = size(topology)
 
-    # @test length(num_objects) == manifold_dim + 1
-    # @test Topology.get_incidence_relations_dim(topology) == manifold_dim + 1
-    # @test Topology.get_num_patches(topology) == num_objects[manifold_dim + 1]
-    # @test lastindex(topology) == manifold_dim + 1
+#     # @test length(num_objects) == manifold_dim + 1
+#     # @test Topology.get_incidence_relations_dim(topology) == manifold_dim + 1
+#     # @test Topology.get_num_patches(topology) == num_objects[manifold_dim + 1]
+#     # @test lastindex(topology) == manifold_dim + 1
 
-    # @testset "relation ($i, $k)" for i in 1:(manifold_dim + 1), k in 1:(manifold_dim + 1)
-    #     relation = topology[i, k]
-    #     if i == k
-    #         # The relation of an object with itself is trivial and left empty.
-    #         @test isempty(relation)
-    #     else
-    #         @test length(relation) == num_objects[i]
-    #         @test all(!isempty, relation)
+#     # @testset "relation ($i, $k)" for i in 1:(manifold_dim + 1), k in 1:(manifold_dim + 1)
+#     #     relation = topology[i, k]
+#     #     if i == k
+#     #         # The relation of an object with itself is trivial and left empty.
+#     #         @test isempty(relation)
+#     #     else
+#     #         @test length(relation) == num_objects[i]
+#     #         @test all(!isempty, relation)
 
-    #         # Every relation is the transpose of its mirror image.
-    #         transposed = topology[k, i]
-    #         for (object_id, related) in pairs(relation), related_id in related
-    #             @test object_id in abs.(transposed[abs(related_id)])
-    #         end
-    #     end
-    # end
+#     #         # Every relation is the transpose of its mirror image.
+#     #         transposed = topology[k, i]
+#     #         for (object_id, related) in pairs(relation), related_id in related
+#     #             @test object_id in abs.(transposed[abs(related_id)])
+#     #         end
+#     #     end
+#     # end
 
-    # @test Topology.get_local_size(topology) ==
-    #     size(Topology.get_topological_patch(topology))
+#     # @test Topology.get_local_size(topology) ==
+#     #     size(Topology.get_topological_patch(topology))
 
-    # Objects of the manifold dimension are the patches themselves and are covered by the
-    # relation checks above.
-    @testset "local objects of dimension $object_dim" for object_dim in 0:(manifold_dim - 1)
-        num_local = Topology.get_local_size(topology, object_dim + 1)
-        # @test num_local == size(Topology.get_topological_patch(topology), object_dim + 1)
+#     # Objects of the manifold dimension are the patches themselves and are covered by the
+#     # relation checks above.
+#     @testset "local objects of dimension $object_dim" for object_dim in 0:(manifold_dim - 1)
+#         num_local = Topology.get_local_size(topology, object_dim + 1)
+#         # @test num_local == size(Topology.get_topological_patch(topology), object_dim + 1)
 
-        objects = topology[manifold_dim + 1, object_dim + 1]
-        for patch_id in 1:num_objects[manifold_dim + 1]
-            # @test length(objects[patch_id]) == num_local
+#         objects = topology[manifold_dim + 1, object_dim + 1]
+#         for patch_id in 1:num_objects[manifold_dim + 1]
+#             # @test length(objects[patch_id]) == num_local
 
-            for local_id in 1:num_local
-                global_id = Topology.get_global_id(topology, patch_id, local_id, object_dim)
-                # @test abs(
-                #     Topology.get_local_id(topology, patch_id, global_id, object_dim)
-                # ) == local_id
+#             for local_id in 1:num_local
+#                 global_id = Topology.get_global_id(topology, patch_id, local_id, object_dim)
+#                 # @test abs(
+#                 #     Topology.get_local_id(topology, patch_id, global_id, object_dim)
+#                 # ) == local_id
 
-                # The vertices a patch assigns to one of its objects are the vertices that
-                # the object itself lists. A vertex has no vertex sequence of its own.
-                object_dim == 0 && continue
-                @test sort(
-                    Topology._object_vertices_in_patch(
-                        topology, patch_id, local_id, object_dim
-                    ),
-                ) == sort(topology[object_dim + 1, 1][abs(global_id)])
-            end
-        end
-    end
-end
+#                 # The vertices a patch assigns to one of its objects are the vertices that
+#                 # the object itself lists. A vertex has no vertex sequence of its own.
+#                 object_dim == 0 && continue
+#                 @test sort(
+#                     Topology._object_vertices_in_patch(
+#                         topology, patch_id, local_id, object_dim
+#                     ),
+#                 ) == sort(topology[object_dim + 1, 1][abs(global_id)])
+#             end
+#         end
+#     end
+# end
 
 ############################################################################################
 #                                   Construction errors                                    #
@@ -1974,81 +1974,6 @@ end
 end
 
 ############################################################################################
-#                                     SkeletonTopology                                     #
-############################################################################################
-@testset "SkeletonTopology" begin
-    @testset "of a 3D mesh" begin
-        parent = Topology.MeshTopology(hex_grid(2, 2, 2), Topology.HEX, Val(8))
-        skeleton = Topology.SkeletonTopology(parent)
-
-        @test Topology.get_manifold_dim(skeleton) == 2
-        @test Topology.get_incidence_relations_dim(skeleton) == 3
-        # The patches of the skeleton are the faces of the parent.
-        @test Topology.get_num_patches(skeleton) == size(parent, 3)
-        @test Topology.get_parent_topology(skeleton) === parent
-        @test Topology.get_topological_patch(skeleton) == Topology.QUAD
-        @test Topology.get_patch_type(skeleton) == typeof(Topology.QUAD)
-
-        @test size(skeleton) == size(parent)[1:3]
-        @test size(skeleton, 3) == size(parent, 3)
-        # The skeleton patches are quadrilaterals, not hexahedra.
-        @test Topology.get_local_size(skeleton) == (4, 4, 1)
-        @test Topology.get_local_size(skeleton, 2) == 4
-
-        @testset "relation ($i, $k)" for i in 1:3, k in 1:3
-            @test skeleton[i, k] === parent[i, k]
-        end
-
-        @testset "patch $patch_id parents" for patch_id in 1:size(parent, 3)
-            parents = Topology.get_patch_parents(skeleton, patch_id)
-            @test size(parents, 1) == 4
-            # A face is shared by at most two hexahedra.
-            @test size(parents, 2) == length(parent[3, 4][patch_id])
-            @test sort(parents[1, :]) == sort(parent[3, 4][patch_id])
-
-            # The reported rotation and orientation reproduce how each parent patch
-            # traverses the face.
-            face_vertices = parent[3, 1][patch_id]
-            for column in axes(parents, 2)
-                parent_id, local_id, rotation, orientation = parents[:, column]
-                @test reconstruct_vertices(face_vertices, rotation, orientation) ==
-                    Topology._object_vertices_in_patch(parent, parent_id, local_id, 2)
-            end
-        end
-    end
-
-    @testset "of a 2D mesh" begin
-        parent = Topology.MeshTopology(quad_grid(2, 2), Topology.QUAD, Val(4))
-        skeleton = Topology.SkeletonTopology(parent)
-
-        @test Topology.get_manifold_dim(skeleton) == 1
-        @test Topology.get_num_patches(skeleton) == size(parent, 2)
-        @test Topology.get_topological_patch(skeleton) == Topology.LINE
-        @test size(skeleton) == size(parent)[1:2]
-        @test Topology.get_local_size(skeleton) == (2, 1)
-
-        @testset "patch $patch_id parents" for patch_id in 1:size(parent, 2)
-            parents = Topology.get_patch_parents(skeleton, patch_id)
-            @test sort(parents[1, :]) == sort(parent[2, 3][patch_id])
-            @test all(iszero, parents[3, :]) # edges do not rotate
-
-            edge_vertices = parent[2, 1][patch_id]
-            for column in axes(parents, 2)
-                parent_id, local_id, rotation, orientation = parents[:, column]
-                @test reconstruct_vertices(edge_vertices, rotation, orientation) ==
-                    Topology._object_vertices_in_patch(parent, parent_id, local_id, 1)
-            end
-        end
-    end
-
-    @testset "of a 1D mesh" begin
-        # The skeleton of a 1D mesh would be a set of points, which is not a topology.
-        parent = Topology.MeshTopology(line_grid(3), Topology.LINE, Val(3))
-        @test_throws ArgumentError Topology.SkeletonTopology(parent)
-    end
-end
-
-############################################################################################
 #                                     Argument errors                                      #
 ############################################################################################
 @testset "argument errors" begin
@@ -2089,14 +2014,6 @@ end
         @test_throws BoundsError quad_topology[4, 1]
         @test_throws BoundsError quad_topology[1, 4]
         @test_throws BoundsError size(quad_topology, 4)
-
-        skeleton = Topology.SkeletonTopology(hex_topology)
-        @test_throws BoundsError skeleton[4, 1]
-        @test_throws BoundsError skeleton[1, 4]
-        # Checking the bounds of size with 4 will trigger the boundscheck for the skeleton.
-        # If this is ever removed, this test will fail, because 4 is not out-of-bounds for
-        # the parent (size(skeleton) calls size on the parent).
-        @test_throws BoundsError size(skeleton, 4)
     end
 end
 
