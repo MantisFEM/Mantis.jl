@@ -1,4 +1,4 @@
-module DiscreteGeometryTests
+module FEGeometryTests
 
 using Mantis
 
@@ -9,6 +9,7 @@ using Test
 
 # Refer to the following file for method and variable definitions.
 include("GeometryTestsHelpers.jl")
+include("../TestHelpers.jl")
 
 function run_tests(geometry, file_name; degree=4)
     output_file_path = Mantis.GeneralHelpers.export_path(output_directory_tree, file_name)
@@ -64,8 +65,8 @@ geom_coeffs = [
     geom_coeffs_0 .* r1
 ]
 
-# create DiscreteGeometry
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+# create FEGeometry
+geom = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 # Generate the plot
 file_name = "fem_geometry_annulus_test"
 run_tests(geom, file_name)
@@ -95,32 +96,99 @@ geom_coeffs = [
     geom_coeffs_0 .* r0
     geom_coeffs_0 .* r1
 ]
-geom = Mantis.FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+geom = Mantis.FunctionSpaces.FEGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_lagrange_square_test"
 run_tests(geom, file_name; degree=1)
 
-############################################################################################
-#                                          Spiral                                          #
-############################################################################################
-deg = 2
-Wt = pi / 2
-b = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-breakpoints = [0.0, 1.0, 2.0, 3.0, 4.0]
-patch = Geometry.CartesianGeometry(breakpoints)
-GB = FunctionSpaces.BSplineSpace(patch, b, [-1, 1, 1, 1, -1])
+@testset "Single-patch 1D-in-3D: Spiral" verbose=true begin
+    geo = Geometry.CartesianGeometry(LinRange(0.0, 4.0, 5))
+    GB = FunctionSpaces.BSplineSpace(
+        geo, FunctionSpaces.GeneralizedTrigonometric(2, pi/2), [-1, 1, 1, 1, -1]
+    )
 
-# control points for geometry
-geom_coeffs = [
-    +0.0 -1.0 0.0
-    +1.0 -1.0 0.25
-    +1.0 +1.0 0.5
-    -1.0 +1.0 0.75
-    -1.0 -1.0 1.0
-    +0.0 -1.0 1.25
-]
-geom = FunctionSpaces.DiscreteGeometry(GB, geom_coeffs)
-file_name = "fem_geometry_spiral_test"
-run_tests(geom, file_name)
+    geom_coeffs = [
+        +0.0 -1.0 0.0
+        +1.0 -1.0 0.25
+        +1.0 +1.0 0.5
+        -1.0 +1.0 0.75
+        -1.0 -1.0 1.0
+        +0.0 -1.0 1.25
+    ]
+    geometry = FunctionSpaces.FEGeometry(GB, geom_coeffs)
+
+    @test Geometry.get_manifold_dim(geometry) == 1
+    @test Geometry.get_image_dim(geometry) == 3
+    @test Geometry.get_num_patches(geometry) == 1
+    @test Geometry.get_topology(geometry) == Topology.SINGLE_PATCH_TOPOLOGY_1D
+    @test Geometry.get_patch_id(geometry, 1) == 1
+    @test Geometry.get_patch_and_local_element_id(geometry, 1) == (1, 1)
+    @test Geometry.get_global_element_id(geometry, 1, 1) == 1
+    @test Geometry.get_num_elements(geometry) == 4
+    @test Geometry.get_num_elements(geometry, 1) == 4
+    @test Geometry.get_num_elements_per_patch(geometry) == (4,)
+    @test Geometry.get_element_measure(geometry, 1) == 1.0
+    @test Geometry.get_element_lengths(geometry, 1) == (1.0,)
+    @test Geometry.get_element_vertices(geometry, 1) == ((0.0, 1.0),)
+
+    xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 4),))
+    evaluations = Dict{Int, Matrix{Float64}}(
+        1 => [
+            0.0 -1.0 0.0
+            0.5 -0.8660254037844387 0.14174682452694512
+            0.8660254037844384 -0.5 0.2790063509461096
+            1.0 0.0 0.375
+        ],
+        2 => [
+            1.0 0.0 0.375
+            0.8660254037844387 0.5 0.45424682452694515
+            0.5 0.8660254037844384 0.5457531754730548
+            0.0 1.0 0.625
+        ],
+        3 => [
+            0.0 1.0 0.625
+            -0.5 0.8660254037844387 0.7042468245269452
+            -0.8660254037844384 0.5 0.7957531754730548
+            -1.0 0.0 0.875
+        ],
+        4 => [
+            -1.0 0.0 0.875
+            -0.8660254037844386 -0.5 0.9709936490538903
+            -0.5 -0.8660254037844384 1.1082531754730547
+            0.0 -1.0 1.25
+        ],
+    )
+    @test @expected evaluations k -> Geometry.evaluate(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+
+    jacobians = Dict{Int, Vector{Matrix{Float64}}}(
+        1 => [
+            [1.5707963267948963; 0.0; 0.3926990816987241;;],
+            [1.3603495231756633; 0.7853981633974483; 0.43826215121859685;;],
+            [0.7853981633974481; 1.3603495231756633; 0.36639323124631995;;],
+            [0.0; 1.5707963267948966; 0.1963495408493621;;],
+        ],
+        2 => [
+            [0.0; 1.5707963267948961; 0.19634954084936207;;],
+            [-0.7853981633974483; 1.360349523175663; 0.2682184608216389;;],
+            [-1.360349523175663; 0.7853981633974481; 0.26821846082163897;;],
+            [-1.5707963267948966; 0.0; 0.19634954084936213;;],
+        ],
+        3 => [
+            [-1.5707963267948961; 0.0; 0.19634954084936207;;],
+            [-1.360349523175663; -0.7853981633974483; 0.26821846082163897;;],
+            [-0.7853981633974481; -1.360349523175663; 0.268218460821639;;],
+            [0.0; -1.5707963267948966; 0.19634954084936218;;],
+        ],
+        4 => [
+            [0.0; -1.5707963267948961; 0.19634954084936218;;],
+            [0.7853981633974482; -1.360349523175663; 0.36639323124632006;;],
+            [1.360349523175663; -0.7853981633974481; 0.4382621512185969;;],
+            [1.5707963267948963; 0.0; 0.39269908169872436;;],
+        ],
+    )
+    @test @expected jacobians k -> Geometry.jacobian(geometry, k, xi) (a, b) ->
+        isapprox(a, b, atol=1e-14, rtol=1e-14)
+end
 
 ############################################################################################
 #                                       Wavy surface                                       #
@@ -147,7 +215,7 @@ geom_coeffs = [
     geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
     geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+geom = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_wavy_surface_test"
 run_tests(geom, file_name)
 
@@ -172,7 +240,7 @@ geom_coeffs = [
     geom_coeffs_0 .* r0 zeros(3)
     geom_coeffs_0 .* r1 zeros(3)
 ]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+geom = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_quarter_annulus_test"
 # run_tests(geom, file_name)
 
@@ -200,7 +268,7 @@ geom_coeffs = [
     geom_coeffs_0 .* r0 zeros(4)
     geom_coeffs_0 .* r1 zeros(4)
 ]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+geom = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_annulus_test"
 # run_tests(geom, file_name)
 
@@ -228,56 +296,56 @@ geom_coeffs = [
     geom_coeffs_0 .* r0 [-1.0, 1.0, -1.0, 1.0]
     geom_coeffs_0 .* r1 [1.0, -1.0, 1.0, -1.0]
 ]
-geom = FunctionSpaces.DiscreteGeometry(TP, geom_coeffs)
+geom = FunctionSpaces.FEGeometry(TP, geom_coeffs)
 file_name = "fem_geometry_nurbs_wavy_surface_test"
 # run_tests(geom, file_name)
 
-############################################################################################
-#                                NURBS vs GTB basis annulus                               #
-############################################################################################
+# ############################################################################################
+# #                                NURBS vs GTB basis annulus                               #
+# ############################################################################################
 
-# B-spline and NURBS GTB spline spaces on the circle
-deg = 2
-b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
-br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
-Bsp = FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
-Nurbs = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
+# # B-spline and NURBS GTB spline spaces on the circle
+# deg = 2
+# b = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), deg, [-1, -1])
+# br = FunctionSpaces.RationalFESpace(b, [1, 1 / sqrt(2), 1])
+# Bsp = FunctionSpaces.GTBSplineSpace((b, b, b, b), [1, 1, 1, 1])
+# Nurbs = FunctionSpaces.GTBSplineSpace((br, br, br, br), [1, 1, 1, 1])
 
-# GTB spline space on the radial direction
-Wt = pi / 2
-gt = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
-B = FunctionSpaces.BSplineSpace(
-    Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
-)
-GTB = FunctionSpaces.GTBSplineSpace((B,), [1])
+# # GTB spline space on the radial direction
+# Wt = pi / 2
+# gt = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
+# B = FunctionSpaces.BSplineSpace(
+#     Geometry.CartesianGeometry([0.0, 1.0, 2.0, 3.0, 4.0]), gt, [-1, 1, 1, 1, -1]
+# )
+# GTB = FunctionSpaces.GTBSplineSpace((B,), [1])
 
-b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
+# b1 = FunctionSpaces.BSplineSpace(Geometry.CartesianGeometry([0.0, 1.0]), 1, [-1, -1])
 
-TP_bsp = FunctionSpaces.TensorProductSpace((Bsp, b1))
-TP_nurbs = FunctionSpaces.TensorProductSpace((Nurbs, b1))
-TP_gtb = FunctionSpaces.TensorProductSpace((GTB, b1))
+# TP_bsp = FunctionSpaces.TensorProductSpace((Bsp, b1))
+# TP_nurbs = FunctionSpaces.TensorProductSpace((Nurbs, b1))
+# TP_gtb = FunctionSpaces.TensorProductSpace((GTB, b1))
 
-# control points for geometry
-geom_coeffs_0 = [
-    +1.0 -1.0
-    +1.0 +1.0
-    -1.0 +1.0
-    -1.0 -1.0
-]
-r0 = 1
-r1 = 2
-geom_coeffs = [
-    geom_coeffs_0 .* r0 zeros(4)
-    geom_coeffs_0 .* r1 zeros(4)
-]
+# # control points for geometry
+# geom_coeffs_0 = [
+#     +1.0 -1.0
+#     +1.0 +1.0
+#     -1.0 +1.0
+#     -1.0 -1.0
+# ]
+# r0 = 1
+# r1 = 2
+# geom_coeffs = [
+#     geom_coeffs_0 .* r0 zeros(4)
+#     geom_coeffs_0 .* r1 zeros(4)
+# ]
 
-# NURBS annulus with B-spline and NURBS bases
-geom = FunctionSpaces.DiscreteGeometry(TP_nurbs, geom_coeffs)
-file_name = "fem_geometry_nurbs_bsp_basis_test"
-# run_tests(geom, file_name)
+# # NURBS annulus with B-spline and NURBS bases
+# geom = FunctionSpaces.FEGeometry(TP_nurbs, geom_coeffs)
+# file_name = "fem_geometry_nurbs_bsp_basis_test"
+# # run_tests(geom, file_name)
 
-geom = FunctionSpaces.DiscreteGeometry(TP_gtb, geom_coeffs)
-file_name = "fem_geometry_nurbs_gtb_basis_test"
-# run_tests(geom, file_name)
+# geom = FunctionSpaces.FEGeometry(TP_gtb, geom_coeffs)
+# file_name = "fem_geometry_nurbs_gtb_basis_test"
+# # run_tests(geom, file_name)
 
 end

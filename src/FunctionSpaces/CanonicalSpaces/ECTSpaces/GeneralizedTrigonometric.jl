@@ -35,7 +35,7 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
     end
 end
 
-function _evaluate(ect_space::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
+function _evaluate(ect_space::GeneralizedTrigonometric, xi::Real, nderivatives::Int)
     M = zeros(Float64, 1, ect_space.p+1, nderivatives+1)
 
     left = false

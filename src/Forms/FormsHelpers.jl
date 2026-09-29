@@ -705,35 +705,7 @@ Creates a dictionary of Dirichlet boundary conditions for a given form space.
 - `::Dict{Int, Float64}`: The dictionary of Dirichlet boundary conditions.
 """
 function set_dirichlet_boundary_conditions(form::AbstractFormSpace, value::Float64)
-    return Dict{Int, Float64}(i => value for i in trace_basis_idxs(form))
-end
-
-"""
-    trace_basis_idxs(
-        form::AbstractForm{manifold_dim, form_rank, expression_rank}
-    ) where {manifold_dim, form_rank, expression_rank}
-
-Creates a list of basis function idxs which control the trace of the form on the boundary.
-
-# Arguments
-- `form::AbstractForm`: The form for which to compute the boundary conditions.
-
-# Returns
-- `Vector{Int}`: The list of basis idxs.
-"""
-function trace_basis_idxs(
-    form::AbstractForm{manifold_dim, form_rank, expression_rank}
-) where {manifold_dim, form_rank, expression_rank}
-    if FunctionSpaces.get_num_patches(get_fe_space(form)) > 1
-        # This will require topological information to know which interfaces are outer
-        # boundaries.
-        throw(ArgumentError("trace_basis_idxs not implemented for multipatch geometries"))
-    end
-    dof_partition = FunctionSpaces.get_dof_partition(get_fe_space(form))
-    num_sides = 3^manifold_dim
-    basis_idxs = [
-        i for j in setdiff(1:num_sides, Int((num_sides + 1) / 2)) for
-        i in dof_partition[1][j]
-    ]
-    return basis_idxs
+    fe_space = get_fe_space(form)
+    boundary_dofs = FunctionSpaces.get_boundary_dofs(fe_space, true)
+    return Dict{Int, Float64}(i => value for i in boundary_dofs)
 end

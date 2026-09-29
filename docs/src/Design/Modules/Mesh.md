@@ -1,6 +1,6 @@
 # Mesh
 
-## All docstrings from Mantis.Mesh
+## All docstrings from Mantis.Topology
 ```@autodocs
-Modules = [Mantis.Mesh]
+Modules = [Mantis.Topology]
 ```

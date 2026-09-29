@@ -11,6 +11,7 @@ downstream modules, such as [Geometry](@ref DocGeometryModule), [FunctionSpaces]
 module Points
 
 using ..TensorProducts
+using ..Topology
 
 ############################################################################################
 #                                         Exports                                          #
@@ -96,7 +97,7 @@ end
 	    T <: NTuple{manifold_dim, Real},
 	}
 
-Applies an affine map defined by `scalings` and `translations` to each point in `points`. 
+Applies an affine map defined by `scalings` and `translations` to each point in `points`.
 
 # Arguments
 - `points::P`: The set of points.
