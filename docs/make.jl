@@ -112,6 +112,7 @@ makedocs(;
         Mantis.Points,
         Mantis.Quadrature,
         Mantis.TensorProducts,
+        Mantis.Topology,
         Mantis.TimeIntegrators,
     ],
     repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
