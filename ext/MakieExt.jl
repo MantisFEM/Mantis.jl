@@ -515,9 +515,11 @@ function Mantis.Plot.plot_basis(
     colormap=Makie.wong_colors(),
     show_legend=true,
     show_colormap=true,
+    label_prefix="",
+    axis_kwargs...,
 )
     fig = Figure()
-    ax = Axis(fig[1, 1])
+    ax = Axis(fig[1, 1]; axis_kwargs...)
 
     fig = _plot_basis!(
         fig,
@@ -532,6 +534,7 @@ function Mantis.Plot.plot_basis(
         colormap=colormap,
         show_legend=show_legend,
         show_colormap=show_colormap,
+        label_prefix=label_prefix,
     )
 
     return fig
@@ -548,9 +551,11 @@ function Mantis.Plot.plot_basis(
     colormap=:viridis,
     show_legend=true,
     show_colormap=true,
+    label_prefix="",
+    axis_kwargs...,
 )
     fig = Figure()
-    ax = Axis3(fig[1, 1]; viewmode=:fit)
+    ax = Axis3(fig[1, 1]; viewmode=:fit, axis_kwargs...)
 
     fig = _plot_basis!(
         fig,
@@ -565,9 +570,22 @@ function Mantis.Plot.plot_basis(
         colormap=colormap,
         show_legend=show_legend,
         show_colormap=show_colormap,
+        label_prefix=label_prefix,
     )
 
     return fig
+end
+
+function sanitise_label(label_prefix::AbstractString, main_label::AbstractString)
+    label = label_prefix * main_label
+
+    return label
+end
+function sanitise_label(label_prefix::LaTeXStrings.LaTeXString, main_label::AbstractString)
+    # Remove trailing $ and add it back at the end.
+    label = LaTeXStrings.LaTeXString(label_prefix.s[1:(end - 1)] * main_label * "\$")
+
+    return label
 end
 
 function _plot_basis!(
@@ -583,6 +601,7 @@ function _plot_basis!(
     colormap,
     show_legend,
     show_colormap,
+    label_prefix,
 )
     if typeof(ids) <: Integer
         basis_ids = ids:ids
@@ -595,7 +614,7 @@ function _plot_basis!(
     image_dim = Geometry.get_image_dim(geometry)
 
     TPoint = Point{image_dim, Float32}
-    xi = Points.CartesianPoints(
+    xi = Points.TensorProductPoints(
         ntuple(manifold_dim) do i
             return LinRange(
                 zero(eltype(TPoint)), one(eltype(TPoint)), plot_points_per_element
@@ -638,7 +657,8 @@ function _plot_basis!(
             if manifold_dim == 1
                 if color_per_basis
                     color = colormap[basis_id % length(colormap) + 1]
-                    lines!(ax, x, z; color=color, label=string(basis_id))
+                    label = sanitise_label(label_prefix, string(basis_id))
+                    lines!(ax, x, z; color=color, label=label)
                 else
                     lines!(ax, x, z; color=z, colorrange=colorrange, colormap=colormap)
                 end
@@ -654,7 +674,7 @@ function _plot_basis!(
                         shading=true,
                         transparency=false,
                         color=fill(color, plot_points_per_element, plot_points_per_element),
-                        label=string(basis_id),
+                        label=sanitise_label(label_prefix, string(basis_id)),
                     )
                 else
                     surface!(
