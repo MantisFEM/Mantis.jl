@@ -685,6 +685,7 @@ function get_vertex_coordinates(
     xi_vertex = Points.get_canonical_points(
         get_topology(geometry), local_vertex_id, 0, 1, eltype(VT)
     )
+    @show element_id
     coord = NTuple{get_image_dim(geometry), eltype(VT)}(
         vec(evaluate(geometry, element_id, xi_vertex))
     )
@@ -817,8 +818,9 @@ end
 #     return edge_coordinates
 # end
 
+# FEGeometry lives in FunctionSpaces.
 include("CartesianGeometry.jl")
-include("DiscreteGeometry.jl")
+# include("DiscreteGeometry.jl")
 include("MappedGeometry.jl")
 include("TensorProductGeometry.jl")
 include("EvaluationMask/EvaluationMask.jl")

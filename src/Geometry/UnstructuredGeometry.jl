@@ -65,6 +65,22 @@ function get_geometry(geometry::UnstructuredGeometry, patch_id::Int)
     return geometry.geometry_per_patch[patch_id]
 end
 
+function get_elements(
+    geometry::UnstructuredGeometry, patch_id, local_object_id, geometric_dim
+)
+    element_ids = get_elements(
+        get_geometry(geometry, patch_id), 1, local_object_id, geometric_dim
+    )
+    # Since the base geometries are stored as a tuple, we always need to offset here to get
+    # the global ids.
+    offset = 0
+    for i in 1:(patch_id - 1)
+        offset += get_num_elements(geometry, i)
+    end
+
+    return element_ids .+ offset
+end
+
 # Getters for numbers, sizes, shapes, lengths, etc.
 function get_element_lengths(geometry::UnstructuredGeometry, element_id::Int)
     patch_id, local_element_id = get_patch_and_local_element_id(geometry, element_id)

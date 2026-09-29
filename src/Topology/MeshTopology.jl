@@ -301,7 +301,9 @@ function single_patch_tensorproduct_topology(::Val{manifold_dim}) where {manifol
     return throw(
         ArgumentError(
             LazyString(
-                "Topologies are limited to manifold dimension 3. Got ", manifold_dim, "."
+                "Topologies are limited to manifold dimension 1 to 3. Got ",
+                manifold_dim,
+                ".",
             ),
         ),
     )

@@ -68,6 +68,7 @@ function get_parent_elements(
             patch_parents[4, k_parent],
         )[local_element_id]
     end
+
     return parent_elements_ids, patch_parents
 end
 
@@ -283,7 +284,8 @@ function skeleton_element_to_parent_element_coords(
 
     constituent_points = Vector{eltype(σ_τ)}(undef, manifold_dim + 1)
 
-    iteration_order = zeros(Int, manifold_dim + 1)  # allocate the memory to store the final iteration order
+    # allocate the memory to store the final iteration order
+    iteration_order = zeros(Int, manifold_dim + 1)
     skeleton_position_id = 1
     for position_id in 1:(manifold_dim + 1)
         if position[position_id] == 0

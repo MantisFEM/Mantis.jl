@@ -14,15 +14,21 @@ as the number of elements; the ids then refer to element ids. See [`TensorProduc
 - `tensor_product::TP`: A `TensorProducts.TensorProduct` of the factor geometries.
 - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elements on each patch.
 """
-struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometries, T, TP} <:
-       AbstractGeometry{manifold_dim, image_dim, num_patches}
+struct TensorProductGeometry{
+    manifold_dim, image_dim, num_patches, num_geometries, T, TP, C
+} <: AbstractGeometry{manifold_dim, image_dim, num_patches}
     topology::T
     tensor_product::TP
     num_elements_per_patch::NTuple{num_patches, Int}
+    cart_patches::C
 
     function TensorProductGeometry(
-        geometries::T
-    ) where {num_geometries, T <: NTuple{num_geometries, AbstractGeometry}}
+        geometries::G, topology::T
+    ) where {
+        num_geometries,
+        G <: NTuple{num_geometries, AbstractGeometry},
+        T <: Topology.AbstractTopology,
+    }
         tensor_product = TensorProduct(geometries)
         manifold_dim = sum(get_manifold_dim, geometries)
         image_dim = sum(get_image_dim, geometries)
@@ -40,10 +46,32 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
             )
         end
 
-        if num_patches == 1
-            topology = Topology.single_patch_tensorproduct_topology(Val(manifold_dim))
-        else
-            throw(ArgumentError("Multi-patch TP geometries are not supported."))
+        if manifold_dim != Topology.get_manifold_dim(topology)
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The given topology does not have the same manifold_dim (",
+                        Topology.get_manifold_dim(topology),
+                        ") as the sum of the manifold_dims of the input geometries (",
+                        manifold_dim,
+                        ").",
+                    ),
+                ),
+            )
+        end
+        if num_patches != Topology.get_num_patches(topology)
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The given topology does not have the same number of patches (",
+                        Topology.get_num_patches(topology),
+                        ") as the product of the number of patches of the input ",
+                        "geometries (",
+                        num_patches,
+                        ").",
+                    ),
+                ),
+            )
         end
 
         return new{
@@ -51,17 +79,130 @@ struct TensorProductGeometry{manifold_dim, image_dim, num_patches, num_geometrie
             image_dim,
             num_patches,
             num_geometries,
-            typeof(topology),
+            T,
             typeof(tensor_product),
+            typeof(cart_num_patches),
         }(
-            topology, tensor_product, num_elements_per_patch
+            topology, tensor_product, num_elements_per_patch, cart_num_patches
         )
     end
 end
 
-TensorProductGeometry(geometries...) = TensorProductGeometry(geometries)
+function TensorProductGeometry(
+    geometries::G
+) where {
+    manifold_dim,
+    image_dim,
+    num_geometries,
+    G <: NTuple{num_geometries, AbstractGeometry{manifold_dim, image_dim, 1}},
+}
+    return TensorProductGeometry(
+        geometries,
+        Topology.single_patch_tensorproduct_topology(
+            Val(sum(get_manifold_dim, geometries))
+        ),
+    )
+end
+
+# TensorProductGeometry(geometries...) = TensorProductGeometry(geometries)
 
 get_tensor_product(geometry::TensorProductGeometry) = geometry.tensor_product
+
+function get_elements(
+    geometry::TensorProductGeometry,
+    patch_id::Int,
+    local_object_id::Int,
+    geometric_dim::Int,
+    rotation::Int=0,
+    orientation::Int=1,
+)
+    position = Topology.id_to_position(
+        Topology.get_topological_patch(get_topology(geometry)),
+        geometric_dim,
+        local_object_id,
+    )
+
+    # Compute the element_ids on this patch from the topological position.
+    num_elements_per_dim = get_factor_num_elements(geometry, patch_id)
+    mask = ntuple(get_manifold_dim(geometry)) do i
+        if position[i] == 0
+            return 1:num_elements_per_dim[i]
+        elseif position[i] == -1
+            return 1:1
+        else
+            return num_elements_per_dim[i]:num_elements_per_dim[i]
+        end
+    end
+    cart_elements = CartesianIndices(mask)
+    factor_patches = Tuple(geometry.cart_patches[patch_id])
+    elements_per_patch = get_num_elements_per_patch(geometry)
+    num_elements_per_dimension = elements_per_patch[[factor_patches...]]
+    lin_num_elements = LinearIndices(num_elements_per_dimension)
+    element_ids = [lin_num_elements[ci] for ci in cart_elements]
+
+    # Compute the corresponding global element_id.
+    offset = 0
+    for i in 1:(patch_id - 1)
+        offset += get_num_elements(geometry, i)
+    end
+
+    # Drop the dimensions the object is fixed along, so that the result is an array of
+    # dimension geometric_dim. These dimensions are indicated by the zeros in the position.
+    dims_to_drop = Tuple(findall(!iszero, position))
+    element_ids = dropdims(element_ids .+ offset; dims=dims_to_drop)
+
+    # Match the element numbering to the requested rotation and orientation.
+    if geometric_dim == 1
+        # An edge has a single direction, so reversing it reverses the element order.
+        orientation == -1 && (element_ids = reverse(element_ids))
+    elseif geometric_dim == 2
+        # A quadrilateral face is matched by transposing (reversed orientation) and then
+        # rotating by quarter turns.
+        orientation == -1 && (element_ids = transpose(element_ids))
+        rotation != 0 && (element_ids = rotl90(element_ids, rotation))
+    end
+
+    # Return flattened (as vector) numbers
+    return vec(element_ids)
+end
+
+function get_factor_num_elements(
+    geometry::TensorProductGeometry{manifold_dim},
+    patch_id::Int,
+    local_object_id::Int=1,
+    geometric_dim::Int=manifold_dim,
+) where {manifold_dim}
+    # The cartesian number of elements is always ordered and created with the number of
+    # elements in each factor. So, its last entry is the total number of elements per
+    # factor. This means we don't have to search for its maximum.
+    factor_patches = Tuple(geometry.cart_patches[patch_id])
+    elements_per_geometry_per_patch = TensorProducts.mapfactors(
+        get_num_elements_per_patch, get_tensor_product(geometry)
+    )
+    num_elements_per_dimension = ntuple(get_num_geometries(geometry)) do i
+        return elements_per_geometry_per_patch[i][factor_patches[i]]
+    end
+
+    if geometric_dim == manifold_dim && local_object_id == 1
+        return num_elements_per_dimension
+    else
+        position = Topology.id_to_position(
+            Topology.get_topological_patch(get_topology(geometry)),
+            geometric_dim,
+            local_object_id,
+        )
+
+        constituent_num_elements = ntuple(manifold_dim) do i
+            if position[i] == 0
+                return num_elements_per_dimension[i]
+            else
+                return 0
+            end
+        end
+
+        return constituent_num_elements
+    end
+end
 
 function get_num_elements(geometry::TensorProductGeometry)
     #=
