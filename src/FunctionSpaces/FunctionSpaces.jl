@@ -9,6 +9,7 @@ import Graphs
 import LinearAlgebra
 import Memoization
 import SparseArrays
+import StaticArrays
 import ToeplitzMatrices
 
 using ..Topology

@@ -739,7 +739,7 @@ function create_polar_geometry_data(
     n_r = get_num_basis(Br)
     tp_space = TensorProductSpace((GBθ, Br))
     geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
-    geometry = DiscreteGeometry(tp_space, reshape(geom_coeffs_tp, :, 2))
+    geometry = FEGeometry(tp_space, reshape(geom_coeffs_tp, :, 2))
 
     return geometry, geom_coeffs_tp
 end
