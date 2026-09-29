@@ -129,7 +129,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         ir_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
             return get_num_elements(geometry[geo_i])
@@ -155,7 +155,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         ir_dim,
         G <: AbstractGeometry{manifold_dim, image_dim_base, num_patches_G},
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }
         if !(num_patches_G == 1 || num_patches_G == num_patches)
             throw(
@@ -196,7 +196,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, T, G, Map} <:
         ir_dim,
         G <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim_base, 1}},
         Map <: AbstractMapping{manifold_dim, image_dim},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
             return get_num_elements(geometry[geo_i])

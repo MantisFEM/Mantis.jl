@@ -11,7 +11,7 @@ A geometry consisting of multiple patches, each with its own geometry.
     therefore a significant performance penalty.
 
 # Fields
-- `topology::T`: A [`Topology.MeshTopology`](@ref) specifying how the patches connect.
+- `topology::T`: A [`Topology.AbstractTopology`](@ref) specifying how the patches connect.
 - `geometry_per_patch::NTuple{GP, num_patches}`: The geometries for each patch.
 - `num_elements::Int`: The total number of elements in the geometry.
 - `num_elements_per_patch::NTuple{num_patches, Int}`: The number of elments per patch.
@@ -31,7 +31,7 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, T, GT} <:
         num_patches,
         ir_dim,
         GT <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }
         num_elements_per_patch = ntuple(num_patches) do i
             return get_num_elements(geometry_per_patch[i])

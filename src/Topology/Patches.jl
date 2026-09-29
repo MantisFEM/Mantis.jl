@@ -696,3 +696,31 @@ get_skeleton_patch(patch::AbstractPatch) = throw(MethodError(get_skeleton_patch,
 get_skeleton_patch(::Line) = nothing
 get_skeleton_patch(::Quad) = LINE
 get_skeleton_patch(::Hex) = QUAD
+
+############################################################################################
+#                                  Tensor-Product Patches                                  #
+############################################################################################
+"""
+    tensor_product_patch(::Val{manifold_dim})
+
+Return the [`AbstractTensorProductPatch`](@ref) of dimension `manifold_dim`, i.e. [`LINE`](@ref),
+[`QUAD`](@ref) or [`HEX`](@ref).
+
+Each geometric object of dimension `manifold_dim` of a topology made of tensor-product
+patches is itself shaped like this patch, which fixes the local numbering of the objects it
+contains.
+"""
+tensor_product_patch(::Val{1}) = LINE
+tensor_product_patch(::Val{2}) = QUAD
+tensor_product_patch(::Val{3}) = HEX
+function tensor_product_patch(::Val{manifold_dim}) where {manifold_dim}
+    return throw(
+        ArgumentError(
+            LazyString(
+                "There is no tensor-product patch of dimension ",
+                manifold_dim,
+                "; supported dimensions are 1, 2 and 3.",
+            ),
+        ),
+    )
+end

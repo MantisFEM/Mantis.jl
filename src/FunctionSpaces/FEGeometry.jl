@@ -28,7 +28,7 @@ struct FEGeometry{manifold_dim, image_dim, num_patches, T, F, V} <:
         ir_dim,
         num_patches,
         F <: AbstractFESpace{manifold_dim, 1, num_patches},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
         V <: Real,
     }
         return new{manifold_dim, size(coefficients, 2), num_patches, T, F, V}(

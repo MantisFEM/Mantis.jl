@@ -12,7 +12,8 @@ geometry can have non-uniformly spaced elements, but every element is only a sca
 translation away form the canonical element.
 
 # Fields
-- `topology::T`: A [`MeshTopology`](@ref)-object specifying the connectivity information.
+- `topology::T`: A [`Topology.AbstractTopology`](@ref) specifying the connectivity
+    information.
 - `breakpoints::B`: Grid point locations per patch and per dimension.
 - `cart_num_elements::CI`: A (tuple of) `CartesianIndices` for the elements on each patch.
 - `lin_num_elements::LI`: A (tuple of) `LinearIndices` for the elements on each patch.
@@ -26,7 +27,7 @@ translation away form the canonical element.
         num_patches,
         NT <: Number,
         B <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }`: General constructor.
 - `CartesianGeometry(
         breakpoints::NTuple{manifold_dim, AbstractVector{NT}}
@@ -49,7 +50,7 @@ struct CartesianGeometry{manifold_dim, image_dim, num_patches, T, B, CI, LI} <:
         num_patches,
         NT <: Number,
         B <: NTuple{num_patches, NTuple{manifold_dim, AbstractVector{NT}}},
-        T <: Topology.MeshTopology{manifold_dim, ir_dim, num_patches},
+        T <: Topology.AbstractTopology{manifold_dim, ir_dim, num_patches},
     }
         for patch_breakpoints in breakpoints
             unique_breakpoints = map(unique, patch_breakpoints)

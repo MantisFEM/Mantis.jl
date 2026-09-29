@@ -585,7 +585,7 @@ function compute_neighbours(
     neighbours = Matrix{Matrix{Int}}(undef, num_patches, num_local_objects)
     for object_local_id in 1:num_local_objects, patch_id in 1:num_patches
         neighbours[patch_id, object_local_id] = compute_neighbours(
-            topology, patch_id, object_local_id, object_dim; include_local_patch
+            topology, patch_id, object_local_id, object_dim, include_local_patch
         )
     end
 
@@ -595,5 +595,6 @@ end
 include("Patches.jl")
 include("MeshTopology.jl")
 include("SkeletonTopology.jl")
+include("TensorProductTopology.jl")
 
 end

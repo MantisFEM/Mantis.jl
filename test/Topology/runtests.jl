@@ -12,6 +12,9 @@ using Test
     @testset "SkeletonTopology" verbose=true begin
         include("SkeletonTopologyTests.jl")
     end
+    @testset "TensorProductTopology" verbose=true begin
+        include("TensorProductTopologyTests.jl")
+    end
 end
 
 end

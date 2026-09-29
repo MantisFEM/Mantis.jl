@@ -527,10 +527,10 @@ julia> line = Geometry.create_cartesian_box((0.0,), (1.0,), (1,)); nothing
 
 julia> square = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (1, 1)); nothing
 
-julia> tp = Geometry.TensorProductGeometry((line, square, line)); nothing
+julia> tp = Geometry.TensorProductGeometry((line, square)); nothing
 
 julia> Geometry.get_factor_manifold_indices(tp)
-((1,), (2, 3), (4,))
+((1,), (2, 3))
 
 ```
 """
@@ -554,9 +554,9 @@ julia> line = Geometry.create_cartesian_box((0.0,), (1.0,), (1,)); nothing
 
 julia> square = Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (1, 1)); nothing
 
-julia> tp = Geometry.TensorProductGeometry((line, square, line)); nothing
+julia> tp = Geometry.TensorProductGeometry((line, square)); nothing
 
-julia> xi = Points.TensorProductPoints([0.0], [0.5], [0.0, 1.0], [0.3]); nothing
+julia> xi = Points.TensorProductPoints([0.0], [0.5], [0.0, 1.0]); nothing
 
 julia> factor_points = Geometry.get_factor_evaluation_points(tp, xi); nothing
 
@@ -568,10 +568,6 @@ julia> map(collect, factor_points[2])
 2-element Vector{Vector{Float64}}:
  [0.5, 0.0]
  [0.5, 1.0]
-
-julia> map(collect, factor_points[3])
-1-element Vector{Vector{Float64}}:
- [0.3]
 ```
 """
 function get_factor_evaluation_points(
