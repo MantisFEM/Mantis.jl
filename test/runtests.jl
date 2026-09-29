@@ -3,24 +3,24 @@ module MantisTests
 using Pkg
 using Test
 
-# @testset verbose=true "GeneralHelpers" begin
-#     include("GeneralHelpers/runtests.jl")
-# end
-# @testset verbose=true "Topology" begin
-#     include("Topology/runtests.jl")
-# end
-# @testset verbose=true "TensorProducts" begin
-#     include("TensorProducts/runtests.jl")
-# end
-# @testset verbose=true "Points" begin
-#     include("Points/runtests.jl")
-# end
+@testset verbose=true "GeneralHelpers" begin
+    include("GeneralHelpers/runtests.jl")
+end
+@testset verbose=true "Topology" begin
+    include("Topology/runtests.jl")
+end
+@testset verbose=true "TensorProducts" begin
+    include("TensorProducts/runtests.jl")
+end
+@testset verbose=true "Points" begin
+    include("Points/runtests.jl")
+end
 @testset verbose=true "Geometry" begin
     include("Geometry/runtests.jl")
 end
-# @testset verbose=true "FunctionSpaces" begin
-#     include("FunctionSpaces/runtests.jl")
-# end
+@testset verbose=true "FunctionSpaces" begin
+    include("FunctionSpaces/runtests.jl")
+end
 # @testset verbose=true "Quadrature" begin
 #     include("Quadrature/runtests.jl")
 # end

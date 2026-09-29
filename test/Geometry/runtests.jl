@@ -8,9 +8,9 @@ end
 @testset "MappedGeometry" verbose=true begin
     include("MappedGeometryTests.jl")
 end
-# @testset "DiscreteGeometry" verbose=true begin
-#     include("DiscreteGeometryTests.jl")
-# end
+@testset "FEGeometry" verbose=true begin
+    include("DiscreteGeometryTests.jl")
+end
 @testset "TensorProductGeometry" verbose=true begin
     include("TensorProductGeometryTests.jl")
 end

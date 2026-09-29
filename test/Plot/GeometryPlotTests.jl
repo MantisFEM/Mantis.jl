@@ -53,7 +53,7 @@ for i in 1:(FunctionSpaces.get_num_basis(GBθ) - 1)
     geom_coeffs_θrϕ[i + 1] = geom_coeffs_θr0 * R'
 end
 geom_coeffs_θrϕ = vcat(geom_coeffs_θrϕ...)
-geom = FunctionSpaces.DiscreteGeometry(space_θrϕ, geom_coeffs_θrϕ)
+geom = FunctionSpaces.FEGeometry(space_θrϕ, geom_coeffs_θrϕ)
 
 # Generate the plot
 output_filename = "fem_geometry_torus_test.vtu"
@@ -102,7 +102,7 @@ for i in 1:3
     geom_coeffs_θrϕ[i + 1] = geom_coeffs_θr0 * R'
 end
 geom_coeffs_θrϕ = vcat(geom_coeffs_θrϕ...)
-geom = FunctionSpaces.DiscreteGeometry(TP_θrϕ, geom_coeffs_θrϕ)
+geom = FunctionSpaces.FEGeometry(TP_θrϕ, geom_coeffs_θrϕ)
 # Generate the plot
 output_filename = "fem_geometry_toroidal_annulus_test.vtu"
 output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename)
@@ -150,7 +150,7 @@ for i in 1:3
     geom_coeffs_θrϕ[i + 1] = geom_coeffs_θr0 * R'
 end
 geom_coeffs_θrϕ = vcat(geom_coeffs_θrϕ...)
-geom = FunctionSpaces.DiscreteGeometry(TP_θrϕ, geom_coeffs_θrϕ)
+geom = FunctionSpaces.FEGeometry(TP_θrϕ, geom_coeffs_θrϕ)
 
 # form spaces and fields
 zero_sum_space = FunctionSpaces.DirectSumSpace((TP_θrϕ,))
@@ -216,7 +216,7 @@ geom_coeffs_θrz = [
     geom_coeffs_tp z0.*ones(8)
     geom_coeffs_tp z1.*ones(8)
 ]
-geom = FunctionSpaces.DiscreteGeometry(TP_θrz, geom_coeffs_θrz)
+geom = FunctionSpaces.FEGeometry(TP_θrz, geom_coeffs_θrz)
 # Generate the plot
 output_filename = "fem_geometry_hollow_cylinder_test.vtu"
 output_file = Mantis.GeneralHelpers.export_path(output_directory_tree, output_filename)
@@ -336,7 +336,7 @@ geom_coeffs = [
     -1.0 -1.0 1.0
     0.0 -1.0 1.25
 ]
-geom = FunctionSpaces.DiscreteGeometry(GB, geom_coeffs)
+geom = FunctionSpaces.FEGeometry(GB, geom_coeffs)
 
 # Generate the plots
 degrees_range = 1:3:10
