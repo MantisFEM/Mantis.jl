@@ -173,6 +173,8 @@ Return the active hierarchical basis of `space`. See [`HierarchicalBasis`](@ref)
 """
 get_hierarchical_basis(space::HierarchicalSpace) = space.basis
 
+# TODO: create helper with just parametric geometry
+
 """
     get_basis(space::HierarchicalSpace)
 
