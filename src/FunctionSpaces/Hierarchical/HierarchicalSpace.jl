@@ -104,6 +104,8 @@ function HierarchicalSpace(
     return HierarchicalSpace(geometry, parametric_geometry, basis, S, B)
 end
 
+# TODO: create helper with just parametric geometry
+
 """
     get_basis(space::HierarchicalSpace)
 
