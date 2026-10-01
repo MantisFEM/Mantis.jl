@@ -103,12 +103,12 @@ struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, H} <:
 end
 
 """
-    HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings)
+    HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings...)
 
 Helper constructor from active element information and scalings.
 """
 function HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings)
-    return HierarchicalGeometry(Hierarchical.TreeHierarchy(active_info, scalings))
+    return HierarchicalGeometry(Hierarchical.TreeHierarchy(active_info, scalings...))
 end
 
 """

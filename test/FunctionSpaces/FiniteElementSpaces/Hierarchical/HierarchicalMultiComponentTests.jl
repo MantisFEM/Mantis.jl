@@ -4,6 +4,9 @@ using Mantis
 
 using Test
 
+# TODO: These need to be ported to the new framework. But they should not rely on later
+# modules for the tests (like Assemblers)
+
 function create_hier_ds(parent_splines)
     bspline_DS = FunctionSpaces.DirectSumSpace(parent_splines)
     two_scale_operators_DS = Vector{FunctionSpaces.TwoScaleOperator}(undef, nlevels - 1)

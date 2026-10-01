@@ -20,4 +20,8 @@ end
     include("ExtractionTests.jl")
 end
 
+@testset "HierarchicalSpace" verbose = true begin
+    include("HierarchicalSpace.jl")
+end
+
 end

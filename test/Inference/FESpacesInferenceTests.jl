@@ -76,8 +76,8 @@ ref_geo_h2(s) = Geometry.refinement_uniform(s, 2)
 ref_space_p1(s) = FunctionSpaces.refinement_degree(s, 1)
 scal_space_p1(p, c) = FunctionSpaces.scaling_matrix_degree(p, c, 1)
 scal_space_h2 = FunctionSpaces.scaling_matrix_uniform
-SelStd = FunctionSpaces.SelectionStandard()
-SelSimp = FunctionSpaces.SelectionSimple()
+SelStd = FunctionSpaces.SelectionStandard
+SelSimp = FunctionSpaces.SelectionSimple
 HB = FunctionSpaces.HB
 THB = FunctionSpaces.THB
 
