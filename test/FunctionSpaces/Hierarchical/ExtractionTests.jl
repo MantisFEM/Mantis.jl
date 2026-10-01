@@ -3,7 +3,7 @@ module ExtractionTests
 using Mantis
 using Mantis.Hierarchical
 using Test
-include(joinpath(pwd(), "test/TestHelpers.jl"))
+include("../../TestHelpers.jl")
 include("data/ExtractionTests/data.jl")
 
 const PLOT = false
