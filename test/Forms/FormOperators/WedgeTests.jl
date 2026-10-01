@@ -145,6 +145,9 @@ function test_nested_mixed_wedge_2d(complex, q_rule)
     @test Forms.get_fe_space(mixed_wedge) === Forms.get_fe_space(ϵ¹)
     @test Forms.get_estimated_nnz_per_elem(★(mixed_wedge)) ==
         Forms.get_estimated_nnz_per_elem(ϵ¹)
+    @test Forms.get_estimated_nnz_per_elem(mixed_wedge) ==
+        Forms.get_estimated_nnz_per_elem(ϵ¹)
+
 
     # ∫ v¹ ∧ ★(w⁰ ∧ ★u¹) = -∫ v¹ ∧ (w⁰ ∧ u¹), which is skew-symmetric in (v¹, u¹).
     with_hodge = ∫(ϵ¹ ∧ ★(ε⁰ ∧ ★(ϵ¹)), q_rule)
