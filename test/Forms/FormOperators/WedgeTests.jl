@@ -129,6 +129,45 @@ function test_combinations_2d(complex, q_rule)
     return nothing
 end
 
+function test_nested_mixed_wedge_2d(complex, q_rule)
+    # A wedge between a form field and a form space (expression rank 1) nested inside an
+    # expression of rank 2, as in the convective term (w⁰ ∧ ⋆u¹, v¹) of the Navier-Stokes
+    # equations in rotational form.
+    ϵ⁰ = complex[1]
+    ϵ¹ = complex[2]
+    ε⁰ = Forms.FormField(ϵ⁰, collect(range(-1.0, 1.0; length=Forms.get_num_basis(ϵ⁰))))
+    ε¹ = Forms.FormField(ϵ¹, collect(range(-1.0, 1.0; length=Forms.get_num_basis(ϵ¹))))
+
+    # Basis-related queries on a mixed wedge are forwarded to the factor with the basis.
+    mixed_wedge = ε⁰ ∧ ★(ϵ¹)
+    @test Forms.get_num_basis(mixed_wedge) == Forms.get_num_basis(ϵ¹)
+    @test Forms.get_num_basis(mixed_wedge, 1) == Forms.get_num_basis(ϵ¹, 1)
+    @test Forms.get_fe_space(mixed_wedge) === Forms.get_fe_space(ϵ¹)
+    @test Forms.get_estimated_nnz_per_elem(★(mixed_wedge)) ==
+        Forms.get_estimated_nnz_per_elem(ϵ¹)
+    @test Forms.get_estimated_nnz_per_elem(mixed_wedge) ==
+        Forms.get_estimated_nnz_per_elem(ϵ¹)
+
+
+    # ∫ v¹ ∧ ★(w⁰ ∧ ★u¹) = -∫ v¹ ∧ (w⁰ ∧ u¹), which is skew-symmetric in (v¹, u¹).
+    with_hodge = ∫(ϵ¹ ∧ ★(ε⁰ ∧ ★(ϵ¹)), q_rule)
+    without_hodge = ∫(ϵ¹ ∧ (ε⁰ ∧ ϵ¹), q_rule)
+    # The other linearization: the 0-form is the basis and the 1-form the field.
+    other_linearization = ∫(ϵ¹ ∧ ★(ϵ⁰ ∧ ★(ε¹)), q_rule)
+    for element_id in 1:Quadrature.get_num_base_elements(q_rule)
+        with_hodge_eval, with_hodge_indices = Forms.evaluate(with_hodge, element_id)
+        without_hodge_eval, _ = Forms.evaluate(without_hodge, element_id)
+        @test all(isapprox.(with_hodge_eval, -without_hodge_eval; atol=1e-12))
+        @test all(isapprox.(with_hodge_eval, -transpose(with_hodge_eval); atol=1e-12))
+        @test length(with_hodge_indices) == 2
+
+        other_eval, other_indices = Forms.evaluate(other_linearization, element_id)
+        @test size(other_eval) == (length(other_indices[1]), length(other_indices[2]))
+    end
+
+    return nothing
+end
+
 function test_combinations_3d(complex, q_rule)
 
     # Create form spaces
@@ -287,11 +326,13 @@ dΩ₂ = Quadrature.StandardQuadrature(
     @testset "CartesianGeometry" begin
         test_inner_prod_equality(cart_complex_2d, dΩ₂)
         test_combinations_2d(cart_complex_2d, dΩ₂)
+        test_nested_mixed_wedge_2d(cart_complex_2d, dΩ₂)
     end
 
     @testset "MappedGeometry" begin
         test_inner_prod_equality(curv_complex_2d, dΩ₂)
         test_combinations_2d(curv_complex_2d, dΩ₂)
+        test_nested_mixed_wedge_2d(curv_complex_2d, dΩ₂)
     end
 end
 
