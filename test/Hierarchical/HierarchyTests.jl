@@ -3,7 +3,6 @@ module HierarchyTests
 using Mantis
 using Mantis.Hierarchical
 using Test
-using InteractiveUtils
 
 struct NewObject
     n::Int

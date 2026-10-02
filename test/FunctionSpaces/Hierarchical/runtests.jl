@@ -24,4 +24,10 @@ end
     include("HierarchicalSpace.jl")
 end
 
+@testset "Adaptivity" verbose = true begin
+    @testset "Marking" verbose = true begin
+        include("Adaptivity/MarkingTests.jl")
+    end
+end
+
 end
