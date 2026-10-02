@@ -36,6 +36,9 @@ end
 @testset verbose=true "Plot" begin
     include("Plot/runtests.jl")
 end
+@testset verbose=true "End to end" begin
+    include("EndToEnd/runtests.jl")
+end
 
 # Do not run JET tests on pre-release versions, as JET is too unstable and the CI will
 # appear as failing. Also only run it from v1.12 onwards, also for compatibility reasons.

@@ -159,15 +159,17 @@ one_form_space_BBBB_4D = Forms.FormSpace(1, DS_BBBB_4D, "one-form-BBBB")
 B11111_5D = FunctionSpaces.TensorProductSpace((B1_1D, B1_1D, B1_1D, B1_1D, B1_1D))
 zero_form_space_BBBBB_5D = Forms.FormSpace(0, B11111_5D, "zero-form-BBBBB")
 
+# We add a few pullbacks at random. This will check if the propagation of the pullbacks and
+# the automatic pullbacks are handled in a type-stable way.
 forms_base = (
-    zero_form_space_B1_1D,
+    Forms.FormPullback(zero_form_space_B1_1D, Forms.Canonical),
     zero_form_space_L1_1D,
     one_form_space_B2_1D,
     one_form_space_E1_1D,
     zero_form_field_B1_1D,
     zero_form_field_L1_1D,
     one_form_field_B2_1D,
-    one_form_field_E1_1D,
+    Forms.FormPullback(one_form_field_E1_1D, Forms.Canonical),
     zero_form_space_B1_2D,
     zero_form_space_L1_2D,
     one_form_space_BB_2D,
@@ -175,12 +177,12 @@ forms_base = (
     zero_form_field_B1_2D,
     one_form_field_BB_2D,
     zero_form_space_B1_3D,
-    zero_form_space_L1_3D,
+    Forms.FormPullback(zero_form_space_L1_3D, Forms.Canonical),
     zero_form_field_B1_3D,
     one_form_space_BBB_3D,
     one_form_space_LEL_3D,
     one_form_field_BBB_3D,
-    two_form_space_BBB_3D_2,
+    Forms.FormPullback(two_form_space_BBB_3D_2, Forms.Canonical),
     two_form_space_LEE_3D,
     two_form_field_BBB_3D_2,
     zero_form_space_BBBB_4D,
@@ -250,6 +252,10 @@ forms_base_bin_min = (f - f for f in forms_base)
 forms_base_bin_plus = (f + f for f in forms_base)
 forms_base_bin_prod = (f * f for f in forms_base)
 
+inner_prod = Forms.FormPullback(
+    Forms.Wedge(one_form_space_BBB_3D, Forms.Hodge(one_form_field_BBB_3D)), Forms.Canonical
+)
+
 forms = (
     forms_base...,
     forms_base_uni_min...,
@@ -257,4 +263,5 @@ forms = (
     forms_base_bin_min...,
     forms_base_bin_plus...,
     forms_base_bin_prod...,
+    inner_prod,
 )
