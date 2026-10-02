@@ -68,8 +68,7 @@
 # also conserves helicity ``H = \int_\Omega\boldsymbol{u}\cdot\boldsymbol{\omega}``. In 2D,
 # ``\boldsymbol{\omega}\perp\boldsymbol{u}``, so helicity is identically zero. Its role is
 # taken by the enstrophy: both are Casimirs of the Hamiltonian structure of the Euler
-# equations [Zhang2022](@cite). Remarkably, we will see that the 2D scheme also conserves
-# enstrophy exactly.
+# equations [Zhang2022](@cite).
 
 # ## [From vector calculus to differential forms](@id NS2DForms)
 # ### [The unknowns as differential forms](@id NS2DUnknowns)
@@ -100,7 +99,9 @@
 # | ``\omega = \nabla\times\boldsymbol{u}`` | ``w^{0} = \delta u^{1}`` |
 # | ``\nabla\times\omega`` | ``\mathrm{d}w^{0}`` |
 # | ``\nabla P`` | ``-\delta P^{2}`` |
-# | ``\boldsymbol{\omega}\times\boldsymbol{u}`` | ``w^{0}\wedge\star u^{1}`` (derived below) |
+#
+# The one term not covered by this table is the nonlinear term
+# ``\boldsymbol{\omega}\times\boldsymbol{u}``, which we treat next.
 
 # ### [The nonlinear term: an interior product](@id NS2DLamb)
 # The convective term is where differential geometry pays off. In the circulation
@@ -313,9 +314,21 @@ end
 # The convective term ``(w_h\wedge\star u_h, \varphi_i)_\Omega`` is *bilinear* in
 # ``(u_h, w_h)``. It can therefore be written as ``\mathsf{R}(w_h)\,\mathbf{u} =
 # \mathsf{Q}(u_h)\,\mathbf{w}``, with bold symbols denoting coefficient vectors.
-# ``\mathsf{R}`` and ``\mathsf{Q}`` are also exactly the two blocks of its Jacobian.
 # By the antisymmetry noted above, ``\mathsf{R}(w_h)`` is a skew-symmetric matrix.
 #
+# ### [The pressure gauge](@id NS2DGauge)
+# On a periodic domain, ``\int_\Omega\mathrm{d}u^{1}_h = 0`` for every ``u^{1}_h``, so the
+# constant 2-form is orthogonal to ``\mathrm{d}\Lambda^1_h``. The pressure enters the weak
+# formulation only through ``(P^2, \mathrm{d}v^1)_\Omega``, so it is determined only up to
+# a constant. Correspondingly, one row of the continuity equation
+# ``\mathsf{D}\mathbf{u} = 0`` is a linear combination of the others. We therefore
+# replace the first continuity equation by ``P_1 = 0``: the matrix `D_gauged` is
+# ``\mathsf{D}`` with its first row set to zero, and the matrix `gauge` has a single entry
+# ``1`` at position ``(1, 1)``, so that the continuity rows read
+# `D_gauged * u + gauge * P = 0`. The constraint ``\mathrm{d}u^1_h = 0`` still holds exactly.
+# Whenever we compare pressures, we compare them up to their mean.
+#
+# ### [Setting up the problem](@id NS2DSetup)
 # In `Mantis`, the integrand ``v^{1}\wedge\star(w^{0}_h\wedge\star u^{1})`` is written
 # literally as `v¹ ∧ ★(w⁰ₕ ∧ ★(u¹))`. When one factor is a `FormField` (a known field) and
 # the other a `FormSpace` (a basis), the result is again a (bi)linear form in the basis
@@ -340,10 +353,8 @@ function setup_navier_stokes(
     M¹ = assemble_operator(Λ¹, Λ¹, (v¹, u¹) -> ∫(v¹ ∧ ★(u¹), dΩ))
     C = assemble_operator(Λ¹, Λ⁰, (v¹, w⁰) -> ∫(v¹ ∧ ★(d(w⁰)), dΩ))
     D = assemble_operator(Λ², Λ¹, (q², u¹) -> ∫(q² ∧ ★(d(u¹)), dΩ))
-    ## Only used for diagnostics: ‖dw‖² = wᵀ S⁰ w (the enstrophy dissipation).
-    S⁰ = assemble_operator(Λ⁰, Λ⁰, (ξ⁰, w⁰) -> ∫(d(ξ⁰) ∧ ★(d(w⁰)), dΩ))
 
-    ## The pressure is only determined up to a constant (see "The pressure gauge" below).
+    ## The pressure gauge.
     num_P = Forms.get_num_basis(Λ²)
     D_gauged = copy(D)
     D_gauged[1, :] .= 0.0
@@ -360,7 +371,6 @@ function setup_navier_stokes(
         M¹,
         C,
         D,
-        S⁰,
         D_gauged,
         gauge,
         box_size,
@@ -507,17 +517,9 @@ println(
 # Compare with the (linear) systems of [Zhang2022](@cite), eq. (46). The new ingredient is
 # the block ``\tfrac{1}{2}\mathsf{Q}``, which couples the momentum equation to the unknown
 # vorticity. The solution at the previous time step is an excellent initial guess, so Newton
-# typically converges quadratically in two to four iterations.
+# typically converges quadratically in two to four iterations. In the code, the last block
+# row uses the gauged continuity equation of [The pressure gauge](@ref NS2DGauge).
 #
-# ### [The pressure gauge](@id NS2DGauge)
-# On a periodic domain, ``\int_\Omega\mathrm{d}u^{1}_h = 0`` for every ``u^{1}_h``, so the
-# constant 2-form is orthogonal to ``\mathrm{d}\Lambda^1_h``. As a consequence, the
-# pressure is determined only up to a constant, and one row of ``\mathsf{D}\mathbf{u} = 0``
-# is a linear combination of the others. We therefore replace the first continuity
-# equation by ``P_1 = 0``. This is what `D_gauged` and `gauge` do in `setup_navier_stokes`.
-# The constraint ``\mathrm{d}u^1_h = 0`` still holds exactly. Whenever we compare pressures,
-# we compare them up to their mean.
-
 function midpoint_newton_step(
     problem, uⁿ, wⁿ, P_guess, Δt, ν; tolerance=1e-11, max_iterations=15, verbose=false
 )
@@ -611,14 +613,14 @@ compute_vorticity(problem, u) = problem.M⁰ \ (problem.C' * u)
 # We monitor the kinetic energy ``K = \tfrac{1}{2}(u^1_h, u^1_h)_\Omega``, the enstrophy
 # ``\mathcal{E} = \tfrac{1}{2}(w^0_h, w^0_h)_\Omega``, and the ``L^2`` norm of
 # ``\mathrm{d}u^1_h`` (the divergence). The divergence is computed by applying `d` to the
-# `FormField` itself, independently of the matrices. The enstrophy dissipation
-# ``\|\mathrm{d}w^0_h\|^2 = \mathbf{w}^{\mathsf{T}}\mathsf{S}^0\mathbf{w}`` uses the
-# stiffness matrix ``\mathsf{S}^0_{ij} = (\mathrm{d}\psi_j, \mathrm{d}\psi_i)_\Omega``
-# assembled in `setup_navier_stokes`.
+# `FormField` itself, independently of the matrices. The term
+# ``\|\mathrm{d}w^0_h\|^2`` of the enstrophy balance is computed in the same way.
 
 kinetic_energy(problem, u) = 0.5 * dot(u, problem.M¹ * u)
 enstrophy(problem, w) = 0.5 * dot(w, problem.M⁰ * w)
-vorticity_gradient_squared(problem, w) = dot(w, problem.S⁰ * w)
+function vorticity_gradient_squared(problem, w)
+    return Analysis.L2_norm(d(Forms.FormField(problem.Λ⁰, w, "w")), problem.dΩ)^2
+end
 function divergence_norm(problem, u)
     return Analysis.L2_norm(d(Forms.FormField(problem.Λ¹, u, "u")), problem.dΩ)
 end
@@ -1023,8 +1025,7 @@ end
 # ``|\boldsymbol{u}| \lesssim 1`` and element size ``h = 2\pi/30``, the CFL number
 # ``|\boldsymbol{u}|\Delta t/h`` is about ``1``, or about ``3`` when measured against the
 # resolution ``h/p`` of the cubic splines. This mesh is deliberately coarse, so that the
-# example runs quickly; it is enough to see the roll-up, and also the effects of
-# under-resolution discussed below.
+# example runs quickly; it is enough to see the roll-up.
 #
 # Set `show_progress = true` to print, at every time step, the Newton residuals and the
 # conservation diagnostics (see [The time loop](@ref NS2DTimeLoop)). To keep this page
@@ -1130,6 +1131,454 @@ num_newton_iterations =
     "Newton iterations per time step    = %.2f\n",
     num_newton_iterations / length(history_sl.newton_residuals)
 )
+
+# ## [The same scheme with the `TimeIntegrators` module](@id NS2DTimeIntegrators)
+# So far we wrote the time loop by hand. `Mantis` also provides a general
+# [TimeIntegrators](@ref) module (see the [time integration tutorial](GetStartTimeIntegration.md)).
+# In this section we use it to advance the same discretization in time, and check that
+# it gives the same result.
+#
+# `TimeIntegrators` separates two ingredients:
+# - the **ODE**, i.e. the problem, described by problem-specific functions;
+# - the **time integration scheme**, described by its Butcher tableau.
+#
+# The same description of the ODE can be combined with any scheme of the right class. We
+# first explain the class of schemes we use, then what the ODE description must contain,
+# and only then choose the scheme.
+#
+# ### [Diagonally implicit Runge–Kutta methods](@id NS2DTIDIRK)
+# Consider a general ODE
+# ```math
+# \frac{\mathrm{d}\mathbf{y}}{\mathrm{d}t} = \mathbf{g}(t, \mathbf{y})\,, \qquad
+# \mathbf{y}(0) = \mathbf{y}^0\,.
+# ```
+# An ``s``-stage Runge–Kutta method with Butcher tableau ``(a_{ij}, b_i, c_i)`` advances the
+# solution from ``t^n`` to ``t^{n+1} = t^n + \Delta t`` by first computing ``s`` *stage
+# values* ``\mathbf{Y}_1, \dots, \mathbf{Y}_s``, at the stage times
+# ``t_i = t^n + c_i\,\Delta t``, and then the new solution:
+# ```math
+# \mathbf{Y}_i = \mathbf{y}^n + \Delta t\sum_{j=1}^{s} a_{ij}\,\mathbf{g}(t_j, \mathbf{Y}_j)\,,
+# \quad i = 1, \dots, s\,, \qquad
+# \mathbf{y}^{n+1} = \mathbf{y}^n + \Delta t\sum_{i=1}^{s} b_i\,\mathbf{g}(t_i, \mathbf{Y}_i)\,.
+# ```
+# Many texts write the method instead in terms of the *stage derivatives*
+# ``\mathbf{k}_i = \mathbf{g}(t_i, \mathbf{Y}_i)``:
+# ```math
+# \mathbf{k}_i = \mathbf{g}\Big(t^n + c_i\,\Delta t,\ \mathbf{y}^n + \Delta t\sum_{j=1}^{s}
+# a_{ij}\,\mathbf{k}_j\Big)\,, \qquad
+# \mathbf{y}^{n+1} = \mathbf{y}^n + \Delta t\sum_{i=1}^{s} b_i\,\mathbf{k}_i\,.
+# ```
+# Both forms are equivalent: inserting ``\mathbf{k}_j = \mathbf{g}(t_j, \mathbf{Y}_j)`` into
+# the first form gives ``\mathbf{Y}_i = \mathbf{y}^n + \Delta t\sum_j a_{ij}\,\mathbf{k}_j``,
+# and applying ``\mathbf{g}(t_i, \cdot)`` to both sides gives the second. `TimeIntegrators`
+# works with the stage values ``\mathbf{Y}_i``, so we use the first form.
+#
+# The method is *diagonally implicit* if ``a_{ij} = 0`` for ``j > i``. Then stage ``i``
+# involves only ``\mathbf{Y}_i`` itself and the stages before it, and can be written as
+# ```math
+# \mathbf{Y}_i = \mathbf{y}^n + \Delta t\sum_{j=1}^{s} a_{ij}\,\mathbf{g}(t_j, \mathbf{Y}_j) =
+# \mathbf{y}^n + \Delta t\sum_{j=1}^{i-1}a_{ij}\,\mathbf{g}(t_j, \mathbf{Y}_j) + \Delta t\, a_{ii}\,\mathbf{g}(t_i, \mathbf{Y}_i)\,,
+# \quad i = 1, \dots, s\,,
+# ```
+# since the method is *diagonally implicit* (``a_{ij} = 0`` for ``j > i``). If we now introduce
+# ```math
+# \mathbf{x}_i = \mathbf{y}^n + \Delta t\sum_{j=1}^{i-1} a_{ij}\,\mathbf{g}(t_j,
+# \mathbf{Y}_j)\,,
+# ```
+# we can rewrite the stages as
+# ```math
+# \mathbf{Y}_i = \mathbf{x}_i + \Delta t\, a_{ii}\,\mathbf{g}(t_i, \mathbf{Y}_i)\,.
+# ```
+# When stage ``i`` is computed, ``\mathbf{x}_i`` is known. So a step consists
+# of solving ``s`` equations of the same form, one after the other. We call them *stage
+# equations*.
+#
+# ### [Describing the ODE: `define_diagonally_implicit_ode`](@id NS2DTISolve)
+# In the algorithm above, everything is generic except one operation: solving a stage
+# equation ``\mathbf{Y}_{i} - \Delta t\, a_{ii}\,\mathbf{g}(t_{i}, \mathbf{Y}_{i}) = \mathbf{x}_{i}`` for given ``\mathbf{x}_{i}``,
+# ``a_{ii}``, ``\Delta t``, and stage time ``t_{i}``. Note that, for each stage we must solve
+# an equation for ``\mathbf{Y}`` of the form
+# ```math
+# \mathbf{Y} - h\,\mathbf{g}(t, \mathbf{Y}) = \mathbf{x}\,,
+# ```
+# given ``h``, ``t``, and ``\mathbf{x}``. The scheme provides ``h``, ``t``, and
+# ``\mathbf{x}``; how to solve this equation depends on ``\mathbf{g}``, which only we know.
+# So we must provide a function that, given ``h``, ``t``, and ``\mathbf{x}``, returns the
+# solution ``\mathbf{Y}`` of the stage equation.
+# `TimeIntegrators.define_diagonally_implicit_ode(implicit_solve!, implicit_evaluate!)`
+# collects the problem-specific functions into an object describing the ODE. Its inputs are:
+# - `implicit_solve!(Y, x, h, t)` (required): overwrites `Y` with the solution of the stage
+#   equation ``\mathbf{Y} - h\,\mathbf{g}(t, \mathbf{Y}) = \mathbf{x}``, where ``t`` is the
+#   stage time. ``\mathbf{g}`` is not an argument: ``\mathbf{g}`` is directly included
+#   inside the function. For a nonlinear ``\mathbf{g}``, `implicit_solve!(Y, x, h, t)` implements, for example,
+#   Newton's method applied to the residual
+#   ```math
+#   \mathbf{F}(\mathbf{Y}) = \mathbf{Y} - h\,\mathbf{g}(t, \mathbf{Y}) - \mathbf{x}\,, \qquad
+#   \frac{\partial\mathbf{F}}{\partial\mathbf{Y}} = \mathsf{I} - h\,\frac{\partial\mathbf{g}}{\partial\mathbf{Y}}\,,
+#   ```
+#   starting from the initial guess ``\mathbf{Y} = \mathbf{x}``. In summary, given 
+#   ``h``, ``t``, and ``\boldsymbol{x}``, `implicit_solve!(Y, x, h, t)` must return the solution
+#   to the stage equation.
+# - `implicit_evaluate!(G, y, t)` (optional): overwrites `G` with
+#   ``\mathbf{g}(t, \mathbf{y})``. The algorithm needs the values
+#   ``\mathbf{g}(t_i, \mathbf{Y}_i)`` twice: in ``\mathbf{x}_j`` of the later stages
+#   ``j > i``, and in the update of ``\mathbf{y}^{n+1}``. If ``a_{ii} \neq 0``, these values
+#   can be obtained without evaluating ``\mathbf{g}``. The solution ``\mathbf{Y}_i``
+#   returned by `implicit_solve!` satisfies the stage equation
+#   ``\mathbf{Y}_i = \mathbf{x}_i + h_i\,\mathbf{g}(t_i, \mathbf{Y}_i)``, with
+#   ``h_i = a_{ii}\,\Delta t \neq 0``, so
+#   ```math
+#   \mathbf{g}(t_i, \mathbf{Y}_i) = \frac{\mathbf{Y}_i - \mathbf{x}_i}{h_i}\,.
+#   ```
+#   This costs one vector subtraction, while evaluating ``\mathbf{g}`` may be expensive.
+#   If ``a_{ii} = 0``, the stage equation reduces to ``\mathbf{Y}_i = \mathbf{x}_i``: stage
+#   ``i`` is explicit, its equation does not contain ``\mathbf{g}(t_i, \mathbf{Y}_i)``, and
+#   the division above is not possible. Then ``\mathbf{g}(t_i, \mathbf{Y}_i)`` must be
+#   evaluated directly, and the user must provide `implicit_evaluate!`. The same holds for
+#   multi-step schemes, which evaluate ``\mathbf{g}`` at the initial condition during
+#   their initialisation. For schemes with ``a_{ii} \neq 0`` in all stages,
+#   `implicit_evaluate!` is never called.
+#
+# In the examples considered here, ``\mathbf{g}`` does not depend on ``t`` (the ODE is
+# *autonomous*), so from here on we drop the ``t`` argument, and the time arguments of the
+# two functions are not used.
+#
+# Note that the ODE object contains no information about the scheme: the Butcher tableau
+# only determines *which* ``\mathbf{x}``, ``h``, and ``t`` are passed to `implicit_solve!`.
+# This is a setup step that is common to all time integrators that require an implicit solve.
+#
+# ### [Choosing the scheme: the implicit midpoint rule](@id NS2DTIMidpoint)
+# The scheme is chosen when the solution is initialised, with
+# `TimeIntegrators.initialise_scheme(y⁰, scheme)`. This returns a solution object holding the
+# initial condition ``\mathbf{y}^0`` and the scheme. Here we use the implicit midpoint rule,
+# `TimeIntegrators.IMPLICIT_MIDPOINT`: the one-stage method with ``a_{11} = \tfrac{1}{2}``,
+# ``b_1 = 1``, ``c_1 = \tfrac{1}{2}``. Any other diagonally implicit scheme of
+# `TimeIntegrators`, such as `TimeIntegrators.DIRK2`, could be used instead with the same ODE
+# object.
+#
+# For the implicit midpoint rule, the general algorithm reduces to:
+# - one stage equation, with ``\mathbf{x} = \mathbf{y}^n`` and ``h = \tfrac{\Delta t}{2}``:
+#   ``\mathbf{Y} - \tfrac{\Delta t}{2}\,\mathbf{g}(\mathbf{Y}) = \mathbf{y}^n``;
+# - the update ``\mathbf{y}^{n+1} = \mathbf{y}^n + \Delta t\,\mathbf{g}(\mathbf{Y})``. With
+#   ``\mathbf{g}(\mathbf{Y}) = (\mathbf{Y} - \mathbf{y}^n)/h``, this is
+#   ``\mathbf{y}^{n+1} = 2\mathbf{Y} - \mathbf{y}^n``.
+#
+# The last relation shows that ``\mathbf{Y} = \tfrac{1}{2}(\mathbf{y}^n + \mathbf{y}^{n+1})``
+# is the midpoint value. Inserted into the update, it gives the familiar form of the rule,
+# ``\mathbf{y}^{n+1} = \mathbf{y}^n + \Delta t\,\mathbf{g}\big(\tfrac{1}{2}(\mathbf{y}^n +
+# \mathbf{y}^{n+1})\big)``, i.e. exactly the scheme of the previous sections. Since
+# ``a_{11} \neq 0``, `implicit_evaluate!` is never called.
+#
+# ### [Integrating in time](@id NS2DTIScheme)
+# Each call `TimeIntegrators.time_integrate!(solution, ode, tⁿ, Δt)` advances the solution
+# object by one time step: for every stage it forms ``\mathbf{x}_i`` and ``h_i``, calls
+# `implicit_solve!`, and finally computes ``\mathbf{y}^{n+1}``. For the implicit midpoint rule
+# this is one call `implicit_solve!(Y, yⁿ, Δt/2, tⁿ + Δt/2)` followed by
+# ``\mathbf{y}^{n+1} = 2\mathbf{Y} - \mathbf{y}^n``. `TimeIntegrators.get_solution(solution)`
+# returns the current solution.
+#
+# Put together, a schematic implementation for a general ``\mathbf{g}`` reads:
+# ```julia
+# # Describing the ODE: the right-hand side and Newton's method for Y - h g(Y) = x.
+# function implicit_evaluate!(G, y, t)
+#     G .= g(y)
+# end
+#
+# function implicit_solve!(Y, x, h, t)
+#     Y .= x # initial guess
+#     for iteration in 1:max_iterations
+#         F = Y - h * g(Y) - x
+#         if norm(F) < tolerance
+#             break
+#         end
+#         Y .-= (I - h * dg_dy(Y)) \ F
+#     end
+# end
+#
+# ode = TimeIntegrators.define_diagonally_implicit_ode(implicit_solve!, implicit_evaluate!)
+#
+# # Choosing the scheme and integrating in time.
+# solution = TimeIntegrators.initialise_scheme(y⁰, TimeIntegrators.IMPLICIT_MIDPOINT)
+# t = 0.0
+# for step in 1:num_steps
+#     TimeIntegrators.time_integrate!(solution, ode, t, Δt) # yⁿ → yⁿ⁺¹
+#     t += Δt
+# end
+# y = TimeIntegrators.get_solution(solution)[:, 1] # the solution at the final time
+# ```
+# Here `g(y)` and its Jacobian `dg_dy(y)` stand for the problem at hand.
+#
+# We now carry out these steps for the Navier–Stokes equations.
+#
+# ### [Navier–Stokes: the right-hand side ``\mathbf{g}``](@id NS2DTIODE)
+# Before discretizing in time, the semi-discrete Navier–Stokes equations read
+# ```math
+# \mathsf{M}^1\frac{\mathrm{d}\mathbf{u}}{\mathrm{d}t} + \mathsf{R}(\mathbf{w})\,\mathbf{u}
+# + \nu\,\mathsf{C}\,\mathbf{w} - \mathsf{D}^{\mathsf{T}}\mathbf{P} = 0\,, \qquad
+# \mathsf{M}^0\mathbf{w} = \mathsf{C}^{\mathsf{T}}\mathbf{u}\,, \qquad
+# \mathsf{D}\,\mathbf{u} = 0\,,
+# ```
+# where ``\mathsf{R}(\mathbf{w})`` denotes the matrix ``\mathsf{R}(w_h)`` of the vorticity
+# field ``w_h`` with coefficients ``\mathbf{w}``. Solving the first equation for
+# ``\frac{\mathrm{d}\mathbf{u}}{\mathrm{d}t}``, we identify the right-hand side
+# ``\mathbf{g}``:
+# ```math
+# \frac{\mathrm{d}\mathbf{u}}{\mathrm{d}t} = \mathbf{g}(\mathbf{u}, \mathbf{w}, \mathbf{P})\,,
+# \qquad
+# \mathbf{g}(\mathbf{u}, \mathbf{w}, \mathbf{P}) = (\mathsf{M}^1)^{-1}\big(
+# -\mathsf{R}(\mathbf{w})\,\mathbf{u} - \nu\,\mathsf{C}\,\mathbf{w}
+# + \mathsf{D}^{\mathsf{T}}\mathbf{P}\big)\,,
+# ```
+# subject to the two remaining equations,
+# ```math
+# \mathsf{M}^0\mathbf{w} = \mathsf{C}^{\mathsf{T}}\mathbf{u}\,, \qquad
+# \mathsf{D}\,\mathbf{u} = 0\,.
+# ```
+# This is the ODE of the generic description with ``\mathbf{y} = \mathbf{u}``, with two
+# differences:
+# - ``\mathbf{g}`` also depends on the vorticity ``\mathbf{w}`` and the pressure
+#   ``\mathbf{P}``;
+# - two constraints accompany the ODE: the definition of the vorticity, and the
+#   divergence-free constraint ``\mathsf{D}\,\mathbf{u} = 0``.
+#
+# Neither ``\mathbf{w}`` nor ``\mathbf{P}`` has an evolution equation of its own. The
+# vorticity is determined by the velocity through its definition. The pressure is the
+# Lagrange multiplier of the divergence-free constraint, and takes the value for which the
+# constraint holds.
+#
+# ### [Navier–Stokes: solving the stage equation](@id NS2DTIStage)
+# With this ``\mathbf{g}``, the stage equation of the generic description, together with
+# the two constraints, becomes, for the stage value ``\mathbf{Y}``, the stage vorticity
+# ``\mathbf{w}`` and the stage pressure ``\mathbf{P}``,
+# ```math
+# \mathbf{Y} - h\,\mathbf{g}(\mathbf{Y}, \mathbf{w}, \mathbf{P}) = \mathbf{x}\,, \qquad
+# \mathsf{M}^0\mathbf{w} = \mathsf{C}^{\mathsf{T}}\mathbf{Y}\,, \qquad
+# \mathsf{D}\,\mathbf{Y} = 0\,.
+# ```
+# Each constraint adds one equation, which determines one additional unknown: the
+# vorticity definition determines ``\mathbf{w}``, and the divergence-free constraint
+# determines ``\mathbf{P}``. For the implicit midpoint rule, ``\mathbf{x} = \mathbf{u}^n``,
+# ``h = \tfrac{\Delta t}{2}``, and ``\mathbf{Y} = \mathbf{u}^{n+\frac{1}{2}}`` is the
+# midpoint velocity.
+#
+# To avoid the inverse ``(\mathsf{M}^1)^{-1}`` in ``\mathbf{g}``, we multiply the first
+# equation by ``\mathsf{M}^1/h``. This gives the nonlinear system for
+# ``(\mathbf{Y}, \mathbf{w}, \mathbf{P})`` that we solve:
+# ```math
+# \begin{aligned}
+# \mathsf{M}^1\frac{\mathbf{Y} - \mathbf{x}}{h} + \mathsf{R}(\mathbf{w})\,\mathbf{Y}
+# + \nu\,\mathsf{C}\,\mathbf{w} - \mathsf{D}^{\mathsf{T}}\mathbf{P} &= 0\,,\\
+# \mathsf{M}^0\mathbf{w} - \mathsf{C}^{\mathsf{T}}\mathbf{Y} &= 0\,,\\
+# \mathsf{D}\,\mathbf{Y} &= 0\,.
+# \end{aligned}
+# ```
+# For the implicit midpoint rule, this is the system of the
+# [Newton–Raphson section](@ref NS2DNewton), written for the midpoint values instead of the
+# values at ``t^{n+1}``. We solve it with the same Newton method. As
+# there, the derivative of ``\mathsf{R}(\mathbf{w})\,\mathbf{Y}`` with respect to
+# ``\mathbf{Y}`` is ``\mathsf{R}(\mathbf{w})``, and with respect to ``\mathbf{w}`` it is
+# ``\mathsf{Q}(\mathbf{Y})``, the matrix ``\mathsf{Q}`` of
+# [Assembling operators](@ref NS2DOperators) evaluated at the velocity field with
+# coefficients ``\mathbf{Y}``. The Jacobian is the same as before, without the factors
+# ``\tfrac{1}{2}``:
+# ```math
+# \mathsf{J} =
+# \begin{bmatrix}
+# \dfrac{1}{h}\mathsf{M}^1 + \mathsf{R}(\mathbf{w}) & \mathsf{Q}(\mathbf{Y}) + \nu\,\mathsf{C}
+# & -\mathsf{D}^{\mathsf{T}}\\[2mm]
+# -\mathsf{C}^{\mathsf{T}} & \mathsf{M}^0 & 0\\[1mm]
+# \mathsf{D} & 0 & 0
+# \end{bmatrix}.
+# ```
+# The function below performs this Newton solve, starting from ``\mathbf{Y} = \mathbf{x}``.
+# It returns the stage value ``\mathbf{Y}``, together with the pressure and the Newton
+# residuals for later inspection. It assumes ``h > 0``, which holds for every scheme whose
+# stages all have ``a_{ii} \neq 0``, such as the implicit midpoint rule.
+
+function solve_stage_equation(problem, ν, x, h, P_guess; tolerance=1e-11, max_iterations=15)
+    (; Λ⁰, Λ¹, M⁰, M¹, C, D, D_gauged, gauge, num_u, num_w, num_P) = problem
+    iY, iw, iP = 1:num_u, num_u .+ (1:num_w), (num_u + num_w) .+ (1:num_P)
+
+    z = [x; compute_vorticity(problem, x); P_guess] # initial guess: Y = x
+    residual_norms = Float64[]
+    for iteration in 1:max_iterations
+        Y, w, P = z[iY], z[iw], z[iP]
+        R, Q = convection_operators(
+            problem, Forms.FormField(Λ¹, Y, "u"), Forms.FormField(Λ⁰, w, "w")
+        )
+
+        ## Residual of the stage equation, the vorticity and the (gauged) continuity.
+        F_Y = M¹ * (Y .- x) ./ h .+ R * Y .+ ν .* (C * w) .- D' * P
+        F_w = M⁰ * w .- C' * Y
+        F_P = D_gauged * Y .+ gauge * P
+        F = [F_Y; F_w; F_P]
+        push!(residual_norms, norm(F))
+        if residual_norms[end] < tolerance
+            break
+        end
+
+        ## Jacobian, with block columns ordered as the unknowns (Y, w, P).
+        J_YY = M¹ ./ h .+ R
+        J_Yw = Q .+ ν .* C
+        J = [
+            J_YY J_Yw -D'
+            -C' M⁰ spzeros(num_w, num_P)
+            D_gauged spzeros(num_P, num_w) gauge
+        ]
+        z .-= J \ F
+    end
+    if residual_norms[end] ≥ tolerance
+        @warn "Newton did not converge" residual_norms
+    end
+
+    return z[iY], z[iP], residual_norms
+end
+
+# ### [Navier–Stokes: describing the ODE](@id NS2DTIDefine)
+# `implicit_evaluate!(G, y, t)` receives only the velocity ``\mathbf{y} = \mathbf{u}``, and
+# must return ``\mathbf{G} = \mathbf{g}(\mathbf{u}, \mathbf{w}, \mathbf{P})``. As in the
+# stage equation, the vorticity ``\mathbf{w}`` and the pressure ``\mathbf{P}`` follow from
+# the two constraints:
+# - the vorticity from its definition, ``\mathsf{M}^0\mathbf{w} =
+#   \mathsf{C}^{\mathsf{T}}\mathbf{u}``;
+# - the pressure from the divergence-free constraint. Since ``\mathsf{D}\,\mathbf{u} = 0``
+#   at all times, also ``\mathsf{D}\,\frac{\mathrm{d}\mathbf{u}}{\mathrm{d}t} =
+#   \mathsf{D}\,\mathbf{G} = 0``.
+#
+# Multiplying ``\mathbf{G} = \mathbf{g}(\mathbf{u}, \mathbf{w}, \mathbf{P})`` by
+# ``\mathsf{M}^1``, as for the stage equation, gives the system for
+# ``(\mathbf{G}, \mathbf{w}, \mathbf{P})``:
+# ```math
+# \begin{aligned}
+# \mathsf{M}^1\mathbf{G} + \mathsf{R}(\mathbf{w})\,\mathbf{u}
+# + \nu\,\mathsf{C}\,\mathbf{w} - \mathsf{D}^{\mathsf{T}}\mathbf{P} &= 0\,,\\
+# \mathsf{M}^0\mathbf{w} - \mathsf{C}^{\mathsf{T}}\mathbf{u} &= 0\,,\\
+# \mathsf{D}\,\mathbf{G} &= 0\,.
+# \end{aligned}
+# ```
+# Since ``\mathbf{u}`` is given, this system is linear. The second equation gives
+# ``\mathbf{w}`` directly; the first and third then form a linear saddle-point system for
+# ``(\mathbf{G}, \mathbf{P})``, in which we fix the pressure with the
+# [pressure gauge](@ref NS2DGauge). The function `evaluate_g` solves it. The implicit
+# midpoint rule never calls `implicit_evaluate!`, but schemes with a stage that has
+# ``a_{ii} = 0`` do.
+
+function evaluate_g(problem, ν, u)
+    (; Λ⁰, Λ¹, M¹, C, D, D_gauged, gauge, num_u, num_P) = problem
+    w = compute_vorticity(problem, u)
+    R, _ = convection_operators(
+        problem, Forms.FormField(Λ¹, u, "u"), Forms.FormField(Λ⁰, w, "w")
+    )
+
+    ## Solve M¹ G - Dᵀ P = -R(w) u - ν C w together with the (gauged) D G = 0.
+    A = [M¹ -D'; D_gauged gauge]
+    b = [-(R * u) .- ν .* (C * w); zeros(num_P)]
+    G_and_P = A \ b
+    G = G_and_P[1:num_u]
+
+    return G
+end
+
+# We now wrap `evaluate_g` and `solve_stage_equation` in the two functions expected by
+# `define_diagonally_implicit_ode`, `implicit_solve!(Y, x, h, t)` and
+# `implicit_evaluate!(G, y, t)`, and pass them to it. The two functions receive only these
+# arguments; everything else they need (the operators, the viscosity, a pressure to start
+# Newton from) is captured from the enclosing function. We also keep the latest pressure
+# and the Newton residuals in a small `stage_info` container, so that they can be
+# inspected after each step.
+
+function define_navier_stokes_ode(problem, ν)
+    stage_info = (P=zeros(problem.num_P), newton_residuals=Vector{Float64}[])
+
+    ## Solve the stage equation Y - h g(Y, w, P) = x with M⁰ w = Cᵀ Y and D Y = 0.
+    function implicit_solve!(Y, x, h, t)
+        Y_new, P, residuals = solve_stage_equation(problem, ν, x, h, stage_info.P)
+        Y .= Y_new # the first argument must be overwritten
+        stage_info.P .= P
+        push!(stage_info.newton_residuals, residuals)
+        return nothing
+    end
+
+    ## Evaluate the right-hand side G = g(u, w, P), with w and P from the constraints.
+    function implicit_evaluate!(G, y, t)
+        G .= evaluate_g(problem, ν, collect(vec(y))) # some schemes pass y as a one-column matrix
+        return nothing
+    end
+
+    ode = TimeIntegrators.define_diagonally_implicit_ode(
+        implicit_solve!, implicit_evaluate!
+    )
+
+    return ode, stage_info
+end
+
+# ### [Navier–Stokes: choosing the scheme and integrating in time](@id NS2DTILoop)
+# With the ODE described, we choose the scheme with `initialise_scheme`, passing the initial
+# velocity and `IMPLICIT_MIDPOINT`, and call `time_integrate!` once per time step, as in the
+# schematic implementation. The vorticity at the end follows from the velocity.
+
+function run_navier_stokes_time_integrators(problem, velocity::Function, ν, Δt, num_steps)
+    u₀ = project_velocity(problem, velocity)
+    ode, stage_info = define_navier_stokes_ode(problem, ν)
+    solution = TimeIntegrators.initialise_scheme(u₀, TimeIntegrators.IMPLICIT_MIDPOINT)
+
+    t = 0.0
+    for step in 1:num_steps
+        TimeIntegrators.time_integrate!(solution, ode, t, Δt)
+        t += Δt
+    end
+
+    u = TimeIntegrators.get_solution(solution)[:, 1]
+    w = compute_vorticity(problem, u)
+
+    return u, w, stage_info.P, stage_info
+end
+
+# ### [Comparison with the hand-written time loop](@id NS2DTICompare)
+# We rerun the Taylor–Green vortex up to ``t = 1`` with both implementations and compare the
+# results. Both solve the same equations with the same Newton method from the same initial
+# guess, so they should agree up to round-off.
+
+problem_ti = setup_navier_stokes((16, 16), (3, 3))
+Δt_ti, num_steps_ti = 0.05, 20
+u_hand, w_hand, P_hand, history_hand, _ = run_navier_stokes(
+    problem_ti, taylor_green_velocity, ν_tg, Δt_ti, num_steps_ti
+)
+u_ti, w_ti, P_ti, stage_info_ti = run_navier_stokes_time_integrators(
+    problem_ti, taylor_green_velocity, ν_tg, Δt_ti, num_steps_ti
+)
+
+relative_difference(a, b) = norm(a - b) / norm(b)
+@printf("relative difference in u = %.3e\n", relative_difference(u_ti, u_hand))
+@printf("relative difference in w = %.3e\n", relative_difference(w_ti, w_hand))
+@printf("relative difference in P = %.3e\n", relative_difference(P_ti, P_hand))
+println("Newton residuals, first time step (TimeIntegrators):")
+foreach(r -> @printf("    %.3e\n", r), stage_info_ti.newton_residuals[1])
+
+# The two implementations agree to round-off, and Newton again converges quadratically.
+#
+# Finally, we check that `evaluate_g` and `solve_stage_equation` describe the same ODE. For the
+# stage value ``\mathbf{Y}`` of the first time step of the implicit midpoint rule
+# (``\mathbf{x} = \mathbf{u}^0``, ``h = \tfrac{\Delta t}{2}``), with stage vorticity
+# ``\mathbf{w}`` and stage pressure ``\mathbf{P}``, the stage equation gives
+# ``\mathbf{g}(\mathbf{Y}, \mathbf{w}, \mathbf{P}) = (\mathbf{Y} - \mathbf{u}^0)/h``. We
+# compare this with `evaluate_g(problem, ν, Y)`, which computes ``\mathbf{w}`` and
+# ``\mathbf{P}`` from ``\mathbf{Y}`` through the constraints.
+
+u⁰_ti = project_velocity(problem_ti, taylor_green_velocity)
+h_ti = Δt_ti / 2
+Y_ti, _, _ = solve_stage_equation(problem_ti, ν_tg, u⁰_ti, h_ti, zeros(problem_ti.num_P))
+@printf(
+    "relative difference between g(Y, w, P) and (Y - u⁰)/h = %.3e\n",
+    relative_difference(evaluate_g(problem_ti, ν_tg, Y_ti), (Y_ti .- u⁰_ti) ./ h_ti)
+)
+
+# Both agree, so `implicit_evaluate!` and `implicit_solve!` describe the same ODE. Since this
+# description does not depend on the scheme, using another diagonally implicit scheme whose
+# stages all have ``a_{ii} \neq 0`` (for example `TimeIntegrators.DIRK2`) only requires
+# replacing `IMPLICIT_MIDPOINT` in `initialise_scheme`. Note, however, that the
+# conservation proofs of this example rely on the implicit midpoint rule: other schemes
+# generally do not conserve energy and enstrophy exactly.
 
 # ## [Summary and outlook](@id NS2DSummary)
 # We implemented the ``H(\mathrm{div})`` part of the formulation of [Zhang2022](@cite) in
