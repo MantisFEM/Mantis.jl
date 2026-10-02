@@ -3,7 +3,6 @@ module HierarchicalGeometryTests
 using Mantis
 using Mantis.Hierarchical
 using Test
-using InteractiveUtils
 
 ############################################################################################
 #                                          Setup                                           #

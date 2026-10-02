@@ -2,5 +2,5 @@
 include("Refinement.jl")
 # How parent/child bases are related
 include("Scalings.jl")
-
 include("HierarchicalSpace.jl")
+include("Adaptivity/Adaptivity.jl")
