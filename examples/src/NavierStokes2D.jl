@@ -858,25 +858,27 @@ end
 # step, and at the discrete energy and enstrophy balances over all steps.
 N = 16
 p = 3
-Δt=0.05
-T=1.0
+Δt = 0.05
+T = 1.0
 
-@printf(
-"========================================================== 
+@printf("========================================================== 
 = Verification: Taylor-Green vortex                      =
-==========================================================\n"
-)
+==========================================================\n")
 
 @printf(
-        "\n==> Max energy and enstrophy balance
+    "\n==> Max energy and enstrophy balance
       N  = %d x %d
       p  = %d 
       Δt = %.2f 
       T  = %.1f\n",
-      N, N, p, Δt, T
+    N,
+    N,
+    p,
+    Δt,
+    T
 )
 
-tg = taylor_green_errors((N, N), (p, p); Δt=0.05, T=1.0)
+tg = taylor_green_errors((N, N), (p, p); Δt=Δt, T=T)
 println("Newton residuals, first time step:")
 foreach(r -> @printf("    %.3e\n", r), tg.history.newton_residuals[1])
 @printf(
@@ -898,19 +900,21 @@ foreach(r -> @printf("    %.3e\n", r), tg.history.newton_residuals[1])
 # 2-form pressure, whose spaces contain polynomials of degree ``p-1`` in some directions,
 # to converge as ``\mathcal{O}(h^{p})``. The 0-form vorticity, of degree ``p``, should
 # converge as ``\mathcal{O}(h^{p+1})``.
-Δt=0.05
-T=1.0
+Δt = 0.05
+T = 1.0
 
 @printf(
-        "\n==> Convergence tests
+    "\n==> Convergence tests
       Δt = %.2f 
       T  = %.1f\n",
-      Δt, T
+    Δt,
+    T
 )
 
 mesh_sizes = [4, 8, 16, 32]
 errors = Dict(
-    p => [taylor_green_errors((n, n), (p, p); Δt=Δt, T=T) for n in mesh_sizes] for p in (2, 3)
+    p => [taylor_green_errors((n, n), (p, p); Δt=Δt, T=T) for n in mesh_sizes] for
+    p in (2, 3)
 )
 
 fig_convergence = Figure(; size=(1000, 380))
@@ -945,26 +949,31 @@ end
 display(GLMakie.Screen(), fig_convergence) #src
 DisplayAs.Text(DisplayAs.PNG(fig_convergence)) #hide
 
-# Here are
-# the computed vorticity, speed ``|\boldsymbol{u}|`` and total pressure (with its mean
-# removed) at ``t = 1`` on the ``16\times 16``, ``p=3`` mesh.
+# All fields converge at the expected rates; only the pressure errors on the coarsest mesh
+# are still outside the asymptotic range. For completeness, here are the computed
+# vorticity, speed ``|\boldsymbol{u}|`` and total pressure (with its mean removed) at
+# ``t = 1`` on the ``16\times 16``, ``p=3`` mesh.
 N = 16
 p = 3
-Δt=0.05
-T=1.0
+Δt = 0.05
+T = 1.0
 
 @printf(
-        "\n==> Snapshots at t = 1
+    "\n==> Snapshots at t = 1
       N  = %d x %d
       p  = %d 
       Δt = %.2f 
       T  = %.1f",
-      N, N, p, Δt, T
+    N,
+    N,
+    p,
+    Δt,
+    T
 )
 
 problem_tg = setup_navier_stokes((N, N), (p, p))
 u_tg, w_tg, P_tg, _, _ = run_navier_stokes(
-    problem_tg, taylor_green_velocity, ν_tg, Δt, T/Δt
+    problem_tg, taylor_green_velocity, ν_tg, Δt, round(Int, T / Δt)
 )
 
 fig_tg = Figure(; size=(1200, 360))
@@ -1008,37 +1017,41 @@ function shear_layer_velocity(x)
     return [u, v]
 end
 
-# We use quadratic splines (``p = 2``) on a ``60\times 60`` mesh and a time step
+# We use cubic splines (``p = 3``) on a ``30\times 30`` mesh and a time step
 # ``\Delta t = 0.2``. Because the implicit midpoint rule conserves energy, it is
 # unconditionally stable, so the time step is limited by accuracy only. With
-# ``|\boldsymbol{u}| \lesssim 1`` and element size ``h = 2\pi/60``, the CFL number
-# ``|\boldsymbol{u}|\Delta t/h`` is about ``2``, or about ``4`` when measured against the
-# resolution ``h/p`` of the quadratic splines.
+# ``|\boldsymbol{u}| \lesssim 1`` and element size ``h = 2\pi/30``, the CFL number
+# ``|\boldsymbol{u}|\Delta t/h`` is about ``1``, or about ``3`` when measured against the
+# resolution ``h/p`` of the cubic splines. This mesh is deliberately coarse, so that the
+# example runs quickly; it is enough to see the roll-up, and also the effects of
+# under-resolution discussed below.
 #
 # Set `show_progress = true` to print, at every time step, the Newton residuals and the
 # conservation diagnostics (see [The time loop](@ref NS2DTimeLoop)). To keep this page
 # short, it is switched off here.
 
-show_progress = false  # select true to show all diagnostics or false to show only minimal info
+show_progress = false # set to true to print the diagnostics of every time step
+show_progress = true # when running this file directly, always print them #src
 N = 30  # there will be N² elements
 p = 3   # polynomial degree of basis functions (with maximal regularity) 
 Δt_sl = 0.2  # time step size
-@printf(
-"\n\n========================================================== 
+@printf("\n\n========================================================== 
 = Shear layer roll up                                    =
-==========================================================\n"
-)
+==========================================================\n")
 
 @printf(
-        "\n==> Full simulation
+    "\n==> Full simulation
       N  = %d x %d
       p  = %d 
-      Δt = %.2f", 
-      N, N, p, Δt_sl
+      Δt = %.2f",
+    N,
+    N,
+    p,
+    Δt_sl
 )
 
 problem_sl = setup_navier_stokes((N, N), (p, p))
-snapshot_steps = [0, 4/Δt_sl, 6/Δt_sl, 8/Δt_sl] # t = 0, 4, 6, 8
+snapshot_steps = round.(Int, [0, 4, 6, 8] ./ Δt_sl) # t = 0, 4, 6, 8
 u_sl, w_sl, P_sl, history_sl, snapshots_sl = run_navier_stokes(
     problem_sl,
     shear_layer_velocity,
@@ -1069,9 +1082,12 @@ Colorbar(fig_sl[:, 3]; colormap=:balance, limits=(-5, 5), label="vorticity")
 display(GLMakie.Screen(), fig_sl) #src
 DisplayAs.Text(DisplayAs.PNG(fig_sl)) #hide
 
-# Up to ``t = 6`` the roll-up into two spiral vortices connected by thin braids is well
-# resolved. By ``t = 8`` the filaments have become thinner than the mesh can represent,
-# and grid-scale oscillations appear. This is the expected behaviour of a scheme without
+# The shear layers roll up into two vortices connected by thin braids of vorticity. On
+# this coarse mesh, the braids soon become thinner than the mesh can represent:
+# grid-scale oscillations are already visible at ``t = 4``. By ``t = 6`` they fill the
+# domain, and by ``t = 8`` the braids break up into small spurious vortices. On a finer
+# mesh (for example ``60\times 60`` elements with ``p = 2``) the roll-up stays clean
+# until about ``t = 6``. This is the expected behaviour of a scheme without
 # numerical dissipation on an under-resolved flow, not an instability. The enstrophy that
 # the roll-up transfers to ever smaller scales cannot leave the resolved scales, so it
 # appears as small-scale noise. Energy and enstrophy remain bounded by construction.
