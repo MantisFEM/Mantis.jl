@@ -88,8 +88,8 @@ CTP_num_els = FunctionSpaces.get_num_elements(CTP)
 
 CTS = FunctionSpaces.TensorProductTwoScaleOperator(CTP, FTP, (TS1, TS2))
 
-basis1_support = FunctionSpaces.get_support(CTP, 57)
-basis2_support = FunctionSpaces.get_support(CTP, 98)
+basis1_support = collect(FunctionSpaces.get_support(CTP, 57))
+basis2_support = collect(FunctionSpaces.get_support(CTP, 98))
 coarse_elements_to_refine = vcat(basis1_support, basis2_support)
 refined_elements = vcat(
     FunctionSpaces.get_element_children.(Ref(CTS), coarse_elements_to_refine)...

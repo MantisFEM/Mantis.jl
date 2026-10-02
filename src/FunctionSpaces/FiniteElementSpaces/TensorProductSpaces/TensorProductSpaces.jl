@@ -208,8 +208,8 @@ function get_num_basis(space::TensorProductSpace)
     #=
     The `TensorProducts` module already implements a `get_num_objects` by checking the size
     of the `CartesianIndices` iterator.
-    However, `TensorProducts` needs to call `get_num_objects` on the factor geometries, which
-    is why there is also a `TensorProducts.get_num_objects(space::AbstractFESpace)`.
+    However, `TensorProducts` needs to call `get_num_objects` on the factor geometries,
+    which is why there is also a `TensorProducts.get_num_objects(space::AbstractFESpace)`.
     =#
     return TensorProducts.get_num_objects(get_tensor_product(space))
 end
@@ -276,6 +276,8 @@ end
 function TensorProducts.get_factor_ids(space::TensorProductSpace, basis_id::Int)
     return get_factor_basis_ids(space, basis_id)
 end
+
+TensorProducts.get_lin_ids(space::TensorProductSpace) = get_lin_num_basis(space)
 
 """
     get_factor_basis_ids(space::TensorProductSpace, basis_id::Int)
@@ -495,12 +497,9 @@ end
 
 function get_support(space::TensorProductSpace, basis_id::Int)
     factor_supports = get_factor_supports(space, basis_id)
-    iterator = Iterators.product(factor_supports...)
+    product = Iterators.product(factor_supports...)
     lin_num_elements = get_lin_num_elements(space)
-    support = Vector{Int}(undef, length(iterator))
-    for (i, el) in enumerate(iterator)
-        support[i] = lin_num_elements[el...]
-    end
+    support = Iterators.flatten(Iterators.map(e -> lin_num_elements[e...], product))
 
     return support
 end
@@ -733,6 +732,12 @@ function _get_key_info(key, factor_manifold_indices, space)
     space_der_id = get_derivative_idx(factor_key)
 
     return space_der_order, space_der_id
+end
+
+function assemble_global_extraction_matrix(space::TensorProductSpace)
+    extraction_factors = map(assemble_global_extraction_matrix, get_factor_spaces(space))
+
+    return kron(Iterators.reverse(extraction_factors)...)
 end
 
 # Methods for tensor product B-spline spaces

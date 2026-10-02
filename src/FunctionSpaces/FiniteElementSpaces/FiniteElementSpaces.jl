@@ -615,11 +615,7 @@ degrees of freedom to the local degrees of freedom.
 - `SparseMatrixCSC{Float64}`: The global extraction matrix that maps global dofs to local dofs
 """
 function assemble_global_extraction_matrix(space::AbstractFESpace)
-    throw(
-        ArgumentError(
-            "'assemble_global_extraction_matrix' not implemented for $(typeof(space))"
-        ),
-    )
+    return throw(MethodError(assemble_global_extraction_matrix, (space,)))
 end
 
 """
@@ -737,6 +733,27 @@ function _compute_parametric_geometry_coeffs(
     return coeffs
 end
 
+"""
+    get_basis_integrals(space::AbstractFESpace)
+
+Get the integrals of the basis functions of `space` over the entire domain.
+
+# Arguments
+- `space::AbstractFESpace`: A finite element space.
+
+# Returns
+- `::Vector{Float64}`: The integrals of the basis functions.
+"""
+function get_basis_integrals(space::AbstractFESpace)
+    basis_integrals = zeros(Float64, get_num_basis(space))
+    for el_id in 1:get_num_elements(space)
+        global_basis_indices = get_basis_indices(space, el_id)
+        basis_integrals[global_basis_indices] += get_basis_integrals(space, el_id)
+    end
+
+    return basis_integrals
+end
+
 include("ExtractionOperator.jl")
 
 include("OtherSpaces/RationalFESpaces.jl")
@@ -748,7 +765,4 @@ include("TensorProductSpaces/TensorProductSpaces.jl")
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
 
-include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
-
-include("Hierarchical/Hierarchical.jl")
-
+#include("TwoScaleRelations/AbstractTwoScaleRelations.jl")

@@ -14,7 +14,7 @@ import ToeplitzMatrices
 using ..Geometry
 using ..Points
 using ..GeneralHelpers
-using ..Hierarchy
+using ..Hierarchical
 using ..TensorProducts
 
 """
@@ -75,10 +75,14 @@ function check_geometry(space_1::AbstractFunctionSpace, space_2::AbstractFunctio
 end
 
 # TensorProducts module interface
-TensorProducts.get_num_objects(space::AbstractFESpace) = get_num_basis(space)
+TensorProducts.get_num_objects(space::AbstractFunctionSpace) = get_num_basis(space)
+# Hierarchical module interface
+Hierarchical.get_num_objects(space::AbstractFunctionSpace) = get_num_basis(space)
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
-include("AdaptiveRefinement/AdaptiveRefinement.jl")
+#include("AdaptiveRefinement/AdaptiveRefinement.jl")
+
+include("Hierarchical/Hierarchical.jl")
 
 # helper functions for convenience
 include("./FunctionSpaceHelpers.jl")

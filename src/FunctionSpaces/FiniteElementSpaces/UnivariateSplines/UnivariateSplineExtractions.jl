@@ -442,3 +442,158 @@ function build_sparse_nullspace(constraint::SparseArrays.SparseVector{Float64})
 
     return SparseArrays.spdiagm(q - 1, q, 0 => dd[:, 1], 1 => dd[:, 2])
 end
+
+"""
+    extract_and_relate_gtbspline_to_bspline(
+        spline_spaces::NTuple{m, F}, regularity::Vector{Int}
+    ) where {m, F <: Union{BSplineSpace, RationalFESpace}}
+
+Compute the extraction coefficients of GTB-Spline basis functions in terms of (rational)
+B-spline basis functions.
+
+# Arguments
+- `spline_spaces::NTuple{m,F}`: Collection of (rational) B-spline spaces.
+- `regularity::Vector{Int}`: Smoothness to be imposed at patch interfaces.
+
+# Returns
+- `ExtractionOperator{Indices{1, TE, TI, TJ}}`: The extraction operator containing the
+    coefficients. See [`ExtractionOperator`](@ref) for the details.
+- `Vector{Vector{Int}}`: A mapping that stores which GTB-splines are linear combinations
+    of which B-splines.
+"""
+function extract_and_relate_gtbspline_to_bspline(
+    spline_spaces::NTuple{m, F}, regularity::Vector{Int}
+) where {m, F <: Union{BSplineSpace, RationalFESpace}}
+    # Construct cumulative sum of all B-spline dimensions
+    spl_dims = zeros(Int, m + 1)
+    for i in 2:(m + 1)
+        spl_dims[i] = spl_dims[i - 1] + get_num_basis(spline_spaces[i - 1])
+    end
+
+    # Number of elements for all spline_spaces
+    bspl_nels = [get_num_elements(spline_spaces[i]) for i in 1:m]
+    nel = sum(bspl_nels)
+
+    # Initialize global extraction matrix
+    H = SparseArrays.sparse(
+        1:spl_dims[m + 1],
+        1:spl_dims[m + 1],
+        ones(Float64, spl_dims[m + 1]),
+        spl_dims[m + 1],
+        spl_dims[m + 1],
+    )
+
+    # Loop over all internal patch interfaces and update extraction by imposing smoothness
+    for i in 1:(m - 1)
+        # Regularity at this interface
+        r = regularity[i]
+
+        # Smoothness constraint matrix
+        KL = _evaluate_all_at_point(spline_spaces[i], bspl_nels[i], 1.0, r)
+        SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, KL)
+        KR = _evaluate_all_at_point(spline_spaces[i + 1], 1, 0.0, r)
+        SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, KR)
+        # element sizes where constraints are evaluated
+        h_L = get_element_measure(spline_spaces[i], bspl_nels[i])
+        h_R = get_element_measure(spline_spaces[i + 1], 1)
+        # scale the constraints by the element sizes and findnz values
+        scaling_L = [h_L^(-j) for j in 0:r]
+        scaling_R = [h_R^(-j) for j in 0:r]
+        KL = SparseArrays.findnz(SparseArrays.sparse(KL * LinearAlgebra.diagm(scaling_L)))
+        KR = SparseArrays.findnz(SparseArrays.sparse(KR * LinearAlgebra.diagm(scaling_R)))
+        # join the constraints together
+        rows = [KL[1]; KR[1] .+ (spl_dims[i + 1] - spl_dims[i])]
+        cols = [KL[2]; KR[2]]
+        vals = [-KL[3]; KR[3]]
+        K = SparseArrays.sparse(rows, cols, vals, (spl_dims[i + 2] - spl_dims[i]), r + 1)
+
+        # Update local extraction matrix by building double-diagonal nullspace of constraints
+        L = H[:, (spl_dims[i] + 1):spl_dims[i + 2]] * K
+        for j in 0:r
+            Hbar = build_sparse_nullspace(L[:, j + 1])
+            H = Hbar * H
+            L = Hbar * L
+        end
+    end
+
+    # Impose periodicity if desired for i = m
+    if regularity[m] > -1
+        r = regularity[m]
+        if size(H, 1) >= 2 * (r + 1)
+            Hper = circshift(H, r + 1)
+
+            # smoothness constraints
+            KL = _evaluate_all_at_point(spline_spaces[m], bspl_nels[m], 1.0, r)
+            SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, KL)
+            KR = _evaluate_all_at_point(spline_spaces[1], 1, 0.0, r)
+            SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, KR)
+            # element sizes where constraints are evaluated
+            h_L = get_element_measure(spline_spaces[m], bspl_nels[m])
+            h_R = get_element_measure(spline_spaces[1], 1)
+            # scale the constraints by the element sizes and findnz values
+            scaling_L = [h_L^(-j) for j in 0:r]
+            scaling_R = [h_R^(-j) for j in 0:r]
+            KL = SparseArrays.findnz(
+                SparseArrays.sparse(KL * LinearAlgebra.diagm(scaling_L))
+            )
+            KR = SparseArrays.findnz(
+                SparseArrays.sparse(KR * LinearAlgebra.diagm(scaling_R))
+            )
+
+            rows = [KL[1]; KR[1] .+ (spl_dims[m + 1] - spl_dims[m])]
+            cols = [KL[2]; KR[2]]
+            vals = [-KL[3]; KR[3]]
+            K = SparseArrays.sparse(
+                rows,
+                cols,
+                vals,
+                (spl_dims[m + 1] - spl_dims[m] + spl_dims[2] - spl_dims[1]),
+                r + 1,
+            )
+            Lper =
+                Hper[
+                    :, [(spl_dims[m] + 1):spl_dims[m + 1]; (spl_dims[1] + 1):spl_dims[2]]
+                ] * K
+            for j in 0:r
+                Hbar = build_sparse_nullspace(Lper[:, j + 1])
+                Hper = Hbar * Hper
+                Lper = Hbar * Lper
+            end
+            H = Hper
+        end
+    end
+
+    # Remove small values obtained as a result of round-off errors.
+    SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, H)
+
+    # Convert global extraction matrix to element local extractions.
+    # The matrix is transposed so that [spline_spaces] * [extraction] = [GTB-splines].
+    HT = permutedims(H)
+    extraction_coefficients = Vector{Tuple{Matrix{Float64}}}(undef, nel)
+    basis_indices = Vector{Indices{1, Vector{Int}, UnitRange{Int}}}(undef, nel)
+    count = 0
+    for i in 1:m
+        for j in 1:bspl_nels[i]
+            cols_ij = get_basis_indices(spline_spaces[i], j)
+            eij = SparseArrays.findnz(H[:, cols_ij .+ spl_dims[i]])
+            # Unique indices for non-zero rows and columns
+            unique_eij = unique(eij[1])
+            basis_indices[count + 1] = Indices(unique_eij, (1:length(unique_eij),))
+            # Matrix of coefficients
+            extraction_coefficients[count + 1] = (
+                Matrix(
+                    HT[cols_ij .+ spl_dims[i], get_basis_indices(basis_indices[count+1])]
+                ),
+            )
+            count += 1
+        end
+    end
+    # Store which GTB-splines are linear combinations of which B-splines
+    gtb_spline_to_b_spline_map = [
+        SparseArrays.findnz(view(HT, :, i))[1] for i in 1:size(HT, 2)
+    ]
+
+    return ExtractionOperator(extraction_coefficients, basis_indices, nel, size(HT, 2)),
+        gtb_spline_to_b_spline_map
+end
+
