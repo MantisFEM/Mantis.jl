@@ -8,7 +8,7 @@ One of the most distinguishing features of `Mantis` is its ability to work with 
 The `Forms` module provides all the required tools to use differential forms in `Mantis`.
 
 ## What is a differential form in `Mantis`?
-The top-level type within the `Forms` module is the `AbstractForm{manifold_dim, form_rank, expression_rank}` type. Every expression involving forms (see [Creating Forms](@ref FormsCreation)) and operations on forms (see [Operations on Forms](@ref FormsOperations)) will be an `AbstractForm`. 
+The top-level type within the `Forms` module is the [`AbstractForm`](@ref).
 There are two exceptions to this rule. 
 The first exception is an operation that returns a real value, such as an integral, see [Operators returning a real value](@ref FormsRealValuedOperators).
 The second exception is an operation that returns a vector, such as the sharp, see [Operators returning a vector](@ref FormsOperationsToVectors)
@@ -22,12 +22,13 @@ AbstractFormField
 AbstractFormSpace
 ```
 
-Every `AbstractForm` has three type parameters which say something about the form. 
+Every `AbstractForm` has four type parameters which say something about the form. 
 You can always call the following three methods on any `AbstractForm` to get these type parameters.
 ```@docs
 get_manifold_dim
 get_form_rank
 get_expression_rank
+get_source_location
 ```
 
 The above abstract types are used in function signatures, but cannot be instantiated. 
@@ -84,24 +85,21 @@ get_expression
 ```
 
 ## [Pullbacks](@id FormsPullbacks)
-In the docstrings of the above spaces and fields, the pullback object already briefly appeared.
-One of the benefits of working with differential forms is the ability to pullback a form. 
+In the docstrings of the above spaces and fields, the source location already appeared. 
+The source location is useful to understand where the values coming from [`evaluate`](@ref) live. 
+You can setup a pullback to change that location. 
+Working with pullbacks is one of the benefits of working with differential forms.
 `Mantis` makes this pullback explicit using the following abstract type.
 ```@docs
 AbstractPullback
 ```
-The above forms (by default) are pulled back using the standard differential form pullback:
+Differential forms have a well-defined pullback, which is represented by the following pullback.
 ```@docs
 FormPullback
 ```
 
-You can always obtain the pullback using the following method.
-```@docs
-get_pullback
-```
-
-In the above pullbacks, the location of the source and destination need to be specified. 
-This is done using the following abstract types.
+In the above pullback, the location of the destination need to be specified. 
+This is again done using the following abstract types, just like the specification of the source locations.
 ```@docs
 AbstractPullbackLocation
 Physical
@@ -122,11 +120,6 @@ Currently, `Mantis` provides one other pullback.
 Note that operator support using this pullback may be limited.
 ```@docs
 ComponentWisePullback
-```
-
-You can always obtain the pullback type using the following getter.
-```@docs
-get_pullback_type
 ```
 
 :::

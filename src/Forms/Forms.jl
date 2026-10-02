@@ -341,23 +341,23 @@ function get_estimated_nnz_per_elem(form::AbstractFormSpace)
 end
 
 """
-    get_max_local_dim(form_space::AbstractFormSpace)
+    get_max_local_dim(form::AbstractFormSpace)
 
 Compute an upper bound of the element-local dimension of `form_space`. Note that this is not
 necessarily a tight upper bound.
 
 # Arguments
-- `form_space::AbstractFormSpace`: The form space.
+- `form::AbstractFormSpace`: The form space.
 
 # Returns
 - `::Int`: The element-local upper bound.
 """
-function get_max_local_dim(form_space::AbstractFormSpace)
-    return FunctionSpaces.get_max_local_dim(get_fe_space(form_space))
+function get_max_local_dim(form::AbstractFormSpace)
+    return get_max_local_dim(get_form(form))
 end
 
 """
-    get_fe_space(form::FS) where {FS <: AbstractForm}
+    get_fe_space(form::AbstractForm)
 
 Returns the finite element space associated with the given form. Note that this function
 recurses untill it finds a form (usually a [`FormSpace`](@ref)) which has an underlying
@@ -369,11 +369,7 @@ finite element space.
 # Returns
 - `<:FunctionSpaces.AbstractFESpace`: The finite element space.
 """
-function get_fe_space(form::FS) where {FS <: AbstractForm}
-    if hasfield(FS, :fem_space)
-        return form.fem_space
-    end
-
+function get_fe_space(form::AbstractForm)
     return get_fe_space(get_form(form))
 end
 
