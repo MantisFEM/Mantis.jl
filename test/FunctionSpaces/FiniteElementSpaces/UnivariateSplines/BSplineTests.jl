@@ -208,4 +208,21 @@ coeffs_N = LHS \ RHS_N
 @test all(isapprox.(abs.(LHS * coeffs_P - RHS_P), 0.0, atol=1e-10))
 @test all(isapprox.(abs.(LHS * coeffs_N - RHS_N), 0.0, atol=1e-14))
 
+# B-splines on a curve in the plane, the half circle θ ↦ (cos θ, sin θ): the physical
+# geometry has a larger image dimension than the parametric geometry. The basis functions
+# are the same as on the parametric geometry.
+curve_parametric = Geometry.create_cartesian_box((0.0,), (1.0π,), (16,))
+half_circle = Geometry.Mapping(
+    (1, 2), x -> [cos(x[1]), sin(x[1])], x -> [-sin(x[1]), cos(x[1])]
+)
+B_curve = FunctionSpaces.BSplineSpace(curve_parametric, half_circle, 2, 1)
+B_curve_parametric = FunctionSpaces.BSplineSpace(curve_parametric, 2, 1)
+@test Geometry.get_image_dim(FunctionSpaces.get_geometry(B_curve)) == 2
+@test FunctionSpaces.get_num_basis(B_curve) == 18
+ξ = Points.TensorProductPoints(([0.0, 0.3, 1.0],))
+for element_id in 1:16
+    @test FunctionSpaces.evaluate(B_curve, element_id, ξ, 1) ==
+        FunctionSpaces.evaluate(B_curve_parametric, element_id, ξ, 1)
+end
+
 end
