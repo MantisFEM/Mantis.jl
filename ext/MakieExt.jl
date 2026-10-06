@@ -109,8 +109,11 @@ function sanitise_label(label_prefix::AbstractString, main_label::AbstractString
     return label
 end
 function sanitise_label(label_prefix::LaTeXStrings.LaTeXString, main_label::AbstractString)
-    # Remove trailing $ and add it back at the end.
-    label = LaTeXStrings.LaTeXString(label_prefix.s[1:(end - 1)] * main_label * "\$")
+    # Remove trailing $ and add it back at the end. The braces keep multi-digit labels
+    # together, for example when the prefix ends with a subscript `_`.
+    label = LaTeXStrings.LaTeXString(
+        label_prefix.s[1:(end - 1)] * "{" * main_label * "}" * "\$"
+    )
 
     return label
 end
