@@ -94,6 +94,14 @@ get_estimated_nnz_per_elem(form::FormSpace) = get_max_local_dim(form)
 
 get_geometry(form::FormSpace) = FunctionSpaces.get_geometry(get_fe_space(form))
 
+function get_max_local_dim(form::FormSpace)
+    return FunctionSpaces.get_max_local_dim(get_fe_space(form))
+end
+
+function get_fe_space(form::FormSpace)
+    return form.fem_space
+end
+
 function get_num_basis(form::FormSpace)
     return FunctionSpaces.get_num_basis(get_fe_space(form))
 end
