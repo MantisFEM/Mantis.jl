@@ -23,9 +23,9 @@ nodes2 = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_legendre(
 ll_poly = FunctionSpaces.Lagrange(nodes)
 gl_poly = FunctionSpaces.Lagrange(nodes2)
 el_poly = FunctionSpaces.Edge(nodes)
-B1LL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, ll_poly, fill(-1, 26))
-B1GL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, gl_poly, fill(-1, 26))
-B1ELL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, el_poly, fill(-1, 26))
+B1LL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, ll_poly, fill(-1, 26))
+B1GL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, gl_poly, fill(-1, 26))
+B1ELL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, el_poly, fill(-1, 26))
 
 # Rational
 R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])

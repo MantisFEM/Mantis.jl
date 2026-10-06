@@ -225,4 +225,12 @@ for element_id in 1:16
         FunctionSpaces.evaluate(B_curve_parametric, element_id, ξ, 1)
 end
 
+# The physical and the parametric geometry must have the same number of elements.
+@test_throws ArgumentError FunctionSpaces.BSplineSpace(
+    Geometry.create_cartesian_box((0.0,), (1.0,), (8,)),
+    curve_parametric,
+    FunctionSpaces.Bernstein(2),
+    [-1; fill(1, 15); -1],
+)
+
 end

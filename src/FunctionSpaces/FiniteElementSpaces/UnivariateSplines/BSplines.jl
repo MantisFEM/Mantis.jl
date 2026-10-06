@@ -40,6 +40,23 @@ struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
         G <: Geometry.AbstractGeometry{1, image_dim, 1},
         GP <: Geometry.CartesianGeometry{1, 1, 1},
     }
+        num_elements = Geometry.get_num_elements(geometry)
+        num_parametric_elements = Geometry.get_num_elements(parametric_geometry)
+        if num_elements != num_parametric_elements
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "The geometry and the parametric geometry must have the same ",
+                        "number of elements, but they have ",
+                        num_elements,
+                        " and ",
+                        num_parametric_elements,
+                        " elements, respectively.",
+                    ),
+                ),
+            )
+        end
+
         polynomial_degree = get_polynomial_degree(polynomials)
         if polynomial_degree < 0
             throw(
