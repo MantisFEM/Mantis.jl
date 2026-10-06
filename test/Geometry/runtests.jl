@@ -22,6 +22,9 @@ end
 	include("HierarchicalGeometryTests.jl")
 end
 
+@testset "GeometryHelpers" begin
+    include("GeometryHelpersTests.jl")
+end
 @testset "Metric" begin
     include("MetricTests.jl")
 end
