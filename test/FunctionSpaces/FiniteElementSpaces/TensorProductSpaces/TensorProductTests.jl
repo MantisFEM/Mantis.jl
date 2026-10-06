@@ -364,4 +364,11 @@ B_z_fine = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (6,), (1,), (0,))
     (B_xy_coarse, B_z_fine), box, box
 )
 
+# The Greville points of a tensor product of B-spline spaces are those of its factors.
+@test FunctionSpaces.get_greville_points(TP_curved) == (
+    FunctionSpaces.get_greville_points(B_x)..., FunctionSpaces.get_greville_points(B_y)...
+)
+@test FunctionSpaces.get_greville_points(TP_curved)[1] ≈
+    [0.0, 0.125, 0.375, 0.625, 0.875, 1.0]
+
 end
