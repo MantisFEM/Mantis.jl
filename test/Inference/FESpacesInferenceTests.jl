@@ -58,6 +58,18 @@ B1_3D = FunctionSpaces.create_bspline_space(
     (1, 1, 1),
 )
 
+# Spaces created on a given geometry: a curve in the plane (the half circle) and a mapped
+# planar domain.
+half_circle = Geometry.MappedGeometry(
+    Geometry.create_cartesian_box((0.0,), (1.0π,), (8,)),
+    Geometry.Mapping((1, 2), x -> [cos(x[1]), sin(x[1])], x -> [-sin(x[1]), cos(x[1])]),
+)
+curved_square = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (3, 4))
+B1_curve = FunctionSpaces.create_bspline_space(half_circle, (2,), (1,))
+TP_curved = FunctionSpaces.create_bspline_space(curved_square, (2, 2), (1, 1))
+@test_opt FunctionSpaces.create_bspline_space(half_circle, (2,), (1,))
+@test_opt FunctionSpaces.create_bspline_space(curved_square, (2, 2), (1, 1))
+
 # DirectSumSpace
 # Reduction test, single-component, single-patch, single element, 1D.
 DS1 = FunctionSpaces.DirectSumSpace((B1,))
@@ -85,6 +97,8 @@ spaces = (
     TP_R1mR1mR1m,
     TP_B1mR1m,
     B1_3D,
+    B1_curve,
+    TP_curved,
     DS1,
     DS_B1mB1m,
     DS_TP1mTP1m,
