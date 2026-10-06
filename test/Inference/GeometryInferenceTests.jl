@@ -209,6 +209,10 @@ const xi_11D_set = Points.PointSet((
 @test_opt Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (3, 4))
 @test_opt Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (3, 4); c=0.2)
 @test_opt Geometry.create_curvilinear_mapping((0.0, 0.0, 0.0), (1.0, 1.0, 1.0), 0.2)
+@test_opt Geometry.create_archimedean_spiral(8)
+@test_opt Geometry.create_annulus_sector((3, 4))
+@test_opt Geometry.create_helicoid((3, 4))
+@test_opt Geometry.create_helical_duct((2, 6, 2))
 @test_opt Geometry.get_parametric_geometry(
     Geometry.create_cartesian_box((0.0, 0.0), (1.0, 1.0), (3, 4))
 )
