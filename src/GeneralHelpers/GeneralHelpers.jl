@@ -93,8 +93,8 @@ space, then its `k`-th derivatives will all be stored in the location `local_bas
 Moreover, the `k`-th derivative corresponding to the key `[i₁,i₂,...,iₙ]` in the location
 `local_basis[k+1][m]` where:
 - `m = 1` when `iⱼ = 0` for all `j`, i.e., for basis function values;
-- `m = 1+r` when `iⱼ = 0` for all `j` except for `j = r` and `iⱼ = 1`, i.e.,
-    for the first derivative w.r.t. the `j`-th canonical coordinate;
+- `m = r` when `iⱼ = 0` for all `j` except for `j = r` and `iⱼ = 1`, i.e.,
+    for the first derivative w.r.t. the `r`-th canonical coordinate;
 - in all other cases (i.e., when `k>1`),  the value of `m` is equal to `l`
     if `[i₁,i₂,...,iₙ]` is the `l`-th key returned by the function
     `integer_sums(k, Val(manifold_dim))`.
