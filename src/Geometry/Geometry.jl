@@ -354,7 +354,7 @@ function get_geometry(geometry::AbstractGeometry, patch_id::Int)
 end
 
 function get_parametric_geometry(geometry::AbstractGeometry)
-    return throw(MethodError(get_parametric_geometry, geometry))
+    return throw(MethodError(get_parametric_geometry, (geometry,)))
 end
 
 """
