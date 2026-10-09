@@ -71,17 +71,20 @@ function test_3d_evaluations(
     geometry = Forms.get_geometry(u⁰)
     f⁰ = Forms.AnalyticalFormField(0, scalar_valued_3d_func, geometry, "f⁰")
     f¹ = Forms.AnalyticalFormField(1, vector_valued_3d_func, geometry, "f¹")
+    f² = Forms.AnalyticalFormField(2, vector_valued_3d_func, geometry, "f²")
     f³ = Forms.AnalyticalFormField(3, scalar_valued_3d_func, geometry, "f³")
 
     ∫⁰ = ∫(u⁰ ∧ ★(u⁰), dΩ)
     ∫¹ = ∫(u¹ ∧ ★(u¹), dΩ)
     ∫f⁰ = ∫(f⁰ ∧ ★(f⁰), dΩ)
     ∫f¹ = ∫(f¹ ∧ ★(f¹), dΩ)
+    ∫f² = ∫(f² ∧ ★(f²), dΩ)
     ∫f³ = ∫(f³ ∧ ★(f³), dΩ)
 
     ∫⁰_eval = 0.0
     ∫f⁰_eval = 0.0
     ∫f¹_eval = 0.0
+    ∫f²_eval = 0.0
     ∫f³_eval = 0.0
     integrated_metric_1 = zeros(manifold_dim, manifold_dim)
     for element_id in 1:Forms.get_num_elements(u⁰)
@@ -104,13 +107,24 @@ function test_3d_evaluations(
         @test isapprox(sum(Forms.evaluate(∫¹, element_id)[1]), reference_result, atol=1e-12)
         ∫f⁰_eval += Forms.evaluate(∫f⁰, element_id)[1][1]
         ∫f¹_eval += Forms.evaluate(∫f¹, element_id)[1][1]
+        ∫f²_eval += Forms.evaluate(∫f², element_id)[1][1]
         ∫f³_eval += Forms.evaluate(∫f³, element_id)[1][1]
+        
+        # In the physical domain (Euclidean, Cartesian coordinates x),
+        # ★(f₁dx²∧dx³ + f₂dx³∧dx¹ + f₃dx¹∧dx²) = f₁dx¹ + f₂dx² + f₃dx³, so ★f² and f¹, built
+        # from the same components, are the same 1-form, and their pull-backs to the
+        # canonical element, returned by evaluate, must be equal.
+        nodes = Quadrature.get_nodes(dΩₑ)
+        star_f²_eval = Forms.evaluate(★(f²), element_id, nodes)[1]
+        f¹_eval = Forms.evaluate(f¹, element_id, nodes)[1]
+        @test all(isapprox.(vec.(star_f²_eval), f¹_eval, atol=1e-10))
     end
 
     int_val = 8 * π^4
     @test isapprox(∫⁰_eval, 1.0, atol=atol)
     @test isapprox(∫f⁰_eval, int_val, atol=atol)
     @test isapprox(∫f¹_eval, 3 * int_val, atol=atol)
+    @test isapprox(∫f²_eval, 3 * int_val, atol=atol)
     @test isapprox(∫f³_eval, int_val, atol=atol)
 
     return nothing

@@ -83,6 +83,19 @@ The analytical `expression` should be a Julia function defining the form in the 
 domain. See the [documentation on the Geometry module](@ref DocGeometryModule) for the
 difference between the domains used in `Mantis`.
 
+The `expression` takes the physical points as a matrix with one row per point and one
+column per coordinate, and returns a vector with one vector of values per component of the
+form, in the physical basis:
+- ``0``-forms ``f``: `[f]`;
+- ``1``-forms ``f_1\\,dx^1 + \\dots + f_m\\,dx^m``: `[f₁, …, fₘ]`, where `m` is the image
+    dimension of the geometry;
+- ``2``-forms in 3D
+    ``f_1\\,dx^2\\wedge dx^3 + f_2\\,dx^3\\wedge dx^1 + f_3\\,dx^1\\wedge dx^2``:
+    `[f₁, f₂, f₃]`;
+- top forms ``f\\,dx^1\\wedge\\dots\\wedge dx^n``: `[f]`.
+Top forms and ``2``-forms in 3D require the image dimension to be equal to the manifold
+dimension. When evaluated, the form is pulled back to the canonical domain of each element.
+
 # Constructors
 - `AnalyticalFormField(form_rank::Int, expression::E, geometry::G, label::AbstractString)`:
     General constructor for analytical form fields.
@@ -289,5 +302,54 @@ function _evaluate(
     end
 
     # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
+    return form_pullback, [[1]]
+end
+
+function _evaluate(
+    form_field::AnalyticalFormField{3, 2}, element_idx::Int, xi::Points.AbstractPoints{3}
+)
+    # We need to check that the image dim is not larger than 3
+    # This is still possible to setup but we do not have the operators
+    # generalized to larger dimensions, once we do that, this function must
+    # be generalized and this check removed.
+    geometry = get_geometry(form_field)
+    if Geometry.get_image_dim(geometry) != 3
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Analytical 2-forms in 3D require a geometry with image dimension 3, ",
+                    "but the image dimension is ",
+                    Geometry.get_image_dim(geometry),
+                    ".",
+                ),
+            ),
+        )
+    end
+
+    # Evaluate geometric data
+    x = Geometry.evaluate(geometry, element_idx, xi)
+    J = Geometry.jacobian(geometry, element_idx, xi)  # Jₖⱼ = ∂Φᵏ\∂ξⱼ
+
+    # Components of f₁dx²∧dx³ + f₂dx³∧dx¹ + f₃dx¹∧dx² in the physical basis.
+    form_eval = get_expression(form_field)(x)
+    num_eval_points = size(x, 1)
+    form_pullback = [zeros(num_eval_points) for _ in 1:3]
+    
+    # The pullback has the components α₁dξ²∧dξ³ + α₂dξ³∧dξ¹ + α₃dξ¹∧dξ². With the tangent
+    # vectors tᵢ = ∂Φ/∂ξᵢ (the columns of J) and f = (f₁, f₂, f₃), they are
+    #   α₁ = f ⋅ (t₂ × t₃),  α₂ = f ⋅ (t₃ × t₁),  α₃ = f ⋅ (t₁ × t₂),
+    # that is, α = det(J) J⁻¹ f.
+    for point in 1:num_eval_points
+        f = (form_eval[1][point], form_eval[2][point], form_eval[3][point])
+        t₁, t₂, t₃ = J[point][:, 1], J[point][:, 2], J[point][:, 3]
+        for (component, (tᵢ, tⱼ)) in enumerate(((t₂, t₃), (t₃, t₁), (t₁, t₂)))
+            normal = LinearAlgebra.cross(tᵢ, tⱼ)
+            form_pullback[component][point] =
+                f[1] * normal[1] + f[2] * normal[2] + f[3] * normal[3]
+        end
+    end
+
+    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
+    # multi-indexed expressions, like wedges.
     return form_pullback, [[1]]
 end
