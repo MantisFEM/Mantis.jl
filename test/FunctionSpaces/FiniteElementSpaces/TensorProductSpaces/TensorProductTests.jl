@@ -323,4 +323,52 @@ else
 end
 @test_throws fielderror FunctionSpaces.get_extraction_operator(TP_B1_a)
 
+# The factor spaces must have the same elements as the geometry, direction by direction.
+curved_square = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (4, 12))
+curved_square_parametric = Geometry.get_parametric_geometry(curved_square)
+B_x = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (2,), (1,))
+B_y = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (12,), (2,), (1,))
+B_y_coarse = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (5,), (2,), (1,))
+TP_curved = FunctionSpaces.TensorProductSpace(
+    (B_x, B_y), curved_square, curved_square_parametric
+)
+@test FunctionSpaces.get_num_basis(TP_curved) == 6 * 14
+@test FunctionSpaces.get_geometry(TP_curved) === curved_square
+# Wrong total number of elements.
+@test_throws ArgumentError FunctionSpaces.TensorProductSpace(
+    (B_x, B_y_coarse), curved_square, curved_square_parametric
+)
+# Right total number of elements, but the directions are swapped.
+@test_throws ArgumentError FunctionSpaces.TensorProductSpace(
+    (B_y, B_x), curved_square, curved_square_parametric
+)
+# The physical geometry does not match the parametric geometry.
+@test_throws ArgumentError FunctionSpaces.TensorProductSpace(
+    (B_x, B_y),
+    Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (4, 6)),
+    curved_square_parametric,
+)
+# A factor space spanning two directions is compared with the product of their numbers of
+# elements.
+box = Geometry.create_cartesian_box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0), (2, 3, 4))
+B_xy = FunctionSpaces.create_bspline_space((0.0, 0.0), (1.0, 1.0), (2, 3), (1, 1), (0, 0))
+B_xy_coarse = FunctionSpaces.create_bspline_space(
+    (0.0, 0.0), (1.0, 1.0), (2, 2), (1, 1), (0, 0)
+)
+B_z = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (1,), (0,))
+B_z_fine = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (6,), (1,), (0,))
+@test FunctionSpaces.get_num_elements(
+    FunctionSpaces.TensorProductSpace((B_xy, B_z), box, box)
+) == 24
+@test_throws ArgumentError FunctionSpaces.TensorProductSpace(
+    (B_xy_coarse, B_z_fine), box, box
+)
+
+# The Greville points of a tensor product of B-spline spaces are those of its factors.
+@test FunctionSpaces.get_greville_points(TP_curved) == (
+    FunctionSpaces.get_greville_points(B_x)..., FunctionSpaces.get_greville_points(B_y)...
+)
+@test FunctionSpaces.get_greville_points(TP_curved)[1] ≈
+    [0.0, 0.125, 0.375, 0.625, 0.875, 1.0]
+
 end

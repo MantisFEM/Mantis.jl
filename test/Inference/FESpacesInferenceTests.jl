@@ -23,9 +23,9 @@ nodes2 = Points.get_input_points(Quadrature.get_nodes(Quadrature.gauss_legendre(
 ll_poly = FunctionSpaces.Lagrange(nodes)
 gl_poly = FunctionSpaces.Lagrange(nodes2)
 el_poly = FunctionSpaces.Edge(nodes)
-B1LL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, ll_poly, fill(-1, 26))
-B1GL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, gl_poly, fill(-1, 26))
-B1ELL = FunctionSpaces.BSplineSpace(geometry1, geometry1multi, el_poly, fill(-1, 26))
+B1LL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, ll_poly, fill(-1, 26))
+B1GL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, gl_poly, fill(-1, 26))
+B1ELL = FunctionSpaces.BSplineSpace(geometry1multi, geometry1multi, el_poly, fill(-1, 26))
 
 # Rational
 R1 = FunctionSpaces.RationalFESpace(B1, [0.2, 0.8])
@@ -58,6 +58,18 @@ B1_3D = FunctionSpaces.create_bspline_space(
     (1, 1, 1),
 )
 
+# Spaces created on a given geometry: a curve in the plane (the half circle) and a mapped
+# planar domain.
+half_circle = Geometry.MappedGeometry(
+    Geometry.create_cartesian_box((0.0,), (1.0π,), (8,)),
+    Geometry.Mapping((1, 2), x -> [cos(x[1]), sin(x[1])], x -> [-sin(x[1]), cos(x[1])]),
+)
+curved_square = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (3, 4))
+B1_curve = FunctionSpaces.create_bspline_space(half_circle, (2,), (1,))
+TP_curved = FunctionSpaces.create_bspline_space(curved_square, (2, 2), (1, 1))
+@test_opt FunctionSpaces.create_bspline_space(half_circle, (2,), (1,))
+@test_opt FunctionSpaces.create_bspline_space(curved_square, (2, 2), (1, 1))
+
 # DirectSumSpace
 # Reduction test, single-component, single-patch, single element, 1D.
 DS1 = FunctionSpaces.DirectSumSpace((B1,))
@@ -85,6 +97,8 @@ spaces = (
     TP_R1mR1mR1m,
     TP_B1mR1m,
     B1_3D,
+    B1_curve,
+    TP_curved,
     DS1,
     DS_B1mB1m,
     DS_TP1mTP1m,
