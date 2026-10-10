@@ -43,7 +43,7 @@ export PointSet,
 
 # Exports from Forms.
 using .Forms
-export d, ★, ♯, ∧, ∫, dstar, δ
+export d, ★, ♯, ∧, ∫, dstar, δ, ∂
 export ConstantFormSpace, FormField, AnalyticalFormField, FormSpace
 export evaluate
 export get_label, get_num_basis, get_coefficients

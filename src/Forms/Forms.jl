@@ -47,6 +47,7 @@ export Integral, ∫, get_quadrature_rule
 export evaluate_pushforward, evaluate_sharp_pushforward
 export ♯, Sharp
 export ∧, Wedge, get_forms
+export ∂, PartialDerivative
 
 ############################################################################################
 #                                      Abstract Types                                      #
