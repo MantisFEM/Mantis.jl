@@ -237,17 +237,17 @@ function pullback!(
     return evaluations
 end
 # Physical -> Canonical
-function exterior_power(J::StaticArrays.SMatrix{3, 3})
+function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3})
     return StaticArrays.SMatrix{3, 3}(
-        J[1, 1]*J[2, 2] - J[2, 1]*J[1, 2],
-        J[1, 1]*J[3, 2] - J[3, 1]*J[1, 2],
-        J[2, 1]*J[3, 2] - J[3, 1]*J[2, 2],
-        J[1, 1]*J[2, 3] - J[2, 1]*J[1, 3],
-        J[1, 1]*J[3, 3] - J[3, 1]*J[1, 3],
-        J[2, 1]*J[3, 3] - J[3, 1]*J[2, 3],
-        J[1, 2]*J[2, 3] - J[2, 2]*J[1, 3],
-        J[1, 2]*J[3, 3] - J[3, 2]*J[1, 3],
-        J[2, 2]*J[3, 3] - J[3, 2]*J[2, 3],
+        J[2, 2] * J[3, 3] - J[2, 3] * J[3, 2],
+        J[3, 2] * J[1, 3] - J[3, 3] * J[1, 2],
+        J[1, 2] * J[2, 3] - J[1, 3] * J[2, 2],
+        J[2, 3] * J[3, 1] - J[2, 1] * J[3, 3],
+        J[3, 3] * J[1, 1] - J[3, 1] * J[1, 3],
+        J[1, 3] * J[2, 1] - J[1, 1] * J[2, 3],
+        J[2, 1] * J[3, 2] - J[2, 2] * J[3, 1],
+        J[3, 1] * J[1, 2] - J[3, 2] * J[1, 1],
+        J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1],
     )
 end
 function pullback!(
@@ -258,37 +258,17 @@ function pullback!(
 ) where {expression_rank, T, D <: Canonical, S <: Physical}
     geometry = get_geometry(form)
     J = Geometry.jacobian(geometry, element_id, xi)
-    TT = eltype(eltype(evaluations))
-    temp = [
-        zeros(TT, size(evaluations[1])...),
-        zeros(TT, size(evaluations[2])...),
-        zeros(TT, size(evaluations[3])...),
-    ]
 
-    for p in eachindex(J)
-        partial_det_J = _partial_determinants(J[p])
+    for p in axes(evaluations[1], 1)
+        C = _cofactor_matrix(J[p])
 
         for b in axes(evaluations[1], 2)
-            temp[1][p, b] =
-                evaluations[1][p, b] * partial_det_J[1] +
-                evaluations[2][p, b] * partial_det_J[2] +
-                evaluations[3][p, b] * partial_det_J[3]
-
-            temp[2][p, b] =
-                evaluations[1][p, b] * partial_det_J[4] +
-                evaluations[2][p, b] * partial_det_J[5] +
-                evaluations[3][p, b] * partial_det_J[6]
-
-            temp[3][p, b] =
-                evaluations[1][p, b] * partial_det_J[7] +
-                evaluations[2][p, b] * partial_det_J[8] +
-                evaluations[3][p, b] * partial_det_J[9]
-        end
-    end
-
-    for j in eachindex(evaluations, temp)
-        for i in eachindex(evaluations[j], temp[j])
-            evaluations[j][i] = temp[j][i]
+            e1 = evaluations[1][p, b]
+            e2 = evaluations[2][p, b]
+            e3 = evaluations[3][p, b]
+            for k in 1:3
+                evaluations[k][p, b] = e1 * C[1, k] + e2 * C[2, k] + e3 * C[3, k]
+            end
         end
     end
 
