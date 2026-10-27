@@ -803,6 +803,7 @@ include("TensorProductSpaces/TensorProductSpaces.jl")
 
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
+include("UnstructuredSpaces/C0Spaces.jl")
 
 include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
 
