@@ -12,6 +12,11 @@ for form in forms
         continue
     end
 
+    if Forms.get_source_location(form) != Forms.Canonical
+        # We can only construct the integral if the form is in the canonical domain.
+        continue
+    end
+
     if verbose
         println("New test ---")
         @show nameof(typeof(form))

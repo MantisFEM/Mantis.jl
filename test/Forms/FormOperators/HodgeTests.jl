@@ -5,7 +5,6 @@ using Mantis
 using Test
 
 using LinearAlgebra
-using SparseArrays
 
 ############################################################################################
 #                                         2D Tests                                         #
@@ -26,9 +25,7 @@ cart2 = Geometry.CartesianGeometry(breakpoints2)
 
 # Crazy mesh
 c = 0.2
-crazy_mapping = Geometry.create_curvilinear_mapping(
-    (Lleft, Lbottom), (Lright, Ltop), c
-)
+crazy_mapping = Geometry.create_curvilinear_mapping((Lleft, Lbottom), (Lright, Ltop), c)
 
 # first B-spline patch
 deg1 = 2
@@ -58,22 +55,17 @@ fe_space_1_mapp = FunctionSpaces.DirectSumSpace((
 ))
 mapp_fe_complex_2d = (tp_space_mapp_geo_2d, fe_space_1_mapp, tp_space_mapp_geo_2d)
 
-# Tensor product geometry
-cart_geo_2d = Geometry.CartesianGeometry((breakpoints1, breakpoints2))
-tp_geo_2d = FunctionSpaces.get_geometry(tp_space_tp_geo_2d)
-mapp_geo_2d = Geometry.MappedGeometry(cart_geo_2d, crazy_mapping)
-
 q_rule = Quadrature.tensor_product_rule((deg1 + 1, deg2 + 1), Quadrature.gauss_legendre)
 
 # Test on multiple geometries. Type-wise and content/metric wise.
-complexes_2d = [cart_fe_complex_2d, tp_fe_complex_2d, mapp_fe_complex_2d]
-geometries_2d = [cart_geo_2d, tp_geo_2d, mapp_geo_2d]
+complexes_2d = (cart_fe_complex_2d, tp_fe_complex_2d, mapp_fe_complex_2d)
 @testset "2D" verbose = true begin
-    for i in eachindex(complexes_2d)
+    for complex in complexes_2d
         # Create form spaces
-        zero_form_space = Forms.FormSpace(0, complexes_2d[i][1], "ν")
-        one_form_space = Forms.FormSpace(1, complexes_2d[i][2], "η")
-        top_form_space = Forms.FormSpace(2, complexes_2d[i][3], "σ")
+        spaces = map(Forms.FormSpace, (0, 1, 2), complex, ("ν", "η", "σ"))
+        zero_form_space, one_form_space, top_form_space = map(
+            Forms.FormPullback, spaces, (Forms.Canonical, Forms.Canonical, Forms.Canonical)
+        )
 
         # Generate the form expressions
         α⁰ = Forms.FormField(zero_form_space)
@@ -84,17 +76,15 @@ geometries_2d = [cart_geo_2d, tp_geo_2d, mapp_geo_2d]
         constdx.coefficients[begin:20] .= 1.0
         constdy = Forms.FormField(one_form_space)
         constdy.coefficients[21:end] .= 1.0
-        dα⁰ = Forms.ExteriorDerivative(α⁰)
         γ² = Forms.FormField(top_form_space)
         γ².coefficients .= 1.0
-        dζ¹ = Forms.ExteriorDerivative(ζ¹)
 
         ★α⁰ = Forms.Hodge(α⁰)
         ★ζ¹ = Forms.Hodge(ζ¹)
         ★★ζ¹ = Forms.Hodge(★ζ¹)
         ★γ² = Forms.Hodge(γ²)
 
-        geom = geometries_2d[i]
+        geom = Forms.get_geometry(zero_form_space)
         @testset "$(string(Base.typename(typeof(geom)).wrapper)[17:end])" begin
             for elem_id in 1:1:Geometry.get_num_elements(geom)
                 # Note that we cannot do mixed inner products
@@ -325,10 +315,18 @@ geometries_3d = [geo_3d_cart, tp_geo_3d, crazy_geo_3d_cart]
         end
 
         @testset "$(geom_name)" begin
-            zero_form_space = Forms.FormSpace(0, complex_3d[1], "ν")
-            one_form_space = Forms.FormSpace(1, complex_3d[2], "η")
-            two_form_space = Forms.FormSpace(2, complex_3d[3], "μ")
-            top_form_space = Forms.FormSpace(3, complex_3d[4], "σ")
+            zero_form_space = Forms.FormPullback(
+                Forms.FormSpace(0, complex_3d[1], "ν"), Forms.Canonical
+            )
+            one_form_space = Forms.FormPullback(
+                Forms.FormSpace(1, complex_3d[2], "η"), Forms.Canonical
+            )
+            two_form_space = Forms.FormPullback(
+                Forms.FormSpace(2, complex_3d[3], "μ"), Forms.Canonical
+            )
+            top_form_space = Forms.FormPullback(
+                Forms.FormSpace(3, complex_3d[4], "σ"), Forms.Canonical
+            )
 
             # Generate the form expressions
             # 0-form: constant
