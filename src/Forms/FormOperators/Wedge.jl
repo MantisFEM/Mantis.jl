@@ -125,16 +125,45 @@ function get_estimated_nnz_per_elem(form::Wedge)
     return prod(map(get_estimated_nnz_per_elem, get_forms(form)))
 end
 
+"""
+    get_basis_form(form::Wedge{manifold_dim, form_rank, 1}) where {manifold_dim, form_rank}
+
+Return the factor of a `Wedge` with expression rank 1 that carries the basis.
+
+A `Wedge` with expression rank 1 is the product of a form field (expression rank 0) and a
+form expression with a basis (expression rank 1), e.g. `α⁰ₕ ∧ Λ¹ₕ`. All basis-related
+queries (number of basis functions, finite element space, ...) are therefore forwarded to
+the factor with expression rank 1.
+"""
+function get_basis_form(
+    form::Wedge{manifold_dim, form_rank, 1}
+) where {manifold_dim, form_rank}
+    form_1, form_2 = get_forms(form)
+    if get_expression_rank(form_1) == 1
+        return form_1
+    end
+
+    return form_2
+end
+
 function get_num_basis_per_expression(
     form::Wedge{manifold_dim, form_rank, 1}, element_id::Int
 ) where {manifold_dim, form_rank}
-    bpb_all = map(get_num_basis, get_forms(form), (element_id, element_id))
-    if length(bpb_all[1]) == 0
-        return (bpb_all[2],)
-    else
-        return (bpb_all[1],)
-    end
-    # return (get_num_basis(get_form(form), element_id),)
+    return get_num_basis_per_expression(get_basis_form(form), element_id)
+end
+
+function get_num_basis(form::Wedge{manifold_dim, form_rank, 1}) where {manifold_dim, form_rank}
+    return get_num_basis(get_basis_form(form))
+end
+
+function get_num_basis(
+    form::Wedge{manifold_dim, form_rank, 1}, element_id::Int
+) where {manifold_dim, form_rank}
+    return get_num_basis(get_basis_form(form), element_id)
+end
+
+function get_fe_space(form::Wedge{manifold_dim, form_rank, 1}) where {manifold_dim, form_rank}
+    return get_fe_space(get_basis_form(form))
 end
 
 function get_form_space_tree(wedge::Wedge)
