@@ -10,7 +10,6 @@ end
 
 TensorProducts.get_num_objects(s::NewObject) = s.n
 
-
 @test_opt TensorProducts.TensorProduct((NewObject(2), NewObject(3))) # tuple
 @test_opt TensorProducts.TensorProduct(NewObject(2), NewObject(3)) # splat
 

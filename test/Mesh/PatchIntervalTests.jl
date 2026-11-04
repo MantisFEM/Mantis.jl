@@ -44,20 +44,20 @@ test_patch = Patch((test_brk, test_brk2, test_brk3, test_brk4))
 
 # Test if the size of a Patch is correctly computed. Note that these are 
 # redefinitions of Base.size so that one can simply call size() on a Patch.
-@test size(test_patch_1d) == (n1-1,)
-@test size(test_patch) == (n1-1, n2-1, n3-1, n4-1)
-@test size(test_patch_1d, 1) == n1-1
-@test size(test_patch, 1) == n1-1
-@test size(test_patch, 2) == n2-1
-@test size(test_patch, 3) == n3-1
-@test size(test_patch, 4) == n4-1
+@test size(test_patch_1d) == (n1 - 1,)
+@test size(test_patch) == (n1 - 1, n2 - 1, n3 - 1, n4 - 1)
+@test size(test_patch_1d, 1) == n1 - 1
+@test size(test_patch, 1) == n1 - 1
+@test size(test_patch, 2) == n2 - 1
+@test size(test_patch, 3) == n3 - 1
+@test size(test_patch, 4) == n4 - 1
 
 # Test if the element ids are correctly created.
 check_ids = NTuple{4, Int}[]
-for i in 1:1:n4-1
-    for j in 1:1:n3-1
-        for k in 1:1:n2-1
-            for l in 1:1:n1-1
+for i in 1:1:(n4 - 1)
+    for j in 1:1:(n3 - 1)
+        for k in 1:1:(n2 - 1)
+            for l in 1:1:(n1 - 1)
                 push!(check_ids, (l, k, j, i))
             end
         end

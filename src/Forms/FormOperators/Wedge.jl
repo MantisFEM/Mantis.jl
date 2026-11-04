@@ -236,7 +236,9 @@ function _evaluate_wedge(
     #   α⁰ ∧ β⁰ = (αβ)⁰
 
     # Get the number of basis for the first expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of components of the wedge
     # In this case because it is the wedge of a 0-form with a 0-form
@@ -293,7 +295,9 @@ function _evaluate_wedge(
     #   α⁰ ∧ β⁰ = (αβ)⁰
 
     # Get the number of basis for the second expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of components of the wedge
     # In this case because it is the wedge of a 0-form with a 0-form
@@ -352,8 +356,12 @@ function _evaluate_wedge(
     #   α⁰ ∧ β⁰ = (αβ)⁰
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -462,7 +470,9 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_1
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -521,7 +531,9 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_1
 
     # Get the number of basis in each expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -580,8 +592,12 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_1
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Assign wedge_indices: wedge_indices is just the concatenation of the indices of each expression
     wedge_indices = vcat(form_expression_1_indices, form_expression_2_indices)
@@ -688,7 +704,9 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_2
 
     # Get the number of basis in the first expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -745,7 +763,9 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_2
 
     # Get the number of basis in the first expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -804,8 +824,12 @@ function _evaluate_wedge(
     n_components_wedge = n_components_form_expression_2
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -900,7 +924,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -951,7 +977,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1004,8 +1032,12 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1118,7 +1150,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₂β₃ - α₃β₂)dξ²∧dξ³ + (α₃β₁ - α₁β₃)dξ³∧dξ¹ + (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1189,7 +1223,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₂β₃ - α₃β₂)dξ²∧dξ³ + (α₃β₁ - α₁β₃)dξ³∧dξ¹ + (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1262,8 +1298,12 @@ function _evaluate_wedge(
     #   α¹ ∧ β¹ = (α₂β₃ - α₃β₂)dξ²∧dξ³ + (α₃β₁ - α₁β₃)dξ³∧dξ¹ + (α₁β₂ - α₂β₁)dξ¹∧dξ²
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1389,7 +1429,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β² = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1447,7 +1489,9 @@ function _evaluate_wedge(
     #   α¹ ∧ β² = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1507,8 +1551,12 @@ function _evaluate_wedge(
     #   α¹ ∧ β² = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1615,7 +1663,9 @@ function _evaluate_wedge(
     #   α² ∧ β¹ = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1673,7 +1723,9 @@ function _evaluate_wedge(
     #   α² ∧ β¹ = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points
@@ -1733,8 +1785,12 @@ function _evaluate_wedge(
     #   α² ∧ β¹ = (α₁β₁ + α₂β₂ + α₃β₃) dξ¹∧dξ²∧dξ³
 
     # Get the number of basis in each expression
-    num_basis_form_expression_1 = get_num_basis_per_expression(form_expression_1, element_id)
-    num_basis_form_expression_2 = get_num_basis_per_expression(form_expression_2, element_id)
+    num_basis_form_expression_1 = get_num_basis_per_expression(
+        form_expression_1, element_id
+    )
+    num_basis_form_expression_2 = get_num_basis_per_expression(
+        form_expression_2, element_id
+    )
 
     # Get the number of evaluation points
     n_evaluation_points = size(form_expression_1_eval[1], 1)  # all components are evaluated at the same points and both forms are evaluated at the same points

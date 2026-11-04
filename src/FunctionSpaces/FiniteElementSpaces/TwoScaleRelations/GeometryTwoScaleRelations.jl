@@ -8,7 +8,7 @@ Returns a refined version of `parent_geo` where each element is subdivided accor
 - `child_geometry`: The geometry corresponding to the subdivision of `parent_geo`.
 """
 function subdivide_geometry(parent_geo::Geometry.AbstractGeometry, num_subdivisions)
-    throw(MethodError(subdivide_geometry, (parent_geo, num_subdivisions)))
+    return throw(MethodError(subdivide_geometry, (parent_geo, num_subdivisions)))
 end
 
 function subdivide_geometry(

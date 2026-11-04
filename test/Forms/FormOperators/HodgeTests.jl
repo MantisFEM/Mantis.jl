@@ -26,9 +26,7 @@ cart2 = Geometry.CartesianGeometry(breakpoints2)
 
 # Crazy mesh
 c = 0.2
-crazy_mapping = Geometry.create_curvilinear_mapping(
-    (Lleft, Lbottom), (Lright, Ltop), c
-)
+crazy_mapping = Geometry.create_curvilinear_mapping((Lleft, Lbottom), (Lright, Ltop), c)
 
 # first B-spline patch
 deg1 = 2

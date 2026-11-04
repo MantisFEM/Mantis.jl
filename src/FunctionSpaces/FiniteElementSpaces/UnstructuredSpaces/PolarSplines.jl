@@ -515,7 +515,7 @@ function extract_scalar_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )
@@ -658,7 +658,7 @@ function extract_vector_polar_splines_to_tensorproduct(
     if ~all(
         isapprox.(
             degenerate_control_points[:, 1, :],
-            degenerate_control_points[1:1, 1, :],
+            degenerate_control_points[1:1, 1, :];
             atol=1e-12,
         ),
     )

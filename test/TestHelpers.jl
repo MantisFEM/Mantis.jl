@@ -30,4 +30,3 @@ macro expected(expected_dict, test_func, match_op=isequal)
 end
 
 export expected
-

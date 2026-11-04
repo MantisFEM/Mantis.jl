@@ -196,7 +196,7 @@ function _plot_basis!(
                         shading=true,
                         transparency=false,
                         color=fill(color, plot_points_per_element, plot_points_per_element),
-                        label=label_prefix*string(basis_id),
+                        label=label_prefix * string(basis_id),
                     )
                 else
                     surface!(

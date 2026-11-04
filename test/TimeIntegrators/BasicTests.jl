@@ -112,7 +112,7 @@ end
 
 @test check_equal(
     TimeIntegrators.butcher_tableau_to_glm(
-        SMatrix{3, 3}(0.0, 1/2, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0),
+        SMatrix{3, 3}(0.0, 1 / 2, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0),
         SVector(1 / 6, 2 / 3, 1 / 6),
         SVector(0.0, 1 / 2, 1.0),
         3,
@@ -121,7 +121,7 @@ end
 )
 @test check_equal(
     TimeIntegrators.Explicit(
-        SMatrix{3, 3}(0.0, 1/2, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0),
+        SMatrix{3, 3}(0.0, 1 / 2, -1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0),
         SMatrix{1, 3}(1 / 6, 2 / 3, 1 / 6),
         ones(SMatrix{3, 1}),
         ones(SMatrix{1, 1}),
@@ -134,20 +134,24 @@ end
 
 @test check_equal(
     TimeIntegrators.butcher_tableau_to_glm(
-        SMatrix{2, 2}(1/2 + 1/(2*sqrt(3)), -1/sqrt(3), 0.0, 1/2+1/(2*sqrt(3))),
+        SMatrix{2, 2}(
+            1 / 2 + 1 / (2 * sqrt(3)), -1 / sqrt(3), 0.0, 1 / 2 + 1 / (2 * sqrt(3))
+        ),
         SVector(1 / 2, 1 / 2),
-        SVector(1 / 2 + 1/(2*sqrt(3)), 1 / 2 - 1/(2*sqrt(3))),
+        SVector(1 / 2 + 1 / (2 * sqrt(3)), 1 / 2 - 1 / (2 * sqrt(3))),
         3,
     ),
     TimeIntegrators.DIRK3,
 )
 @test check_equal(
     TimeIntegrators.DiagonallyImplicit(
-        SMatrix{2, 2}(1/2 + 1/(2*sqrt(3)), -1/sqrt(3), 0.0, 1/2+1/(2*sqrt(3))),
+        SMatrix{2, 2}(
+            1 / 2 + 1 / (2 * sqrt(3)), -1 / sqrt(3), 0.0, 1 / 2 + 1 / (2 * sqrt(3))
+        ),
         SMatrix{1, 2}(1 / 2, 1 / 2),
         ones(SMatrix{2, 1}),
         ones(SMatrix{1, 1}),
-        SVector(1 / 2 + 1/(2*sqrt(3)), 1 / 2 - 1/(2*sqrt(3))),
+        SVector(1 / 2 + 1 / (2 * sqrt(3)), 1 / 2 - 1 / (2 * sqrt(3))),
         TimeIntegrators.TimeLevels([0], Int[], Int[]),
         3,
     ),
@@ -156,13 +160,16 @@ end
 
 @test check_equal(
     TimeIntegrators.butcher_tableau_to_glm(
-        SMatrix{2, 2}(1/4, 1/4, -1/4, 5/12), SVector(1 / 4, 3 / 4), SVector(0, 2 / 3), 3
+        SMatrix{2, 2}(1 / 4, 1 / 4, -1 / 4, 5 / 12),
+        SVector(1 / 4, 3 / 4),
+        SVector(0, 2 / 3),
+        3,
     ),
     TimeIntegrators.RADAU_IA_3,
 )
 @test check_equal(
     TimeIntegrators.Implicit(
-        SMatrix{2, 2}(1/4, 1/4, -1/4, 5/12),
+        SMatrix{2, 2}(1 / 4, 1 / 4, -1 / 4, 5 / 12),
         SMatrix{1, 2}(1 / 4, 3 / 4),
         ones(SMatrix{2, 1}),
         ones(SMatrix{1, 1}),
@@ -175,14 +182,14 @@ end
 
 @test check_equal_imex(
     TimeIntegrators.IMEX(
-        SMatrix{2, 2}(0.0, 0.0, 0.0, 1/2),
-        SMatrix{2, 2}(0.0, 1/2, 0.0, 0.0),
+        SMatrix{2, 2}(0.0, 0.0, 0.0, 1 / 2),
+        SMatrix{2, 2}(0.0, 1 / 2, 0.0, 0.0),
         SMatrix{1, 2}(0.0, 1.0),
         SMatrix{1, 2}(0.0, 1.0),
         SMatrix{2, 1}(1.0, 1.0),
         SMatrix{1, 1}(1.0),
-        SVector(0.0, 1/2),
-        SVector(0.0, 1/2),
+        SVector(0.0, 1 / 2),
+        SVector(0.0, 1 / 2),
         TimeIntegrators.TimeLevels([0], Int[], Int[]),
         2,
     ),

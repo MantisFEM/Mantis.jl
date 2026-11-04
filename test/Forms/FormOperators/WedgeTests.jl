@@ -265,12 +265,7 @@ cart_complex_2d = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, degrees_2d, regularities_2d
 )
 curv_complex_2d = Forms.create_curvilinear_tensor_product_bspline_de_rham_complex(
-    starting_point_2d,
-    box_size_2d,
-    num_elements_2d,
-    degrees_2d,
-    regularities_2d;
-    c=c,
+    starting_point_2d, box_size_2d, num_elements_2d, degrees_2d, regularities_2d; c=c
 )
 
 # The canonical quadrature information.

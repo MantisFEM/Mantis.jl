@@ -100,7 +100,7 @@ for element_row_idx in 1:nz_elements
     ξ = Points.TensorProductPoints(([0.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
-        0.5*π 0.0
+        0.5 * π 0.0
         0.0 dx_cylinder_line
     ]]
     J_cylinder = Geometry.jacobian(
@@ -113,7 +113,7 @@ for element_row_idx in 1:nz_elements
     # of row element_row_idx
     ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
-        -0.5*π 0.0
+        -0.5 * π 0.0
         0.0 0.0
         0.0 dx_cylinder_line
     ]]
@@ -128,7 +128,7 @@ for element_row_idx in 1:nz_elements
     ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
-        -0.5*π 0.0
+        -0.5 * π 0.0
         0.0 dx_cylinder_line
     ]]
     J_cylinder = Geometry.jacobian(
@@ -141,7 +141,7 @@ for element_row_idx in 1:nz_elements
     # of row element_row_idx
     ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
-        0.5*π 0.0
+        0.5 * π 0.0
         0.0 0.0
         0.0 dx_cylinder_line
     ]]
@@ -156,7 +156,7 @@ for element_row_idx in 1:nz_elements
     ξ = Points.TensorProductPoints(([1.0], [0.0]))
     J_cylinder_reference = [[
         0.0 0.0
-        0.5*π 0.0
+        0.5 * π 0.0
         0.0 dx_cylinder_line
     ]]
     J_cylinder = Geometry.jacobian(

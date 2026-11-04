@@ -75,15 +75,15 @@ function exact_sol_func_1D(xx::Matrix{Float64})
 end
 function exact_dsol_func_1D(xx::Matrix{Float64})
     xs = xx[:, 1]
-    return [[4*x^3 for x in xs]]
+    return [[4 * x^3 for x in xs]]
 end
 function exact_ddsol_func_1D(xx::Matrix{Float64})
     xs = xx[:, 1]
-    return [[-12*x^2 for x in xs]]
+    return [[-12 * x^2 for x in xs]]
 end
 function exact_dddsol_func_1D(xx::Matrix{Float64}) # grad laplacian
     xs = xx[:, 1]
-    return [[-24*x for x in xs]]
+    return [[-24 * x for x in xs]]
 end
 function forcing_function_1D(xx::Matrix{Float64})
     xs = xx[:, 1]
@@ -193,30 +193,32 @@ basic_tests(
 function exact_sol_func_2D(xx::Matrix{Float64})
     xs = xx[:, 1]
     ys = xx[:, 2]
-    return [[x^4*y^4 for (x, y) in zip(xs, ys)]]
+    return [[x^4 * y^4 for (x, y) in zip(xs, ys)]]
 end
 function exact_dsol_func_2D(xx::Matrix{Float64})
     xs = xx[:, 1]
     ys = xx[:, 2]
-    return [[4*x^3*y^4 for (x, y) in zip(xs, ys)], [4*x^4*y^3 for (x, y) in zip(xs, ys)]]
+    return [
+        [4 * x^3 * y^4 for (x, y) in zip(xs, ys)], [4 * x^4 * y^3 for (x, y) in zip(xs, ys)]
+    ]
 end
 function exact_ddsol_func_2D(xx::Matrix{Float64})
     xs = xx[:, 1]
     ys = xx[:, 2]
-    return [[-12*x^4*y^2 - 12*x^2*y^4 for (x, y) in zip(xs, ys)]]
+    return [[-12 * x^4 * y^2 - 12 * x^2 * y^4 for (x, y) in zip(xs, ys)]]
 end
 function exact_dddsol_func_2D(xx::Matrix{Float64}) # grad laplacian
     xs = xx[:, 1]
     ys = xx[:, 2]
     return [
-        [-24*x*y^2*(2*x^2 + y^2) for (x, y) in zip(xs, ys)],
-        [-24*x^2*y*(x^2 + 2*y^2) for (x, y) in zip(xs, ys)],
+        [-24 * x * y^2 * (2 * x^2 + y^2) for (x, y) in zip(xs, ys)],
+        [-24 * x^2 * y * (x^2 + 2 * y^2) for (x, y) in zip(xs, ys)],
     ]
 end
 function forcing_function_2D(xx::Matrix{Float64})
     xs = xx[:, 1]
     ys = xx[:, 2]
-    return [[24*x^4 + 288*x^2*y^2 + 24*y^4 for (x, y) in zip(xs, ys)]]
+    return [[24 * x^4 + 288 * x^2 * y^2 + 24 * y^4 for (x, y) in zip(xs, ys)]]
 end
 
 sol_2D = Forms.AnalyticalFormField(0, exact_sol_func_2D, geometry_2D, "sol")

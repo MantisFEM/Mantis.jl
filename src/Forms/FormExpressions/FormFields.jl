@@ -62,8 +62,8 @@ struct FormField{manifold_dim, form_rank, FS, L} <:
                         ") must match the number of basis functions (",
                         get_num_basis(form_space),
                         ") in the space, but doesn't.",
-                    )
-                )
+                    ),
+                ),
             )
         end
 
@@ -188,9 +188,7 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, FS}
     n_form_components = binomial(manifold_dim, form_rank)
-    form_basis_eval, form_basis_indices = evaluate(
-        get_form(form_field), element_idx, xi
-    )
+    form_basis_eval, form_basis_indices = evaluate(get_form(form_field), element_idx, xi)
     form_eval = Vector{Vector{Float64}}(undef, n_form_components)
     form_field_coefficients = get_coefficients(form_field)
     for form_component_idx in 1:n_form_components

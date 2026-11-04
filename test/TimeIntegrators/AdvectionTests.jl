@@ -23,7 +23,7 @@ const dt = dx / velocity  # gives CFL = 1
 const grid = 0.0:dx:L
 const A =
     (velocity / dx) *
-    SparseArrays.spdiagm(0 => ones(length(grid)), -1 => -1 .* ones(length(grid)-1))
+    SparseArrays.spdiagm(0 => ones(length(grid)), -1 => -1 .* ones(length(grid) - 1))
 # Set periodic boundary conditions.
 A[1, end] = -(velocity / dx)
 

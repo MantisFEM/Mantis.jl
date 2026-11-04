@@ -198,7 +198,7 @@ k1 = 0
 n1 = N1 * (p1 + 1) - (k1 + 1) * (N1 - 1)
 
 ## Create the mesh and the function space
-breakpoints1 = LinRange(0.0, L1, N1+1)
+breakpoints1 = LinRange(0.0, L1, N1 + 1)
 line_geo1 = Geometry.CartesianGeometry((breakpoints1,))
 B1 = FunctionSpaces.BSplineSpace(line_geo1, p1, k1)
 
@@ -364,13 +364,13 @@ V⁰ = Forms.FormSpace(0, V, L"V^0")
 const alpha = 1.0
 
 ## Analytical solution
-u_analytical_expression(x) = [1.0 .+ 0.5*cos.((2.0*π/L)*x[:, 1])]
+u_analytical_expression(x) = [1.0 .+ 0.5 * cos.((2.0 * π / L) * x[:, 1])]
 u_analytical = Mantis.Forms.AnalyticalFormField(
     0, u_analytical_expression, line_geometry, L"u_{\text{exact}}"
 )
 
 ## Right hand side
-f_expression(x) = [@. alpha*0.5*(4.0*(π^2)/(L^2))*cos(2.0*π*x[:, 1]/L)]
+f_expression(x) = [@. alpha * 0.5 * (4.0 * (π^2) / (L^2)) * cos(2.0 * π * x[:, 1] / L)]
 f = Mantis.Forms.AnalyticalFormField(0, f_expression, line_geometry, "f")
 
 function assemble_system_matrices(
@@ -426,7 +426,7 @@ u_h.coefficients[1] = u_0
 u_h.coefficients[end] = u_L
 
 ## Solve for the unknown coefficients
-u_h.coefficients[2:(end - 1)] = K \ (F - u_0*K_0 - u_L*K_L)
+u_h.coefficients[2:(end - 1)] = K \ (F - u_0 * K_0 - u_L * K_L)
 
 ## Plot the error with respect to the analytical solution
 error = u_analytical - u_h
@@ -472,7 +472,7 @@ const num_time_steps = 501
 ## timestep, we can reuse the factorisation. This is more efficient than refactorising every
 ## step.
 import LinearSolve as LS
-const prob = LS.LinearProblem(M, zeros(Forms.get_num_basis(V⁰)-2))
+const prob = LS.LinearProblem(M, zeros(Forms.get_num_basis(V⁰) - 2))
 const linsolve = LS.init(prob)
 function heat_equation_solver(output, C::Vector{Float64}, t::Float64)
     linsolve.b = (-K * C + F - u_0 * K_0 - u_L * K_L)
@@ -502,7 +502,7 @@ function evaluate_solution(u_h)
 end
 
 ## We project the initial condition onto our form space
-u_initial_expression(x) = [@. 1.5 + sin((2.0*π/L)*x[:, 1])]
+u_initial_expression(x) = [@. 1.5 + sin((2.0 * π / L) * x[:, 1])]
 u_initial = Forms.AnalyticalFormField(0, u_initial_expression, line_geometry, "u")
 u_hi = Assemblers.solve_L2_projection(V⁰, u_initial, dΩ)
 
@@ -553,7 +553,7 @@ lines!(xe, ye; color=:black, label="exact")
 record(
     fig,
     "heat_equation_1d.mp4",
-    LinRange(dt, dt*num_time_steps, num_time_steps);
+    LinRange(dt, dt * num_time_steps, num_time_steps);
     framerate=30,
 ) do t
     return time[] = t

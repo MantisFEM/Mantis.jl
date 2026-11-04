@@ -31,12 +31,12 @@ struct GeneralizedTrigonometric <: AbstractECTSpaces
         if p < 1
             throw(ArgumentError("Degree p must be a positive integer."))
         end
-        new(p, w, l, t, m, gtrig_representation(p, w, l, t, m), endpoint_tol)
+        return new(p, w, l, t, m, gtrig_representation(p, w, l, t, m), endpoint_tol)
     end
 end
 
 function _evaluate(ect_space::GeneralizedTrigonometric, xi::Float64, nderivatives::Int)
-    M = zeros(Float64, 1, ect_space.p+1, nderivatives+1)
+    M = zeros(Float64, 1, ect_space.p + 1, nderivatives + 1)
 
     left = false
     right = false
@@ -49,34 +49,35 @@ function _evaluate(ect_space::GeneralizedTrigonometric, xi::Float64, nderivative
     # scale the point to lie in the interval [0, l]
     xi = ect_space.l * xi
     if ect_space.t
-        for k = 0:nderivatives
+        for k in 0:nderivatives
             wxl = ect_space.w * xi
-            E = [1.0; cumprod((1.0 ./ (1:ect_space.p-k)) * wxl)]
+            E = [1.0; cumprod((1.0 ./ (1:(ect_space.p - k))) * wxl)]
             if mod(k, 4) == 0
-                E[ect_space.p-k] = cos(wxl);
-                E[ect_space.p+1-k] = sin(wxl);
+                E[ect_space.p - k] = cos(wxl)
+                E[ect_space.p + 1 - k] = sin(wxl)
             elseif mod(k, 4) == 1
-                E[ect_space.p-k] = -sin(wxl);
-                E[ect_space.p+1-k] = cos(wxl);
+                E[ect_space.p - k] = -sin(wxl)
+                E[ect_space.p + 1 - k] = cos(wxl)
             elseif mod(k, 4) == 2
-                E[ect_space.p-k] = -cos(wxl);
-                E[ect_space.p+1-k] = -sin(wxl);
+                E[ect_space.p - k] = -cos(wxl)
+                E[ect_space.p + 1 - k] = -sin(wxl)
             elseif mod(k, 4) == 3
-                E[ect_space.p-k] = sin(wxl);
-                E[ect_space.p+1-k] = -cos(wxl);
+                E[ect_space.p - k] = sin(wxl)
+                E[ect_space.p + 1 - k] = -cos(wxl)
             end
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, k+1] = (ect_space.w^k) * (ect_space.C[:,k+1:end] * E) * (ect_space.l^k)
+            M[1, :, k + 1] =
+                (ect_space.w^k) * (ect_space.C[:, (k + 1):end] * E) * (ect_space.l^k)
         end
     else
-        for k = 0:nderivatives
+        for k in 0:nderivatives
             ww = [1; cumprod(repeat([-ect_space.w * ect_space.w], ect_space.m))]
-            Ef = [1.0; cumprod((1.0 ./ (1:ect_space.p-k+2*ect_space.m)) * xi)]
-            E = Ef[1:ect_space.p+1-k]
-            E[ect_space.p-k, :] = Ef[ect_space.p-k:2:end, :]' * ww
-            E[ect_space.p-k+1, :] = Ef[ect_space.p-k+1:2:end, :]' * ww
+            Ef = [1.0; cumprod((1.0 ./ (1:(ect_space.p - k + 2 * ect_space.m))) * xi)]
+            E = Ef[1:(ect_space.p + 1 - k)]
+            E[ect_space.p - k, :] = Ef[(ect_space.p - k):2:end, :]' * ww
+            E[ect_space.p - k + 1, :] = Ef[(ect_space.p - k + 1):2:end, :]' * ww
             # rescale the derivative to map back from [0, l] -> [0, 1]
-            M[1, :, k+1] = ect_space.C[:,k+1:end] * E * (ect_space.l^k)
+            M[1, :, k + 1] = ect_space.C[:, (k + 1):end] * E * (ect_space.l^k)
         end
     end
 
@@ -182,7 +183,9 @@ is at least 2.
 """
 function get_derivative_space(ect_space::GeneralizedTrigonometric)
     if ect_space.p < 2
-        throw(ArgumentError("Degree of the space must be at least 2 to get derivative space."))
+        throw(
+            ArgumentError("Degree of the space must be at least 2 to get derivative space.")
+        )
     end
     return GeneralizedTrigonometric(
         ect_space.p - 1, ect_space.w, ect_space.l, ect_space.t, ect_space.m

@@ -76,8 +76,9 @@ function run_problems(
         num_eig, geo, scale_factors
     )
     eigval_errors = compt_eigvals - exact_eigvals
-    eigfunc_errors =
-        Analysis.compute_error_total.(compt_eigfuncs, exact_eigfuncs, Ref(dΩₑ), Ref("L2"))
+    eigfunc_errors = Analysis.compute_error_total.(
+        compt_eigfuncs, exact_eigfuncs, Ref(dΩₑ), Ref("L2")
+    )
 
     return eigval_errors, eigfunc_errors
 end

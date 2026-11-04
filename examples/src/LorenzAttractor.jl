@@ -38,7 +38,7 @@ using LinearAlgebra
 
 const σ = 10
 const ρ = 28
-const β = 8/3
+const β = 8 / 3
 
 # ### [Setting up the ODE](@id LorenzODESetup)
 # The ODEs as described in the [background section](@ref LorenzBackground) need to be
@@ -57,7 +57,7 @@ function J(sol)
     x, y, z = sol
 
     ## Note that SMatrix creates a matrix per column.
-    return SMatrix{3, 3}(-σ, ρ-z, y, σ, -1.0, x, 0.0, -x, -β)
+    return SMatrix{3, 3}(-σ, ρ - z, y, σ, -1.0, x, 0.0, -x, -β)
 end
 
 function newton_rhapson(output, x, h, g, jacobian, t; eps=1e-14, iter=10)
@@ -106,7 +106,7 @@ colours = lift(steps) do step
 end
 integrator = lift(steps) do step
     ## Here we advance our solution.
-    TimeIntegrators.time_integrate!(y_n, ode, (step-1)*dt, dt)
+    TimeIntegrators.time_integrate!(y_n, ode, (step - 1) * dt, dt)
     push!(position_vec, Point3f(vec(TimeIntegrators.get_solution(y_n))))
 
     return position_vec[1:step]

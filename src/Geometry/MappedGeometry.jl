@@ -129,7 +129,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
         M <: NTuple{num_patches, AbstractMapping{manifold_dim, image_dim}},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, G, M}(
@@ -192,7 +192,7 @@ struct MappedGeometry{manifold_dim, image_dim, num_patches, G, Map} <:
         Map <: AbstractMapping{manifold_dim, image_dim},
     }
         num_elements_per_patch = ntuple(num_patches) do geo_i
-            get_num_elements(geometry[geo_i])
+            return get_num_elements(geometry[geo_i])
         end
 
         return new{manifold_dim, image_dim, num_patches, G, Map}(
@@ -344,13 +344,11 @@ function hessian(
     Jm = jacobian(get_mapping(geometry, base_patch_id), x)
     Hm = hessian(get_mapping(geometry, base_patch_id), x)
 
-    return [
-        ntuple(image_dim) do i
-            Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
-            for j in 1:manifold_dim
-                Hp += Jm[p][i, j] * Hb[p][j]
-            end
-            return Hp
-        end for p in eachindex(Jb, Jm, Hm, Hb)
-    ]
+    return [ntuple(image_dim) do i
+        Hp = transpose(Jb[p]) * Hm[p][i] * Jb[p]
+        for j in 1:manifold_dim
+            Hp += Jm[p][i, j] * Hb[p][j]
+        end
+        return Hp
+    end for p in eachindex(Jb, Jm, Hm, Hb)]
 end

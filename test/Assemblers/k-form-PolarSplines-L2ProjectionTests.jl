@@ -109,7 +109,9 @@ for (p_idx, p) in enumerate(p⁰)
             fₕ = Assemblers.solve_L2_projection(X[form_rank + 1], fₑ, dΩ)
             ref_coeffs = read_data(sub_dir, "$p-$section_space-$form_rank.txt")
 
-            @test all(isapprox.(fₕ.coefficients, ref_coeffs, atol=atol*10, rtol=rtol*10))
+            @test all(
+                isapprox.(fₕ.coefficients, ref_coeffs, atol=atol * 10, rtol=rtol * 10)
+            )
 
             # compute error
             error = Analysis.L2_norm(fₕ - fₑ, dΩ)

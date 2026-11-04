@@ -38,15 +38,9 @@ function get_global_quadrature_rules(
     nq_single::NTuple{manifold_dim, Int},
     nq_others::NTuple{manifold_dim, Int}...,
 ) where {manifold_dim}
-    q_single = StandardQuadrature(
-        tensor_product_rule(nq_single, q_rule),
-        num_elements
-    )
+    q_single = StandardQuadrature(tensor_product_rule(nq_single, q_rule), num_elements)
     q_others = ntuple(length(nq_others)) do i
-        return StandardQuadrature(
-            tensor_product_rule(nq_others[i], q_rule),
-            num_elements
-        )
+        return StandardQuadrature(tensor_product_rule(nq_others[i], q_rule), num_elements)
     end
 
     return (q_single, q_others...)

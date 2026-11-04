@@ -62,7 +62,7 @@ struct TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_d
     ) where {manifold_dim}
         _construction_checks(input_points)
 
-        if any(i -> i<1 || i>manifold_dim, iteration_order)
+        if any(i -> i < 1 || i > manifold_dim, iteration_order)
             return throw(
                 ArgumentError(
                     LazyString(

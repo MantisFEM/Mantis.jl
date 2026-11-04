@@ -19,7 +19,7 @@ end
 end
 
 @testset "HierarchicalGeometry" verbose = true begin
-	include("HierarchicalGeometryTests.jl")
+    include("HierarchicalGeometryTests.jl")
 end
 
 @testset "Metric" begin
@@ -28,7 +28,7 @@ end
 @testset "ErrorBehaviour" begin
     include("GeometryErrorsTests.jl")
 end
-@testset "EvaluationMask" verbose=true begin
+@testset "EvaluationMask" verbose = true begin
     include("EvaluationMask/runtests.jl")
 end
 

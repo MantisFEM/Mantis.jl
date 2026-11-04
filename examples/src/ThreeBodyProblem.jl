@@ -130,13 +130,13 @@ function integrate_Stormer_Verlet!(x_n, v_n, t)
     ## a full position updated, followed by another half time-step velocity update, we
     ## obtain the Störmer-Verlet (or kick-drift-kick) algorithm.
     TimeIntegrators.time_integrate!(
-        v_n, ode_velocity, t, 0.5*dt; pos=TimeIntegrators.get_solution(x_n)
+        v_n, ode_velocity, t, 0.5 * dt; pos=TimeIntegrators.get_solution(x_n)
     )
     TimeIntegrators.time_integrate!(
         x_n, ode_position, t, dt; vel=TimeIntegrators.get_solution(v_n)
     )
     TimeIntegrators.time_integrate!(
-        v_n, ode_velocity, t+0.5*dt, 0.5*dt; pos=TimeIntegrators.get_solution(x_n)
+        v_n, ode_velocity, t + 0.5 * dt, 0.5 * dt; pos=TimeIntegrators.get_solution(x_n)
     )
 
     return nothing
@@ -267,7 +267,7 @@ function compute_hamiltonian(x_n, v_n)
                 U += 1.0 / r
             end
         end
-        K += 0.5 * (v[i]^2 + v[i+1]^2)
+        K += 0.5 * (v[i]^2 + v[i + 1]^2)
     end
     return K - U
 end
@@ -332,7 +332,7 @@ lines!(ax_ham, hamiltonian_history_R; color=:green)
 record(
     fig, "three_body_problem.mp4", LinRange(t0, T, round(Int, T / dt)); framerate=30
 ) do t
-    time[] = t
+    return time[] = t
 end
 
 # ```@raw html

@@ -163,8 +163,12 @@ basic_tests(geometryMP, answers_MP)
 @test Geometry.get_patch_and_local_element_id(geometryMP, 10) == (2, 2)
 
 for i in 1:Geometry.get_num_elements(geometryMP)
-    jac = Geometry.jacobian(geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0])))
-    hess = Geometry.hessian(geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0])))
+    jac = Geometry.jacobian(
+        geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
+    )
+    hess = Geometry.hessian(
+        geometryMP, i, Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0]))
+    )
     if i <= 4
         for p in axes(jac, 1)
             @test all(isapprox.(jac[p][:, :], [0.5 0.0; 0.0 0.85], rtol=1e-14))
@@ -175,7 +179,7 @@ for i in 1:Geometry.get_num_elements(geometryMP)
         end
     else
         for p in axes(jac, 1)
-            @test all(isapprox.(jac[p][:, :], [1/3 0.0; 0.0 1/5], rtol=1e-14))
+            @test all(isapprox.(jac[p][:, :], [1 / 3 0.0; 0.0 1 / 5], rtol=1e-14))
         end
     end
     for p in eachindex(hess)
@@ -218,10 +222,10 @@ for i in 1:Geometry.get_num_elements(geometryMP100)
     hess = Geometry.hessian(geometryMP100, i, Points.TensorProductPoints(([0.0, 1.0],)))
 
     for p in eachindex(jac, hess)
-        if !all(isapprox.(jac[p][:, :], [1.0 / i], rtol=1e-14))
+        if !all(isapprox.(jac[p][:, :], [1.0 / i]; rtol=1e-14))
             all_jac_MP100 = false
         end
-        if !all(isapprox.(hess[p][1][:, :], [0.0], rtol=1e-14))
+        if !all(isapprox.(hess[p][1][:, :], [0.0]; rtol=1e-14))
             all_hess_MP100 = false
         end
     end

@@ -26,12 +26,16 @@ The strictly increasing property of the breakpoints is checked. An
 struct Patch1D
     breakpoints::Vector{Float64}
     function Patch1D(breakpoints::Vector{Float64})
-        for i in eachindex(breakpoints)[begin:end-1]
-            if breakpoints[i] >= breakpoints[i+1]
-                throw(ArgumentError("Breakpoints should be strictly increasing but they are not."))
+        for i in eachindex(breakpoints)[begin:(end - 1)]
+            if breakpoints[i] >= breakpoints[i + 1]
+                throw(
+                    ArgumentError(
+                        "Breakpoints should be strictly increasing but they are not."
+                    ),
+                )
             end
         end
-        new(breakpoints)
+        return new(breakpoints)
     end
     function Patch1D(breakpoint::Float64)
         return Patch1D([breakpoint])
@@ -61,7 +65,7 @@ struct Patch{n}
 
     # Inner constructor(s)
     function Patch(breakpoints::NTuple{n, Vector{Float64}}) where {n}
-        new{n}(NTuple{n, Patch1D}(Patch1D(breakpoints[d]) for d in 1:1:n))
+        return new{n}(NTuple{n, Patch1D}(Patch1D(breakpoints[d]) for d in 1:1:n))
     end
 end
 
@@ -83,11 +87,13 @@ Returns the breakpoints per dimension.
 - `::NTuple{n, Vector{Float64}}`: Breakpoints per dimension.
 """
 function get_breakpoints(patch::Patch{n}) where {n}
-    return NTuple{n, Vector{Float64}}(get_breakpoints(patch.patches_per_dim[d]) for d in 1:1:n)
+    return NTuple{n, Vector{Float64}}(
+        get_breakpoints(patch.patches_per_dim[d]) for d in 1:1:n
+    )
 end
 
 function get_element_measure(patch::Patch1D, element_id::Int)
-    return patch.breakpoints[element_id+1]-patch.breakpoints[element_id]
+    return patch.breakpoints[element_id + 1] - patch.breakpoints[element_id]
 end
 
 """
@@ -103,7 +109,7 @@ Returns the vertices of the element specified by `element_id`.
 - `::NTuple{1, Vector{Float64}}`: The vertices of the element.
 """
 function get_element_vertices(patch::Patch1D, element_id::Int)
-    return ([patch.breakpoints[element_id],patch.breakpoints[element_id+1]],)
+    return ([patch.breakpoints[element_id], patch.breakpoints[element_id + 1]],)
 end
 
 """
@@ -137,7 +143,7 @@ call `size(patch)` to get the size of the patch.
 - `::NTuple{n, Int}`: Tuple of the number of elements per dimension.
 """
 function Base.size(patch::Patch{n}) where {n}
-    return NTuple{n, Int}(length(get_breakpoints(patch)[i]) - 1 for i = 1:1:n)
+    return NTuple{n, Int}(length(get_breakpoints(patch)[i]) - 1 for i in 1:1:n)
 end
 
 """
@@ -192,13 +198,14 @@ precomputed nor stored.
 - `::Base.Iterators.ProductIterator{NTuple{n, StepRange{Int, Int}}}`: Iterator of NTuples of element ids.
 """
 function get_element_ids(patch::Patch{n}) where {n}
-    return Iterators.product(NTuple{n,StepRange{Int,Int}}(1:1:nei for nei in size(patch))...)
+    return Iterators.product(
+        NTuple{n, StepRange{Int, Int}}(1:1:nei for nei in size(patch))...
+    )
 end
 
 function get_element(patch::Patch1D, element_id::Int)
-    return @view get_breakpoints(patch)[element_id:element_id+1]
+    return @view get_breakpoints(patch)[element_id:(element_id + 1)]
 end
-
 
 # TopologyFunctionality
 include("./MeshTopology.jl")

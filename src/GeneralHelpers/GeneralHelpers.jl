@@ -79,7 +79,7 @@ See also [`cache_dict`](@ref) and `get!`.
 function get_from_cache(::Type{K}, ::Type{V}, key, f, id=Val{1}()) where {K, V}
     dict = cache_dict(K, V, id)
     get!(dict, key) do
-        f(key)
+        return f(key)
     end
 end
 
@@ -240,7 +240,7 @@ function Array{T, N}(::UndefInitializer, dims...) where {T, N}
     if !matches(Array{T, N}, dims...)
         throw(
             DimensionMismatch(
-                "$(Array{T, N}) incompatible with number of dimensions $(length.(dims)).",
+                "$(Array{T, N}) incompatible with number of dimensions $(length.(dims))."
             ),
         )
     end

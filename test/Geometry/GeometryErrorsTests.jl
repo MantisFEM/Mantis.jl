@@ -39,10 +39,18 @@ neg_1D = NonExistentGeometry(1, 1, 1)
 @test_throws MethodError Geometry.get_element_measure(neg_1D, 1)
 @test_throws MethodError Geometry.get_element_lengths(neg_1D, 1)
 @test_throws MethodError Geometry.get_element_vertices(neg_1D, 1)
-@test_throws MethodError Geometry.evaluate(neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],)))
-@test_throws MethodError Geometry.jacobian(neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],)))
-@test_throws MethodError Geometry.hessian(neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],)))
-@test_throws MethodError Geometry.metric(neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],)))
+@test_throws MethodError Geometry.evaluate(
+    neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],))
+)
+@test_throws MethodError Geometry.jacobian(
+    neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],))
+)
+@test_throws MethodError Geometry.hessian(
+    neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],))
+)
+@test_throws MethodError Geometry.metric(
+    neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],))
+)
 @test_throws MethodError Geometry.inv_metric(
     neg_1D, 1, Points.TensorProductPoints(([0.0, 1.0],))
 )
@@ -77,7 +85,9 @@ neg_1D_3 = NonExistentGeometry(1, 1, 3)
 @test_throws MethodError Geometry.hessian(
     neg_1D_3, 1, Points.TensorProductPoints(([0.0, 1.0],))
 )
-@test_throws MethodError Geometry.metric(neg_1D_3, 1, Points.TensorProductPoints(([0.0, 1.0],)))
+@test_throws MethodError Geometry.metric(
+    neg_1D_3, 1, Points.TensorProductPoints(([0.0, 1.0],))
+)
 @test_throws MethodError Geometry.inv_metric(
     neg_1D_3, 1, Points.TensorProductPoints(([0.0, 1.0],))
 )

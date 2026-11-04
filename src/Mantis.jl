@@ -36,10 +36,7 @@ export Mesh,
 
 # Exports from Points
 using .Points
-export PointSet,
-    TensorProductPoints,
-    get_input_points,
-    get_num_points
+export PointSet, TensorProductPoints, get_input_points, get_num_points
 
 # Exports from Forms.
 using .Forms
@@ -50,8 +47,8 @@ export get_label, get_num_basis, get_coefficients
 
 # Exports from TimeIntegrators
 using .TimeIntegrators
-export define_explicit_ode, define_diagonally_implicit_ode, define_implicit_ode,
-    define_imex_ode
+export define_explicit_ode,
+    define_diagonally_implicit_ode, define_implicit_ode, define_imex_ode
 export get_solution, initialise_scheme, time_integrate, time_integrate!
 
 end

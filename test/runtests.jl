@@ -3,37 +3,37 @@ module MantisTests
 using Pkg
 using Test
 
-@testset verbose=true "GeneralHelpers" begin
+@testset verbose = true "GeneralHelpers" begin
     include("GeneralHelpers/runtests.jl")
 end
-@testset verbose=true "Mesh" begin
+@testset verbose = true "Mesh" begin
     include("Mesh/runtests.jl")
 end
-@testset verbose=true "TensorProducts" begin
+@testset verbose = true "TensorProducts" begin
     include("TensorProducts/runtests.jl")
 end
-@testset verbose=true "Points" begin
+@testset verbose = true "Points" begin
     include("Points/runtests.jl")
 end
-@testset verbose=true "Geometry" begin
+@testset verbose = true "Geometry" begin
     include("Geometry/runtests.jl")
 end
-@testset verbose=true "FunctionSpaces" begin
+@testset verbose = true "FunctionSpaces" begin
     include("FunctionSpaces/runtests.jl")
 end
-@testset verbose=true "Quadrature" begin
+@testset verbose = true "Quadrature" begin
     include("Quadrature/runtests.jl")
 end
-@testset verbose=true "Forms" begin
+@testset verbose = true "Forms" begin
     include("Forms/runtests.jl")
 end
-@testset verbose=true "Assembly" begin
+@testset verbose = true "Assembly" begin
     include("Assemblers/runtests.jl")
 end
-@testset verbose=true "TimeIntegrators" begin
+@testset verbose = true "TimeIntegrators" begin
     include("TimeIntegrators/runtests.jl")
 end
-@testset verbose=true "Plot" begin
+@testset verbose = true "Plot" begin
     include("Plot/runtests.jl")
 end
 
@@ -44,7 +44,7 @@ end
         Pkg.activate("Inference")
         Pkg.develop(PackageSpec(path=dirname(@__DIR__)))
         Pkg.instantiate()
-        @testset verbose=true "Inference Tests" include("Inference/runtests.jl")
+        @testset verbose = true "Inference Tests" include("Inference/runtests.jl")
     end
 end
 

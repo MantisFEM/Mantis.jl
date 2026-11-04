@@ -95,7 +95,7 @@ const explicit_integrators = (
             errors[i] = abs(exact_sol(t_final) - TimeIntegrators.get_solution(y_n)[1])
         end
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -131,7 +131,7 @@ const explicit_multi_step_integrators = (
             errors[i] = abs(exact_sol(t_final) - TimeIntegrators.get_solution(y_n)[1])
         end
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -175,27 +175,26 @@ const implicit_integrators = (
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
                     (
-                        -4.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
-                        1.0
-                    )/(4.0 * TimeIntegrators._ESDIRK32_g),
-                    (6.0*TimeIntegrators._ESDIRK32_g - 1.0)/(
-                        12.0 * TimeIntegrators._ESDIRK32_g
-                    ),
+                        -4.0 * TimeIntegrators._ESDIRK32_g^2 +
+                        6 * TimeIntegrators._ESDIRK32_g - 1.0
+                    ) / (4.0 * TimeIntegrators._ESDIRK32_g),
+                    (6.0 * TimeIntegrators._ESDIRK32_g - 1.0) /
+                    (12.0 * TimeIntegrators._ESDIRK32_g),
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
-                    (-2.0*TimeIntegrators._ESDIRK32_g+1.0)/(
-                        4.0*TimeIntegrators._ESDIRK32_g
-                    ),
-                    -1.0/(
-                        (24.0*TimeIntegrators._ESDIRK32_g-12.0)*TimeIntegrators._ESDIRK32_g
+                    (-2.0 * TimeIntegrators._ESDIRK32_g + 1.0) /
+                    (4.0 * TimeIntegrators._ESDIRK32_g),
+                    -1.0 / (
+                        (24.0 * TimeIntegrators._ESDIRK32_g - 12.0) *
+                        TimeIntegrators._ESDIRK32_g
                     ),
                     0.0,
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
                     (
-                        -6.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
-                        1.0
-                    )/(6.0*TimeIntegrators._ESDIRK32_g - 3.0),
+                        -6.0 * TimeIntegrators._ESDIRK32_g^2 +
+                        6 * TimeIntegrators._ESDIRK32_g - 1.0
+                    ) / (6.0 * TimeIntegrators._ESDIRK32_g - 3.0),
                     0.0,
                     0.0,
                     0.0,
@@ -220,7 +219,7 @@ const implicit_integrators = (
             errors[i] = abs(exact_sol(t_final) - TimeIntegrators.get_solution(y_n)[1])
         end
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -279,7 +278,7 @@ const implicit_multi_step_integrators = (
             errors[i] = abs(exact_sol(t_final) - TimeIntegrators.get_solution(y_n)[1])
         end
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -321,7 +320,7 @@ const one_step_imex_integrators = (
         end
 
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -358,7 +357,7 @@ const multi_step_imex_integrators = (
         end
 
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 
@@ -376,10 +375,10 @@ end
 # second derivative which is not accounted for in the available initialisations. As a
 # result, this scheme is not part of Mantis.
 const ARK3 = TimeIntegrators.Explicit(
-    StaticArrays.SMatrix{3, 3}(0.0, 1/2, 0.0, 0.0, 0.0, 3/4, 0.0, 0.0, 0.0), # A
-    StaticArrays.SMatrix{3, 3}(0.0, 0.0, 3.0, 3/4, 0.0, -3.0, 0.0, 1.0, 2.0), # B
-    StaticArrays.SMatrix{3, 3}(1.0, 1.0, 1.0, 1/3, 1/6, 1/4, 1/18, 1/18, 0.0), # U
-    StaticArrays.SMatrix{3, 3}(1.0, 0.0, 0.0, 1/4, 0, -2.0, 0.0, 0.0, 0.0), # V
+    StaticArrays.SMatrix{3, 3}(0.0, 1 / 2, 0.0, 0.0, 0.0, 3 / 4, 0.0, 0.0, 0.0), # A
+    StaticArrays.SMatrix{3, 3}(0.0, 0.0, 3.0, 3 / 4, 0.0, -3.0, 0.0, 1.0, 2.0), # B
+    StaticArrays.SMatrix{3, 3}(1.0, 1.0, 1.0, 1 / 3, 1 / 6, 1 / 4, 1 / 18, 1 / 18, 0.0), # U
+    StaticArrays.SMatrix{3, 3}(1.0, 0.0, 0.0, 1 / 4, 0, -2.0, 0.0, 0.0, 0.0), # V
     StaticArrays.SVector(1 / 3, 2 / 3, 1.0),
     TimeIntegrators.TimeLevels(
         [0], # y
@@ -410,7 +409,7 @@ const explicit_multi_multi_integrators = (ARK3,)
             errors[i] = abs(exact_sol(t_final) - TimeIntegrators.get_solution(y_n)[1])
         end
         rates = [
-            log(errors[i]/errors[i + 1])/(log(dts[i]/dts[i + 1])) for
+            log(errors[i] / errors[i + 1]) / (log(dts[i] / dts[i + 1])) for
             i in eachindex(errors)[1:(end - 1)]
         ]
 

@@ -8,8 +8,10 @@ using Printf
 using Test
 
 # Compute directory trees for data input and output
-reference_directory_tree = [dirname(dirname(pathof(Mantis))), "test", "data", "reference", "Plot"]
-output_directory_tree = [dirname(dirname(pathof(Mantis))), "test","data","output","Plot"]
+reference_directory_tree = [
+    dirname(dirname(pathof(Mantis))), "test", "data", "reference", "Plot"
+]
+output_directory_tree = [dirname(dirname(pathof(Mantis))), "test", "data", "output", "Plot"]
 
 # Test Plotting of 3D Geometry (torus) -------------------------------------------
 deg = 2
@@ -213,8 +215,8 @@ geom_coeffs_tp = [
     geom_coeffs_θ .* r1
 ]
 geom_coeffs_θrz = [
-    geom_coeffs_tp z0.*ones(8)
-    geom_coeffs_tp z1.*ones(8)
+    geom_coeffs_tp z0 .* ones(8)
+    geom_coeffs_tp z1 .* ones(8)
 ]
 geom = FunctionSpaces.DiscreteGeometry(TP_θrz, geom_coeffs_θrz)
 # Generate the plot
@@ -263,7 +265,7 @@ function mapping(x::AbstractVector)
     return [(x[1] + 0.2) * cos(x[2]), (x[1] + 0.2) * sin(x[2])]
 end
 function dmapping(x::AbstractVector)
-    return [cos(x[2]) -(x[1] + 0.2)*sin(x[2]); sin(x[2]) (x[1] + 0.2)*cos(x[2])]
+    return [cos(x[2]) -(x[1] + 0.2) * sin(x[2]); sin(x[2]) (x[1] + 0.2) * cos(x[2])]
 end
 dimension = (2, 2)
 curved_mapping = Geometry.Mapping(dimension, mapping, dmapping)

@@ -24,7 +24,7 @@ function update_domains_with_lchains!(
     previous_parents = Int[]
     L = get_num_levels(space)
     domains = get_nested_domains(space)
-	two_scale_operators = copy(get_two_scale_operators(space))
+    two_scale_operators = copy(get_two_scale_operators(space))
     spaces = get_spaces(space)
     for level in L:-1:1
         level_marked_els = marked_els[level]

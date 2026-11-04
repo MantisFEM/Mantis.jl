@@ -117,9 +117,9 @@ end
 ############################################################################################
 #
 function build_two_scale_operator(
-	parent_bspline::BSplineSpace, num_subdivisions::Tuple{Int}
+    parent_bspline::BSplineSpace, num_subdivisions::Tuple{Int}
 )
-	return build_two_scale_operator(parent_bspline, num_subdivisions[1])
+    return build_two_scale_operator(parent_bspline, num_subdivisions[1])
 end
 
 """

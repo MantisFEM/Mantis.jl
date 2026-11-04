@@ -30,7 +30,7 @@ struct UnstructuredGeometry{manifold_dim, image_dim, num_patches, GT} <:
         GT <: NTuple{num_patches, AbstractGeometry{manifold_dim, image_dim, 1}},
     }
         num_elements_per_patch = ntuple(num_patches) do i
-            get_num_elements(geometry_per_patch[i])
+            return get_num_elements(geometry_per_patch[i])
         end
         num_elements = sum(num_elements_per_patch)
 

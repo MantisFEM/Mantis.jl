@@ -92,7 +92,9 @@ Evaluates all derivatives upto order `nderivatives` for all basis functions of
 function _evaluate_all_at_point(
     canonical_space::AbstractCanonicalSpace, xi::Float64, nderivatives::Int
 )
-    local_basis = evaluate(canonical_space, Points.TensorProductPoints(([xi],)), nderivatives)
+    local_basis = evaluate(
+        canonical_space, Points.TensorProductPoints(([xi],)), nderivatives
+    )
     ndofs = get_polynomial_degree(canonical_space) + 1
     basis_indices = collect(1:ndofs)
     I = zeros(Int, ndofs * (nderivatives + 1))
@@ -162,7 +164,7 @@ function build_two_scale_matrix(
     subdivision_matrix = SparseArrays.sparse(Matrix(LinearAlgebra.I, p + 1, p + 1))
     for i in 1:num_ref
         subdivision_matrix =
-            SparseArrays.blockdiag([bisection_matrix for i in 1:(2^(i - 1))]...) * subdivision_matrix
+            SparseArrays.blockdiag([bisection_matrix for i in 1:(2 ^ (i - 1))]...) * subdivision_matrix
     end
 
     return subdivision_matrix

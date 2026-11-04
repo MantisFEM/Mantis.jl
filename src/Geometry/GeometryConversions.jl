@@ -5,7 +5,7 @@
 function Base.convert(
     ::Type{CartesianGeometry},
     geometry::TensorProductGeometry{
-        manifold_dim, image_dim, num_patches, num_geometries, TP,
+        manifold_dim, image_dim, num_patches, num_geometries, TP
     },
 ) where {
     manifold_dim,

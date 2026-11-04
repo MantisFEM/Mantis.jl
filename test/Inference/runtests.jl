@@ -11,7 +11,7 @@ end
 @testset "FESpaces" begin
     include("FESpacesInferenceTests.jl")
 end
-@testset verbose=true "Forms" begin
+@testset verbose = true "Forms" begin
     @testset "CoDifferential" begin
         include("Forms/CoDifferentialInferenceTests.jl")
     end

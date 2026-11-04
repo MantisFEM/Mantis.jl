@@ -129,7 +129,7 @@ function extract_bspline_to_section_space(
         # Count forwrd multiplicity of knot at k_id_end
         t = k_id_end
         while k_id_end < num_knots &&
-            convert_knot_to_breakpoint_idx(knot_vector, k_id_end + 1) == b_id_end
+              convert_knot_to_breakpoint_idx(knot_vector, k_id_end + 1) == b_id_end
             k_id_end += 1
         end
         mult = k_id_end - t + 1
@@ -261,8 +261,9 @@ function extract_bspline_to_section_space(
     for el in 1:nel
         cols_el = (canonical_dims[el] + 1):canonical_dims[el + 1]
         # Matrix of coefficients
-        extraction_coefficients[el] =
-            Matrix(H[get_basis_indices(basis_indices[el]), cols_el])'
+        extraction_coefficients[el] = Matrix(
+            H[get_basis_indices(basis_indices[el]), cols_el]
+        )'
     end
 
     Etup = [(extraction_coefficients[el],) for el in eachindex(extraction_coefficients)]
@@ -429,7 +430,7 @@ Build the sparsest possible nullspace of a constraint vector with no zero entrie
 """
 function build_sparse_nullspace(constraint::SparseArrays.SparseVector{Float64})
     q = length(constraint)
-    nz_flag = .!isapprox.(constraint, 0.0, atol=1e-14)
+    nz_flag = .!isapprox.(constraint, 0.0; atol=1e-14)
     i1 = findfirst(nz_flag)
     i2 = findlast(nz_flag)
     dd = zeros(Float64, q - 1, 2)

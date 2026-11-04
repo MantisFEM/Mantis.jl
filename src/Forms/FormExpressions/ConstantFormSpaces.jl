@@ -78,10 +78,8 @@ get_form_space_tree(form::ConstantFormSpace) = (get_form(form_space),)
 get_geometry(form::ConstantFormSpace) = form.geometry
 
 function get_fe_space(::ConstantFormSpace)
-    throw(
-        ArgumentError(
-            "ConstantFormSpace does not have an associated finite element space.",
-        ),
+    return throw(
+        ArgumentError("ConstantFormSpace does not have an associated finite element space.")
     )
 end
 
@@ -90,9 +88,7 @@ end
 ############################################################################################
 
 function evaluate(
-    ::ConstantFormSpace{manifold_dim, 0},
-    ::Int,
-    xi::Points.AbstractPoints{manifold_dim},
+    ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     num_evaluation_points = Points.get_num_points(xi)
     return [ones(Float64, num_evaluation_points, 1)], [[1]]

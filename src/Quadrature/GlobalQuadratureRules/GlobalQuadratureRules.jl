@@ -43,7 +43,9 @@ Get the indices of the quadrature elements in a given base element.
 - `Vector{Int}`: The indices of the quadrature elements in the specified base element.
 """
 function get_element_idxs(::AbstractGlobalQuadratureRule, ::Int)
-    throw(ArgumentError("Method not implemented for this type of global quadrature rule."))
+    return throw(
+        ArgumentError("Method not implemented for this type of global quadrature rule.")
+    )
 end
 
 """

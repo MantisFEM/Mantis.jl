@@ -67,8 +67,7 @@ for element_idx in 1:Geometry.get_num_elements(E₀)
         @test element_idx_base == element_idx
         @test isapprox(
             collect(Points.get_input_points(xi_base)[1]),
-            (collect(Points.get_input_points(xi)[1]) .+ (subd - 1)) ./
-            nsubd[element_idx],
+            (collect(Points.get_input_points(xi)[1]) .+ (subd - 1)) ./ nsubd[element_idx],
             atol=1e-12,
         )
         @test isapprox(scale[1], 1 / nsubd[element_idx], atol=1e-12)

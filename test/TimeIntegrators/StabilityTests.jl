@@ -27,7 +27,7 @@ const dt = dx / velocity  # gives CFL = 1
 const grid = 0.0:dx:L
 const A =
     (velocity / dx) *
-    SparseArrays.spdiagm(0 => ones(length(grid)), -1 => -1 .* ones(length(grid)-1))
+    SparseArrays.spdiagm(0 => ones(length(grid)), -1 => -1 .* ones(length(grid) - 1))
 # Set periodic boundary conditions.
 A[1, end] = -(velocity / dx)
 
@@ -57,11 +57,11 @@ function exact_stability(z, order)
     if order == 1
         return 1 + z
     elseif order == 2
-        return 1 + z + 1/2 * z^2
+        return 1 + z + 1 / 2 * z^2
     elseif order == 3
-        return 1 + z + 1/2 * z^2 + 1/6 * z^3
+        return 1 + z + 1 / 2 * z^2 + 1 / 6 * z^3
     elseif order == 4
-        return 1 + z + 1/2 * z^2 + 1/6 * z^3 + 1/24 * z^4
+        return 1 + z + 1 / 2 * z^2 + 1 / 6 * z^3 + 1 / 24 * z^4
     end
 end
 
@@ -102,7 +102,7 @@ function rk_stability(A, b, z)
     b = vec(Matrix(b))
     s = size(A, 1)
     e = ones(ComplexF64, s)
-    return 1 + z * LinearAlgebra.dot(b, (LinearAlgebra.I - z*A) \ e)
+    return 1 + z * LinearAlgebra.dot(b, (LinearAlgebra.I - z * A) \ e)
 end
 const gamma4 = (1 + TimeIntegrators._α_DIRK4) / 2
 const diagonally_implicit_integrators = (
@@ -146,27 +146,26 @@ dimplicit_linear_advection_ode2 = TimeIntegrators.define_diagonally_implicit_ode
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
                     (
-                        -4.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
-                        1.0
-                    )/(4.0 * TimeIntegrators._ESDIRK32_g),
-                    (6.0*TimeIntegrators._ESDIRK32_g - 1.0)/(
-                        12.0 * TimeIntegrators._ESDIRK32_g
-                    ),
+                        -4.0 * TimeIntegrators._ESDIRK32_g^2 +
+                        6 * TimeIntegrators._ESDIRK32_g - 1.0
+                    ) / (4.0 * TimeIntegrators._ESDIRK32_g),
+                    (6.0 * TimeIntegrators._ESDIRK32_g - 1.0) /
+                    (12.0 * TimeIntegrators._ESDIRK32_g),
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
-                    (-2.0*TimeIntegrators._ESDIRK32_g+1.0)/(
-                        4.0*TimeIntegrators._ESDIRK32_g
-                    ),
-                    -1.0/(
-                        (24.0*TimeIntegrators._ESDIRK32_g-12.0)*TimeIntegrators._ESDIRK32_g
+                    (-2.0 * TimeIntegrators._ESDIRK32_g + 1.0) /
+                    (4.0 * TimeIntegrators._ESDIRK32_g),
+                    -1.0 / (
+                        (24.0 * TimeIntegrators._ESDIRK32_g - 12.0) *
+                        TimeIntegrators._ESDIRK32_g
                     ),
                     0.0,
                     0.0,
                     TimeIntegrators._ESDIRK32_g,
                     (
-                        -6.0*TimeIntegrators._ESDIRK32_g^2 + 6*TimeIntegrators._ESDIRK32_g -
-                        1.0
-                    )/(6.0*TimeIntegrators._ESDIRK32_g - 3.0),
+                        -6.0 * TimeIntegrators._ESDIRK32_g^2 +
+                        6 * TimeIntegrators._ESDIRK32_g - 1.0
+                    ) / (6.0 * TimeIntegrators._ESDIRK32_g - 3.0),
                     0.0,
                     0.0,
                     0.0,
@@ -232,7 +231,7 @@ function glm_amplification(scheme, z)
 
     s = size(A, 1)
 
-    M = V + z * B * ((LinearAlgebra.I - z*A) \ U)
+    M = V + z * B * ((LinearAlgebra.I - z * A) \ U)
 
     λ = LinearAlgebra.eigvals(M)
 
@@ -275,7 +274,7 @@ multistep_integrators_explicit = (
     TimeIntegrators.AB1, TimeIntegrators.AB2, TimeIntegrators.AB3, TimeIntegrators.AB4
 )
 
-@testset "Multi-Step Single-Stage Explicit Integrators" verbose=true begin
+@testset "Multi-Step Single-Stage Explicit Integrators" verbose = true begin
     foreach(multistep_integrators_explicit) do scheme
         ξ, history = create_history(scheme, z_k)
 
@@ -301,7 +300,7 @@ multistep_integrators_diag_impl = (
     TimeIntegrators.BDF4,
 )
 
-@testset "Multi-Step Single-Stage (Diagonally) Implicit Integrators" verbose=true begin
+@testset "Multi-Step Single-Stage (Diagonally) Implicit Integrators" verbose = true begin
     foreach(multistep_integrators_diag_impl) do scheme
         ξ, history = create_history(scheme, z_k)
 
@@ -327,11 +326,11 @@ function imex_solve(output, x, h, t; num_stages)
     return nothing
 end
 function imex_eval(output, c, t; num_stages)
-    LinearAlgebra.mul!(output, -0.8*A, c)
+    LinearAlgebra.mul!(output, -0.8 * A, c)
     return nothing
 end
 function imex_expl(output, c, t; num_stages)
-    LinearAlgebra.mul!(output, -0.2*A, c)
+    LinearAlgebra.mul!(output, -0.2 * A, c)
     return nothing
 end
 imex_linear_advection_ode = TimeIntegrators.define_imex_ode(
@@ -348,7 +347,7 @@ function glm_amplification_imex(scheme, ze, zi)
     U = Matrix(scheme.U)
     V = Matrix(scheme.V)
 
-    M = V + (ze*BE + zi*BI) * ((LinearAlgebra.I - ze*AE - zi*AI) \ U)
+    M = V + (ze * BE + zi * BI) * ((LinearAlgebra.I - ze * AE - zi * AI) \ U)
 
     λ = LinearAlgebra.eigvals(M)
 
@@ -394,9 +393,9 @@ const one_step_imex_integrators = (
     TimeIntegrators.RK3_IMEX,
     TimeIntegrators.IMEX331,
 )
-@testset "Single-Step Multi-Stage IMEX Integrators" verbose=true begin
+@testset "Single-Step Multi-Stage IMEX Integrators" verbose = true begin
     foreach(one_step_imex_integrators) do scheme
-        ξ, history = create_history_imex(scheme, 0.2*z_k, 0.8*z_k)
+        ξ, history = create_history_imex(scheme, 0.2 * z_k, 0.8 * z_k)
 
         yn = TimeIntegrators.TimeIntegrationSolution(history, scheme, nothing, 0)
 
@@ -420,9 +419,9 @@ const multi_step_imex_integrators = (
     TimeIntegrators.SSSS2,
 )
 
-@testset "Multi-Step Single-Stage IMEX Integrators" verbose=true begin
+@testset "Multi-Step Single-Stage IMEX Integrators" verbose = true begin
     foreach(multi_step_imex_integrators) do scheme
-        ξ, history = create_history_imex(scheme, 0.2*z_k, 0.8*z_k)
+        ξ, history = create_history_imex(scheme, 0.2 * z_k, 0.8 * z_k)
 
         yn = TimeIntegrators.TimeIntegrationSolution(history, scheme, nothing, 0)
 

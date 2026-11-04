@@ -113,7 +113,7 @@ function time_integrate!(
             ode.implicitEvaluate!(
                 view(y_n.solution, :, index_implicit),
                 get_solution(y_n_startup),
-                t+dt;
+                t + dt;
                 kwargs...,
             )
             y_n.solution[:, index_implicit] .*= dt
@@ -532,7 +532,7 @@ function _time_integrate!(
 
     ode.implicitSolve!(Y, xi, scheme.A * dt, tis; kwargs...)
 
-    allG = Vector{T}(undef, N*num_stages)
+    allG = Vector{T}(undef, N * num_stages)
     ode.implicitEvaluate!(allG, Y, tis; kwargs...)
     @inbounds for i in 1:num_steps
         for k in 1:num_stages

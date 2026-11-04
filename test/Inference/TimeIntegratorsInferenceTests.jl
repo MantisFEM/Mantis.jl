@@ -136,13 +136,13 @@ const t = 0.0
     4,
 )
 @test_opt TimeIntegrators.butcher_tableau_to_glm( # DiagonallyImplicit DIRK3
-    SMatrix{2, 2}(1/2 + sqrt(3)/6, -sqrt(3)/3, 0.0, 1/2+sqrt(3)/6),
+    SMatrix{2, 2}(1 / 2 + sqrt(3) / 6, -sqrt(3) / 3, 0.0, 1 / 2 + sqrt(3) / 6),
     SVector(1 / 2, 1 / 2),
     SVector(1 / 2 + sqrt(3) / 6, 1 / 2 - sqrt(3) / 6),
     3,
 )
 @test_opt TimeIntegrators.butcher_tableau_to_glm( # Implicit GAUSS_LEGENDRE_4
-    SMatrix{2, 2}(1/4, 1/4+sqrt(3)/6, 1/4-sqrt(3)/6, 1/4),
+    SMatrix{2, 2}(1 / 4, 1 / 4 + sqrt(3) / 6, 1 / 4 - sqrt(3) / 6, 1 / 4),
     SVector(1 / 2, 1 / 2),
     SVector(1 / 2 - sqrt(3) / 6, 1 / 2 + sqrt(3) / 6),
     4,

@@ -43,9 +43,7 @@ for p in degrees_to_test
 
     # Check that Greville points represent the polynomial \xi
     @test all(
-        isapprox.(
-            b_eval[1][1] * LinRange(0, p, p + 1), p .* Points.get_input_points(x)[1]
-        ),
+        isapprox.(b_eval[1][1] * LinRange(0, p, p + 1), p .* Points.get_input_points(x)[1])
     )
 
     if p > 0
