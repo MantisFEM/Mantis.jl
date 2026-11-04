@@ -80,7 +80,6 @@ TensorProducts.get_num_objects(space::AbstractFunctionSpace) = get_num_basis(spa
 Hierarchical.get_num_objects(space::AbstractFunctionSpace) = get_num_basis(space)
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
-#include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
 include("Hierarchical/Hierarchical.jl")
 

@@ -764,5 +764,3 @@ include("TensorProductSpaces/TensorProductSpaces.jl")
 
 include("UnstructuredSpaces/GTBSplines.jl")
 include("UnstructuredSpaces/PolarSplines.jl")
-
-include("TwoScaleRelations/AbstractTwoScaleRelations.jl")
