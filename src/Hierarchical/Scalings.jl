@@ -511,6 +511,7 @@ Return the scaling matrix between `parent` and `child` as defined by `scaling_me
 
 !!! note
     Must be implement for every concrete type of `parent` and `child`.
+
 """
 function build_scaling_matrix(parent, child, scaling_method)
     return throw(MethodError(build_scaling_matrix, (parent, child, scaling_method)))
