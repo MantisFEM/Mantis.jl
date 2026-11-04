@@ -1,13 +1,10 @@
-"""
-    module Analysis
-
-Contains all analysis-related structs and functions.
-"""
 module Analysis
 
-using ..Geometry
+using ..Points
 using ..Forms
 using ..Quadrature
+
+export L2_norm, Linf_norm, L2_norm_per_element, Linf_norm_per_element
 
 include("ErrorComputations.jl")
 

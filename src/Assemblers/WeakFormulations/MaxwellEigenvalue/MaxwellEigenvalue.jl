@@ -239,8 +239,8 @@ function solve_maxwell_eig(
         num_eig, Forms.get_geometry(complex[1]), scale_factors
     )
     ω²ₕ, u¹ₕ = solve_maxwell_eig(complex[1], complex[2], dΩₐ, num_eig)
-    err_per_element = Analysis.compute_error_per_element(
-        u¹ₕ[eigenfunction], u¹[eigenfunction], dΩₑ
+    err_per_element = Analysis.L2_norm_per_element(
+        u¹ₕ[eigenfunction] - u¹[eigenfunction], dΩₑ
     )
     for step in 1:num_steps
         if verbose
@@ -275,8 +275,8 @@ function solve_maxwell_eig(
         # Update exact solution
         ω², u¹ = get_analytical_maxwell_eig(num_eig, geo, scale_factors)
         ω²ₕ, u¹ₕ = solve_maxwell_eig(complex[1], complex[2], dΩₐ, num_eig; verbose)
-        err_per_element = Analysis._compute_square_error_per_element(
-            u¹ₕ[eigenfunction], u¹[eigenfunction], dΩₑ
+        err_per_element = Analysis.L2_norm_per_element(
+            u¹ₕ[eigenfunction] - u¹[eigenfunction], dΩₑ
         )
     end
 

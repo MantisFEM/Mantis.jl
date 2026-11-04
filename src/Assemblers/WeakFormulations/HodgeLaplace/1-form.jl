@@ -138,7 +138,7 @@ function solve_one_form_hodge_laplacian(
     # Exact solution on initial step
     δu¹, u¹, f¹ = problem_data(1, Forms.get_geometry(complex[1]))
     δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ, bc_type)
-    err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
+    err_per_element = Analysis.L2_norm_per_element(u¹ₕ - u¹, dΩₑ)
     if VERBOSE
         error_δu = Analysis.L2_norm(δu¹ - δu¹ₕ, dΩₑ)
         error_u = Analysis.L2_norm(u¹ - u¹ₕ, dΩₑ)
@@ -185,7 +185,7 @@ function solve_one_form_hodge_laplacian(
         δu¹, u¹, f¹ = problem_data(1, geo)
         # Solve problem on current step
         δu¹ₕ, u¹ₕ = solve_one_form_hodge_laplacian(complex[1], complex[2], f¹, dΩₐ, bc_type)
-        err_per_element = Analysis.compute_error_per_element(u¹ₕ, u¹, dΩₑ)
+        err_per_element = Analysis.L2_norm_per_element(u¹ₕ - u¹, dΩₑ)
         if VERBOSE
             error_δu = Analysis.L2_norm(δu¹ - δu¹ₕ, dΩₑ)
             error_u = Analysis.L2_norm(u¹ - u¹ₕ, dΩₑ)
