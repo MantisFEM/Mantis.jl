@@ -27,6 +27,9 @@ end
 @testset verbose = true "Forms" begin
     include("Forms/runtests.jl")
 end
+@testset verbose = true "Analysis" begin
+    include("Analysis/runtests.jl")
+end
 @testset verbose = true "Assembly" begin
     include("Assemblers/runtests.jl")
 end
