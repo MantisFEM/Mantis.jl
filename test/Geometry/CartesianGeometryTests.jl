@@ -281,4 +281,7 @@ for nx in 1:3
     end
 end
 
+# A Cartesian geometry is its own parametric geometry.
+@test Geometry.get_parametric_geometry(geometry1) === geometry1
+
 end

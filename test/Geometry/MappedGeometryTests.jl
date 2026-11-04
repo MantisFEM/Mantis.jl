@@ -408,4 +408,8 @@ basic_tests(geometrycurv, answers_geometrycurv)
     (mapping_patch_1_slanted, mapping_patch_2_slanted, mapping_patch_2_slanted),
 )
 
+# A single-patch mapped geometry has the parametric geometry of its base geometry.
+@test Geometry.get_parametric_geometry(geometrycurv) ===
+    Geometry.get_base_geometry(geometrycurv)
+
 end

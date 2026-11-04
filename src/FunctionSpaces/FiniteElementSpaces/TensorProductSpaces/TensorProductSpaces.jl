@@ -86,6 +86,8 @@ struct TensorProductSpace{manifold_dim, num_patches, num_spaces, TP, G, GP, D} <
             )
         end
 
+        check_num_elements(spaces, geometry, parametric_geometry)
+
         # Pre-allocate memory for degree of freedom partitioning
         dof_partition = Vector{Vector{Vector{Int}}}(undef, num_patches)
         # factor spaces
@@ -185,6 +187,93 @@ struct TensorProductSpace{manifold_dim, num_patches, num_spaces, TP, G, GP, D} <
 end
 
 TensorProductSpace(spaces...) = TensorProductSpace(spaces)
+
+"""
+    check_num_elements(spaces, geometry, parametric_geometry)
+
+Check that the factor `spaces` of a `TensorProductSpace` have the same elements as its
+`geometry` and `parametric_geometry`. The parametric geometry splits each element id into
+factor element ids, so a mismatch would make the space evaluate the wrong factor elements.
+
+The total numbers of elements are always compared. If the parametric geometry is a
+single-patch `Geometry.CartesianGeometry`, the number of elements of each factor space is
+also compared with the number of elements in the directions it spans.
+
+# Arguments
+- `spaces::NTuple{num_spaces, AbstractFESpace}`: The factor spaces.
+- `geometry::Geometry.AbstractGeometry`: The physical geometry.
+- `parametric_geometry::Geometry.AbstractGeometry`: The parametric geometry.
+
+# Returns
+- `nothing`
+
+# Throws
+- `ArgumentError`: If the numbers of elements do not match.
+"""
+function check_num_elements(spaces, geometry, parametric_geometry)
+    factor_num_elements = map(get_num_elements, spaces)
+    num_elements = Geometry.get_num_elements(geometry)
+    num_parametric_elements = Geometry.get_num_elements(parametric_geometry)
+    if prod(factor_num_elements) != num_parametric_elements ||
+        num_elements != num_parametric_elements
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The factor spaces, the geometry and the parametric geometry must have ",
+                    "the same number of elements, but the factor spaces have ",
+                    factor_num_elements,
+                    " elements, the geometry has ",
+                    num_elements,
+                    " and the parametric geometry has ",
+                    num_parametric_elements,
+                    ".",
+                ),
+            ),
+        )
+    end
+
+    expected_factor_num_elements = get_expected_factor_num_elements(
+        spaces, parametric_geometry
+    )
+    if factor_num_elements != expected_factor_num_elements
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The factor spaces have ",
+                    factor_num_elements,
+                    " elements, but the parametric geometry has ",
+                    expected_factor_num_elements,
+                    " elements in the directions spanned by each factor space.",
+                ),
+            ),
+        )
+    end
+
+    return nothing
+end
+
+# In general, only the total number of elements of the parametric geometry is known, which
+# has already been checked.
+function get_expected_factor_num_elements(spaces, parametric_geometry)
+    return map(get_num_elements, spaces)
+end
+
+function get_expected_factor_num_elements(
+    spaces, parametric_geometry::Geometry.CartesianGeometry{manifold_dim, manifold_dim, 1}
+) where {manifold_dim}
+    num_elements_per_dim = Geometry.get_factor_num_elements(parametric_geometry, 1)
+    factor_manifold_dims = map(get_manifold_dim, spaces)
+    factor_last_dims = cumsum(factor_manifold_dims)
+
+    return map(factor_manifold_dims, factor_last_dims) do factor_manifold_dim, last_dim
+        num_elements = 1
+        for dim in (last_dim - factor_manifold_dim + 1):last_dim
+            num_elements *= num_elements_per_dim[dim]
+        end
+
+        return num_elements
+    end
+end
 
 TensorProducts.get_factors(space::TensorProductSpace) = get_factor_spaces(space)
 
