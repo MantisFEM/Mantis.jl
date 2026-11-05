@@ -65,18 +65,18 @@ get_basis_indices(indices::Indices, component_id::Int) = indices.I_c[component_i
 Stores the extraction coefficients and basis indices of a function space.
 
 On each element, the extraction maps the local bases of the input components,
-``B_1, \dots, B_{n_i}``, to the output components ``M_1, \dots, M_{n_o}`` of the space as
+``B_1, \\dots, B_{n_i}``, to the output components ``M_1, \\dots, M_{n_o}`` of the space as
 ```math
-\left[M_1 \cdots M_{n_o}\right]
+\\left[M_1 \\cdots M_{n_o}\\right]
 =
-\left[B_1 \cdots B_{n_i}\right]
-\begin{bmatrix}
-E_{11} & \cdots & E_{1n_o} \\
-\vdots & \ddots & \vdots \\
-E_{n_i1} & \cdots & E_{n_in_o}
-\end{bmatrix},
-\qquad\text{i.e.}\qquad
-M_{c_o} = \sum_{c_i} B_{c_i} E_{c_i c_o}.
+\\left[B_1 \\cdots B_{n_i}\\right]
+\\begin{bmatrix}
+E_{11} & \\cdots & E_{1n_o} \\\\
+\\vdots & \\ddots & \\vdots \\\\
+E_{n_i1} & \\cdots & E_{n_in_o}
+\\end{bmatrix},
+\\qquad\\text{i.e.}\\qquad
+M_{c_o} = \\sum_{c_i} B_{c_i} E_{c_i c_o}.
 ```
 The rows of a block ``E_{c_i c_o}`` correspond to the local basis functions of input
 component ``c_i``, and its columns to the global basis indices of output component ``c_o``
@@ -303,9 +303,9 @@ function _check_block_sizes(
                 )
             end
 
-            # The number of rows should be the same for a given element, so we extract the
-            # number for the first block of the element, and then compare against the
-            # others.
+            # All blocks of the same input component must have the same number of rows on
+            # a given element, so we store the number of rows of the first block of each
+            # input component, and compare the other blocks of that component against it.
             if num_rows[ci] == -1
                 num_rows[ci] = block_rows
             elseif num_rows[ci] != block_rows
@@ -363,18 +363,24 @@ function _get_index_operator(extraction_op::ExtractionOperator, element_id::Int)
 end
 
 """
-    _get_block_id(extraction_op::ExtractionOperator, input_component_id::Int,
-        output_component_id::Int)
+    _get_block_id(
+        block_pattern::NTuple{num_blocks, Tuple{Int, Int}},
+        input_component_id::Int,
+        output_component_id::Int,
+    ) where {num_blocks}
 
-Returns the storage position of the block `(input_component_id, output_component_id)`.
+Returns the storage position of the block `(input_component_id, output_component_id)` in
+`block_pattern`.
 
 # Exceptions
-- `ArgumentError`: If the block is not stored, i.e. it is structurally zero.
+- `ArgumentError`: If the block is not in the pattern, i.e. it is structurally zero.
 """
 function _get_block_id(
-    extraction_op::ExtractionOperator, input_component_id::Int, output_component_id::Int
-)
-    for (block_id, block) in enumerate(get_block_pattern(extraction_op))
+    block_pattern::NTuple{num_blocks, Tuple{Int, Int}},
+    input_component_id::Int,
+    output_component_id::Int,
+) where {num_blocks}
+    for (block_id, block) in enumerate(block_pattern)
         if block == (input_component_id, output_component_id)
             return block_id
         end
@@ -385,9 +391,17 @@ function _get_block_id(
             LazyString(
                 "Block ",
                 (input_component_id, output_component_id),
-                " is not stored in the extraction operator (it is structurally zero).",
+                " is not stored in the block pattern (it is structurally zero).",
             ),
         ),
+    )
+end
+
+function _get_block_id(
+    extraction_op::ExtractionOperator, input_component_id::Int, output_component_id::Int
+)
+    return _get_block_id(
+        get_block_pattern(extraction_op), input_component_id, output_component_id
     )
 end
 
@@ -414,7 +428,6 @@ function get_extraction_coefficients(
     return get_extraction_blocks(extraction_op, element_id)[block_id]
 end
 
-
 """
     get_extraction_coefficients(
         extraction_op::ExtractionOperator{1, 1}, element_id::Int
@@ -426,11 +439,11 @@ space.
 function get_extraction_coefficients(
     extraction_op::ExtractionOperator{1, 1}, element_id::Int
 )
-    return first(get_extraction_blocks(extraction_op, element_id))
+    return only(get_extraction_blocks(extraction_op, element_id))
 end
 
 """
-    get_extraction(
+    get_extraction_coefficients(
         extraction_op::ExtractionOperator,
         element_id::Int,
         input_component_id::Int,
@@ -444,7 +457,7 @@ input component `input_component_id` to output component `output_component_id`.
 - `ArgumentError`: If the block is structurally zero (not stored). Use
     [`get_block_pattern`](@ref) to iterate over the stored blocks instead.
 """
-function get_extraction(
+function get_extraction_coefficients(
     extraction_op::ExtractionOperator,
     element_id::Int,
     input_component_id::Int,

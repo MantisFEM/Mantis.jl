@@ -24,8 +24,25 @@ for el in 1:1:FunctionSpaces.get_num_elements(GB)
     @test all(ex_coeffs .>= 0.0)
     # Test for partition of unity
     @test all(isapprox.(sum(ex_coeffs; dims=2) .- 1.0, 0.0, atol=1e-14))
+
+    # Single-component extraction framework
+    @test FunctionSpaces.get_block_pattern(GB) == ((1, 1),)
+    @test FunctionSpaces.get_extraction_blocks(GB, el) == (ex_coeffs,)
+    @test FunctionSpaces.get_extraction_coefficients(GB, el, 1, 1) == ex_coeffs
+    @test FunctionSpaces.get_extraction_coefficients(GB, el, 1) == ex_coeffs
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(GB, el, 1, 2)
+    @test FunctionSpaces.get_basis_indices(GB, el, 1) ==
+        FunctionSpaces.get_basis_indices(GB, el)
+    @test FunctionSpaces.get_num_basis(GB, el, 1) == FunctionSpaces.get_num_basis(GB, el)
+    # The component can be omitted for single-component spaces, but must be 1 if given.
+    @test FunctionSpaces.get_local_basis(GB, el, x, 1) ==
+        FunctionSpaces.get_local_basis(GB, el, x, 1, 1)
+    @test_throws ArgumentError FunctionSpaces.get_local_basis(GB, el, x, 1, 2)
+
     # check GTB-spline evaluation
-    GB_eval, _ = FunctionSpaces.evaluate(GB, el, x, 1)
+    GB_eval = FunctionSpaces.evaluate(GB, el, x, 1)
+    @test size(GB_eval[1][1][1]) ==
+        (Points.get_num_points(x), FunctionSpaces.get_num_basis(GB, el))
 end
 
 # Test C1-smooth TrigonometricSplineSpace ----------------------------------------------------
@@ -52,7 +69,8 @@ LHS = zeros(nel, nel)
 RHS_C = zeros(nel)
 RHS_S = zeros(nel)
 for el in 1:1:FunctionSpaces.get_num_elements(GB)
-    GB_eval, inds = FunctionSpaces.evaluate(GB, el, x2, 0)
+    GB_eval = FunctionSpaces.evaluate(GB, el, x2, 0)
+    inds = FunctionSpaces.get_basis_indices(GB, el)
     LHS[el, inds] = GB_eval[1][1][1]
     RHS_C[el] = cos(Wt * (x2_const[1][1] + el - 1))
     RHS_S[el] = sin(Wt * (x2_const[1][1] + el - 1))
@@ -60,7 +78,8 @@ end
 coeffs_C = LHS \ RHS_C
 coeffs_S = LHS \ RHS_S
 for el in 1:1:FunctionSpaces.get_num_elements(GB)
-    GB_eval, inds = FunctionSpaces.evaluate(GB, el, x, 0)
+    GB_eval = FunctionSpaces.evaluate(GB, el, x, 0)
+    inds = FunctionSpaces.get_basis_indices(GB, el)
     @test all(
         isapprox.(
             maximum(

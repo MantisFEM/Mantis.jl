@@ -10,11 +10,11 @@ import SparseArrays
 
 using Test
 
-struct MultiPatchC0Space{num_patches, T, G, TE, TI, TJ} <:
+struct MultiPatchC0Space{num_patches, T, G, TE, TI} <:
        FunctionSpaces.AbstractFESpace{2, 1, num_patches}
     function_spaces::T
     geometry::G
-    extraction_op::FunctionSpaces.ExtractionOperator{1, TE, TI, TJ}
+    extraction_op::FunctionSpaces.ExtractionOperator{1, 1, 1, TE, TI}
     dof_partition::Vector{Vector{Vector{Int}}}
 end
 
@@ -170,10 +170,8 @@ function create_multi_patch_c0_space(
     global_dof -= 1  # Last global dof that was processed.
 
     # Create the global extraction operator.
-    extraction_coefficients = Vector{NTuple{1, Matrix{Float64}}}(undef, num_elements)
-    basis_indices = Vector{FunctionSpaces.Indices{1, Vector{Int}, StepRange{Int, Int}}}(
-        undef, num_elements
-    )
+    extraction_coefficients = Vector{Matrix{Float64}}(undef, num_elements)
+    basis_indices = Vector{Vector{Int}}(undef, num_elements)
     for patch_idx in 1:1:num_patches
         for elem_idx in 1:1:FunctionSpaces.get_num_elements(function_spaces[patch_idx])
             global_elem_id = elems_per_patch_offset[patch_idx] + elem_idx
@@ -184,14 +182,13 @@ function create_multi_patch_c0_space(
             )
             indices = FunctionSpaces.get_basis_indices(function_spaces[patch_idx], elem_idx)
 
-            extraction_coefficients[global_elem_id] = (
-                Matrix(LinearAlgebra.I, size(extr_coeffs)),
+            extraction_coefficients[global_elem_id] = Matrix(
+                LinearAlgebra.I, size(extr_coeffs)
             )
 
-            basis_indices[global_elem_id] = FunctionSpaces.Indices(
-                [local_to_global_dof_dict[(patch_idx, local_dof)] for local_dof in indices],
-                (1:1:length(indices),),
-            )
+            basis_indices[global_elem_id] = [
+                local_to_global_dof_dict[(patch_idx, local_dof)] for local_dof in indices
+            ]
         end
     end
 
@@ -200,7 +197,7 @@ function create_multi_patch_c0_space(
     )
 
     return MultiPatchC0Space{
-        num_patches, T, typeof(geometry), FunctionSpaces.get_EIJ_types(E)...
+        num_patches, T, typeof(geometry), FunctionSpaces.get_EI_types(E)...
     }(
         function_spaces, geometry, E, dof_partition
     )
@@ -211,16 +208,14 @@ function FunctionSpaces.get_local_basis(
     element_id::Int,
     xi::Points.AbstractPoints{2},
     nderivatives::Int,
-    component_id::Int=1,
 )
     patch_id, local_element_id = FunctionSpaces.get_patch_and_local_element_id(
         space, element_id
     )
 
-    # Only keep the evaluations, not the indices.
     return FunctionSpaces.evaluate(
         space.function_spaces[patch_id], local_element_id, xi, nderivatives
-    )[1]
+    )
 end
 
 function FunctionSpaces.get_num_elements_per_patch(space::MultiPatchC0Space)
@@ -247,7 +242,7 @@ function extract_mcmp_to_tp(
     extraction_coefficients = Vector{NTuple{num_components, Matrix{Float64}}}(
         undef, num_elements
     )
-    basis_indices = Vector{FunctionSpaces.Indices{num_components, Vector{Int}, Vector{Int}}}(
+    basis_indices = Vector{FunctionSpaces.Indices{num_components, Vector{Int}}}(
         undef, num_elements
     )
     basis_indices_all = Vector{Vector{Int}}(undef, num_elements)
@@ -266,44 +261,44 @@ function extract_mcmp_to_tp(
         # element. We need to find the non-zero row indices for each component space to
         # account for the most general case where the global extraction operator is not
         # a block-diagonal matrix.
+        # Only the unique indices are needed, both per component and for all components.
         nz_row_idxs_per_component = ntuple(num_components) do i
             (nz_row_idxs_i, _, _) = SparseArrays.findnz(
                 global_extr_ops[i][:, support_per_space[i]]
             )
-            return nz_row_idxs_i
+            return unique!(nz_row_idxs_i)
         end
-
-        # Only the unique indices are needed.
-        nz_row_idxs = unique!(reduce(vcat, nz_row_idxs_per_component))
+        nz_row_idxs = unique(reduce(vcat, nz_row_idxs_per_component))
         basis_indices[elem_id] = FunctionSpaces.Indices(
-            nz_row_idxs,
-            Tuple([
-                convert(Vector{Int}, indexin(nz_row_idxs_per_component[i], nz_row_idxs)) for
-                i in 1:num_components
-            ]),
+            nz_row_idxs, nz_row_idxs_per_component
         )
 
         e_elem = ntuple(num_components) do component_idx
             # Note that the convention is that [factor_spaces] * [extraction] = [MCMP].
-            return transpose(
-                global_extr_ops[component_idx][
-                    nz_row_idxs_per_component[component_idx],
-                    support_per_space[component_idx],
-                ],
+            return Matrix(
+                transpose(
+                    global_extr_ops[component_idx][
+                        nz_row_idxs_per_component[component_idx],
+                        support_per_space[component_idx],
+                    ],
+                ),
             )
         end
 
         extraction_coefficients[elem_id] = e_elem
     end
 
-    return FunctionSpaces.ExtractionOperator(
-        extraction_coefficients, basis_indices, num_elements, max_global_dof
+    # Each component space only contributes to its own component.
+    block_pattern = ntuple(component_idx -> (component_idx, component_idx), num_components)
+
+    return FunctionSpaces.ExtractionOperator{num_components}(
+        block_pattern, extraction_coefficients, basis_indices, num_elements, max_global_dof
     )
 end
 
-struct MCMP{T, TE, TI, TJ} <: FunctionSpaces.AbstractFESpace{2, 2, 2}
+struct MCMP{T, TE, TI} <: FunctionSpaces.AbstractFESpace{2, 2, 2}
     component_spaces::T
-    extraction_op::FunctionSpaces.ExtractionOperator{2, TE, TI, TJ}
+    extraction_op::FunctionSpaces.ExtractionOperator{2, 2, 2, TE, TI}
 
     function MCMP(
         component_spaces::T,
@@ -314,7 +309,7 @@ struct MCMP{T, TE, TI, TJ} <: FunctionSpaces.AbstractFESpace{2, 2, 2}
         extraction_operator = extract_mcmp_to_tp(
             component_spaces, global_extraction_operators
         )
-        return new{T, FunctionSpaces.get_EIJ_types(extraction_operator)...}(
+        return new{T, FunctionSpaces.get_EI_types(extraction_operator)...}(
             component_spaces, extraction_operator
         )
     end
@@ -405,13 +400,18 @@ basic_tests(
 
 test_elem_id = 1
 xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.7]))
-mcmpC0_eval, mcmpC0_ind = FunctionSpaces.evaluate(mcmpC0, test_elem_id, xi, 1)
+mcmpC0_eval = FunctionSpaces.evaluate(mcmpC0, test_elem_id, xi, 1)
+mcmpC0_ind = FunctionSpaces.get_basis_indices(mcmpC0, test_elem_id)
 
-C0TP1_eval, C0TP1_ind = FunctionSpaces.evaluate(C0TP1, test_elem_id, xi, 1)
-C0TP2_eval, C0TP2_ind = FunctionSpaces.evaluate(C0TP2, test_elem_id, xi, 1)
+C0TP1_eval = FunctionSpaces.evaluate(C0TP1, test_elem_id, xi, 1)
+C0TP1_ind = FunctionSpaces.get_basis_indices(C0TP1, test_elem_id)
+C0TP2_eval = FunctionSpaces.evaluate(C0TP2, test_elem_id, xi, 1)
+C0TP2_ind = FunctionSpaces.get_basis_indices(C0TP2, test_elem_id)
 
 # Verify that the evaluation of the sum space is the combination of the evaluations of the
-# component spaces per component and zero elsewhere.
+# component spaces per component. The answers are first computed for all basis functions of
+# the multi-component space on the element, and then restricted to the basis functions of
+# each component.
 n_nonzero_basis_mcmpC0 = FunctionSpaces.get_num_basis(mcmpC0, test_elem_id)
 n_nonzero_basis_C0TP1 = FunctionSpaces.get_num_basis(C0TP1, test_elem_id)
 n_nonzero_basis_C0TP2 = FunctionSpaces.get_num_basis(C0TP2, test_elem_id)
@@ -423,7 +423,8 @@ answer2 = C0TP1_eval[1][1][1]
 ans2_inds = C0TP1_ind .+ FunctionSpaces.get_num_basis(C0TP1)
 answer3 = C0TP2_eval[1][1][1]
 ans3_inds = C0TP2_ind .+ FunctionSpaces.get_num_basis(C0TP1)
-answer_c1 = zeros(size(mcmpC0_eval[1][1][1]))
+num_points = Points.get_num_points(xi)
+answer_c1 = zeros(num_points, length(mcmpC0_ind))
 for i in 1:1:(n_nonzero_basis_mcmpC0 - 4)
     if mod(i, 2) == 1
         answer_c1[:, i] = answer1[:, div(i, 2) + 1]
@@ -431,15 +432,37 @@ for i in 1:1:(n_nonzero_basis_mcmpC0 - 4)
         answer_c1[:, i] = answer2[:, div(i, 2)]
     end
 end
-answer_c2 = zeros(size(mcmpC0_eval[1][1][2]))
+answer_c2 = zeros(num_points, length(mcmpC0_ind))
 for i in eachindex(mcmpC0_ind)
     if mcmpC0_ind[i] in C0TP2_ind
         answer_c2[:, i] = answer3[:, indexin([mcmpC0_ind[i]], C0TP2_ind)]
     end
 end
 
-@test all(isapprox(mcmpC0_eval[1][1][1], answer_c1; rtol=1e-14))
-@test all(isapprox(mcmpC0_eval[1][1][2], answer_c2; rtol=1e-14))
+# Component 1 is supported on the basis functions that are a multiple (2x and 1x) of those of
+# C0TP1. Component 2 only on the ones that are equal to those of C0TP2.
+mcmpC0_ind_c1 = FunctionSpaces.get_basis_indices(mcmpC0, test_elem_id, 1)
+mcmpC0_ind_c2 = FunctionSpaces.get_basis_indices(mcmpC0, test_elem_id, 2)
+@test issetequal(
+    mcmpC0_ind_c1,
+    vcat(C0TP1_ind, C0TP1_ind[C0TP1_ind .<= num_basis_C0TP2] .+ num_basis_C0TP1),
+)
+@test issetequal(mcmpC0_ind_c2, C0TP2_ind)
+@test issetequal(mcmpC0_ind, union(mcmpC0_ind_c1, mcmpC0_ind_c2))
+@test FunctionSpaces.get_block_pattern(mcmpC0) == ((1, 1), (2, 2))
+@test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+    mcmpC0, test_elem_id, 1, 2
+)
+
+cols_c1 = indexin(mcmpC0_ind_c1, mcmpC0_ind)
+cols_c2 = indexin(mcmpC0_ind_c2, mcmpC0_ind)
+@test size(mcmpC0_eval[1][1][1]) == (num_points, length(mcmpC0_ind_c1))
+@test size(mcmpC0_eval[1][1][2]) == (num_points, length(mcmpC0_ind_c2))
+@test all(isapprox(mcmpC0_eval[1][1][1], answer_c1[:, cols_c1]; rtol=1e-14))
+@test all(isapprox(mcmpC0_eval[1][1][2], answer_c2[:, cols_c2]; rtol=1e-14))
+# No non-zero basis functions are left out.
+@test all(iszero, answer_c1[:, setdiff(eachindex(mcmpC0_ind), cols_c1)])
+@test all(iszero, answer_c2[:, setdiff(eachindex(mcmpC0_ind), cols_c2)])
 
 # This case of MCMP should be equivalent to a DirectSumSpace.
 component_spaces = (C0TP1, C0TP2)
@@ -483,12 +506,25 @@ basic_tests(
 DS = FunctionSpaces.DirectSumSpace(component_spaces)
 
 test_elem_id = 20
-mcmpC0_like_DS_eval, mcmpC0_like_DS_ind = FunctionSpaces.evaluate(
-    mcmpC0_like_DS, test_elem_id, xi, 1
-)
-DS_eval, DS_ind = FunctionSpaces.evaluate(DS, test_elem_id, xi, 1)
+mcmpC0_like_DS_eval = FunctionSpaces.evaluate(mcmpC0_like_DS, test_elem_id, xi, 1)
+DS_eval = FunctionSpaces.evaluate(DS, test_elem_id, xi, 1)
 
-@test all(isapprox(mcmpC0_like_DS_eval[1][1][1], DS_eval[1][1][1]; rtol=1e-14))
-@test all(isapprox(mcmpC0_like_DS_eval[1][1][2], DS_eval[1][1][2]; rtol=1e-14))
+@test FunctionSpaces.get_basis_indices(mcmpC0_like_DS, test_elem_id) ==
+    FunctionSpaces.get_basis_indices(DS, test_elem_id)
+for component_id in 1:2
+    @test FunctionSpaces.get_basis_indices(mcmpC0_like_DS, test_elem_id, component_id) ==
+        FunctionSpaces.get_basis_indices(DS, test_elem_id, component_id)
+    for der_order in eachindex(DS_eval)
+        for der_idx in eachindex(DS_eval[der_order])
+            @test all(
+                isapprox(
+                    mcmpC0_like_DS_eval[der_order][der_idx][component_id],
+                    DS_eval[der_order][der_idx][component_id];
+                    rtol=1e-14,
+                ),
+            )
+        end
+    end
+end
 
 end

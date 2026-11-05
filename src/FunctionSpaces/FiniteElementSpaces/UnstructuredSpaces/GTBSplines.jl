@@ -1,5 +1,5 @@
 """
-    GTBSplineSpace{num_patches, T, TE, TI, TJ} <: AbstractFESpace{1, 1, num_patches}
+    GTBSplineSpace{num_patches, T, G, GP, TE, TI} <: AbstractFESpace{1, 1, num_patches}
 
 Constructs a GTBSplineSpace from a tuple of NURBS or B-spline spaces and a vector of
 regularity conditions. Periodic spaces are a special case of GTBSplines for
@@ -7,7 +7,7 @@ regularity conditions. Periodic spaces are a special case of GTBSplines for
 
 # Fields
 - `patch_spaces::NTuple{num_patches, T}`: A tuple of `num_patches` NURBS or B-spline spaces.
-- `extraction_op::ExtractionOperator{1, TE, TI, TJ}`: The extraction operator for the
+- `extraction_op::ExtractionOperator{1, 1, 1, TE, TI}`: The extraction operator for the
     GTBSpline space.
 - `dof_partition::Vector{Vector{Vector{Int}}}`: A vector of vectors of vectors of integers
     representing the degree of freedom partitioning.
@@ -29,12 +29,11 @@ regularity conditions. Periodic spaces are a special case of GTBSplines for
 - `ArgumentError`: If the minimal polynomial degree of any pair of adjacent spaces is less
     than the corresponding regularity condition.
 """
-struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
-       AbstractFESpace{1, 1, num_patches}
+struct GTBSplineSpace{num_patches, T, G, GP, TE, TI} <: AbstractFESpace{1, 1, num_patches}
     patch_spaces::T
     geometry::G
     parametric_geometry::GP
-    extraction_op::ExtractionOperator{1, TE, TI, TJ}
+    extraction_op::ExtractionOperator{1, 1, 1, TE, TI}
     dof_partition::Vector{Vector{Vector{Int}}}
     regularity::Vector{Int}
     num_dofs_left::Int
@@ -166,7 +165,7 @@ struct GTBSplineSpace{num_patches, T, G, GP, TE, TI, TJ} <:
             T,
             typeof(geometry),
             typeof(parametric_geometry),
-            get_EIJ_types(extraction_op)...,
+            get_EI_types(extraction_op)...,
         }(
             patch_spaces,
             geometry,
@@ -189,16 +188,12 @@ function get_num_local_basis_per_patch(
 end
 
 function get_local_basis(
-    space::GTBSplineSpace,
-    element_id::Int,
-    xi::Points.AbstractPoints{1},
-    nderivatives::Int,
-    component_id::Int=1,
+    space::GTBSplineSpace, element_id::Int, xi::Points.AbstractPoints{1}, nderivatives::Int
 )
     # We need space ID and local element ID to know which function space to evaluate.
     patch_id, patch_element_id = get_patch_and_local_element_id(space, element_id)
 
-    return evaluate(get_patch_spaces(space)[patch_id], patch_element_id, xi, nderivatives)[1]
+    return evaluate(get_patch_spaces(space)[patch_id], patch_element_id, xi, nderivatives)
 end
 
 get_patch_spaces(space::GTBSplineSpace) = space.patch_spaces
