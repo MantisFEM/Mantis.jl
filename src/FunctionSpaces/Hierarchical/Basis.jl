@@ -120,7 +120,7 @@ function create_basis(
         # This support-containment test is sufficient because the tree ids are gathered from
         # the tree below the refined domain rather than only its active elements.
         # This is why we use `get_tree_ids` and not `get_level_ids`.
-        child_level_set = Hierarchical.get_tree_ids(geometry_hierarchy, l+1)
+        child_level_set = Hierarchical.get_tree_ids(geometry_hierarchy, l + 1)
         for c in 1:get_num_basis(child_space)
             supp = get_support(child_space, c)
             if issubset(supp, child_level_set)
@@ -128,7 +128,7 @@ function create_basis(
             end
         end
     end
-    
+
     active_info = Hierarchical.ActiveInfo(level_sets)
 
     return Hierarchical.Hierarchy(active_info, scalings...)

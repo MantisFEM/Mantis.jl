@@ -826,8 +826,9 @@ function get_extraction(
         basis_indices = collect(
             get_basis_indices(get_space(space, element_level), element_level_id)
         )
-        basis_indices .=
-            convert_to_basis_hier_id.(Ref(space), Ref(element_level), basis_indices)
+        basis_indices .= convert_to_basis_hier_id.(
+            Ref(space), Ref(element_level), basis_indices
+        )
     else
         element_level, element_level_id = convert_to_element_level_and_level_id(
             space, hier_id
@@ -915,7 +916,9 @@ nested `domains`.
 # Returns
 - `refine_space::HierarchicalFiniteElementSpace`: A refined hierarchical space.
 """
-function refine_space(space::HierarchicalFiniteElementSpace, domains::Hierarchical.ActiveInfo)
+function refine_space(
+    space::HierarchicalFiniteElementSpace, domains::Hierarchical.ActiveInfo
+)
     L = Hierarchical.get_num_levels(domains)
     spaces = get_spaces(space)
     two_scale_operators = get_two_scale_operators(space)

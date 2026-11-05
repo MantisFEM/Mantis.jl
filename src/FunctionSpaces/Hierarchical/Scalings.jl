@@ -114,7 +114,7 @@ end
 function scaling_matrix_uniform(space::Bernstein, num_subdivisions::Int)
     p = get_polynomial_degree(space)
     parent_knot_vector = KnotVector(
-        Geometry.CartesianGeometry(LinRange(0, 1, 2)), p, [p+1, p+1]
+        Geometry.CartesianGeometry(LinRange(0, 1, 2)), p, [p + 1, p + 1]
     )
     child_knot_vector = refinement_uniform(parent_knot_vector, num_subdivisions, p + 1)
 

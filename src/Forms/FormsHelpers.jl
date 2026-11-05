@@ -531,7 +531,9 @@ function create_hierarchical_de_rham_complex(
     num_subdivisions::NTuple{manifold_dim, Int},
     ::Type{S},
     ::Type{B},
-) where {manifold_dim, S <: FunctionSpaces.SelectionAlgorithm, B <: FunctionSpaces.BasisType}
+) where {
+    manifold_dim, S <: FunctionSpaces.SelectionAlgorithm, B <: FunctionSpaces.BasisType
+}
     return create_hierarchical_de_rham_complex(
         starting_points,
         box_sizes,
