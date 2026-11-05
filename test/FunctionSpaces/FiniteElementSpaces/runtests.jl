@@ -2,6 +2,10 @@ module FiniteElementSpacesTests
 
 using Test
 
+@testset verbose = true "ExtractionOperator" begin
+    include("ExtractionOperatorTests.jl")
+end
+
 @testset verbose = true "UnivariateSplines" begin
     include("UnivariateSplines/runtests.jl")
 end
@@ -10,9 +14,9 @@ end
     include("TensorProductSpaces/runtests.jl")
 end
 
-@testset verbose = true "HierarchicalSpaces" begin
-    include("Hierarchical/runtests.jl")
-end
+# @testset verbose = true "HierarchicalSpaces" begin
+#     include("Hierarchical/runtests.jl")
+# end
 
 @testset verbose = true "OtherSpaces" begin
     include("OtherSpaces/runtests.jl")

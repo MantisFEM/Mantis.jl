@@ -100,6 +100,7 @@ xi_3D = Points.TensorProductPoints(([0.0, 1.0], [0.0, 1.0], [0.0, 1.0]))
 
 element_id = 1
 component_id = 1
+block_id = 1
 nderivatives = 2
 basis_id = 4
 
@@ -113,12 +114,20 @@ for space in spaces
     # Methods which have a general fallback (can be an error fallback).
     @test_opt FunctionSpaces.get_component_spaces(space)
     @test_opt FunctionSpaces.get_extraction_operator(space)
-    @test_opt FunctionSpaces.get_extraction(space, element_id, component_id)
-    @test_opt FunctionSpaces.get_extraction_coefficients(space, element_id, component_id)
+    @test_opt FunctionSpaces.get_block_pattern(space)
+    @test_opt FunctionSpaces.get_extraction_blocks(space, element_id)
+    @test_opt FunctionSpaces.get_extraction_coefficients(
+        space, element_id, component_id, component_id
+    )
+    @test_opt FunctionSpaces.get_extraction_coefficients(space, element_id, block_id)
+    if FunctionSpaces.get_num_components(space) == 1
+        @test_opt FunctionSpaces.get_extraction_coefficients(space, element_id)
+    end
     @test_opt FunctionSpaces.get_basis_indices(space, element_id)
-    @test_opt FunctionSpaces.get_basis_permutation(space, element_id, component_id)
+    @test_opt FunctionSpaces.get_basis_indices(space, element_id, component_id)
     @test_opt FunctionSpaces.get_num_basis(space)
     @test_opt FunctionSpaces.get_num_basis(space, element_id)
+    @test_opt FunctionSpaces.get_num_basis(space, element_id, component_id)
     @test_opt FunctionSpaces.get_dof_partition(space)
     @test_opt FunctionSpaces.get_max_local_dim(space)
     @test_opt FunctionSpaces.get_geometry(space)
@@ -236,5 +245,28 @@ for space in spaces
         @warn "FunctionSpacesInference: This space was not tested: $(space)"
     end
 end
+
+# ExtractionOperator constructors
+block = [1.0;;]
+indices_1 = [FunctionSpaces.Indices([1])]
+indices_2 = [FunctionSpaces.Indices([1, 2], ([1], [2]))]
+@test_opt FunctionSpaces.ExtractionOperator([block], [[1]], 1, 1)
+@test_opt FunctionSpaces.ExtractionOperator{1}(((1, 1),), [(block,)], indices_1, 1, 1)
+@test_opt FunctionSpaces.ExtractionOperator{2}(
+    ((1, 1), (2, 2)), [(block, block)], indices_2, 1, 2
+)
+@test_opt FunctionSpaces.ExtractionOperator{1}(
+    ((1, 1), (1, 2)), [(block, block)], indices_2, 1, 2
+)
+# JET does not report a constructed type that is not inferable, as there is no runtime
+# dispatch involved, so we also check that the return type is inferred.
+@inferred FunctionSpaces.ExtractionOperator([block], [[1]], 1, 1)
+@inferred FunctionSpaces.ExtractionOperator{1}(((1, 1),), [(block,)], indices_1, 1, 1)
+@inferred FunctionSpaces.ExtractionOperator{2}(
+    ((1, 1), (2, 2)), [(block, block)], indices_2, 1, 2
+)
+@inferred FunctionSpaces.ExtractionOperator{1}(
+    ((1, 1), (1, 2)), [(block, block)], indices_2, 1, 2
+)
 
 end
