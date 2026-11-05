@@ -70,10 +70,7 @@ struct HierarchicalSpace{manifold_dim, num_components, num_patches, G, GP, HB, E
     extraction_op::E
 
     function HierarchicalSpace(
-        geometry::G,
-        parametric_geometry::GP,
-        basis::HB,
-        E::ExtractionOperator,
+        geometry::G, parametric_geometry::GP, basis::HB, E::ExtractionOperator
     ) where {
         manifold_dim,
         G <: Geometry.AbstractGeometry{manifold_dim},

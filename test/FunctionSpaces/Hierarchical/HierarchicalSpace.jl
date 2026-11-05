@@ -8,7 +8,7 @@ const THB = FunctionSpaces.THB
 const HB = FunctionSpaces.HB
 const SelectionStandard = FunctionSpaces.SelectionStandard
 
-@testset "Polynomial Representation" verbose=true begin
+@testset "Polynomial Representation" verbose = true begin
     # Create the hierarhical space
     p = 3
     nlevels = 3
@@ -70,7 +70,7 @@ const SelectionStandard = FunctionSpaces.SelectionStandard
     end
 end
 
-@testset "HierarchicalBasis" verbose=true begin
+@testset "HierarchicalBasis" verbose = true begin
     bsp_1 = FunctionSpaces.create_bspline_space(0.0, 1.0, 6, 3, 2)
     scal_1 = FunctionSpaces.scaling_uniform(bsp_1, 2)
     bsp_2 = get_child(scal_1)

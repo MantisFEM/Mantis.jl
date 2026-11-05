@@ -209,7 +209,7 @@ end
     @test isapprox(scal_mat, scal_mat_approx)
 end
 
-@testset "DirectSumSpace" verbose=true begin
+@testset "DirectSumSpace" verbose = true begin
     # Generate DirectSum scaling
     bsp_1 = FunctionSpaces.create_bspline_space(
         (0.0, 0.0), (1.0, 1.0), (2, 2), (1, 1), (0, 0)

@@ -89,7 +89,7 @@ end
     @test collect(get_parents(scaling, clin[3, 3])) == [plin[2, 2]]
 end
 
-@testset "Consistency" verbose=true begin
+@testset "Consistency" verbose = true begin
     p = NewObject(2)
     c = NewObject(3)
 

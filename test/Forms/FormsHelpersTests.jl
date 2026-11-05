@@ -82,7 +82,9 @@ is_exact_1d(complex) = get_num_basis(complex)[1] - get_num_basis(complex)[2] == 
             =#
             complex = Forms.update_hierarchical_de_rham_complex(complex, [3, 4])
             @test shares_geometry(complex)
-            @test all(space -> FunctionSpaces.get_num_levels(space) == 3, get_spaces(complex))
+            @test all(
+                space -> FunctionSpaces.get_num_levels(space) == 3, get_spaces(complex)
+            )
             @test sort.(get_level_ids(Geometry.get_hierarchy(get_geometry(complex)))) ==
                 [[3, 4], [3, 4], [1, 2, 3, 4]]
             @test is_exact_1d(complex)

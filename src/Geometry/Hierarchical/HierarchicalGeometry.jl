@@ -193,10 +193,10 @@ function get_ancestors(geometry::HierarchicalGeometry, element_id::Int)
     # the levels
     level, child = convert_to_level_and_level_id(geometry, element_id)
     # Empty if level=1
-    ancestors = Vector{Int}(undef, level-1)
+    ancestors = Vector{Int}(undef, level - 1)
     hierarchy = get_hierarchy(geometry)
     for l in level:-1:2
-        scaling = Hierarchical.get_scaling(hierarchy, l-1)
+        scaling = Hierarchical.get_scaling(hierarchy, l - 1)
         # We use `first` since each element in a hierarchial geometry only has 1 parent.
         parent = first(Hierarchical.get_parents(scaling, child))
         ancestors[l - 1] = parent
@@ -233,13 +233,14 @@ function get_active_descendants(geometry::HierarchicalGeometry, level::Int, leve
     while !isempty(inactive_parents)
         level_scaling = Hierarchical.get_scaling(hierarchy, l)
         # For each parent, we check its children to determine if they are active or not.
-        children_set = Hierarchical.get_level_set(hierarchy, l+1)
+        children_set = Hierarchical.get_level_set(hierarchy, l + 1)
         for parent in inactive_parents,
             child in Hierarchical.get_children(level_scaling, parent)
 
             if child in children_set # Child is active.
                 push!(
-                    active_children, Hierarchical.convert_to_hier_id(hierarchy, l+1, child)
+                    active_children,
+                    Hierarchical.convert_to_hier_id(hierarchy, l + 1, child),
                 )
             else # Child is inactive.
                 push!(inactive_children, child)
