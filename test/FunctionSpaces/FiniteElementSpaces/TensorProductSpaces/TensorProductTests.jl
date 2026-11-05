@@ -48,10 +48,10 @@ for deg1 in 0:5
         x_all3 = Quadrature.get_nodes(qrule3)
         for el in 1:1:FunctionSpaces.get_num_elements(TP)
             # check B-spline evaluation
-            TP_eval, _ = FunctionSpaces.evaluate(TP, el, x_all, 0)
-            TP1_eval, _ = FunctionSpaces.evaluate(TP1, el, x_all3, num_derivatives)
-            TP2_eval, _ = FunctionSpaces.evaluate(TP1, el, x_all3, num_derivatives)
-            TP3_eval, _ = FunctionSpaces.evaluate(TP3, el, x_all3, num_derivatives)
+            TP_eval = FunctionSpaces.evaluate(TP, el, x_all, 0)
+            TP1_eval = FunctionSpaces.evaluate(TP1, el, x_all3, num_derivatives)
+            TP2_eval = FunctionSpaces.evaluate(TP1, el, x_all3, num_derivatives)
+            TP3_eval = FunctionSpaces.evaluate(TP3, el, x_all3, num_derivatives)
             # Positivity of the polynomials
             @test minimum(TP_eval[1][1][1]) >= 0.0
             @test minimum(TP1_eval[1][1][1]) >= 0.0
@@ -122,7 +122,7 @@ x1 = LinRange(0.0, 1.0, 11)
 x2 = LinRange(0.0, 1.0, 11)
 for el in 1:1:FunctionSpaces.get_num_elements(TP)
     # check B-spline evaluation
-    TP_eval, _ = FunctionSpaces.evaluate(TP, el, Points.TensorProductPoints((x1, x2)))
+    TP_eval = FunctionSpaces.evaluate(TP, el, Points.TensorProductPoints((x1, x2)))
     # Positivity of the polynomials
     @test minimum(TP_eval[1][1][1]) >= 0.0
 
@@ -131,30 +131,37 @@ for el in 1:1:FunctionSpaces.get_num_elements(TP)
 end
 
 # Constructor, property, and getters and setters tests -------------------------------------
-function basic_tests(space, answers, element_id=1, component_id=1)
+function basic_tests(space, answers, element_id=1)
     @test FunctionSpaces.get_manifold_dim(space) == answers[1]
     @test FunctionSpaces.get_num_components(space) == answers[2]
     @test FunctionSpaces.get_num_patches(space) == answers[3]
 
     @test all(FunctionSpaces.get_component_spaces(space) .== answers[4])
-    @test FunctionSpaces.get_extraction(space, element_id, component_id) == answers[5]
-    # `component_id` should be 1
-    @test_throws ArgumentError FunctionSpaces.get_extraction(space, element_id, 2)
-    @test FunctionSpaces.get_extraction_coefficients(space, element_id, component_id) ==
-        answers[6]
+    # A `TensorProductSpace` only has a single extraction block.
+    @test FunctionSpaces.get_block_pattern(space) == ((1, 1),)
+    @test FunctionSpaces.get_extraction_coefficients(space, element_id, 1, 1) == answers[5]
     @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
-        space, element_id, 2
+        space, element_id, 1, 2
     )
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+        space, element_id, 2, 1
+    )
+    @test FunctionSpaces.get_extraction_coefficients(space, element_id) == answers[6]
+    @test FunctionSpaces.get_extraction_coefficients(space, element_id, 1) == answers[6]
+    @test FunctionSpaces.get_extraction_blocks(space, element_id) == (answers[6],)
+    @inferred FunctionSpaces.get_extraction_coefficients(space, element_id)
+    @inferred FunctionSpaces.get_extraction_blocks(space, element_id)
     @test FunctionSpaces.get_basis_indices(space, element_id) == answers[7]
-    @test FunctionSpaces.get_basis_permutation(space, element_id, component_id) ==
-        answers[8]
-    @test_throws ArgumentError FunctionSpaces.get_basis_permutation(space, element_id, 2)
-    @test FunctionSpaces.get_num_basis(space) == answers[9]
-    @test FunctionSpaces.get_num_basis(space, element_id) == answers[10]
-    @test FunctionSpaces.get_dof_partition(space) == answers[11]
-    @test FunctionSpaces.get_max_local_dim(space) == answers[12]
-    @test FunctionSpaces.get_geometry(space) == answers[13]
-    @test FunctionSpaces.get_parametric_geometry(space) == answers[14]
+    @test FunctionSpaces.get_basis_indices(space, element_id, 1) == answers[7]
+    # `component_id` should be 1
+    @test_throws ArgumentError FunctionSpaces.get_basis_indices(space, element_id, 2)
+    @test FunctionSpaces.get_num_basis(space) == answers[8]
+    @test FunctionSpaces.get_num_basis(space, element_id) == answers[9]
+    @test FunctionSpaces.get_num_basis(space, element_id, 1) == answers[9]
+    @test FunctionSpaces.get_dof_partition(space) == answers[10]
+    @test FunctionSpaces.get_max_local_dim(space) == answers[11]
+    @test FunctionSpaces.get_geometry(space) == answers[12]
+    @test FunctionSpaces.get_parametric_geometry(space) == answers[13]
 
     return nothing
 end
@@ -170,10 +177,9 @@ answers_0 = (
     1,
     1,
     (TP_B0,),
-    FunctionSpaces.get_extraction(B0, 1, 1),
-    FunctionSpaces.get_extraction_coefficients(B0, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B0, 1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B0, 1),
     [1],
-    1:1,
     1,
     1,
     [[[], [1], []]],
@@ -193,10 +199,9 @@ answers_1a = (
     1,
     1,
     (TP_B1_a,),
-    FunctionSpaces.get_extraction(B1, 1, 1),
-    FunctionSpaces.get_extraction_coefficients(B1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1),
     [1, 2],
-    1:2,
     2,
     2,
     [[[1], [], [2]]],
@@ -213,10 +218,9 @@ answers_1b = (
     1,
     1,
     (TP_B1_b,),
-    FunctionSpaces.get_extraction(B1, 1, 1),
-    FunctionSpaces.get_extraction_coefficients(B1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(B1, 1),
     [1, 2],
-    1:2,
     2,
     2,
     [[[1], [], [2]]],
@@ -236,10 +240,9 @@ answers_L3 = (
     1,
     1,
     (TP_L3,),
-    FunctionSpaces.get_extraction(L3, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(L3, 1, 1, 1),
     LinearAlgebra.I,
     [1, 2, 3, 4], # basis indices on element_id
-    1:4, # basis permutation on element_id
     4, # total num basis
     4, # num basis on element_id
     [[[1], [2, 3], [4]]], # dof partition
@@ -260,10 +263,9 @@ answers_TP_Bmulti = (
     1,
     1,
     (TP_Bmulti,),
-    FunctionSpaces.get_extraction(Bmulti, 3, 1),
-    FunctionSpaces.get_extraction_coefficients(Bmulti, 3, 1),
+    FunctionSpaces.get_extraction_coefficients(Bmulti, 3, 1, 1),
+    FunctionSpaces.get_extraction_coefficients(Bmulti, 3),
     [3, 4, 5, 6, 7], # basis indices on element_id
-    1:5, # basis permutation on element_id
     11, # total num basis
     5, # num basis on element_id
     [[[1], [2, 3, 4, 5, 6, 7, 8, 9, 10], [11]]], # dof partition
@@ -271,7 +273,7 @@ answers_TP_Bmulti = (
     Geometry.TensorProductGeometry((geometry2,)),
     Geometry.TensorProductGeometry((geometry2,)),
 )
-basic_tests(TP_Bmulti, answers_TP_Bmulti, 3, 1)
+basic_tests(TP_Bmulti, answers_TP_Bmulti, 3)
 
 # Reduction test, single-patch, single element, 2D, TensorProduct, degree 0 BSplines.
 TP_B0B0 = FunctionSpaces.TensorProductSpace((B0, B0))
@@ -280,10 +282,9 @@ answers_TP_B0B0 = (
     1,
     1,
     (TP_B0B0,),
-    (LinearAlgebra.I, 1:1),
+    LinearAlgebra.I,
     LinearAlgebra.I,
     [1], # basis indices on element_id
-    1:1, # basis permutation on element_id
     1, # total num basis
     1, # num basis on element_id
     [[[], [], [], [], [1], [], [], [], []]], # dof partition
@@ -291,7 +292,7 @@ answers_TP_B0B0 = (
     Geometry.TensorProductGeometry((geometry1, geometry1)),
     Geometry.TensorProductGeometry((geometry1, geometry1)),
 )
-basic_tests(TP_B0B0, answers_TP_B0B0, 1, 1)
+basic_tests(TP_B0B0, answers_TP_B0B0, 1)
 
 # Reduction test, single-patch, single element, 2D, TensorProduct, degree 1 BSplines.
 TP_B1B1 = FunctionSpaces.TensorProductSpace((B1, B1))
@@ -300,10 +301,9 @@ answers_TP_B1B1 = (
     1,
     1,
     (TP_B1B1,),
-    (LinearAlgebra.I, 1:4),
+    LinearAlgebra.I,
     LinearAlgebra.I,
     [1, 2, 3, 4], # basis indices on element_id
-    1:4, # basis permutation on element_id
     4, # total num basis
     4, # num basis on element_id
     [[[1], [], [2], [], [], [], [3], [], [4]]], # dof partition
@@ -311,7 +311,27 @@ answers_TP_B1B1 = (
     Geometry.TensorProductGeometry((geometry1, geometry1)),
     Geometry.TensorProductGeometry((geometry1, geometry1)),
 )
-basic_tests(TP_B1B1, answers_TP_B1B1, 1, 1)
+basic_tests(TP_B1B1, answers_TP_B1B1, 1)
+
+# Mixed factors: B-spline (matrix extraction) and Lagrange (identity extraction). The
+# identity factor is materialised so that the Kronecker product is a matrix.
+TP_BmultiL3 = FunctionSpaces.TensorProductSpace((Bmulti, L3))
+num_basis_L3 = FunctionSpaces.get_num_basis(L3, 1)
+xi_mixed = Points.TensorProductPoints(([0.0, 0.3, 1.0], [0.1, 0.5, 0.9]))
+for element_id in 1:FunctionSpaces.get_num_elements(TP_BmultiL3)
+    factor_element_ids, _ = FunctionSpaces.get_factor_element_ids(TP_BmultiL3, element_id)
+    E_mixed = @inferred FunctionSpaces.get_extraction_coefficients(TP_BmultiL3, element_id)
+    @test E_mixed isa Matrix{Float64}
+    @test E_mixed == kron(
+        Matrix(LinearAlgebra.I, num_basis_L3, num_basis_L3),
+        FunctionSpaces.get_extraction_coefficients(Bmulti, factor_element_ids[1]),
+    )
+    num_basis_el = FunctionSpaces.get_num_basis(TP_BmultiL3, element_id)
+    @test size(E_mixed) == (num_basis_el, num_basis_el)
+    local_basis = FunctionSpaces.get_local_basis(TP_BmultiL3, element_id, xi_mixed, 0)
+    TP_eval = FunctionSpaces.evaluate(TP_BmultiL3, element_id, xi_mixed)
+    @test isapprox(local_basis[1][1][1] * E_mixed, TP_eval[1][1][1]; atol=1e-14)
+end
 
 # General methods that should error
 # Since v1.12, accessing a non-defined field will return a FieldError. In earlier versions

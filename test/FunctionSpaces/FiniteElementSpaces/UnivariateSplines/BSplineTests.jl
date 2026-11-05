@@ -117,8 +117,28 @@ for el in 1:1:FunctionSpaces.get_num_elements(B1_univariate_bs)
     # Test for partition of unity
     @test all(isapprox.(sum(ex_coeffs; dims=2) .- 1.0, 0.0, atol=1e-14))
 
+    # Single-component extraction framework
+    @test FunctionSpaces.get_block_pattern(B1_univariate_bs) == ((1, 1),)
+    @test FunctionSpaces.get_extraction_blocks(B1_univariate_bs, el) == (ex_coeffs,)
+    @test FunctionSpaces.get_extraction_coefficients(B1_univariate_bs, el, 1, 1) ==
+        ex_coeffs
+    @test FunctionSpaces.get_extraction_coefficients(B1_univariate_bs, el, 1) == ex_coeffs
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+        B1_univariate_bs, el, 1, 2
+    )
+    @test FunctionSpaces.get_basis_indices(B1_univariate_bs, el, 1) ==
+        FunctionSpaces.get_basis_indices(B1_univariate_bs, el)
+    @test FunctionSpaces.get_num_basis(B1_univariate_bs, el, 1) ==
+        FunctionSpaces.get_num_basis(B1_univariate_bs, el)
+    # The component can be omitted for single-component spaces, but must be 1 if given.
+    @test FunctionSpaces.get_local_basis(B1_univariate_bs, el, x1, 1) ==
+        FunctionSpaces.get_local_basis(B1_univariate_bs, el, x1, 1, 1)
+    @test_throws ArgumentError FunctionSpaces.get_local_basis(
+        B1_univariate_bs, el, x1, 1, 2
+    )
+
     # check B-spline evaluation
-    B1_eval, _ = FunctionSpaces.evaluate(B1_univariate_bs, el, x1, 1)
+    B1_eval = FunctionSpaces.evaluate(B1_univariate_bs, el, x1, 1)
     # Positivity of the polynomials
     @test all(B1_eval[1][1][1] .>= 0.0)
     # Partition of unity
@@ -164,7 +184,7 @@ for el in 1:1:FunctionSpaces.get_num_elements(B2_univariate_bs)
     @test all(isapprox.(sum(ex_coeffs; dims=2) .- 1.0, 0.0, atol=1e-14))
 
     # check B-spline evaluation
-    B2_eval, _ = FunctionSpaces.evaluate(B2_univariate_bs, el, x2, 1)
+    B2_eval = FunctionSpaces.evaluate(B2_univariate_bs, el, x2, 1)
     # Positivity of the polynomials
     @test minimum(B2_eval[1][1][1]) >= 0.0
     # Partition of unity
@@ -198,7 +218,9 @@ LHS = zeros(nel * npts, nbasis)
 RHS_P = zeros(nel * npts)
 RHS_N = zeros(nel * npts)
 for el in 1:1:FunctionSpaces.get_num_elements(B)
-    B_eval, inds = FunctionSpaces.evaluate(B, el, xi, 0)
+    B_eval = FunctionSpaces.evaluate(B, el, xi, 0)
+    inds = FunctionSpaces.get_basis_indices(B, el)
+    @test size(B_eval[1][1][1]) == (npts, length(inds))
     LHS[(el - 1) * npts .+ (1:npts), inds] = B_eval[1][1][1]
     RHS_P[(el - 1) * npts .+ (1:npts)] = exp.(Wt .* (x .+ (el - 1)) .* 0.25)
     RHS_N[(el - 1) * npts .+ (1:npts)] = exp.(-Wt .* (x .+ (el - 1)) .* 0.25)

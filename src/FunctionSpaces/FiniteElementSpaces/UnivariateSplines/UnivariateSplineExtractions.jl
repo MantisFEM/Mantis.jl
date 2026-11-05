@@ -1,5 +1,29 @@
 
 """
+    _get_bspline_basis_indices(p::Int, multiplicity::AbstractVector{Int}, nel::Int)
+
+Computes the indices of the B-spline basis functions supported on each element of a knot
+vector with polynomial degree `p` and knot multiplicities `multiplicity`.
+
+# Arguments
+- `p::Int`: The polynomial degree.
+- `multiplicity::AbstractVector{Int}`: The multiplicity of each breakpoint.
+- `nel::Int`: The number of elements.
+
+# Returns
+- `::Vector{UnitRange{Int}}`: The indices of the supported basis functions per element.
+"""
+function _get_bspline_basis_indices(p::Int, multiplicity::AbstractVector{Int}, nel::Int)
+    basis_indices = Vector{UnitRange{Int}}(undef, nel)
+    basis_indices[1] = 1:(p + 1)
+    for el in 2:nel
+        basis_indices[el] = basis_indices[el - 1] .+ multiplicity[el]
+    end
+
+    return basis_indices
+end
+
+"""
     extract_bspline_to_section_space(
         knot_vector::KnotVector, canonical_space::AbstractCanonicalSpace
     )
@@ -12,8 +36,8 @@ functions; see [Borden2011](@cite) [Toshniwal2020](@cite) [Hiemstra2020](@cite).
 - `polynomials::AbstractCanonicalSpace`: The canonical space to extract to.
 
 # Returns
-- `::ExtractionOperator{Indices{1, TE, TI, TJ}}`: See [`ExtractionOperator`](@ref)
-    for the details.
+- `::ExtractionOperator{1, 1, 1, TE, TI}`: See [`ExtractionOperator`](@ref) for the
+    details.
 
 # Note
 The extraction coefficients `E[el]` for element `el` contain the coefficients of the linear
@@ -49,20 +73,12 @@ function extract_bspline_to_section_space(
     end
 
     # Initialize extraction matrices for each element
-    E = [(LinearAlgebra.I,) for _ in 1:nel]
+    E = fill(LinearAlgebra.I, nel)
 
     # Compute indices of supported basis functions on each element
-    basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
-    for el in 2:nel
-        basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
-        )
-    end
+    basis_indices = _get_bspline_basis_indices(p, multiplicity, nel)
 
-    return ExtractionOperator(
-        E, basis_indices, nel, get_basis_indices(basis_indices[end])[end]
-    )
+    return ExtractionOperator(E, basis_indices, nel, last(basis_indices[end]))
 end
 
 function extract_bspline_to_section_space(
@@ -86,20 +102,12 @@ function extract_bspline_to_section_space(
     end
 
     # Initialize extraction matrices for each element
-    E = [(LinearAlgebra.I,) for _ in 1:nel]
+    E = fill(LinearAlgebra.I, nel)
 
     # Compute indices of supported basis functions on each element
-    basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
-    for el in 2:nel
-        basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
-        )
-    end
+    basis_indices = _get_bspline_basis_indices(p, multiplicity, nel)
 
-    return ExtractionOperator(
-        E, basis_indices, nel, get_basis_indices(basis_indices[end])[end]
-    )
+    return ExtractionOperator(E, basis_indices, nel, last(basis_indices[end]))
 end
 
 function extract_bspline_to_section_space(
@@ -111,7 +119,7 @@ function extract_bspline_to_section_space(
     num_knots = sum(get_multiplicity(knot_vector))
 
     # Initialize extraction matrices for each element
-    E = [(Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1),) for _ in 1:nel]
+    E = [Matrix{Float64}(LinearAlgebra.I, p + 1, p + 1) for _ in 1:nel]
 
     # Array to store knot insertion coefficients
     alphas = zeros(max(p - 1, 0))
@@ -151,15 +159,15 @@ function extract_bspline_to_section_space(
                 s = mult + j
                 for k in (p + 1):-1:(s + 1)
                     alpha = alphas[k - s]
-                    E[el_id][1][k, :] .=
-                        (@view E[el_id][1][k, :]) .* alpha .+
-                        (@view E[el_id][1][k - 1, :]) .* (1.0 - alpha)
+                    E[el_id][k, :] .=
+                        (@view E[el_id][k, :]) .* alpha .+
+                        (@view E[el_id][k - 1, :]) .* (1.0 - alpha)
                 end
 
                 # Save coefficients for the next element
                 save = r - j + 1
                 if k_id_end < num_knots && el_id < nel
-                    E[el_id + 1][1][save, save:(save + j)] .= (@view E[el_id][1][
+                    E[el_id + 1][save, save:(save + j)] .= (@view E[el_id][
                         p + 1, (p - j + 1):(p + 1)
                     ])
                 end
@@ -173,18 +181,9 @@ function extract_bspline_to_section_space(
     end
 
     # Compute indices of supported basis functions on each element
-    basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
-    for el in 2:nel
-        basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el - 1]) .+ get_multiplicity(knot_vector)[el],
-            (1:(p + 1),),
-        )
-    end
+    basis_indices = _get_bspline_basis_indices(p, get_multiplicity(knot_vector), nel)
 
-    return ExtractionOperator(
-        E, basis_indices, nel, get_basis_indices(basis_indices[end])[end]
-    )
+    return ExtractionOperator(E, basis_indices, nel, last(basis_indices[end]))
 end
 
 function extract_bspline_to_section_space(
@@ -247,13 +246,7 @@ function extract_bspline_to_section_space(
     SparseArrays.fkeep!((i, j, x) -> abs(x) > 1e-14, H)
 
     # Compute basis indices of supported basis functions on each element.
-    basis_indices = Vector{Indices{1, UnitRange{Int}, UnitRange{Int}}}(undef, nel)
-    basis_indices[1] = Indices(1:(p + 1), (1:(p + 1),))
-    for el in 2:nel
-        basis_indices[el] = Indices(
-            get_basis_indices(basis_indices[el - 1]) .+ multiplicity[el], (1:(p + 1),)
-        )
-    end
+    basis_indices = _get_bspline_basis_indices(p, multiplicity, nel)
 
     # Convert global extraction matrix to element local extractions
     # (the matrix is transposed here so that [canonical_space] * [extraction] = [B-splines])
@@ -261,14 +254,10 @@ function extract_bspline_to_section_space(
     for el in 1:nel
         cols_el = (canonical_dims[el] + 1):canonical_dims[el + 1]
         # Matrix of coefficients
-        extraction_coefficients[el] = Matrix(
-            H[get_basis_indices(basis_indices[el]), cols_el]
-        )'
+        extraction_coefficients[el] = Matrix(H[basis_indices[el], cols_el])'
     end
 
-    Etup = [(extraction_coefficients[el],) for el in eachindex(extraction_coefficients)]
-
-    return ExtractionOperator(Etup, basis_indices, nel, size(H, 1))
+    return ExtractionOperator(extraction_coefficients, basis_indices, nel, size(H, 1))
 end
 
 """
@@ -284,7 +273,7 @@ B-spline basis functions.
 - `regularity::Vector{Int}`: Smoothness to be imposed at patch interfaces.
 
 # Returns
-- `ExtractionOperator{Indices{1, TE, TI, TJ}}`: The extraction operator containing the
+- `ExtractionOperator{1, 1, 1, TE, TI}`: The extraction operator containing the
     coefficients. See [`ExtractionOperator`](@ref) for the details.
 """
 function extract_gtbspline_to_bspline(
@@ -394,8 +383,8 @@ function extract_gtbspline_to_bspline(
 
     # Convert global extraction matrix to element local extractions.
     # The matrix is transposed so that [spline_spaces] * [extraction] = [GTB-splines].
-    extraction_coefficients = Vector{Tuple{Matrix{Float64}}}(undef, nel)
-    basis_indices = Vector{Indices{1, Vector{Int}, UnitRange{Int}}}(undef, nel)
+    extraction_coefficients = Vector{Matrix{Float64}}(undef, nel)
+    basis_indices = Vector{Vector{Int}}(undef, nel)
     count = 0
     for i in 1:m
         for j in 1:bspl_nels[i]
@@ -403,13 +392,11 @@ function extract_gtbspline_to_bspline(
             eij = SparseArrays.findnz(H[:, cols_ij .+ spl_dims[i]])
             # Unique indices for non-zero rows and columns
             unique_eij = unique(eij[1])
-            basis_indices[count + 1] = Indices(unique_eij, (1:length(unique_eij),))
+            basis_indices[count + 1] = unique_eij
             # Matrix of coefficients
-            extraction_coefficients[count + 1] = (
-                Matrix(
-                    H[get_basis_indices(basis_indices[count + 1]), cols_ij .+ spl_dims[i]]
-                )',
-            )
+            extraction_coefficients[count + 1] = Matrix(
+                H[unique_eij, cols_ij .+ spl_dims[i]]
+            )'
             count += 1
         end
     end
