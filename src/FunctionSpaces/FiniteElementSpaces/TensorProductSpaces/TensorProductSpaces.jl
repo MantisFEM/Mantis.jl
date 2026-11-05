@@ -350,14 +350,14 @@ end
 """
     get_factor_extractions(space::TensorProductSpace, element_id::Int)
 
-Returns a tuple corresponding to the factor-wise extraction at `element_id`.
+Returns a tuple corresponding to the factor-wise extraction coefficients at `element_id`.
 
-See also [`get_extraction`](@ref).
+See also [`get_extraction_coefficients`](@ref).
 """
 function get_factor_extractions(space::TensorProductSpace, element_id::Int)
     factor_element_ids, _ = get_factor_element_ids(space, element_id)
 
-    return map(get_extraction, get_factor_spaces(space), factor_element_ids)
+    return map(get_extraction_coefficients, get_factor_spaces(space), factor_element_ids)
 end
 
 """
@@ -429,10 +429,7 @@ function get_factor_evaluations(
     factor_xi = get_factor_evaluation_points(space, xi)
     num_spaces = get_num_spaces(space)
     tup_ders = ntuple(i -> nderivatives, num_spaces)
-    factor_eval_and_inds = map(
-        evaluate, factor_spaces, factor_element_id, factor_xi, tup_ders
-    )
-    factor_eval = map(getindex, factor_eval_and_inds, ntuple(i -> 1, num_spaces))
+    factor_eval = map(evaluate, factor_spaces, factor_element_id, factor_xi, tup_ders)
 
     return factor_eval
 end
@@ -509,73 +506,61 @@ function get_max_local_dim(space::TensorProductSpace)
     return prod(get_max_local_dim, get_factor_spaces(space))
 end
 
-function _check_component_id(component_id::Int)
-    if !isone(component_id)
-        return throw(
-            ArgumentError(
-                LazyString(
-                    "A `TensorProductSpace` is only allowed 1 component. Asked for component ",
-                    component_id,
-                ),
-            ),
-        )
-    end
+"""
+    get_extraction_coefficients(space::TensorProductSpace, element_id::Int)
 
-    return nothing
-end
-
-function get_extraction_coefficients(
-    space::TensorProductSpace{manifold_dim, num_patches, num_spaces},
-    element_id::Int,
-    component_id::Int=1,
-) where {manifold_dim, num_patches, num_spaces}
-    _check_component_id(component_id)
-    # The permutations of the factor spaces should be combined if we allow for more
-    # than one component.
-    extraction_per_space = get_factor_extractions(space, element_id)
-    if num_spaces == 1
-        extraction_coeffs = extraction_per_space[1][1]
-    elseif all([
-        typeof(eps[1]) <: LinearAlgebra.UniformScaling for eps in extraction_per_space
-    ])
-        extraction_coeffs = LinearAlgebra.I
-    else
-        extraction_coeffs = kron(
-            (extraction_per_space[space_id][1] for space_id in num_spaces:-1:1)...
-        )
-    end
-
-    return extraction_coeffs
-end
-
-function get_extraction(space::TensorProductSpace, element_id::Int, component_id::Int=1)
-    _check_component_id(component_id)
-    # We cannot call size on the extraction coefficients intead of get_basis_permutation
-    # because some extraction coefficients are LinearAlgebra.UniformScaling (the identity),
-    # for which size is not defined.
-    return (
-        # `TensorProductSpace` is only allowed 1 component.
-        get_extraction_coefficients(space, element_id, 1),
-        get_basis_permutation(space, element_id, 1),
+Returns the extraction coefficients of `space` on element `element_id`. These are the
+Kronecker product of the factor-wise extraction coefficients, with the last factor varying
+slowest.
+"""
+function get_extraction_coefficients(space::TensorProductSpace, element_id::Int)
+    return _kron_factor_extractions(
+        get_factor_extractions(space, element_id), get_factor_num_basis(space, element_id)
     )
 end
 
-function get_basis_permutation(
-    space::TensorProductSpace, element_id::Int, component_id::Int=1
-)
-    _check_component_id(component_id)
+function _kron_factor_extractions(
+    ::NTuple{num_spaces, LinearAlgebra.UniformScaling}, ::Tuple
+) where {num_spaces}
+    return LinearAlgebra.I
+end
 
-    return 1:get_num_basis(space, element_id)
+function _kron_factor_extractions(factor_extractions::Tuple, factor_num_basis::Tuple)
+    factor_matrices = map(_as_extraction_matrix, factor_extractions, factor_num_basis)
+
+    return _kron(reverse(factor_matrices))
+end
+
+_as_extraction_matrix(extraction::AbstractMatrix, _) = extraction
+
+function _as_extraction_matrix(extraction::LinearAlgebra.UniformScaling, num_basis::Int)
+    return Matrix(extraction, num_basis, num_basis)
+end
+
+# `kron` has no single-argument method.
+_kron(matrices::Tuple{Any}) = only(matrices)
+_kron(matrices::Tuple) = kron(matrices...)
+
+function get_extraction_blocks(space::TensorProductSpace, element_id::Int)
+    return (get_extraction_coefficients(space, element_id),)
+end
+
+get_block_pattern(::TensorProductSpace) = ((1, 1),)
+
+function get_basis_indices(space::TensorProductSpace, element_id::Int, component_id::Int)
+    _check_single_component_id(component_id)
+
+    return get_basis_indices(space, element_id)
 end
 
 function get_local_basis(
     space::TensorProductSpace{manifold_dim},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-    nderivatives::Int=0,
-    component_id::Int=1,
+    nderivatives::Int,
+    component_id::Int,
 ) where {manifold_dim}
-    _check_component_id(component_id)
+    _check_single_component_id(component_id)
     factor_local_basis = get_factor_local_basis(space, element_id, xi, nderivatives)
     num_spaces = get_num_spaces(space)
     factor_sizes = ntuple(space -> size(factor_local_basis[space][1][1][1]), num_spaces)
@@ -634,8 +619,7 @@ function evaluate(
     xi::Points.TensorProductPoints{manifold_dim},
     nderivatives::Int=0,
 ) where {manifold_dim}
-    basis_indices = get_basis_indices(space, element_id)
-    num_basis = length(basis_indices)
+    num_basis = get_num_basis(space, element_id)
     factor_eval = get_factor_evaluations(space, element_id, xi, nderivatives)
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
@@ -668,7 +652,7 @@ function evaluate(
         end
     end
 
-    return eval, basis_indices
+    return eval
 end
 
 function evaluate(
@@ -677,8 +661,7 @@ function evaluate(
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int=0,
 ) where {manifold_dim}
-    basis_indices = get_basis_indices(space, element_id)
-    num_basis = length(basis_indices)
+    num_basis = get_num_basis(space, element_id)
     factor_eval = get_factor_evaluations(space, element_id, xi, nderivatives)
     num_points = Points.get_num_points(xi)
     eval = Vector{Vector{Vector{Matrix{Float64}}}}(undef, nderivatives + 1)
@@ -714,7 +697,7 @@ function evaluate(
         end
     end
 
-    return eval, basis_indices
+    return eval
 end
 
 function _update_key_info!(space_der_order, space_der_id, key, factor_manifold_indices)

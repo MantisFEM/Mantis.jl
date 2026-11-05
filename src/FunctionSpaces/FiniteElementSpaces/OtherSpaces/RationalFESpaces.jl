@@ -45,6 +45,12 @@ function get_basis_indices(space::RationalFESpace, element_id::Int)
     return get_basis_indices(space.function_space, element_id)
 end
 
+function get_basis_indices(space::RationalFESpace, element_id::Int, component_id::Int)
+    _check_single_component_id(component_id)
+
+    return get_basis_indices(space, element_id)
+end
+
 function get_num_elements(space::RationalFESpace)
     return get_num_elements(space.function_space)
 end
@@ -78,9 +84,8 @@ function evaluate(
     nderivatives::Int,
 ) where {manifold_dim, F <: AbstractFESpace{manifold_dim, 1, 1}}
     # Evaluate the basis functions and their derivatives for the underlying function space
-    homog_basis, basis_indices = evaluate(
-        space.function_space, element_id, xi, nderivatives
-    )
+    homog_basis = evaluate(space.function_space, element_id, xi, nderivatives)
+    basis_indices = get_basis_indices(space.function_space, element_id)
     n_eval = Points.get_num_points(xi)
 
     # Compute the rational basis functions and their derivatives
@@ -116,7 +121,7 @@ function evaluate(
         end
     end
 
-    return homog_basis, basis_indices
+    return homog_basis
 end
 
 function get_max_local_dim(space::RationalFESpace)
@@ -128,18 +133,15 @@ function get_local_basis(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-    component_id::Int=1,
+    component_id::Int,
 ) where {manifold_dim, F <: AbstractFESpace{manifold_dim, 1, 1}}
-    return evaluate(space, element_id, xi, nderivatives)[1]
+    _check_single_component_id(component_id)
+
+    return evaluate(space, element_id, xi, nderivatives)
 end
 
-function get_extraction(space::RationalFESpace, element_id::Int, component_id::Int=1)
-    # Get the basis indices for the underlying function space
-    basis_indices = get_basis_indices(space.function_space, element_id)
+get_block_pattern(::RationalFESpace) = ((1, 1),)
 
-    return LinearAlgebra.I, 1:length(basis_indices)
-end
-
-function get_basis_permutation(space::RationalFESpace, element_id::Int, component_id::Int=1)
-    return 1:get_num_basis(space, element_id)
+function get_extraction_blocks(::RationalFESpace, element_id::Int)
+    return (LinearAlgebra.I,)
 end

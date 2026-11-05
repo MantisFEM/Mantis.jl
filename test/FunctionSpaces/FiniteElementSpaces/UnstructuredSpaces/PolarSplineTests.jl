@@ -38,11 +38,16 @@ P_scalar = FunctionSpaces.create_scalar_polar_spline_space(
 
 # evaluate basis functions
 xi = Points.TensorProductPoints(([0.0, 0.25, 0.5, 0.75, 1.0], [0.0, 0.33, 0.66, 1.0]))
+@test FunctionSpaces.get_block_pattern(P_scalar) == ((1, 1),)
 for element_id in 1:FunctionSpaces.get_num_elements(P_scalar)
-    ex_coeffs, _ = FunctionSpaces.get_extraction(P_scalar, element_id, 1)
+    ex_coeffs = FunctionSpaces.get_extraction_coefficients(P_scalar, element_id)
+    @test ex_coeffs ==
+        FunctionSpaces.get_extraction_coefficients(P_scalar, element_id, 1, 1)
     @test all(isapprox.(sum(ex_coeffs; dims=2) .- 1.0, 0.0, atol=1e-14))
 
-    evaluations, basis_indices = FunctionSpaces.evaluate(P_scalar, element_id, xi)
+    evaluations = FunctionSpaces.evaluate(P_scalar, element_id, xi)
+    basis_indices = FunctionSpaces.get_basis_indices(P_scalar, element_id)
+    @test FunctionSpaces.get_basis_indices(P_scalar, element_id, 1) == basis_indices
     @test size(evaluations[1][1][1]) == (Points.get_num_points(xi), length(basis_indices))
     @test all(evaluations[1][1][1] .>= 0.0)
     @test all(isapprox.(sum(evaluations[1][1][1]; dims=2) .- 1.0, 0.0, atol=1e-14))
@@ -68,10 +73,49 @@ P_vector = FunctionSpaces.create_vector_polar_spline_space(
 
 # evaluate basis functions
 xi = Points.TensorProductPoints(([0.0, 0.25, 0.5, 0.75, 1.0], [0.0, 0.33, 0.66, 1.0]))
-for element_id in 1:1#FunctionSpaces.get_num_elements(P_vector)
-    ex_coeffs, basis_indices = FunctionSpaces.get_extraction(P_vector, element_id, 1)
-    ex_coeffs, basis_indices = FunctionSpaces.get_extraction(P_vector, element_id, 2)
-    evaluations, basis_indices = FunctionSpaces.evaluate(P_vector, element_id, xi)
+# Each tensor-product space only contributes to its own component.
+@test FunctionSpaces.get_block_pattern(P_vector) == ((1, 1), (2, 2))
+# Number of elements in the first ring around the pole.
+num_pole_elements = num_elements_p
+for element_id in 1:FunctionSpaces.get_num_elements(P_vector)
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+        P_vector, element_id, 1, 2
+    )
+    @test_throws ArgumentError FunctionSpaces.get_extraction_coefficients(
+        P_vector, element_id, 2, 1
+    )
+
+    evaluations = FunctionSpaces.evaluate(P_vector, element_id, xi, 1)
+    basis_indices = FunctionSpaces.get_basis_indices(P_vector, element_id)
+    @test allunique(basis_indices)
+    component_basis_indices = ntuple(
+        component_id ->
+            FunctionSpaces.get_basis_indices(P_vector, element_id, component_id),
+        2,
+    )
+    # The basis functions of the space on this element are the union of those of each
+    # component.
+    @test issetequal(basis_indices, union(component_basis_indices...))
+    for component_id in 1:2
+        ex_coeffs = FunctionSpaces.get_extraction_coefficients(
+            P_vector, element_id, component_id, component_id
+        )
+        @test size(ex_coeffs, 2) == length(component_basis_indices[component_id])
+        @test issubset(component_basis_indices[component_id], basis_indices)
+        for der_order in eachindex(evaluations)
+            for der_idx in eachindex(evaluations[der_order])
+                @test size(evaluations[der_order][der_idx][component_id]) == (
+                    Points.get_num_points(xi), length(component_basis_indices[component_id])
+                )
+            end
+        end
+        # Only the basis functions with a non-zero component are stored.
+        @test all(col -> !all(iszero, col), eachcol(evaluations[1][1][component_id]))
+    end
+    # Near the pole, (some) basis functions have both components non-zero.
+    if element_id <= num_pole_elements
+        @test !isempty(intersect(component_basis_indices...))
+    end
 end
 
 end

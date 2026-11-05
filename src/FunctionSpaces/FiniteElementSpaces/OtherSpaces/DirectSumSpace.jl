@@ -3,9 +3,9 @@
        AbstractFESpace{manifold_dim, num_components, num_patches}
 
 A multi-component space that is the direct sum of `num_components` scalar function spaces.
-Consequently, their basis functions are evaluated independently and arranged in a
-block-diagonal matrix. Each scalar function space contributes to a separate component of
-the multi-component space.
+Consequently, their basis functions are evaluated independently. Each scalar function space
+contributes to a separate component of the multi-component space, so the extraction has the
+block pattern `((1, 1), ..., (num_components, num_components))` with identity blocks.
 
 # Fields
 - `component_spaces::F`: Tuple of `num_components` scalar function spaces
@@ -70,6 +70,10 @@ function get_num_basis(space::DirectSumSpace, element_id::Int)
     return num_basis
 end
 
+function get_num_basis(space::DirectSumSpace, element_id::Int, component_id::Int)
+    return get_num_basis(get_component_spaces(space)[component_id], element_id)
+end
+
 function get_geometry(space::DirectSumSpace)
     # The geometries of each of the component spaces are enforced to be equal, so we can
     # just pick the first.
@@ -81,12 +85,17 @@ function get_parametric_geometry(space::DirectSumSpace)
 end
 
 function get_basis_indices(space::DirectSumSpace, element_id::Int)
-    basis_indices_per_component = ntuple(get_num_components(space)) do i
-        return get_basis_indices(get_component_spaces(space)[i], element_id) .+
-               get_dof_offsets(space, i)
-    end
+    basis_indices_per_component = ntuple(
+        component_id -> get_basis_indices(space, element_id, component_id),
+        get_num_components(space),
+    )
 
-    return Base.typed_vcat(Int, basis_indices_per_component...)
+    return vcat(basis_indices_per_component...)
+end
+
+function get_basis_indices(space::DirectSumSpace, element_id::Int, component_id::Int)
+    return get_basis_indices(get_component_spaces(space)[component_id], element_id) .+
+           get_dof_offsets(space, component_id)
 end
 
 function get_dof_offsets(space::DirectSumSpace)
@@ -132,43 +141,21 @@ function get_local_basis(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-    component_id::Int=1,
+    component_id::Int,
 ) where {manifold_dim, num_components, num_patches}
-    evals, _ = evaluate(
-        get_component_spaces(space)[component_id], element_id, xi, nderivatives
-    )
-    return evals
+    return evaluate(get_component_spaces(space)[component_id], element_id, xi, nderivatives)
 end
 
-function get_basis_permutation(space::DirectSumSpace, element_id::Int, component_id::Int=1)
-    endpoint = 0
-    start = 0
-    # Cumulative sum to find the correct range of basis functions for the specified
-    # component. We start with computing the endpoint of the range, and then compute
-    # the start from that, so that it automatically works for the first component as well
-    # (where the start is 1).
-    for i in 1:component_id
-        # The components of the DirectSumSpace are enforced (in the constructor) to be
-        # single-component spaces, so we must use `1` as the second component id here.
-        lbp = length(get_basis_permutation(get_component_spaces(space)[i], element_id, 1))
-        endpoint += lbp
-
-        if i == component_id
-            start = endpoint - lbp + 1
-        end
-    end
-
-    return start:endpoint
+function get_block_pattern(
+    ::DirectSumSpace{manifold_dim, num_components, num_patches}
+) where {manifold_dim, num_components, num_patches}
+    return ntuple(component_id -> (component_id, component_id), num_components)
 end
 
-function get_extraction(space::DirectSumSpace, element_id::Int, component_id::Int)
-    return LinearAlgebra.I, get_basis_permutation(space, element_id, component_id)
-end
-
-function get_extraction_coefficients(
-    space::DirectSumSpace, element_id::Int, component_id::Int
-)
-    return LinearAlgebra.I
+function get_extraction_blocks(
+    ::DirectSumSpace{manifold_dim, num_components, num_patches}, element_id::Int
+) where {manifold_dim, num_components, num_patches}
+    return ntuple(_ -> LinearAlgebra.I, num_components)
 end
 
 function get_support(space::DirectSumSpace, basis_id::Int)

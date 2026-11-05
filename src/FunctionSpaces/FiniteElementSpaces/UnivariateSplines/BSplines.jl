@@ -1,5 +1,5 @@
 """
-    BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
+    BSplineSpace{F, G, GP, TM, TE, TI, D} <: AbstractFESpace{1, 1, 1}
 
 Univariate (general) B-Spline function space defined on a `knot_vector::KnotVector`, with
 given `polynomial_degree` and `regularity` per breakpoint.
@@ -20,11 +20,11 @@ to be polynomials; they are just named `polynomials` for convention.
     boundary, 2 interior, 3 right boundary), and the inner Vector will contain the global
     basis indices.
 """
-struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
+struct BSplineSpace{F, G, GP, TM, TE, TI, D} <: AbstractFESpace{1, 1, 1}
     geometry::G
     knot_vector::KnotVector{GP, TM}
     polynomials::F
-    extraction_op::ExtractionOperator{1, TE, TI, TJ}
+    extraction_op::ExtractionOperator{1, 1, 1, TE, TI}
     dof_partition::D
 
     function BSplineSpace(
@@ -137,7 +137,7 @@ struct BSplineSpace{F, G, GP, TM, TE, TI, TJ, D} <: AbstractFESpace{1, 1, 1}
             F,
             G,
             get_knot_vector_types(knot_vector)...,
-            get_EIJ_types(extraction_op)...,
+            get_EI_types(extraction_op)...,
             typeof(dof_partition),
         }(
             geometry, knot_vector, polynomials, extraction_op, dof_partition
@@ -251,8 +251,9 @@ function get_local_basis(
     element_id::Int,
     xi::Points.AbstractPoints{1},
     nderivatives::Int,
-    component_id::Int=1,
+    component_id::Int,
 )
+    _check_single_component_id(component_id)
     # The output of this function must correspond to the general evaluate function, so the
     # output must be a vector{vector{vector{Matrix{eltype(xi)}}}}. The output of the
     # evaluate on polynomials is a vector{vector{Matrix{eltype(xi)}}}, so we need to add an

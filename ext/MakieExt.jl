@@ -173,7 +173,8 @@ function _plot_basis!(
                 )
             end
 
-            function_values, bases = FunctionSpaces.evaluate(space, element_id, xi)
+            function_values = FunctionSpaces.evaluate(space, element_id, xi)
+            bases = FunctionSpaces.get_basis_indices(space, element_id)
             basis_index = findfirst(isequal(basis_id), bases)
             z = reshape(function_values[1][1][1][:, basis_index], point_shape)
             if manifold_dim == 1

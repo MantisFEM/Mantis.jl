@@ -78,7 +78,7 @@ end
 TensorProducts.get_num_objects(space::AbstractFESpace) = get_num_basis(space)
 
 include("FiniteElementSpaces/FiniteElementSpaces.jl")
-include("AdaptiveRefinement/AdaptiveRefinement.jl")
+# include("AdaptiveRefinement/AdaptiveRefinement.jl")
 
 # helper functions for convenience
 include("./FunctionSpaceHelpers.jl")
