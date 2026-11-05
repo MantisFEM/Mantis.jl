@@ -16,8 +16,7 @@ const ref_2(g) = Geometry.refinement_uniform(g, 2)
         @test_throws ArgumentError Geometry.refinement_uniform(Int[], 2)
         @test Geometry.refinement_uniform([1, 4, 10], 3) ==
             [1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0]
-        @test Geometry.refinement_uniform(LinRange(0, 1, 5), 2) ==
-            LinRange(0, 1, 9)
+        @test Geometry.refinement_uniform(LinRange(0, 1, 5), 2) == LinRange(0, 1, 9)
         @test Geometry.refinement_uniform([1], 2) isa Vector{Int}
         @test Geometry.refinement_uniform(Float32[1.0], 2) isa Vector{Float32}
     end
