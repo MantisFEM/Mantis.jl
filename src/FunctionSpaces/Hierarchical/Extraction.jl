@@ -439,12 +439,12 @@ function build_local_extraction(
         c -> Matrix{Float64}(
             undef,
             size(first(component_extractions[c]), 1),
-            length(active_permutations[c])+num_active[c],
+            length(active_permutations[c]) + num_active[c],
         ),
         num_components,
     )
     permutations = ntuple(
-        c -> Vector{Int}(undef, sum(active_permutations[c])+num_active[c]), num_components
+        c -> Vector{Int}(undef, sum(active_permutations[c]) + num_active[c]), num_components
     )
     E = map(first, component_extractions)
 

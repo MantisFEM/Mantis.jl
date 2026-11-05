@@ -570,7 +570,7 @@ function extract_and_relate_gtbspline_to_bspline(
             # Matrix of coefficients
             extraction_coefficients[count + 1] = (
                 Matrix(
-                    HT[cols_ij .+ spl_dims[i], get_basis_indices(basis_indices[count+1])]
+                    HT[cols_ij .+ spl_dims[i], get_basis_indices(basis_indices[count + 1])]
                 ),
             )
             count += 1
@@ -582,6 +582,5 @@ function extract_and_relate_gtbspline_to_bspline(
     ]
 
     return ExtractionOperator(extraction_coefficients, basis_indices, nel, size(HT, 2)),
-        gtb_spline_to_b_spline_map
+    gtb_spline_to_b_spline_map
 end
-

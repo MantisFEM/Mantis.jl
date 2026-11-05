@@ -517,7 +517,6 @@ function build_scaling_matrix(parent, child, scaling_method)
     return throw(MethodError(build_scaling_matrix, (parent, child, scaling_method)))
 end
 
-
 """
     get_scaling_matrix(scaling::MatrixScaling)
 

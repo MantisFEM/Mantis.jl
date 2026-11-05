@@ -421,7 +421,6 @@ function get_basis_integrals(space::BSplineSpace, element_id::Int)
     local_basis_integrals = get_basis_integrals(get_polynomials(space))
     ex_coefficients = get_extraction_coefficients(space, element_id)
     el_size = get_element_measure(space, element_id)
-    
+
     return ex_coefficients' * (local_basis_integrals .* el_size)
 end
-

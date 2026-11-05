@@ -33,7 +33,7 @@ TensorProducts.get_num_objects(obj::NewObject) = obj.n
     )
     s1 = Hierarchical.Scaling(p0, p1, rel_1)
     pc_2(i) = [i, i + 1]
-    cp_2(i) = div(i+1, 2)
+    cp_2(i) = div(i + 1, 2)
     rel_2 = Relations(
         RelationExplicit{Hierarchical.PC}(pc_2), RelationExplicit{Hierarchical.CP}(cp_2)
     )

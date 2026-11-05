@@ -788,7 +788,7 @@ Generate degenerate control points for a given number of poloidal and radial div
 """
 function _build_standard_degenerate_control_points(n_θ::Int, n_r::Int, R::Float64)
     radii = LinRange(0.0, R, n_r)
-    theta = LinRange(0.0, 2π, n_θ+1)
+    theta = LinRange(0.0, 2π, n_θ + 1)
     degenerate_control_points = zeros(Float64, n_θ, n_r, 2)
     # the control points that are identical to the tensor-product control points
     for (t, r) in Iterators.product(1:n_θ, 1:n_r)
