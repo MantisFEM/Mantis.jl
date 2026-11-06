@@ -36,7 +36,7 @@ abstract type SelectionSimple <: SelectionAlgorithm end
         selection_type::Type{S},
     ) where {LS, S <: SelectionAlgorithm}
 
-Construct a hierarchical basis for `geometry` from the function space `scalings`, using
+Construct a hierarchical basis on `geometry` from the `scalings` between function spaces, using
 `selection_type` to determine the active basis functions at each level.
 """
 function create_basis(

@@ -18,7 +18,7 @@ representation.
 - `selection_type::Type{S}`: Algorithm used to construct the active basis.
 - `basis_type::Type{B}`: Hierarchical basis representation, such as `HB` or `THB`.
 
-# Outer Constructors
+# Constructors
 - `HierarchicalBasis(geometry::Geometry.HierarchicalGeometry, scalings, ::Type{S},
   ::Type{B})`: Selects the active basis of `scalings` on `geometry` with `S`.
 """
@@ -301,8 +301,8 @@ end
         space::HierarchicalSpace,
         level::Int,
         elements::Vector{Int},
-        geo_scaling::AbstractScaling,
-        basis_scaling::AbstractScaling,
+        geo_scaling::Hierarchical.AbstractScaling,
+        basis_scaling::Hierarchical.AbstractScaling,
     )
 
 Refine selected elements using the supplied geometry and basis scalings. The physical and
@@ -312,8 +312,8 @@ function refine(
     space::HierarchicalSpace,
     level::Int,
     elements::Vector{Int},
-    geo_scaling::AbstractScaling,
-    basis_scaling::AbstractScaling,
+    geo_scaling::Hierarchical.AbstractScaling,
+    basis_scaling::Hierarchical.AbstractScaling,
 )
     if !(get_parametric_geometry(space) === get_geometry(space))
         throw(
@@ -334,7 +334,7 @@ end
         space::HierarchicalSpace{manifold_dim},
         geometry::Geometry.AbstractGeometry{manifold_dim},
         parametric_geometry::Geometry.HierarchicalGeometry{manifold_dim},
-        scaling::AbstractScaling,
+        scaling::Hierarchical.AbstractScaling,
     ) where {manifold_dim}
 
 Rebuild `space` against the updated geometry and basis scaling, recomputing its active basis
@@ -344,7 +344,7 @@ function update(
     space::HierarchicalSpace{manifold_dim},
     geometry::Geometry.AbstractGeometry{manifold_dim},
     parametric_geometry::Geometry.HierarchicalGeometry{manifold_dim},
-    scaling::AbstractScaling,
+    scaling::Hierarchical.AbstractScaling,
 ) where {manifold_dim}
     curr_L = get_num_levels(space)
     next_L = Geometry.get_num_levels(parametric_geometry)
@@ -380,8 +380,8 @@ function update(
 end
 
 function _update_scalings(
-    curr_scalings::NTuple{LS, AbstractScaling},
-    scaling::AbstractScaling,
+    curr_scalings::NTuple{LS, Hierarchical.AbstractScaling},
+    scaling::Hierarchical.AbstractScaling,
     curr_L::Int,
     next_L::Int,
 ) where {LS}

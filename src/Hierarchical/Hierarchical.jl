@@ -1,7 +1,7 @@
 """
 	module Hierarchical
 
-Utilities related to hierarchies of abstract objects. Includes methods one refinement,
+Utilities related to hierarchies of abstract objects. Includes methods on refinement,
 scalings between parent and child sets, and information about active objects at each level.
 """
 module Hierarchical
@@ -15,20 +15,20 @@ import LinearAlgebra
 #                                         Exports                                          #
 ############################################################################################
 
+# Abstract types
+# The public keyword is only available in Julia 1.11 and up. Since we also support LTS
+# (currently 1.10), we add the following line from the manual:
+# https://docs.julialang.org/en/v1.12/manual/modules/#Export-lists
+VERSION >= v"1.11.0-DEV.469" &&
+    eval(Meta.parse("public AbstractRefinement, AbstractScaling, AbstractHierarchy"))
+
 # Refinement
 ## Structures
-export AbstractRefinement, Refinement, RefinementExplicit, RefinementMethod
+export Refinement, RefinementExplicit, RefinementMethod
 
 # Scalings
 ## Structures
-export AbstractScaling,
-    MatrixScaling,
-    RelationEmpty,
-    RelationExplicit,
-    RelationMethod,
-    RelationType,
-    Relations,
-    Scaling
+export MatrixScaling, RelationExplicit, RelationMethod, RelationType, Relations, Scaling
 ## Methods
 export get_child, get_children, get_parent, get_parents, get_sets
 
@@ -50,7 +50,7 @@ export convert_to_hier_id,
 
 # Hierarchy
 ## Structures
-export AbstractHierarchy, Hierarchy, TreeHierarchy
+export Hierarchy, TreeHierarchy
 ## Methods
 export get_active_info, get_descendants, get_tree_ids, get_scaling, get_scalings
 

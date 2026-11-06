@@ -173,6 +173,8 @@ For a `HierarchicalGeometry`, the qbox of an element is computed on its level, a
 marked elements are given in hierarchical indexing. The hierarchy is assumed to be the
 result of refining whole qboxes, so all elements in the qbox of an active element must be
 active on the same level. An `ArgumentError` is thrown otherwise.
+
+For more details, we refer the reader to [Dijkstra2026](@cite).
 """
 struct QBoxMarking{
     manifold_dim,

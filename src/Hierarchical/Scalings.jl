@@ -206,7 +206,7 @@ child objects through its associated `Relations`.
 - `child::C`: The child set.
 - `relations::R`: The parent-child relations.
 
-# Outer Constructors
+# Constructors
 - [`Scaling(parent)`](@ref)
 - [`Scaling(parent, child, scalings::NTuple{num_scalings, AbstractScaling}) where {num_scalings}`](@ref)
 - [`Scaling(parent, child, R::NTuple{num_rs, Relations}) where {num_rs}`](@ref)
@@ -335,10 +335,10 @@ See also [`Scaling`](@ref), [`Relations(scaling_matrix::AbstractMatrix)`](@ref).
 - `child::C`: The child set.
 - `relations::R`: The parent-child relations.
 - `scaling_matrix::M`: The matrix providing the parent-child relations. The matrix has size
-    ``dP x dC`` where ``dP`` and ``dC`` are the dimensions of `parent` and `child`,
+    ``\\dim(P) \\times \\dim(C)`` where ``P`` and ``C`` are the `parent` and `child` sets,
     respectively.
 
-# Outer Constructors
+# Constructors
 - [`MatrixScaling(parent, child, scaling_method)`](@ref) 
 - [`MatrixScaling(sets::NTuple{num_sets, Any}, scaling_methods::Vararg{Function, num_methods}) where {num_sets, num_methods}`](@ref)
 - [`MatrixScaling(parent, child, scaling_methods::NTuple{num_methods, Function}) where {num_methods}`](@ref)
@@ -510,8 +510,9 @@ end
 Return the scaling matrix between `parent` and `child` as defined by `scaling_method`.
 
 !!! note
-    Must be implement for every concrete type of `parent` and `child`.
+    Must be implemented for every concrete type of `parent` and `child`.
 
+See [`MatrixScaling`](@ref) for the convention of the scaling matrix.
 """
 function build_scaling_matrix(parent, child, scaling_method)
     return throw(MethodError(build_scaling_matrix, (parent, child, scaling_method)))

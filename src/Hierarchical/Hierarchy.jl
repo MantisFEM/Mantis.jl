@@ -5,7 +5,7 @@
 """
     AbstractHierarchy{L, S}
 
-Supertype for all hierarchies. An hierarchy is a collection of sets, each set corresponding
+Supertype for all hierarchies. A hierarchy is a collection of sets, each set corresponding
 to a level, such that at each level there is scaling information relating parents and
 children, and information about which objects are active.
 """
@@ -47,11 +47,9 @@ number of levels of the hierarchy.)
 """
 function get_descendants(hierarchy::AbstractHierarchy{L}, id::Int; last_level=L) where {L}
     level, level_id = convert_to_level_and_level_id(hierarchy, id)
-    # The finest level has no descendants
-    level == L && (return Int[])
-
-    # `last_level` - `level` is the number of descendants we have
-    descendants = Vector{Vector{Int}}(undef, last_level - level)
+    num_descendants = last_level - level
+    num_descendants < 1 && (return Int[])
+    descendants = Vector{Vector{Int}}(undef, num_descendants)
     # The first set of descendants is just the children of the current object
     descendants[1] = get_children(get_scaling(hierarchy, level), level_id)
     # We walk all the descendants until `last_level` - `level`.
@@ -76,7 +74,7 @@ end
 """
     get_sets(hierarchy::AbstractHierarchy)
 
-See [`get_sets(scalings::S) where {LS, S <: NTuple{LS, AbstractScaling}}`](@ref).
+Return the sets of all levels of `hierarchy`, i.e. the sets of its scalings.
 """
 get_sets(hierarchy::AbstractHierarchy) = get_sets(get_scalings(hierarchy))
 
@@ -91,7 +89,7 @@ function _warn_stability(sets)
     # indexing unstable, as the output type is unknown.
     if !(sets isa NTuple)
         @warn LazyString(
-            "The sets provided in scalings do not form an homogeneously-typed tuple. ",
+            "The sets provided in scalings do not form a homogeneously-typed tuple. ",
             "Type-stability will be affected. ",
             "Got type ",
             typeof(sets),
@@ -259,7 +257,7 @@ end
         scaling::AbstractScaling,
     )
 
-Similar [`update(active_info::ActiveInfo, level::Int, remove::Vector{Int},
+Similar to [`update(active_info::ActiveInfo, level::Int, remove::Vector{Int},
 add::Vector{Int})`](@ref), but if a new level needs to be added, then `scaling` is appended
 to the scalings of the hierarchy.
 
@@ -275,7 +273,7 @@ function update(
 ) where {H <: AbstractHierarchy}
     active_info = update(get_active_info(hierarchy), level, remove, add)
     # STABILITY: This method is type unstable. See method's comments
-    scalings = _maybe_add_scaling(hierarchy, scaling, active_info)
+    scalings = _add_scaling(hierarchy, scaling, active_info)
     # This gets the name of the concrete type `H`
     constructor = Base.typename(H).wrapper
 
@@ -292,7 +290,7 @@ function add_scaling(hierarchy::AbstractHierarchy, scaling::AbstractScaling)
 end
 
 """
-    _maybe_add_scaling(
+    _add_scaling(
         hierarchy::H, scaling::AbstractScaling, active_info::ActiveInfo
     ) where {L, H <: AbstractHierarchy{L}}
 
@@ -303,7 +301,7 @@ than `hierarchy`.
     This is type unstable since the output type depends on the runtime number of levels of
     `active_info`. The method is not inlined to act as a function barrier.
 """
-@noinline function _maybe_add_scaling(
+@noinline function _add_scaling(
     hierarchy::H, scaling::AbstractScaling, active_info::ActiveInfo
 ) where {L, H <: AbstractHierarchy{L}}
     # STABILITY: This operation is inherently type unstable as it depends on the runtime
@@ -376,7 +374,7 @@ associated `ActiveInfo` specifies which objects are active on each level.
 
 # Fields
 - `active_info::ActiveInfo`: See [`ActiveInfo`](@ref).
-- `scalings::S`: A tuple of `L+1` abstract scalings; see [`AbstractScaling`](@ref).
+- `scalings::S`: A tuple of `L-1` abstract scalings; see [`AbstractScaling`](@ref).
 
 # Type Parameters
 - `L`: The number of hierarchical levels.
@@ -443,8 +441,8 @@ See also [`Hierarchy`](@ref).
 - `scalings::S`:  See [`AbstractScaling`](@ref).
 - `tree_ids::Vector{Set{Int}}`: Collection of level-wise indices indicating whether a
     given object is either active or has active children. In general, this is _not_ the same
-    as the active level-wise indices. Useful in basis selection algorithms for hierarchical
-    spaces, for example
+    as the active level-wise indices. For a hierarchical geometry, these are used, for
+    example, to select the active basis functions of the hierarchical spaces built on it.
 """
 struct TreeHierarchy{L, S} <: AbstractHierarchy{L, S}
     active_info::ActiveInfo
@@ -456,7 +454,7 @@ struct TreeHierarchy{L, S} <: AbstractHierarchy{L, S}
             active_info::ActiveInfo, scalings::Vararg{AbstractScaling, LS}; check_tree=true
         ) where {LS}
 
-    Similar the constructor for `Hierarchy`, with the default option of checking whether a
+    Similar to the constructor for `Hierarchy`, with the default option of checking whether a
     tree-like structure is satisfied.
 
     # Arguments
