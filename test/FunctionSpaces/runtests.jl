@@ -10,8 +10,8 @@ end
     include("FiniteElementSpaces/runtests.jl")
 end
 
-@testset verbose = true "AdaptiveRefinement" begin
-    include("AdaptiveRefinement/runtests.jl")
+@testset verbose = true "Hierarchical" begin
+    include("Hierarchical/runtests.jl")
 end
 
 end

@@ -400,23 +400,38 @@ end
 	    section_spaces::NTuple{manifold_dim, F},
 	    regularities::NTuple{manifold_dim, Int},
 	    num_subdivisions::NTuple{manifold_dim, Int},
-	    truncate::Bool,
-	    simplified::Bool,
-	    geometry::G,
+	    ::Type{S},
+	    ::Type{B},
 	) where {
 	    manifold_dim,
 	    F <: FunctionSpaces.AbstractCanonicalSpace,
-	    G <: Geometry.AbstractGeometry{manifold_dim},
+	    S <: FunctionSpaces.SelectionAlgorithm,
+	    B <: FunctionSpaces.BasisType,
 	}
 
 Construct a hierarchical discrete de Rham complex of finite element spaces over a
 tensor-product geometry, equivalent to a Cartesian grid, in `manifold_dim` dimensions.
 
 This routine initializes, for each form degree `k = 0,…,manifold_dim`, a hierarchical
-B-spline space of differential `k`‑forms without refinement.
+B-spline space of differential `k`‑forms without refinement. All the spaces share the same
+[`Geometry.HierarchicalGeometry`](@ref), whose finest level is obtained by subdividing the
+elements of the coarsest level by `num_subdivisions`, and is empty until refined with
+[`update_hierarchical_de_rham_complex`](@ref).
+
+!!! note
+    Only complexes where all form spaces have a single component are supported, which
+    currently restricts this routine to `manifold_dim = 1`. Multi-component hierarchical
+    spaces are waiting for the multi-component extraction overhaul.
 
 See also [`create_tensor_product_bspline_de_rham_complex`](@ref) and
-[`FunctionSpaces.HierarchicalFiniteElementSpace`](@ref).
+[`FunctionSpaces.HierarchicalSpace`](@ref).
+
+# Arguments
+- `::Type{S}`: The algorithm used to select the active basis functions, such as
+    [`FunctionSpaces.SelectionStandard`](@ref) or [`FunctionSpaces.SelectionSimple`](@ref).
+- `::Type{B}`: The hierarchical basis representation, such as truncated hierarchical
+    B-splines, [`FunctionSpaces.THB`](@ref), or hierarchical B-splines,
+    [`FunctionSpaces.HB`](@ref).
 
 # Returns
 - A tuple with the `manifold_dim + 1` spaces that form the de Rham complex.
@@ -428,9 +443,14 @@ function create_hierarchical_de_rham_complex(
     section_spaces::NTuple{manifold_dim, F},
     regularities::NTuple{manifold_dim, Int},
     num_subdivisions::NTuple{manifold_dim, Int},
-    truncate::Bool,
-    simplified::Bool,
-) where {manifold_dim, F <: FunctionSpaces.AbstractCanonicalSpace}
+    ::Type{S},
+    ::Type{B},
+) where {
+    manifold_dim,
+    F <: FunctionSpaces.AbstractCanonicalSpace,
+    S <: FunctionSpaces.SelectionAlgorithm,
+    B <: FunctionSpaces.BasisType,
+}
     # store all univariate FEM spaces helper
     fem_spaces = Vector{NTuple{manifold_dim, FunctionSpaces.AbstractFESpace{1, 1}}}(
         undef, 2
@@ -442,36 +462,61 @@ function create_hierarchical_de_rham_complex(
     # next, create all univariate FEM spaces corresponding to directional-one forms
     fem_spaces[2] = map(FunctionSpaces.get_derivative_space, fem_spaces[1])
 
-    # Build all the form spaces of the complex.
-    form_spaces = ntuple(manifold_dim + 1) do k
+    # Build the tensor-product FEM spaces of all the forms on the coarsest level.
+    tp_spaces = ntuple(manifold_dim + 1) do k
         k = k - 1 # Because form ranks range from 0 to manifold_dim.
         # Get k-form basis indices, these also inform the directional degree-deficits.
         k_form_basis_idxs = get_basis_index_combinations(manifold_dim, k)
-        num_form_components = length(k_form_basis_idxs)
-        # Generate tuple with all the k-form finite element spaces.
-        k_form_fem_spaces = ntuple(num_form_components) do component
-            # By default, use direction-zero forms...
-            fem_space_idxs = ones(Int, manifold_dim)
-            # ...unless the basis index is present in the k-form basis indices.
-            fem_space_idxs[k_form_basis_idxs[component]] .= 2
-            # Build and store factor spaces of the tensor-product FEM space.
-            tp_factor_spaces = ntuple(manifold_dim) do dim
-                return fem_spaces[fem_space_idxs[dim]][dim]
-            end
-            # Build the corresponding tensor-product FEM space.
-            tp_space = FunctionSpaces.TensorProductSpace(tp_factor_spaces)
-            hierarchical_space = FunctionSpaces.HierarchicalFiniteElementSpace(
-                tp_space, num_subdivisions, truncate, simplified
+        if length(k_form_basis_idxs) > 1
+            # TODO: Waiting for multi-component extraction overhaul.
+            # https://github.com/MantisFEM/Mantis.jl/discussions/421
+            return throw(
+                ArgumentError(
+                    LazyString(
+                        "Hierarchical de Rham complexes with multi-component form ",
+                        "spaces are not supported yet. Got ",
+                        length(k_form_basis_idxs),
+                        " components for the ",
+                        k,
+                        "-forms in ",
+                        manifold_dim,
+                        " dimensions.",
+                    ),
+                ),
             )
-
-            return hierarchical_space
         end
 
-        if num_form_components == 1
-            return FormSpace(k, k_form_fem_spaces[1], "ω_$k")
-        else
-            return FormSpace(k, FunctionSpaces.DirectSumSpace(k_form_fem_spaces), "ω_$k")
+        # By default, use direction-zero forms...
+        fem_space_idxs = ones(Int, manifold_dim)
+        # ...unless the basis index is present in the k-form basis indices.
+        fem_space_idxs[first(k_form_basis_idxs)] .= 2
+        # Build the tensor-product FEM space from its factor spaces.
+        tp_factor_spaces = ntuple(manifold_dim) do dim
+            return fem_spaces[fem_space_idxs[dim]][dim]
         end
+
+        return FunctionSpaces.TensorProductSpace(tp_factor_spaces)
+    end
+
+    # The spaces of all forms share the same hierarchical geometry. Its coarsest level is
+    # fully active, while its finest level is empty until the complex is refined.
+    basis_scalings = map(
+        space -> FunctionSpaces.scaling_uniform(space, num_subdivisions), tp_spaces
+    )
+    geometry_scaling = Geometry.scaling_uniform(
+        FunctionSpaces.get_parametric_geometry(first(tp_spaces)),
+        FunctionSpaces.get_parametric_geometry(get_child(first(basis_scalings))),
+        num_subdivisions,
+    )
+    active_elements = ActiveInfo([collect(1:prod(num_elements)), Int[]])
+    geometry = Geometry.HierarchicalGeometry(active_elements, (geometry_scaling,))
+
+    form_spaces = ntuple(manifold_dim + 1) do k
+        hierarchical_space = FunctionSpaces.HierarchicalSpace(
+            geometry, (basis_scalings[k],), S, B
+        )
+
+        return FormSpace(k - 1, hierarchical_space, "ω_$(k - 1)")
     end
 
     return form_spaces
@@ -484,9 +529,11 @@ function create_hierarchical_de_rham_complex(
     degrees::NTuple{manifold_dim, Int},
     regularities::NTuple{manifold_dim, Int},
     num_subdivisions::NTuple{manifold_dim, Int},
-    truncate::Bool,
-    simplified::Bool,
-) where {manifold_dim}
+    ::Type{S},
+    ::Type{B},
+) where {
+    manifold_dim, S <: FunctionSpaces.SelectionAlgorithm, B <: FunctionSpaces.BasisType
+}
     return create_hierarchical_de_rham_complex(
         starting_points,
         box_sizes,
@@ -494,49 +541,104 @@ function create_hierarchical_de_rham_complex(
         map(FunctionSpaces.Bernstein, degrees),
         regularities,
         num_subdivisions,
-        truncate,
-        simplified,
+        S,
+        B,
     )
 end
 
 """
 	update_hierarchical_de_rham_complex(
-		complex::C, data
-	) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
+		complex::C,
+		elements::Vector{Int};
+		num_subdivisions::NTuple{manifold_dim, Int}=ntuple(_ -> 2, manifold_dim),
+	) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace{manifold_dim}}}
 
-Returns a refined hierarchical de Rham complex, based on the given `complex` and refinement
-`data`. The input `data` should have a dedicated method in
-`FunctionSpaces.refine_space(space, data)`.
+Returns a refined hierarchical de Rham complex, based on the given `complex` and the marked
+`elements`.
 
-See also [`FunctionSpaces.refine_space`](@ref).
+The marked elements are refined in the hierarchical geometry shared by all the spaces of the
+complex, and then all the spaces are updated to the refined geometry. If an element on the
+finest level is marked, a new level is created by subdividing the elements of the finest
+level by `num_subdivisions`.
+
+See also [`create_hierarchical_de_rham_complex`](@ref) and
+[`FunctionSpaces.refine`](@ref).
 
 # Arguments
-- `complex::C`: The hierarchical B-spline de Rham complex.
-- `data`: The information used for refinement. Examples include domains denoting active
-    elements, of type [`Hierarchy.ActiveInfo`](@ref), or elements marked for refinement, of
-    type `Vector{Vector{Int}}`.
+- `complex::C`: The hierarchical B-spline de Rham complex, for example created with
+    [`create_hierarchical_de_rham_complex`](@ref).
+- `elements::Vector{Int}`: The marked elements, in hierarchical indexing, for example
+    obtained with a [`FunctionSpaces.MarkingStrategy`](@ref).
+
+# Keyword Arguments
+- `num_subdivisions::NTuple{manifold_dim, Int}`: The number of subdivisions per dimension
+    used if a new level is created.
 
 # Returns
 - `new_complex<:NTuple{num_forms, AbstractFormSpace}`:A tuple with the `manifold_dim + 1`
 	refined spaces that form the de Rham complex.
 """
 function update_hierarchical_de_rham_complex(
-    complex::C, data
-) where {num_forms, C <: NTuple{num_forms, AbstractFormSpace}}
-    new_complex = ntuple(num_forms) do k
-        num_components = FunctionSpaces.get_num_components(get_fe_space(complex[k]))
-        if num_components == 1
-            new_space = FunctionSpaces.refine_space(get_fe_space(complex[k]), data)
-        else
-            comp_spaces = FunctionSpaces.get_component_spaces(get_fe_space(complex[k]))
-            new_space = FunctionSpaces.DirectSumSpace(
-                ntuple(num_components) do c
-                    return FunctionSpaces.refine_space(comp_spaces[c], data)
-                end,
+    complex::C,
+    elements::Vector{Int};
+    num_subdivisions::NTuple{manifold_dim, Int}=ntuple(_ -> 2, manifold_dim),
+) where {manifold_dim, num_forms, C <: NTuple{num_forms, AbstractFormSpace{manifold_dim}}}
+    spaces = map(get_fe_space, complex)
+    for space in spaces
+        if !(space isa FunctionSpaces.HierarchicalSpace)
+            # TODO: Waiting for multi-component extraction overhaul.
+            # https://github.com/MantisFEM/Mantis.jl/discussions/421
+            return throw(
+                ArgumentError(
+                    LazyString(
+                        "All the spaces of the complex should be single-component ",
+                        "hierarchical spaces. Got ",
+                        Base.typename(typeof(space)).wrapper,
+                    ),
+                ),
             )
         end
+    end
 
-        return FormSpace(k - 1, new_space, get_label(complex[k]))
+    geometry = FunctionSpaces.get_parametric_geometry(first(spaces))
+    if any(space -> !(FunctionSpaces.get_parametric_geometry(space) === geometry), spaces)
+        return throw(
+            ArgumentError(
+                "All the spaces of the complex should share the same hierarchical geometry."
+            ),
+        )
+    end
+
+    # The marked elements are refined level by level, so we convert them to level indexing.
+    elements_per_level = [Int[] for _ in 1:Geometry.get_num_levels(geometry)]
+    for element_id in unique(elements)
+        level, level_id = Geometry.convert_to_level_and_level_id(geometry, element_id)
+        push!(elements_per_level[level], level_id)
+    end
+
+    # The scalings are only used if a new level is created. The new level of the geometry
+    # has to be the parametric geometry of the new level of the spaces.
+    basis_scalings = map(spaces) do space
+        last_space = get_child(last(get_scalings(FunctionSpaces.get_basis(space))))
+
+        return FunctionSpaces.scaling_uniform(last_space, num_subdivisions)
+    end
+    last_geometry = get_child(last(get_scalings(Geometry.get_hierarchy(geometry))))
+    geometry_scaling = Geometry.scaling_uniform(
+        last_geometry,
+        FunctionSpaces.get_parametric_geometry(get_child(first(basis_scalings))),
+        num_subdivisions,
+    )
+    for (level, level_elements) in enumerate(elements_per_level)
+        if !isempty(level_elements)
+            geometry = Geometry.refine(geometry, level, level_elements, geometry_scaling)
+        end
+    end
+
+    new_complex = ntuple(num_forms) do k
+        space = FunctionSpaces.update(spaces[k], geometry, geometry, basis_scalings[k])
+
+        return FormSpace(get_form_rank(complex[k]), space, get_label(complex[k]))
     end
 
     return new_complex

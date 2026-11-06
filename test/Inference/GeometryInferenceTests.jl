@@ -286,4 +286,28 @@ for geo in geos
     end
 end
 
+# Hierarchical geometry, 1D.
+geo_l1_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 3),))
+geo_l2_1d = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5),))
+relations_1d = Hierarchical.Relations(
+    Geometry.parent_to_children_uniform(geo_l1_1d, 2),
+    Geometry.child_to_parents_uniform(geo_l2_1d, 2),
+)
+scaling_1d = Hierarchical.Scaling(geo_l1_1d, geo_l2_1d, relations_1d)
+hierarchy_1d = Hierarchical.TreeHierarchy(
+    Hierarchical.ActiveInfo([[1], [3, 4]]), scaling_1d
+)
+hgeo_1d = Geometry.HierarchicalGeometry(hierarchy_1d)
+
+@test_opt Geometry.get_hierarchy(hgeo_1d)
+@test_opt Geometry.get_geometries(hgeo_1d)
+@test_opt Geometry.get_active_elements(hgeo_1d)
+@test_opt Geometry.get_level_geometry(hgeo_1d, 1)
+@test_opt Geometry.get_num_levels(hgeo_1d)
+@test_opt Geometry.get_num_elements(hgeo_1d)
+@test_opt Geometry.convert_to_level_and_level_id(hgeo_1d, 2)
+@test_opt Geometry.get_element_measure(hgeo_1d, 2)
+@test_opt Geometry.get_element_lengths(hgeo_1d, 2)
+@test_opt Geometry.get_element_vertices(hgeo_1d, 2)
+
 end
