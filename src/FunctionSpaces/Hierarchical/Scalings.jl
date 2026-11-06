@@ -498,7 +498,7 @@ function scaling_matrix_approximate(
         parent_factor_num_elements,
     )
     child_global_extraction = assemble_global_extraction_matrix(child)
-    R = kron(Iterators.reverse(parent_factor_element_matrices)...)
+    R = reduce(kron, Iterators.reverse(parent_factor_element_matrices))
     parent_global_extraction = assemble_global_extraction_matrix(parent)
 
     return _approximate_scaling_matrix(

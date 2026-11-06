@@ -160,7 +160,7 @@ end
     scaling1 = Scaling(a1, p2, rel)
     warn_msg = Regex(
         join([
-            "The sets provided in scalings do not form an homogeneously-typed tuple. ",
+            "The sets provided in scalings do not form a homogeneously-typed tuple. ",
             "Type-stability will be affected. ",
             "Got type Tuple\\{.*NewObject, .*AnotherObject, .*NewObject\\}",
         ]),
