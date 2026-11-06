@@ -24,7 +24,7 @@ convert between hierarchical and level-wise numbering.
 - `level_cum_num_ids`: Cumulative number of active objects per level, used for converting
     between hierarchical and level-wise numbering.
 
-# Outer Constructors
+# Constructors
 - [`ActiveInfo(level_ids::Vector{Vector{Int}})`](@ref)
 """
 struct ActiveInfo
@@ -245,7 +245,7 @@ end
 ############################################################################################
 
 """
-    convert_to_level_id(active_info, hier_id)
+    convert_to_level_id(active_info::ActiveInfo, hier_id::Int)
 
 Convert hierarchical index `hier_id` to the corresponding level-wise id.
 """
@@ -317,11 +317,15 @@ function update(active_info::ActiveInfo, level::Int, remove::Vector{Int}, add::V
         num_levels += 1
     end
 
-    # Levels `level` and `level+1` are updated with `remove` and `add`
+    # Levels `level` is updated with `remove`
     setdiff!(get_level_ids(active_info, level), remove)
     setdiff!(get_level_set(active_info, level), remove)
-    union!(get_level_ids(active_info, level + 1), add)
-    union!(get_level_set(active_info, level + 1), add)
+    # This checks whether the next level exists, which depends on the current level and
+    # whether `add` is empty or not.
+    if level + 1 <= num_levels
+        union!(get_level_ids(active_info, level + 1), add)
+        union!(get_level_set(active_info, level + 1), add)
+    end
 
     # The previous changes to `level` and `level+1` require updating the cumulative count
     # and level lookups for all subsequent levels
@@ -334,9 +338,11 @@ function update(active_info::ActiveInfo, level::Int, remove::Vector{Int}, add::V
     get_level_lookup(active_info)[level] = Dict(
         id => i for (i, id) in enumerate(get_level_ids(active_info, level))
     )
-    get_level_lookup(active_info)[level + 1] = Dict(
-        id => i for (i, id) in enumerate(get_level_ids(active_info, level + 1))
-    )
+    if level + 1 <= num_levels
+        get_level_lookup(active_info)[level + 1] = Dict(
+            id => i for (i, id) in enumerate(get_level_ids(active_info, level + 1))
+        )
+    end
 
     return active_info
 end

@@ -27,8 +27,8 @@ A hierarchy is built from three ingredients, each with its own section below.
    provided by a [scaling](@ref HierarchicalScalings).
 3. **Active objects** on each level, stored in an [`ActiveInfo`](@ref).
 
-Consider a 1D geometry with 4 elements on the first level, uniformly refined
-twice. Some elements are refined (inactive) and replaced by their children:
+Consider a 1D geometry with 4 elements on the first level, uniformly refined into 2 elements
+each. Some elements are refined (inactive) and replaced by their children:
 
 ```
 x inactive
@@ -65,7 +65,7 @@ The parent set and the refinement method of a refinement can be retrieved with
 the following getters.
 
 ```@docs
-get_parent
+get_parent(::AbstractRefinement)
 get_method
 ```
 
@@ -106,10 +106,11 @@ Scaling
 MatrixScaling
 ```
 
-The sets and relations of any scaling can be inspected with [`get_parent`](@ref)
-(see [Refinement](@ref HierarchicalRefinement)) and the following methods.
+The sets and relations of any scaling can be inspected with the following
+methods.
 
 ```@docs
+get_parent(::AbstractScaling)
 get_child
 get_children
 get_parents
@@ -265,7 +266,7 @@ newly created level.
 
 ```@docs
 add_scaling
-_maybe_add_scaling
+_add_scaling
 ```
 
 :::

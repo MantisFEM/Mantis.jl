@@ -14,7 +14,7 @@ See also [`Hierarchical.Hierarchy`](@ref) and [`TreeHierarchy`](@ref).
 - `hierarchy::H`: A hierarchy of geometries, determining which elements are active form each
     level, and how they are related.
 
-# Outer Constructors
+# Constructors
 - [`HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings)`](@ref)
 """
 struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, H} <:

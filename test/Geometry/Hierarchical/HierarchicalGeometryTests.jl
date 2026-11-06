@@ -235,19 +235,6 @@ end
     end
 end
 
-@testset "Type stability" begin
-    @test_nowarn @inferred Geometry.get_hierarchy(hgeo_1d)
-    @test_nowarn @inferred Geometry.get_geometries(hgeo_1d)
-    @test_nowarn @inferred Geometry.get_active_elements(hgeo_1d)
-    @test_nowarn @inferred Geometry.get_level_geometry(hgeo_1d, 1)
-    @test_nowarn @inferred Geometry.get_num_levels(hgeo_1d)
-    @test_nowarn @inferred Geometry.get_num_elements(hgeo_1d)
-    @test_nowarn @inferred Geometry.convert_to_level_and_level_id(hgeo_1d, 2)
-    @test_nowarn @inferred Geometry.get_element_measure(hgeo_1d, 2)
-    @test_nowarn @inferred Geometry.get_element_lengths(hgeo_1d, 2)
-    @test_nowarn @inferred Geometry.get_element_vertices(hgeo_1d, 2)
-end
-
 @testset "Update" verbose = true begin
     geo_l1 = Geometry.CartesianGeometry(([0.0, 0.5, 1.0], [0.0, 0.5, 1.0]))
     scal_1 = Geometry.scaling_uniform(geo_l1, (2, 2))

@@ -99,7 +99,7 @@ julia> refinement() == "John's son"
 true
 ```
 
-# Outer Constructors
+# Constructors
 - [`Refinement(parent, method::Function)`](@ref)
 """
 struct Refinement{O, M <: RefinementMethod} <: AbstractRefinement{O, M}
