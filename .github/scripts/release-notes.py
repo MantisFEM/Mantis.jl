@@ -7,10 +7,11 @@ Only commits whose message contains the line
 
     Release-note: yes
 
-are listed (case-insensitive, anywhere in the message body). All other
-commits are ignored. Listed commits are grouped by their conventional type,
-using the same sections as TagBot's `conventional` changelog format; commits
-of type `doc` are listed under "Documentation".
+are listed (case-insensitive, anywhere in the message body), together with
+all commits authored by Dependabot (`dependabot[bot]`), which cannot carry the
+marker. All other commits are ignored. Listed commits are grouped by their
+conventional type, using the same sections as TagBot's `conventional`
+changelog format; commits of type `doc` are listed under "Documentation".
 """
 import re
 import subprocess
@@ -34,6 +35,7 @@ SECTIONS = [
     ("other", "Other Changes"),
 ]
 ALIASES = {"doc": "docs"}
+DEPENDABOT = "dependabot[bot]"
 
 
 def commits(rev_range):
@@ -55,7 +57,7 @@ def main():
     rev_range = f"{sys.argv[1]}..{sys.argv[2] if len(sys.argv) > 2 else 'HEAD'}"
     groups = {key: [] for key, _ in SECTIONS}
     for sha, author, title, body in commits(rev_range):
-        if not MARKER.search(body):
+        if not MARKER.search(body) and author != DEPENDABOT:
             continue
         m = TITLE.match(title)
         line = f"- {title} ({sha}, {author})"
