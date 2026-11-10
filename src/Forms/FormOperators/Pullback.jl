@@ -175,7 +175,28 @@ end
 function _cofactor_matrix(J::StaticArrays.SMatrix{2, 2}, ::Val{2})
     return StaticArrays.SMatrix{1, 1}(J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1])
 end
-
+function _cofactor_matrix(J::StaticArrays.SMatrix{3, 2}, ::Val{2})
+    return StaticArrays.SMatrix{1, 3}(
+        J[2, 1] * J[3, 2] - J[2, 2] * J[3, 1],
+        J[3, 1] * J[1, 2] - J[3, 2] * J[1, 1],
+        J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1],
+    )
+end
+function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3}, ::Val{2})
+    # SMatrix is created per column. CofactorMatrix[j,i] is for output component j and
+    # input component i.
+    return StaticArrays.SMatrix{3, 3}(
+        J[2, 2] * J[3, 3] - J[2, 3] * J[3, 2],
+        J[2, 3] * J[3, 1] - J[2, 1] * J[3, 3],
+        J[2, 1] * J[3, 2] - J[2, 2] * J[3, 1],
+        J[3, 2] * J[1, 3] - J[3, 3] * J[1, 2],
+        J[3, 3] * J[1, 1] - J[3, 1] * J[1, 3],
+        J[3, 1] * J[1, 2] - J[3, 2] * J[1, 1],
+        J[1, 2] * J[2, 3] - J[1, 3] * J[2, 2],
+        J[1, 3] * J[2, 1] - J[1, 1] * J[2, 3],
+        J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1],
+    )
+end
 function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3}, ::Val{3})
     return StaticArrays.SMatrix{1, 1}(StaticArrays.det(J))
 end
@@ -242,6 +263,44 @@ function pullback!(
 
     # We keep only the output components that were used.
     resize!(evaluations, num_destination_components)
+
+    return evaluations
+end
+# Physical -> Canonical
+function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3})
+    return StaticArrays.SMatrix{3, 3}(
+        J[2, 2] * J[3, 3] - J[2, 3] * J[3, 2],
+        J[3, 2] * J[1, 3] - J[3, 3] * J[1, 2],
+        J[1, 2] * J[2, 3] - J[1, 3] * J[2, 2],
+        J[2, 3] * J[3, 1] - J[2, 1] * J[3, 3],
+        J[3, 3] * J[1, 1] - J[3, 1] * J[1, 3],
+        J[1, 3] * J[2, 1] - J[1, 1] * J[2, 3],
+        J[2, 1] * J[3, 2] - J[2, 2] * J[3, 1],
+        J[3, 1] * J[1, 2] - J[3, 2] * J[1, 1],
+        J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1],
+    )
+end
+function pullback!(
+    evaluations::Vector{T},
+    form::FormPullback{3, 2, expression_rank, D, S},
+    element_id::Int,
+    xi::Points.AbstractPoints{3},
+) where {expression_rank, T, D <: Canonical, S <: Physical}
+    geometry = get_geometry(form)
+    J = Geometry.jacobian(geometry, element_id, xi)
+
+    for p in axes(evaluations[1], 1)
+        C = _cofactor_matrix(J[p])
+
+        for b in axes(evaluations[1], 2)
+            e1 = evaluations[1][p, b]
+            e2 = evaluations[2][p, b]
+            e3 = evaluations[3][p, b]
+            for k in 1:3
+                evaluations[k][p, b] = e1 * C[1, k] + e2 * C[2, k] + e3 * C[3, k]
+            end
+        end
+    end
 
     return evaluations
 end
