@@ -10,6 +10,7 @@ import Combinatorics
 import LaTeXStrings
 import LinearAlgebra
 import SparseArrays
+import StaticArrays
 
 # These exports make these symbols/functions/etc. available outside the Forms module. Only
 # if they are also exported in the Mantis.jl file will they be available when using Mantis.
@@ -20,7 +21,7 @@ import SparseArrays
 # https://docs.julialang.org/en/v1.12/manual/modules/#Export-lists
 VERSION >= v"1.11.0-DEV.469" && eval(
     Meta.parse(
-        "public AbstractForm, AbstractFormField, AbstractFormSpace, AbstractRealValuedOperator",
+        "public AbstractForm, AbstractFormField, AbstractFormSpace, AbstractRealValuedOperator, AbstractPullback, AbstractPullbackLocation",
     ),
 )
 
@@ -40,6 +41,7 @@ export FormField,
     AnalyticalFormField, get_coefficients, get_num_coefficients, get_expression
 export FormSpace
 # FormOperators
+export FormPullback, ComponentWisePullback, Canonical, Parametric, Physical
 export CoDifferential, dstar, δ
 export ExteriorDerivative, d
 export ★, Hodge
@@ -53,7 +55,43 @@ export ∧, Wedge, get_forms
 ############################################################################################
 
 """
-    AbstractForm{manifold_dim, form_rank, expression_rank}
+    AbstractPullbackLocation
+
+Indicates the locations used when performing pullbacks (both the source and destination).
+Only has abstract subtypes. These are [`Physical`](@ref), [`Parametric`](@ref), and
+[`Canonical`](@ref).
+
+They also have a hierarchy: Physical (top) -> Parametric -> Canonical (bottom).
+"""
+abstract type AbstractPullbackLocation end
+
+"""
+    Physical
+
+Indicates the physical domain. This domain is described by the geometry on which a form is
+defined.
+"""
+abstract type Physical <: AbstractPullbackLocation end
+
+"""
+    Parametric
+
+Indicates the parametric domain. This domain is only a linear map away from the canonical
+domain, and is the domain in which an [`FunctionSpaces.AbstractFESpace`](@ref) is evaluated.
+"""
+abstract type Parametric <: AbstractPullbackLocation end
+
+"""
+    Canonical
+
+Indicates the canonical domain. This is the domain where an
+[`FunctionSpaces.AbstractCanonicalSpace`](@ref) is evaluated. This is also the domain in
+which quadrature is performed and where all other computations happen.
+"""
+abstract type Canonical <: AbstractPullbackLocation end
+
+"""
+    AbstractForm{manifold_dim, form_rank, expression_rank, S}
 
 Supertype for all form expressions representing differential forms.
 
@@ -64,6 +102,9 @@ Supertype for all form expressions representing differential forms.
 - `expression_rank`: The number of bases present in an expression. Is ``0`` if no bases are
     present, ``1`` for a single basis, and ``2`` for two bases. Expression ranks larger
     than ``2`` are not allowed.
+- `S`: Source location. Indicates where the form is located, that is, where the return
+    values of [`evaluate`](@ref) live. Must be a subtype of
+    [`AbstractPullbackLocation`](@ref).
 
 !!! note "Non-zero expression rank does not mean that the full expression has a basis."
     If `expression_rank` is larger than ``0``, this means that the expression acts on
@@ -73,23 +114,29 @@ Supertype for all form expressions representing differential forms.
     basis, this does not generate a basis for the exterior derivative (only a spanning
     set).
 """
-abstract type AbstractForm{manifold_dim, form_rank, expression_rank} end
+abstract type AbstractForm{
+    manifold_dim, form_rank, expression_rank, S <: AbstractPullbackLocation
+} end
 
 """
-    AbstractFormField{manifold_dim, form_rank}
+    AbstractFormField{manifold_dim, form_rank, S}
 
 Alias for an `AbstractForm` with expression rank 0, that is, a form expression without a
 basis. See [`AbstractForm`](@ref) for more details.
 """
-const AbstractFormField{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 0}
+const AbstractFormField{manifold_dim, form_rank, S} = AbstractForm{
+    manifold_dim, form_rank, 0, S
+}
 
 """
-    AbstractFormSpace{manifold_dim, form_rank}
+    AbstractFormSpace{manifold_dim, form_rank, S}
 
 Alias for an `AbstractForm` with expression rank 1, that is, a form expression involving one
 basis. See [`AbstractForm`](@ref) for more details.
 """
-const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, form_rank, 1}
+const AbstractFormSpace{manifold_dim, form_rank, S} = AbstractForm{
+    manifold_dim, form_rank, 1, S
+}
 
 """
     AbstractRealValuedOperator{manifold_dim}
@@ -97,6 +144,21 @@ const AbstractFormSpace{manifold_dim, form_rank} = AbstractForm{manifold_dim, fo
 Supertype for all real-valued operators.
 """
 abstract type AbstractRealValuedOperator{manifold_dim} end
+
+"""
+    AbstractPullback{manifold_dim, form_rank, expression_rank, S} <:
+    AbstractForm{manifold_dim, form_rank, expression_rank, S}
+
+Generic pullback type. Since the pullback of a form is still a form, it is also a subtype
+of [`AbstractForm`](@ref). The type parameter `S` indicates the location where the evaluate
+of a pullback lives, just like any other [`AbstractForm`](@ref).
+"""
+abstract type AbstractPullback{manifold_dim, form_rank, expression_rank, S} <:
+              AbstractForm{manifold_dim, form_rank, expression_rank, S} end
+
+# Abstract trait types for the pullbacks.
+abstract type AbstractFormPullback end
+abstract type AbstractComponentWisePullback end
 
 ############################################################################################
 #                                  Type parameter methods                                  #
@@ -137,6 +199,19 @@ function get_expression_rank(
     ::AbstractForm{manifold_dim, form_rank, expression_rank}
 ) where {manifold_dim, form_rank, expression_rank}
     return expression_rank
+end
+
+"""
+    get_source_location(
+        ::AbstractForm{manifold_dim, form_rank, expression_rank, S}
+    ) where {manifold_dim, form_rank, expression_rank, S}
+
+Returns the source location `S` of the given form.
+"""
+function get_source_location(
+    ::AbstractForm{manifold_dim, form_rank, expression_rank, S}
+) where {manifold_dim, form_rank, expression_rank, S}
+    return S
 end
 
 get_expression_rank(op::AbstractRealValuedOperator) = get_expression_rank(get_form(op))
@@ -189,20 +264,52 @@ function get_form_space_tree(::AbstractFormField)
     return ()
 end
 
+"""
+    get_num_components(::Val{dim}, ::Val{form_rank}) where {dim, form_rank}
+
+Returns the number of components that a real-valued differential form of rank `form_rank`
+has on a manifold of dimension `dim`.
+
+See also [`get_dim`](@ref).
+"""
+get_num_components(::Val{dim}, ::Val{form_rank}) where {dim, form_rank} =
+    binomial(dim, form_rank)
+get_num_components(::Val{1}, ::Val{0}) = 1
+get_num_components(::Val{1}, ::Val{1}) = 1
+get_num_components(::Val{2}, ::Val{0}) = 1
+get_num_components(::Val{2}, ::Val{1}) = 2
+get_num_components(::Val{2}, ::Val{2}) = 1
+get_num_components(::Val{3}, ::Val{0}) = 1
+get_num_components(::Val{3}, ::Val{1}) = 3
+get_num_components(::Val{3}, ::Val{2}) = 3
+get_num_components(::Val{3}, ::Val{3}) = 1
+
 ############################################################################################
 #                              Getters dealing with Geometry                               #
 ############################################################################################
 """
     get_geometry(form::AbstractForm)
+    get_geometry(form::AbstractForm, ::Type{AbstractPullbackLocation})
     get_geometry(op::AbstractRealValuedOperator)
 
-Returns the geometry of the given form expression.
+Returns the physical geometry of the given form or operator.
 
-Will recurse using [`get_form`](@ref) to find the geometry.
+If a subtype of [`AbstractPullbackLocation`](@ref) is given, return the geometry of that
+location. For example, if the location [`Parametric`](@ref) is given, it returns the
+parametric geometry associated with `form`.
+
+See also [`FunctionSpaces.get_parametric_geometry`](@ref).
+
+# Exceptions
+Will throw an error if the geometry of the chosen location cannot be obtained from the given
+`form`.
 """
 function get_geometry(form::AbstractForm)
     return get_geometry(get_form(form))
 end
+get_geometry(form::AbstractForm, ::Type{Physical}) = get_geometry(form)
+get_geometry(form::AbstractForm, ::Type{Parametric}) =
+    FunctionSpaces.get_parametric_geometry(get_fe_space(form))
 get_geometry(op::AbstractRealValuedOperator) = get_geometry(get_form(op))
 
 """
@@ -242,6 +349,19 @@ Returns the number of elements in the geometry of the given form expression.
 function get_num_elements(form::AbstractForm)
     return Geometry.get_num_elements(get_geometry(form))
 end
+
+"""
+    get_dim(form::AbstractForm, ::Type{Canonical})
+    get_dim(form::AbstractForm, ::Type{Parametric})
+    get_dim(form::AbstractForm, ::Type{Physical})
+
+Returns the embedding dimension of the given [`AbstractPullbackLocation`](@ref). This can be
+the manifold_dim belonging to `form`, or the image_dim of the geometry of the
+[`AbstractPullbackLocation`](@ref).
+"""
+get_dim(form::AbstractForm, ::Type{Canonical}) = get_manifold_dim(form)
+get_dim(form::AbstractForm, ::Type{Parametric}) = get_manifold_dim(form)
+get_dim(form::AbstractForm, ::Type{Physical}) = Geometry.get_image_dim(get_geometry(form))
 
 ############################################################################################
 #                           Getters dealing with FunctionSpaces                            #
@@ -384,14 +504,15 @@ end
 
 Evaluate any form (expression) on the given `element_id` at the given points `xi`.
 
-!!! note "Evaluation in the canonical domain."
-    The evaluation of a form (expression) is always done in the canonical domain, not the
-    physical domain. See the [documentation on the Geometry module](@ref DocGeometryModule)
-    for more details on these domains.
+!!! note "Evaluation in the source domain."
+    The evaluation of a form (expression) is always done in the source domain, as also
+    mentioned in [`AbstractForm`](@ref). The evaluations can be mapped to a different
+    domain using an [`AbstractPullback`](@ref).
 
 # Arguments
 - `form::AbstractForm{manifold_dim}`: The differential form space.
-- `element_id::Int`: The global element id. See [`Geometry`](@ref) for the details.
+- `element_id::Int`: The global element id refering to the element in the physical geometry,
+    irrespectively of the given source location.
 - `xi::Points.AbstractPoints{manifold_dim}`: The points in the canonical domain at which to
     evaluate the form. See [`Geometry`](@ref) and [`Points`](@ref) for more details on the
     canonical domain and point structure.
@@ -408,7 +529,7 @@ Evaluate any form (expression) on the given `element_id` at the given points `xi
     `AbstractFormField`s (things without a basis), this will always be [[1]].
 
 # Examples
-Evaluating a ``0``-form:
+Evaluating a ``0``-form and its pullback:
 ```jldoctest
 julia> using Mantis
 
@@ -420,9 +541,15 @@ julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0
 
 julia> Forms.evaluate(Λ⁰ₕ, 1, xi)
 ([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+
+julia> Forms.evaluate(Forms.FormPullback(Λ⁰ₕ, Forms.Canonical), 1, xi)
+([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
 ```
-Evaluating a ``2``-form in 2D (a top form). Note how the result is scaled by the pullback
-to the canonical domain.
+Evaluating a ``2``-form in 2D (a top form) and its pullback. Note that the evaluation is
+not scaled. As mentioned above, the output of `evaluate` is in the domain dictated by the
+source location. Since a [`FormSpace`](@ref), as a default, has the [`Parametric`](@ref)
+domain as it source, no scaling was applied. If we pullback the form, the scaling becomes
+visible.
 ```jldoctest
 julia> using Mantis
 
@@ -433,6 +560,9 @@ julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
 julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
 
 julia> Forms.evaluate(Λ²ₕ, 1, xi)
+([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+
+julia> Forms.evaluate(Forms.FormPullback(Λ²ₕ, Forms.Canonical), 1, xi)
 ([[0.25 0.0 … 0.0 0.0; 0.0 0.125 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0625 0.0625]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
 ```
 """

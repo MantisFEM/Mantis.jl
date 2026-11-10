@@ -14,9 +14,15 @@ function test_2d_evaluations(
     u⁰, u¹, u², dΩ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}; atol
 ) where {manifold_dim}
     geometry = Forms.get_geometry(u⁰)
-    f⁰ = Forms.AnalyticalFormField(0, scalar_valued_2d_func, geometry, "f⁰")
-    f¹ = Forms.AnalyticalFormField(1, vector_valued_2d_func, geometry, "f¹")
-    f² = Forms.AnalyticalFormField(2, scalar_valued_2d_func, geometry, "f²")
+    f⁰ = Forms.FormPullback(
+        Forms.AnalyticalFormField(0, scalar_valued_2d_func, geometry, "f⁰"), Forms.Canonical
+    )
+    f¹ = Forms.FormPullback(
+        Forms.AnalyticalFormField(1, vector_valued_2d_func, geometry, "f¹"), Forms.Canonical
+    )
+    f² = Forms.FormPullback(
+        Forms.AnalyticalFormField(2, scalar_valued_2d_func, geometry, "f²"), Forms.Canonical
+    )
 
     ∫⁰ = ∫(u⁰ ∧ ★(u⁰), dΩ)
     ∫¹ = ∫(u¹ ∧ ★(u¹), dΩ)
@@ -69,9 +75,15 @@ function test_3d_evaluations(
     u⁰, u¹, dΩ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}; atol
 ) where {manifold_dim}
     geometry = Forms.get_geometry(u⁰)
-    f⁰ = Forms.AnalyticalFormField(0, scalar_valued_3d_func, geometry, "f⁰")
-    f¹ = Forms.AnalyticalFormField(1, vector_valued_3d_func, geometry, "f¹")
-    f³ = Forms.AnalyticalFormField(3, scalar_valued_3d_func, geometry, "f³")
+    f⁰ = Forms.FormPullback(
+        Forms.AnalyticalFormField(0, scalar_valued_3d_func, geometry, "f⁰"), Forms.Canonical
+    )
+    f¹ = Forms.FormPullback(
+        Forms.AnalyticalFormField(1, vector_valued_3d_func, geometry, "f¹"), Forms.Canonical
+    )
+    f³ = Forms.FormPullback(
+        Forms.AnalyticalFormField(3, scalar_valued_3d_func, geometry, "f³"), Forms.Canonical
+    )
 
     ∫⁰ = ∫(u⁰ ∧ ★(u⁰), dΩ)
     ∫¹ = ∫(u¹ ∧ ★(u¹), dΩ)
@@ -187,16 +199,20 @@ dΩ₂ = Quadrature.StandardQuadrature(
 # Test the different geometries.
 @testset "2D" verbose = true begin
     @testset "TensorProductGeometry" begin
-        cart_u⁰ = cart_complex_2d[1]
-        cart_u¹ = cart_complex_2d[2]
-        cart_u² = cart_complex_2d[3]
+        cart_u⁰, cart_u¹, cart_u² = map(
+            Forms.FormPullback,
+            cart_complex_2d,
+            (Forms.Canonical, Forms.Canonical, Forms.Canonical),
+        )
         test_2d_evaluations(cart_u⁰, cart_u¹, cart_u², dΩ₂; atol=1e-9)
     end
 
     @testset "MappedGeometry" begin
-        curv_u⁰ = curv_complex_2d[1]
-        curv_u¹ = curv_complex_2d[2]
-        curv_u² = curv_complex_2d[3]
+        curv_u⁰, curv_u¹, curv_u² = map(
+            Forms.FormPullback,
+            curv_complex_2d,
+            (Forms.Canonical, Forms.Canonical, Forms.Canonical),
+        )
         # Higher tolerance due to the trigonometric mapping
         test_2d_evaluations(curv_u⁰, curv_u¹, curv_u², dΩ₂; atol=1e-4)
     end
@@ -231,14 +247,16 @@ Plot.export_geometry_to_vtk(Forms.get_geometry(curv_complex_3d[1]), "curv_test")
 # Test the different geometries.
 @testset "3D" verbose = true begin
     @testset "TensorProductGeometry" begin
-        cart_u⁰ = cart_complex_3d[1]
-        cart_u¹ = cart_complex_3d[2]
+        cart_u⁰, cart_u¹ = map(
+            Forms.FormPullback, cart_complex_3d, (Forms.Canonical, Forms.Canonical)
+        )
         test_3d_evaluations(cart_u⁰, cart_u¹, dΩ₃; atol=1e-9)
     end
 
     @testset "MappedGeometry" begin
-        curv_u⁰ = curv_complex_3d[1]
-        curv_u¹ = curv_complex_3d[2]
+        curv_u⁰, curv_u¹ = map(
+            Forms.FormPullback, curv_complex_3d, (Forms.Canonical, Forms.Canonical)
+        )
         test_3d_evaluations(
             curv_u⁰,
             curv_u¹,

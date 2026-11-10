@@ -191,6 +191,26 @@ function create_tensor_product_bspline_de_rham_complex(
     return form_spaces
 end
 
+function create_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    section_spaces::NTuple{manifold_dim, F},
+    regularities::NTuple{manifold_dim, Int},
+    pullback::Type{P},
+    destination::Type{D}=Canonical,
+) where {
+    manifold_dim,
+    F <: FunctionSpaces.AbstractCanonicalSpace,
+    P <: AbstractPullback,
+    D <: AbstractPullbackLocation,
+}
+    spaces = create_tensor_product_bspline_de_rham_complex(
+        starting_points, box_sizes, num_elements, section_spaces, regularities
+    )
+    return map(pullback, spaces, ntuple(i -> destination, manifold_dim + 1))
+end
+
 """
     create_tensor_product_bspline_de_rham_complex(
         starting_points::NTuple{manifold_dim, Float64},
@@ -276,6 +296,28 @@ function create_tensor_product_bspline_de_rham_complex(
     return form_spaces
 end
 
+function create_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    section_spaces::NTuple{manifold_dim, F},
+    regularities::NTuple{manifold_dim, Int},
+    mapping::M,
+    pullback::Type{P},
+    destination::Type{D}=Canonical,
+) where {
+    manifold_dim,
+    F <: FunctionSpaces.AbstractCanonicalSpace,
+    M <: Geometry.AbstractMapping{manifold_dim},
+    P <: AbstractPullback,
+    D <: AbstractPullbackLocation,
+}
+    spaces = create_tensor_product_bspline_de_rham_complex(
+        starting_points, box_sizes, num_elements, section_spaces, regularities, mapping
+    )
+    return map(pullback, spaces, ntuple(i -> destination, manifold_dim + 1))
+end
+
 """
     create_tensor_product_bspline_de_rham_complex(
         starting_points::NTuple{manifold_dim, Float64},
@@ -311,6 +353,21 @@ function create_tensor_product_bspline_de_rham_complex(
         map(FunctionSpaces.Bernstein, degrees),
         regularities,
     )
+end
+
+function create_tensor_product_bspline_de_rham_complex(
+    starting_points::NTuple{manifold_dim, Float64},
+    box_sizes::NTuple{manifold_dim, Float64},
+    num_elements::NTuple{manifold_dim, Int},
+    degrees::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int},
+    pullback::Type{P},
+    destination::Type{D}=Canonical,
+) where {manifold_dim, P <: AbstractPullback, D <: AbstractPullbackLocation}
+    spaces = create_tensor_product_bspline_de_rham_complex(
+        starting_points, box_sizes, num_elements, degrees, regularities
+    )
+    return map(pullback, spaces, ntuple(i -> destination, manifold_dim + 1))
 end
 
 """
@@ -632,7 +689,7 @@ function create_polar_spline_de_rham_complex(
     ##############################
     # Geometry
     ##############################
-    geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+    geometry, geom_coeffs_tp, parametric_geo = FunctionSpaces.create_polar_geometry_data(
         num_elements, section_spaces, regularities; R=R, box_sizes=box_sizes
     )
     # if refine
@@ -648,7 +705,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         zero_at_poles=false,
@@ -663,7 +721,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         box_sizes=box_sizes,
@@ -677,7 +736,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         zero_at_poles=true,
