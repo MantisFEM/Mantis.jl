@@ -94,6 +94,7 @@ struct HierarchicalSpace{manifold_dim, num_components, num_patches, G, GP, HB, E
         end
 
         _check_levels(parametric_geometry, spaces)
+        _check_block_patterns(spaces, E)
 
         num_components = get_num_components(first(spaces))
         num_patches = get_num_patches(first(spaces))
@@ -102,6 +103,36 @@ struct HierarchicalSpace{manifold_dim, num_components, num_patches, G, GP, HB, E
             geometry, parametric_geometry, basis, E
         )
     end
+end
+
+"""
+    _check_block_patterns(spaces::Tuple, extraction_op::ExtractionOperator)
+
+Throw an `ArgumentError` if the block pattern of any level-wise space in `spaces` differs
+from the block pattern of `extraction_op`. See [`get_block_pattern`](@ref).
+"""
+function _check_block_patterns(spaces::Tuple, extraction_op::ExtractionOperator)
+    block_pattern = get_block_pattern(extraction_op)
+    for (l, space) in enumerate(spaces)
+        if get_block_pattern(space) != block_pattern
+            return throw(
+                ArgumentError(
+                    LazyString(
+                        "All level spaces must have the same block pattern as the ",
+                        "extraction operator. Got block pattern ",
+                        get_block_pattern(space),
+                        " on level ",
+                        l,
+                        " and ",
+                        block_pattern,
+                        " for the extraction operator.",
+                    ),
+                ),
+            )
+        end
+    end
+
+    return nothing
 end
 
 function HierarchicalSpace(
@@ -188,13 +219,42 @@ function get_local_basis(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
     nderivatives::Int,
-    component_id::Int=1,
+    component_id::Int,
 ) where {manifold_dim}
+    level_space, level_id = _get_level_space_and_id(space, element_id)
+
+    return get_local_basis(level_space, level_id, xi, nderivatives, component_id)
+end
+
+# Resolves the ambiguity with the single-component `AbstractFESpace` method.
+function get_local_basis(
+    space::HierarchicalSpace{manifold_dim, 1},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+    nderivatives::Int,
+    component_id::Int,
+) where {manifold_dim}
+    _check_single_component_id(component_id)
+
+    return get_local_basis(space, element_id, xi, nderivatives)
+end
+
+function get_local_basis(
+    space::HierarchicalSpace{manifold_dim, 1},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+    nderivatives::Int,
+) where {manifold_dim}
+    level_space, level_id = _get_level_space_and_id(space, element_id)
+
+    return get_local_basis(level_space, level_id, xi, nderivatives)
+end
+
+function _get_level_space_and_id(space::HierarchicalSpace, element_id::Int)
     geometry = get_parametric_geometry(space)
     level, level_id = Geometry.convert_to_level_and_level_id(geometry, element_id)
-    space = Hierarchical.get_set(get_basis(space), level)
 
-    return get_local_basis(space, level_id, xi, nderivatives, component_id)
+    return Hierarchical.get_set(get_basis(space), level), level_id
 end
 
 function get_support(space::HierarchicalSpace, basis_id::Int)

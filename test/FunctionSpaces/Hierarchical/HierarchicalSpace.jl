@@ -59,7 +59,8 @@ const SelectionStandard = FunctionSpaces.SelectionStandard
                 x_to_degree[degree][ids] .= x .^ (degree - 1)
             end
 
-            h_eval, h_inds = FunctionSpaces.evaluate(hier_space, element_id, xi, 0)
+            h_eval = FunctionSpaces.evaluate(hier_space, element_id, xi, 0)
+            h_inds = FunctionSpaces.get_basis_indices(hier_space, element_id)
             A[ids, h_inds] = h_eval[1][1][1]
         end
 
