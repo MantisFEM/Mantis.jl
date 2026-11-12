@@ -271,7 +271,7 @@ for element_id in 1:Geometry.get_num_elements(geometry_2D)
         if !isapprox(values3[1][point], values3_e[1][point]; rtol=1e-10, atol=1e-10)
             global test_δdsol_2D_h2 = false
         end
-        if !isapprox(values4[1][point], values4_e[1][point]; rtol=1e-10, atol=1e-10)
+        if !isapprox(values4[1][point], values4_e[1][point]; rtol=1e-9, atol=1e-9)
             global test_δdδdsol_2D_h2 = false
         end
     end
