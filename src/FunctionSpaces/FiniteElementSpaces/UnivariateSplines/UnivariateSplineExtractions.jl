@@ -557,8 +557,8 @@ function extract_and_relate_gtbspline_to_bspline(
     # Convert global extraction matrix to element local extractions.
     # The matrix is transposed so that [spline_spaces] * [extraction] = [GTB-splines].
     HT = permutedims(H)
-    extraction_coefficients = Vector{Tuple{Matrix{Float64}}}(undef, nel)
-    basis_indices = Vector{Indices{1, Vector{Int}, UnitRange{Int}}}(undef, nel)
+    extraction_coefficients = Vector{Matrix{Float64}}(undef, nel)
+    basis_indices = Vector{Vector{Int}}(undef, nel)
     count = 0
     for i in 1:m
         for j in 1:bspl_nels[i]
@@ -566,12 +566,10 @@ function extract_and_relate_gtbspline_to_bspline(
             eij = SparseArrays.findnz(H[:, cols_ij .+ spl_dims[i]])
             # Unique indices for non-zero rows and columns
             unique_eij = unique(eij[1])
-            basis_indices[count + 1] = Indices(unique_eij, (1:length(unique_eij),))
+            basis_indices[count + 1] = unique_eij
             # Matrix of coefficients
-            extraction_coefficients[count + 1] = (
-                Matrix(
-                    HT[cols_ij .+ spl_dims[i], get_basis_indices(basis_indices[count + 1])]
-                ),
+            extraction_coefficients[count + 1] = Matrix(
+                HT[cols_ij .+ spl_dims[i], basis_indices[count + 1]]
             )
             count += 1
         end

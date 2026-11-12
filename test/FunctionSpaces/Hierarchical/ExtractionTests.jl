@@ -32,7 +32,7 @@ const get_extraction_coefficients = FunctionSpaces.get_extraction_coefficients
 const get_basis_indices = FunctionSpaces.get_basis_indices
 
 function partition_of_unity(space::FunctionSpaces.AbstractFESpace{1}, e)
-    eval = FunctionSpaces.evaluate(space, e, xi_1d)[1][1][1][1]
+    eval = FunctionSpaces.evaluate(space, e, xi_1d)[1][1][1]
 
     return all(p -> isapprox(p, 1.0), sum(eval; dims=2))
 end
@@ -40,7 +40,7 @@ end
 function partition_of_unity(
     space::FunctionSpaces.AbstractFESpace{2, num_components}, e
 ) where {num_components}
-    eval = FunctionSpaces.evaluate(space, e, xi_2d)[1][1][1]
+    eval = FunctionSpaces.evaluate(space, e, xi_2d)[1][1]
     for c in 1:num_components
         if !all(p -> isapprox(p, 1.0), sum(eval[c]; dims=2))
             return false
