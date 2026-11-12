@@ -127,6 +127,7 @@ function evaluate(
     num_components = get_num_components(
         Val(get_dim(form, source)), Val(get_form_rank(form))
     )
+
     return [ones(eltype(form), num_evaluation_points, 1) for i in 1:num_components],
     _field_indices(num_components)
 end

@@ -172,7 +172,8 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1][1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
     return d_form_eval, _field_indices(n_derivative_components)
@@ -217,7 +218,8 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1][1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
     return d_form_eval, _field_indices(n_derivative_components)
@@ -322,7 +324,10 @@ function _combine_codifferential_terms(terms, form_indices, num_points::Int)
     for (evaluations, weights) in terms
         for component in eachindex(evaluations)
             _add_columns!(
-                codiff_eval, evaluations[component], column_maps[component], weights[component]
+                codiff_eval,
+                evaluations[component],
+                column_maps[component],
+                weights[component],
             )
         end
     end

@@ -58,8 +58,8 @@ field is defined in physical coordinates. See [`Sharp`](@ref) and
 - `evaluated_pushforward::Vector{Matrix{Float64}}`: Each component of the vector, stores the
     evaluated pushforward of the sharp of the 1-form. The size of each matrix is (number of
     evaluation points)x(number of basis functions).
-- `sharp_indices::Vector{Vector{Int}}`: Each component of the vector, stores the indices of
-    the evaluated basis functions.
+- `sharp_indices::Vector{Vector{Vector{Int}}}`: The (dummy) indices per component of the
+    sharp, see [`Sharp`](@ref).
 """
 function evaluate_sharp_pushforward(
     form::AbstractForm{manifold_dim, 1, 0},
