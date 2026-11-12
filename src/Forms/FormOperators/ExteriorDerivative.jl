@@ -178,18 +178,32 @@ function _evaluate_exterior_derivative(
     n_derivative_components = size(dspace, 1)
     T = eltype(eltype(dspace))
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
-
     coefficients = get_coefficients(form)
     for component_id in 1:n_derivative_components
-        d_form_eval[component_id] = dspace[component_id] * coefficients[basis_indices[1]]
+        d_form_eval[component_id] =
+            dspace[component_id] * coefficients[basis_indices[component_id][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 ############################################################################################
 #                                        Form Space                                        #
 ############################################################################################
+
+"""
+    _first_derivative_idx(::Val{manifold_dim}, direction::Int) where {manifold_dim}
+
+Returns the index of the first derivative in `direction` within the derivative evaluations
+of a `manifold_dim`-variate function space; see `FunctionSpaces.get_derivative_idx`.
+"""
+function _first_derivative_idx(::Val{manifold_dim}, direction::Int) where {manifold_dim}
+    key = ntuple(dim -> Int(dim == direction), Val(manifold_dim))
+
+    return FunctionSpaces.get_derivative_idx(key)
+end
+
+# Single-component
 
 function _evaluate_exterior_derivative(
     form_space::FormSpace{manifold_dim, 0},
@@ -202,19 +216,88 @@ function _evaluate_exterior_derivative(
 
     # Evaluate derivatives and values of the FE space.
     fe_space = get_fe_space(form_space)
-    fe_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
+    fe_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
 
     # Create a new array with the correct number of components.
     T = eltype(eltype(eltype(eltype(fe_evals))))
-    form_evals = [
-        zeros(T, n_evaluation_points, n_basis_functions) for component in 1:manifold_dim
-    ]
+    form_evals = [zeros(T, n_evaluation_points, n_basis_functions) for _ in 1:manifold_dim]
+
+    # The pullback of a 0-form is the identity, so the derivatives can be used directly.
+    for dim in 1:manifold_dim
+        der_id = _first_derivative_idx(Val(manifold_dim), dim)
+        for p in eachindex(form_evals[dim], fe_evals[2][der_id][1])
+            form_evals[dim][p] = fe_evals[2][der_id][1][p]
+        end
+    end
+
+    # The fe_space has only 1 component since this is a 0-form. The same basis indices are
+    # propagated to each component of the 1-form resulting from d, and the expression_rank
+    # is 1, so we wrap them in [].
+    fe_indices = FunctionSpaces.get_basis_indices(fe_space, element_id, 1)
+    form_indices = [[copy(fe_indices)] for _ in 1:manifold_dim]
+
+    return form_evals, form_indices
+end
+
+# Multi-component
+
+"""
+    _d_terms(::Val{manifold_dim}, ::Val{form_rank}) where {manifold_dim, form_rank}
+
+Returns, for each component of the exterior derivative of a `form_rank`-form with multiple
+components, the terms `(component, direction, sign)` such that that component of dα is
+
+`∑ sign * ∂α_component/∂ξ_direction`.
+
+The supported combinations are 1-forms in 2D and 3D, and 2-forms in 3D:
+```
+d(α₁dξ₁ + α₂dξ₂) = (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
+
+d(α₁dξ₁ + α₂dξ₂ + α₃dξ₃) =
+    (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃ + (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁ + (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
+
+d(α₁dξ₂∧dξ₃ + α₂dξ₃∧dξ₁ + α₃dξ₁∧dξ₂) = (∂α₁/∂ξ₁ + ∂α₂/∂ξ₂ + ∂α₃/∂ξ₃) dξ₁∧dξ₂∧dξ₃
+```
+Other combinations throw an `ArgumentError`.
+
+# Returns
+- `::NTuple{binomial(manifold_dim, form_rank + 1), NTuple{N, Tuple{Int, Int, Float64}}}`:
+    The terms per component of dα.
+"""
+_d_terms(::Val{manifold_dim}, ::Val{form_rank}) where {manifold_dim, form_rank} = throw(
+    ArgumentError(
+        LazyString(
+            "Combination manifold_dim=",
+            manifold_dim,
+            " and form_rank=",
+            form_rank,
+            " not supported",
+        ),
+    ),
+)
+# 1-forms in 2D.
+_d_terms(::Val{2}, ::Val{1}) = (((2, 1, 1.0), (1, 2, -1.0)),)
+# 1-forms in 3D.
+_d_terms(::Val{3}, ::Val{1}) =
+    (((3, 2, 1.0), (2, 3, -1.0)), ((1, 3, 1.0), (3, 1, -1.0)), ((2, 1, 1.0), (1, 2, -1.0)))
+# 2-forms in 3D.
+_d_terms(::Val{3}, ::Val{2}) = (((1, 1, 1.0), (2, 2, 1.0), (3, 3, 1.0)),)
+
+function _evaluate_exterior_derivative(
+    form_space::FormSpace{manifold_dim, form_rank},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+    pullback::FormPullback,
+) where {manifold_dim, form_rank}
+    # Evaluate derivatives and values of the FE space.
+    fe_space = get_fe_space(form_space)
+    fe_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
 
     # Prepare the data for the pullback.
     source = get_source_location(form_space) # source of the original form
     # source of the pullback = destination of original form
     dest = get_source_location(pullback)
-    val_form_rank = Val(0)
+    val_form_rank = Val(form_rank)
     nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
     ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
     pbt = get_pullback_type(pullback)
@@ -222,178 +305,44 @@ function _evaluate_exterior_derivative(
     geometry = get_geometry(form_space, source)
     jacobian = Geometry.jacobian(geometry, element_id, xi)
 
-    # Store the required values
-    for coordinate_idx in 1:manifold_dim
-        key = ntuple(manifold_dim) do dim
-            return dim == coordinate_idx ? 1 : 0
+    # Convert the fe indices to form indices by wrapping each component in [] since
+    # FormSpace has `expression_rank=1`.
+    fe_indices = [
+        [FunctionSpaces.get_basis_indices(fe_space, element_id, component)] for
+        component in eachindex(fe_evals[1][1])
+    ]
+
+    # Pullback each component before combining them into the final evaluation
+    T = eltype(eltype(eltype(eltype(fe_evals))))
+    pb_derivatives = Vector{Vector{Matrix{T}}}(undef, length(fe_evals[2]))
+    form_indices = Vector{Vector{Vector{Int}}}()
+    for der_id in eachindex(fe_evals[2])
+        pb_derivatives[der_id], form_indices = _pullback(
+            fe_evals[2][der_id], fe_indices, jacobian, val_form_rank, nsc, ndc, Val(1), pbt
+        )
+    end
+
+    # Combine the right terms and basis indices, and assign them to the right columns of
+    # `d_eval`
+    terms = _d_terms(Val(manifold_dim), Val(form_rank))
+    num_d_components = length(terms)
+    d_eval = Vector{Matrix{T}}(undef, num_d_components)
+    d_indices = Vector{Vector{Vector{Int}}}(undef, num_d_components)
+    for (d_component, d_component_terms) in enumerate(terms)
+        components = [c for (c, _, _) in d_component_terms]
+        combined_indices, column_maps = _combine_indices(form_indices, components, Val(1))
+        d_eval[d_component] = _allocate_indices(get_num_points(xi), combined_indices)
+        for (c, direction, sign) in d_component_terms
+            der_idx = _first_derivative_idx(Val(manifold_dim), direction)
+            _add_columns!(
+                d_eval[d_component], pb_derivatives[der_idx][c], column_maps[c], sign
+            )
         end
-        der_idx = FunctionSpaces.get_derivative_idx(key)
 
-        pullback!(fe_evals[2][der_idx], jacobian, val_form_rank, nsc, ndc, pbt)
-
-        for p in eachindex(form_evals[coordinate_idx], fe_evals[2][der_idx][1])
-            form_evals[coordinate_idx][p] = fe_evals[2][der_idx][1][p]
-        end
+        d_indices[d_component] = _tuple_to_vec_indices(combined_indices)
     end
 
-    return form_evals, [form_basis_indices]
-end
-
-function _evaluate_exterior_derivative(
-    form_space::FormSpace{2, 1},
-    element_id::Int,
-    xi::Points.AbstractPoints{2},
-    pullback::FormPullback,
-)
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Evaluate derivatives and values of the FE space.
-    fe_space = get_fe_space(form_space)
-    fe_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
-
-    # Create a new array with the correct number of components (= 1).
-    T = eltype(eltype(eltype(eltype(fe_evals))))
-    form_evals = [zeros(T, n_evaluation_points, n_basis_functions)]
-
-    # The exterior derivative is
-    # (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0))
-    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1))
-
-    # Setup and use the pullback
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(1)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # We need the jacobian of the source geometry to obtain the correct pullback.
-    geometry = get_geometry(form_space, source)
-    jacobian = Geometry.jacobian(geometry, element_id, xi)
-
-    pullback!(fe_evals[2][der_idx_1], jacobian, val_form_rank, nsc, ndc, pbt)
-    pullback!(fe_evals[2][der_idx_2], jacobian, val_form_rank, nsc, ndc, pbt)
-
-    # With the pulled-back values and derivatives, we can now compute the final expression.
-    for p in eachindex(form_evals[1], fe_evals[2][der_idx_1][2], fe_evals[2][der_idx_2][1])
-        form_evals[1][p] = fe_evals[2][der_idx_1][2][p] - fe_evals[2][der_idx_2][1][p]
-    end
-
-    return form_evals, [form_basis_indices]
-end
-
-function _evaluate_exterior_derivative(
-    form_space::FormSpace{3, 1},
-    element_id::Int,
-    xi::Points.AbstractPoints{3},
-    pullback::FormPullback,
-)
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Evaluate derivatives and values of the FE space.
-    fe_space = get_fe_space(form_space)
-    fe_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
-
-    # Create a new array with the correct number of components.
-    T = eltype(eltype(eltype(eltype(fe_evals))))
-    form_evals = [zeros(T, n_evaluation_points, n_basis_functions) for component in 1:3]
-
-    # The exterior derivative is
-    # (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃ + (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁ + (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
-    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
-    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
-
-    # Setup and use the pullback
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(1)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # We need the jacobian of the source geometry to obtain the correct pullback.
-    geometry = get_geometry(form_space, source)
-    jacobian = Geometry.jacobian(geometry, element_id, xi)
-
-    pullback!(fe_evals[2][der_idx_1], jacobian, val_form_rank, nsc, ndc, pbt)
-    pullback!(fe_evals[2][der_idx_2], jacobian, val_form_rank, nsc, ndc, pbt)
-    pullback!(fe_evals[2][der_idx_3], jacobian, val_form_rank, nsc, ndc, pbt)
-
-    # With the pulled-back values and derivatives, we can now compute the final expression.
-    # First: (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃
-    for p in eachindex(form_evals[1], fe_evals[2][der_idx_2][3], fe_evals[2][der_idx_3][2])
-        form_evals[1][p] = fe_evals[2][der_idx_2][3][p] - fe_evals[2][der_idx_3][2][p]
-    end
-    # Second: (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁
-    for p in eachindex(form_evals[2], fe_evals[2][der_idx_3][1], fe_evals[2][der_idx_1][3])
-        form_evals[2][p] = fe_evals[2][der_idx_3][1][p] - fe_evals[2][der_idx_1][3][p]
-    end
-    # Third: (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    for p in eachindex(form_evals[3], fe_evals[2][der_idx_1][2], fe_evals[2][der_idx_2][1])
-        form_evals[3][p] = fe_evals[2][der_idx_1][2][p] - fe_evals[2][der_idx_2][1][p]
-    end
-
-    return form_evals, [form_basis_indices]
-end
-
-function _evaluate_exterior_derivative(
-    form_space::FormSpace{3, 2},
-    element_id::Int,
-    xi::Points.AbstractPoints{3},
-    pullback::FormPullback,
-)
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Evaluate derivatives and values of the FE space.
-    fe_space = get_fe_space(form_space)
-    fe_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
-
-    # Create a new array with the correct number of components (= 1).
-    T = eltype(eltype(eltype(eltype(fe_evals))))
-    form_evals = [zeros(T, n_evaluation_points, n_basis_functions)]
-
-    # The form is
-    # α₁ dξ₂∧dξ₃ + α₂ dξ₃∧dξ₁ + α₃ dξ₁∧dξ₂
-    # The exterior derivative is
-    # (∂α₁/∂ξ₁ + ∂α₂/∂ξ₂ + ∂α₃/∂ξ₃) dξ₁∧dξ₂∧dξ₃
-    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
-    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
-    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
-
-    # Setup and use the pullback
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(2)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # We need the jacobian of the source geometry to obtain the correct pullback.
-    geometry = get_geometry(form_space, source)
-    jacobian = Geometry.jacobian(geometry, element_id, xi)
-
-    pullback!(fe_evals[2][der_idx_1], jacobian, val_form_rank, nsc, ndc, pbt)
-    pullback!(fe_evals[2][der_idx_2], jacobian, val_form_rank, nsc, ndc, pbt)
-    pullback!(fe_evals[2][der_idx_3], jacobian, val_form_rank, nsc, ndc, pbt)
-
-    for p in eachindex(
-        form_evals[1],
-        fe_evals[2][der_idx_1][1],
-        fe_evals[2][der_idx_2][2],
-        fe_evals[2][der_idx_3][3],
-    )
-        form_evals[1][p] =
-            fe_evals[2][der_idx_1][1][p] +
-            fe_evals[2][der_idx_2][2][p] +
-            fe_evals[2][der_idx_3][3][p]
-    end
-
-    return form_evals, [form_basis_indices]
+    return d_eval, d_indices
 end
 
 ############################################################################################
@@ -408,10 +357,10 @@ function _evaluate_exterior_derivative(
 ) where {manifold_dim}
     n_evaluation_points = Points.get_num_points(xi)
     local_d_form_basis_eval = [
-        zeros(eltype(form), n_evaluation_points, 1) for component in 1:manifold_dim
+        zeros(eltype(form), n_evaluation_points, 1) for _ in 1:manifold_dim
     ]
 
-    return local_d_form_basis_eval, [[1]]
+    return local_d_form_basis_eval, _field_indices(manifold_dim)
 end
 
 #############################################################################################
@@ -432,8 +381,8 @@ function _evaluate_exterior_derivative(
     dβ = d(β)
 
     # Compute the Leibniz expression components
-    dα_wedge_β = Forms.Wedge(dα, β)
-    α_wedge_dβ = Forms.Wedge(α, dβ)
+    dα_wedge_β = Wedge(dα, β)
+    α_wedge_dβ = Wedge(α, dβ)
 
     return evaluate(dα_wedge_β + (-1)^get_form_rank(α) * α_wedge_dβ, element_id, xi)
 end

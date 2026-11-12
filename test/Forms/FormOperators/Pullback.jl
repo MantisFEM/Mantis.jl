@@ -55,7 +55,7 @@ end
                 for form in (X_1D..., X_1D_phys...)
                     evaluations_fe = FunctionSpaces.evaluate(
                         Forms.get_fe_space(form), 1, xi_1D, 0
-                    )[1][1][1]
+                    )[1][1]
                     evaluations_fe_ref = deepcopy(evaluations_fe)
 
                     pb = Forms.FormPullback(form, Forms.Canonical)
@@ -181,7 +181,7 @@ end
                 for form in (X_2D..., X_2D_phys...)
                     evaluations_fe = FunctionSpaces.evaluate(
                         Forms.get_fe_space(form), 1, xi_2D, 0
-                    )[1][1][1]
+                    )[1][1]
                     evaluations_fe_ref = deepcopy(evaluations_fe)
 
                     pb = Forms.FormPullback(form, Forms.Canonical)
@@ -311,7 +311,7 @@ end
                 for form in (X_3D..., X_3D_phys...)
                     evaluations_fe = FunctionSpaces.evaluate(
                         Forms.get_fe_space(form), 1, xi_3D, 0
-                    )[1][1][1]
+                    )[1][1]
                     evaluations_fe_ref = deepcopy(evaluations_fe)
 
                     pb = Forms.FormPullback(form, Forms.Canonical)
@@ -443,7 +443,7 @@ end
             for form in X_2D
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_2D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
 
                 if Forms.get_form_rank(form) == 1
@@ -593,7 +593,7 @@ end
             for form in X_1D
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_1D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
 
                 if Forms.get_form_rank(form) == 1
@@ -827,7 +827,7 @@ end
             for form in (X_2D..., X_2D_phys...)
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_2D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
 
                 if Forms.get_form_rank(form) == 1
@@ -1034,7 +1034,7 @@ end
             for form in X_3D
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_3D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
 
                 if Forms.get_form_rank(form) == 1
@@ -1251,7 +1251,7 @@ end
             for form in X_2D
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_2D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
 
                 pb = Forms.ComponentWisePullback(form, Forms.Canonical)
@@ -1406,7 +1406,7 @@ end
             for form in X_3D
                 evaluations_fe = FunctionSpaces.evaluate(
                     Forms.get_fe_space(form), 1, xi_3D, 0
-                )[1][1][1]
+                )[1][1]
                 evaluations_fe_ref = deepcopy(evaluations_fe)
                 pb = Forms.ComponentWisePullback(form, Forms.Canonical)
 

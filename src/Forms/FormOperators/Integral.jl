@@ -233,9 +233,11 @@ function evaluate(
     )
     weights = Quadrature.get_weights(element_quad_rule)
 
-    form_eval, basis_indices = evaluate(
+    form_eval, form_indices = evaluate(
         form, global_element_id, Quadrature.get_nodes(element_quad_rule)
     )
+    # A volume form only has 1 component, so this should never fail
+    basis_indices = only(form_indices)
     num_basis_indices = ntuple(i -> length(basis_indices[i]), max(expression_rank, 1))
     integral_vals = zeros(num_basis_indices)
     integral_vals = add_integral_contribution!(

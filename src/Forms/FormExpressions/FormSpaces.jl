@@ -125,9 +125,12 @@ function evaluate(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank}
-    evaluations_fe, basis_indices = FunctionSpaces.evaluate(
-        get_fe_space(get_form(form)), element_id, xi, 0
-    )
+    fe_space = get_fe_space(get_form(form))
+    form_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 0)[1][1]
+    form_indices = [
+        [FunctionSpaces.get_basis_indices(fe_space, element_id, component)] for
+        component in eachindex(form_evals)
+    ]
 
-    return evaluations_fe[1][1], [basis_indices]
+    return form_evals, form_indices
 end
