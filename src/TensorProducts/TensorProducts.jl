@@ -14,7 +14,7 @@ export TensorProduct
 export ⊗
 
 """
-    TensorProduct{I,CI,LI}
+    TensorProduct{I, num_factors}
 
 Represents the tensor (Cartesian) product of a tuple of factor sets.
 
@@ -24,20 +24,22 @@ indexing.
 
 # Fields
 - `factors::I`: Tuple of factor sets.
-- `cart_ids::CI`: Cartesian indices of the tensor product.
-- `lin_ids::LI`: Linear index mapping for the Cartesian indices.
+- `cart_ids::CartesianIndices{num_factors, NTuple{num_factors, Base.OneTo{Int}}}`: Cartesian
+    indices of the tensor product.
+- `lin_ids::LinearIndices{num_factors, NTuple{num_factors, Base.OneTo{Int}}}`: Linear index
+    mapping for the Cartesian indices.
 """
-struct TensorProduct{I, CI, LI}
+struct TensorProduct{I, num_factors}
     factors::I
-    cart_ids::CI
-    lin_ids::LI
+    cart_ids::CartesianIndices{num_factors, NTuple{num_factors, Base.OneTo{Int}}}
+    lin_ids::LinearIndices{num_factors, NTuple{num_factors, Base.OneTo{Int}}}
 
     function TensorProduct(factors::I) where {I <: Tuple}
         factor_num_objects = map(get_num_objects, factors)
         cart_ids = CartesianIndices(factor_num_objects)
         lin_ids = LinearIndices(cart_ids)
 
-        return new{I, typeof(cart_ids), typeof(lin_ids)}(factors, cart_ids, lin_ids)
+        return new{I, length(factors)}(factors, cart_ids, lin_ids)
     end
 end
 

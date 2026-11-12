@@ -1,5 +1,5 @@
 """
-    TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_dim, T}
+    TensorProductPoints{manifold_dim, T, TP} <: AbstractPoints{manifold_dim, T}
 
 Represents a set of points tensored from `manifold_dim` lists of uni-dimensional points.
 
@@ -15,12 +15,14 @@ See also: [`TensorProducts.TensorProduct`](@ref).
     splat the given tuple and keyword arguments.
 
 # Fields
-- `tensor_product::TP`: The set of points per manifold dimension.
+- `tensor_product::TensorProduct{TP, manifold_dim}`: The set of points per manifold
+    dimension.
 - `iteration_order::NTuple{manifold_dim, Int}`: Used to determine the iteration order over
     the tensored points. If the `k`-th entry has value `i`, then dimension `k` will be the
     `i`-th fastest changing index.
-- `permuted_cart_num_points::CI`: A permuted version of tensored points, as given by
-    `iteration_order`.
+- `permuted_cart_num_points::CartesianIndices{
+        manifold_dim, NTuple{manifold_dim, Base.OneTo{Int}}
+    }`: A permuted version of tensored points, as given by `iteration_order`.
 
 # Examples
 ```jldoctest
@@ -51,10 +53,12 @@ julia> for point in points
 (2, 3)
 ```
 """
-struct TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_dim, T}
-    tensor_product::TP
+struct TensorProductPoints{manifold_dim, T, TP} <: AbstractPoints{manifold_dim, T}
+    tensor_product::TensorProduct{TP, manifold_dim}
     iteration_order::NTuple{manifold_dim, Int}
-    permuted_cart_num_points::CI
+    permuted_cart_num_points::CartesianIndices{
+        manifold_dim, NTuple{manifold_dim, Base.OneTo{Int}}
+    }
 
     function TensorProductPoints(
         input_points::Vararg{AbstractVector{<:Number}, manifold_dim};
@@ -103,9 +107,7 @@ struct TensorProductPoints{manifold_dim, T, TP, CI} <: AbstractPoints{manifold_d
             ntuple(dim -> input_num_points[inv_iteration_order[dim]], manifold_dim)
         )
 
-        return new{
-            manifold_dim, T, typeof(tensor_product), typeof(permuted_cart_num_points)
-        }(
+        return new{manifold_dim, T, typeof(promoted_points)}(
             tensor_product, iteration_order, permuted_cart_num_points
         )
     end
