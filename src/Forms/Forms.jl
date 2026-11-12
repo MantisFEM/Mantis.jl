@@ -400,12 +400,17 @@ Evaluate any form (expression) on the given `element_id` at the given points `xi
 - `Vector{Array{Float64, expression_rank+1}}`: Vector of length equal to the number of
     components of the form, where each entry is a `Array{Float64, expression_rank+1}` (so,
     a `Vector` for `AbstractFormField`s and a `Matrix` for `AbstractFormSpace`s)  of size
-    `(num_evaluation_points,)`, `(num_evaluation_points, num_basis_functions_on_element)`,
+    `(num_evaluation_points,)`, `(num_evaluation_points, num_basis_functions_of_component)`,
     respectively. For expressions involving two forms (such as the `wedge`), the entries
     will be of type `Array{Float64, 1 + expression_rank_1 + expression_rank_2}`
-- `form_basis_indices::Vector{Vector{Int}}`: The indices of the underlying function space
-    that have been evaluated (the inner vector), per basis (the outer vector). For
-    `AbstractFormField`s (things without a basis), this will always be [[1]].
+- `form_basis_indices::Vector{Vector{Vector{Int}}}`: The global indices of the underlying
+    function space(s) that have been evaluated, per component and per expression:
+    `form_basis_indices[c][e]` are the indices corresponding to the `e`-th basis dimension
+    of the `c`-th component of the evaluation. Different components can have different
+    indices; components that combine several components of a form (e.g. after applying an
+    exterior derivative) are evaluated on the union of their indices. For
+    `AbstractFormField`s (things without a basis), this will always be `[[1]]` per
+    component.
 
 # Examples
 Evaluating a ``0``-form:
@@ -419,7 +424,7 @@ julia> Λ⁰ₕ = Forms.FormSpace(0, B, "0-form");  # 0-form with B as basis.
 julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
 
 julia> Forms.evaluate(Λ⁰ₕ, 1, xi)
-([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+([[1.0 0.0 … 0.0 0.0; 0.0 0.5 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.25 0.25]], [[[1, 2, 3, 5, 6, 7, 9, 10, 11]]])
 ```
 Evaluating a ``2``-form in 2D (a top form). Note how the result is scaled by the pullback
 to the canonical domain.
@@ -433,7 +438,7 @@ julia> Λ²ₕ = Forms.FormSpace(2, B, "2-form");  # 2-form with B as basis.
 julia> xi = Points.TensorProductPoints((LinRange(0.0, 1.0, 2), LinRange(0.0, 1.0, 3)));
 
 julia> Forms.evaluate(Λ²ₕ, 1, xi)
-([[0.25 0.0 … 0.0 0.0; 0.0 0.125 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0625 0.0625]], [[1, 2, 3, 5, 6, 7, 9, 10, 11]])
+([[0.25 0.0 … 0.0 0.0; 0.0 0.125 … 0.0 0.0; … ; 0.0 0.0 … 0.0 0.0; 0.0 0.0 … 0.0625 0.0625]], [[[1, 2, 3, 5, 6, 7, 9, 10, 11]]])
 ```
 """
 function evaluate(
