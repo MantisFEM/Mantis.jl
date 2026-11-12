@@ -378,13 +378,19 @@ end
 function evaluate(bin_trans::BinaryOperatorTransformation, element_id::Int)
     operator_1, operator_2 = get_operators(bin_trans)
     transformation = get_transformation(bin_trans)
-    eval_1, indices = evaluate(operator_1, element_id)
-    eval_2, _ = evaluate(operator_2, element_id)
+    eval_1, indices_1 = evaluate(operator_1, element_id)
+    eval_2, indices_2 = evaluate(operator_2, element_id)
+    if indices_1 != indices_2
+        eval_1, eval_2, indices_1 = _expand_to_merged(
+            eval_1, indices_1, eval_2, indices_2, Val(ndims(eval_1))
+        )
+    end
+
     for i in eachindex(eval_1, eval_2)
         eval_1[i] = transformation(eval_1[i], eval_2[i])
     end
 
-    return eval_1, indices
+    return eval_1, indices_1
 end
 
 function evaluate(
@@ -403,20 +409,32 @@ function evaluate(
 end
 
 function evaluate(
-    bin_trans::BinaryFormTransformation{manifold_dim},
+    bin_trans::BinaryFormTransformation{manifold_dim, form_rank, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, form_rank, expression_rank}
     form_1, form_2 = get_forms(bin_trans)
     transformation = get_transformation(bin_trans)
 
-    form_1_eval, indices = evaluate(form_1, element_id, xi)
-    form_2_eval, _ = evaluate(form_2, element_id, xi)
+    form_1_eval, indices_1 = evaluate(form_1, element_id, xi)
+    form_2_eval, indices_2 = evaluate(form_2, element_id, xi)
     for c in eachindex(form_1_eval, form_2_eval)
+        # Both forms can have different indices per component (e.g. α + ★★α), in which case
+        # they are combined on the union of their indices.
+        if indices_1[c] != indices_2[c]
+            form_1_eval[c], form_2_eval[c], indices_1[c] = _expand_to_merged(
+                form_1_eval[c],
+                indices_1[c],
+                form_2_eval[c],
+                indices_2[c],
+                Val(expression_rank),
+            )
+        end
+
         for i in eachindex(form_1_eval[c], form_2_eval[c])
             form_1_eval[c][i] = transformation(form_1_eval[c][i], form_2_eval[c][i])
         end
     end
 
-    return form_1_eval, indices
+    return form_1_eval, indices_1
 end

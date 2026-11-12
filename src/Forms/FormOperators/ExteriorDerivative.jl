@@ -130,12 +130,10 @@ function _evaluate_exterior_derivative(
     for derivative_form_component_idx in 1:n_derivative_components
         d_form_eval[derivative_form_component_idx] =
             d_form_basis_eval[derivative_form_component_idx] *
-            form.coefficients[form_basis_indices[1]]
+            form.coefficients[form_basis_indices[derivative_form_component_idx][1]]
     end
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges.
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 ############################################################################################
@@ -147,139 +145,110 @@ function _evaluate_exterior_derivative(
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim}
-    # Preallocate memory for output array
-    n_derivative_form_components = manifold_dim
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # We can avoid this if we change the output format of evaluation of directsum spaces
-    # flip the second with the third index there...
-    local_d_form_basis_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_derivative_form_components
-    ]
-
-    # Evaluate derivatives
     d_local_fem_basis, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
     )
 
-    # Store the required values
+    # All components of the gradient are spanned by the same (single-component) basis.
+    local_d_form_basis_eval = Vector{Matrix{Float64}}(undef, manifold_dim)
     for coordinate_idx in 1:manifold_dim
         key = ntuple(manifold_dim) do dim
             return dim == coordinate_idx ? 1 : 0
         end
 
         der_idx = FunctionSpaces.get_derivative_idx(key)
-        @. local_d_form_basis_eval[coordinate_idx] = d_local_fem_basis[2][der_idx][1]
+        local_d_form_basis_eval[coordinate_idx] = d_local_fem_basis[2][der_idx][1]
     end
 
-    return local_d_form_basis_eval, form_basis_indices
+    d_form_basis_indices = [copy(form_basis_indices[1]) for _ in 1:manifold_dim]
+
+    return local_d_form_basis_eval, d_form_basis_indices
 end
 
 function _evaluate_exterior_derivative(
     form_space::FormSpace{2, 1}, element_id::Int, xi::Points.AbstractPoints{2}
 )
-    # manifold_dim = 2
-    n_derivative_form_components = 1 # binomial(manifold_dim, 2)
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Preallocate memory for output array
-    local_d_form_basis_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_derivative_form_components
-    ]
-
-    # Evaluate derivatives
     d_local_fem_basis, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
     )
+    n_evaluation_points = Points.get_num_points(xi)
 
     # The exterior derivative is
     # (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    # Store the required values
     der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0))
     der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1))
-    @. local_d_form_basis_eval[1] =
-        d_local_fem_basis[2][der_idx_1][2] - d_local_fem_basis[2][der_idx_2][1]
+    merged_indices, column_maps = _merge_component_indices(
+        form_basis_indices, (1, 2), Val(1)
+    )
+    d_eval = _allocate_merged(n_evaluation_points, merged_indices)
+    _add_mapped!(d_eval, d_local_fem_basis[2][der_idx_1][2], column_maps[2], 1.0)
+    _add_mapped!(d_eval, d_local_fem_basis[2][der_idx_2][1], column_maps[1], -1.0)
 
-    return local_d_form_basis_eval, form_basis_indices
+    return [d_eval], [_merged_to_indices(merged_indices)]
 end
 
 function _evaluate_exterior_derivative(
     form_space::FormSpace{3, 1}, element_id::Int, xi::Points.AbstractPoints{3}
 )
-    # manifold_dim = 3
-    n_derivative_form_components = 3 # binomial(manifold_dim, 2)
-
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Preallocate memory for output array
-    local_d_form_basis_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_derivative_form_components
-    ]
-
-    # Evaluate the underlying FEM space and its first order derivatives (all derivatives for each component)
     d_local_fem_basis, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
+    )
+    n_evaluation_points = Points.get_num_points(xi)
+    der_idxs = (
+        FunctionSpaces.get_derivative_idx((1, 0, 0)),
+        FunctionSpaces.get_derivative_idx((0, 1, 0)),
+        FunctionSpaces.get_derivative_idx((0, 0, 1)),
     )
 
     # The exterior derivative is
     # (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃ + (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁ + (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
-    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
-    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
-    # First: (∂α₃/∂ξ₂ - ∂α₂/∂ξ₃) dξ₂∧dξ₃
-    @. local_d_form_basis_eval[1] =
-        d_local_fem_basis[2][der_idx_2][3] - d_local_fem_basis[2][der_idx_3][2]
-    # Second: (∂α₁/∂ξ₃ - ∂α₃/∂ξ₁) dξ₃∧dξ₁
-    @. local_d_form_basis_eval[2] =
-        d_local_fem_basis[2][der_idx_3][1] - d_local_fem_basis[2][der_idx_1][3]
-    # Third: (∂α₂/∂ξ₁ - ∂α₁/∂ξ₂) dξ₁∧dξ₂
-    @. local_d_form_basis_eval[3] =
-        d_local_fem_basis[2][der_idx_1][2] - d_local_fem_basis[2][der_idx_2][1]
+    # so component `i` is ∂αₖ/∂ξⱼ - ∂αⱼ/∂ξₖ, with (i, j, k) a cyclic permutation of (1,2,3).
+    local_d_form_basis_eval = Vector{Matrix{Float64}}(undef, 3)
+    d_form_basis_indices = Vector{Vector{Vector{Int}}}(undef, 3)
+    cyclic_permutations = ((1, 2, 3), (2, 3, 1), (3, 1, 2))
+    for i in 1:3
+        _, j, k = cyclic_permutations[i]
+        merged_indices, column_maps = _merge_component_indices(
+            form_basis_indices, (j, k), Val(1)
+        )
+        d_eval = _allocate_merged(n_evaluation_points, merged_indices)
+        _add_mapped!(d_eval, d_local_fem_basis[2][der_idxs[j]][k], column_maps[k], 1.0)
+        _add_mapped!(d_eval, d_local_fem_basis[2][der_idxs[k]][j], column_maps[j], -1.0)
+        local_d_form_basis_eval[i] = d_eval
+        d_form_basis_indices[i] = _merged_to_indices(merged_indices)
+    end
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
-    return local_d_form_basis_eval, form_basis_indices
+    return local_d_form_basis_eval, d_form_basis_indices
 end
 
 function _evaluate_exterior_derivative(
     form_space::FormSpace{3, 2}, element_id::Int, xi::Points.AbstractPoints{3}
 )
-    # manifold_dim = 3
-    n_derivative_form_components = 1 # binomial(manifold_dim, 2)
-
-    n_basis_functions = FunctionSpaces.get_num_basis(form_space.fem_space, element_id)
-    n_evaluation_points = Points.get_num_points(xi)
-
-    # Preallocate memory for output array
-    local_d_form_basis_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_derivative_form_components
-    ]
-
-    # Evaluate the underlying FEM space and its first order derivatives (all derivatives for each component)
     d_local_fem_basis, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
     )
+    n_evaluation_points = Points.get_num_points(xi)
 
     # The form is
     # α₁ dξ₂∧dξ₃ + α₂ dξ₃∧dξ₁ + α₃ dξ₁∧dξ₂
     # The exterior derivative is
     # (∂α₁/∂ξ₁ + ∂α₂/∂ξ₂ + ∂α₃/∂ξ₃) dξ₁∧dξ₂∧dξ₃
-    der_idx_1 = FunctionSpaces.get_derivative_idx((1, 0, 0))
-    der_idx_2 = FunctionSpaces.get_derivative_idx((0, 1, 0))
-    der_idx_3 = FunctionSpaces.get_derivative_idx((0, 0, 1))
-    @. local_d_form_basis_eval[1] =
-        d_local_fem_basis[2][der_idx_1][1] +
-        d_local_fem_basis[2][der_idx_2][2] +
-        d_local_fem_basis[2][der_idx_3][3]
+    merged_indices, column_maps = _merge_component_indices(
+        form_basis_indices, (1, 2, 3), Val(1)
+    )
+    d_eval = _allocate_merged(n_evaluation_points, merged_indices)
+    der_keys = ((1, 0, 0), (0, 1, 0), (0, 0, 1))
+    for component_id in 1:3
+        der_idx = FunctionSpaces.get_derivative_idx(der_keys[component_id])
+        _add_mapped!(
+            d_eval,
+            d_local_fem_basis[2][der_idx][component_id],
+            column_maps[component_id],
+            1.0,
+        )
+    end
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
-    return local_d_form_basis_eval, form_basis_indices
+    return [d_eval], [_merged_to_indices(merged_indices)]
 end
 
 ############################################################################################
@@ -289,16 +258,12 @@ end
 function _evaluate_exterior_derivative(
     ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
-    # Preallocate memory for output array
-    n_derivative_form_components = manifold_dim
-    n_basis_functions = 1
     n_evaluation_points = Points.get_num_points(xi)
     local_d_form_basis_eval = [
-        zeros(Float64, n_evaluation_points, n_basis_functions) for
-        _ in 1:n_derivative_form_components
+        zeros(Float64, n_evaluation_points, 1) for _ in 1:manifold_dim
     ]
 
-    return local_d_form_basis_eval, [[1]]
+    return local_d_form_basis_eval, [[[1]] for _ in 1:manifold_dim]
 end
 
 #############################################################################################

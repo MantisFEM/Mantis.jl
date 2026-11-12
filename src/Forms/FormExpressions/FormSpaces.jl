@@ -140,8 +140,8 @@ Evaluate the form basis functions and their arbitrary derivatives in canonical c
 # Returns
 - `local_form_basis::Vector{Vector{Vector{Matrix{Float64}}}}`: The basis functions evaluated
     at the canonical coordinates of the element.
-- `::Vector{Vector{Int}}`: The basis functions evaluated at the canonical coordinates of the
-    element.
+- `::Vector{Vector{Vector{Int}}}`: The global indices of the evaluated basis functions per
+    component (and per expression), see [`evaluate`](@ref).
 """
 function _evaluate_form_in_canonical_coordinates(
     form_space::FormSpace{manifold_dim, form_rank},
@@ -150,18 +150,38 @@ function _evaluate_form_in_canonical_coordinates(
     nderivatives::Int,
 ) where {manifold_dim, form_rank}
     # Evaluate the form spaces on parametric domain ...
-    local_form_basis, form_basis_indices = FunctionSpaces.evaluate(
+    local_form_basis = FunctionSpaces.evaluate(
         get_fe_space(form_space), element_idx, xi, nderivatives
-    )  # (only evaluate the basis (0-th order derivative))
+    )
     # ... and account for the transformation from a parametric mesh element to the canonical
     # mesh element
     local_form_basis = _pullback_to_canonical_coordinates(
         get_geometry(form_space), local_form_basis, element_idx, form_rank
     )
 
-    # We need to return form_basis_indices as a vector of vectors to allow for multiple
-    # index expressions, like the wedge
-    return local_form_basis, [form_basis_indices]
+    return local_form_basis, _get_form_basis_indices(form_space, element_idx)
+end
+
+"""
+    _get_form_basis_indices(form_space::FormSpace, element_idx::Int)
+
+Returns the global indices of the basis functions of `form_space` on element `element_idx`,
+in the format of [`evaluate`](@ref): one vector of indices (a single expression) per
+component.
+
+# Returns
+- `::Vector{Vector{Vector{Int}}}`: The indices per component.
+"""
+function _get_form_basis_indices(form_space::FormSpace, element_idx::Int)
+    fe_space = get_fe_space(form_space)
+
+    return [
+        [
+            collect(
+                Int, FunctionSpaces.get_basis_indices(fe_space, element_idx, component_id)
+            ),
+        ] for component_id in 1:FunctionSpaces.get_num_components(fe_space)
+    ]
 end
 
 """
