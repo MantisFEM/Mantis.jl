@@ -30,7 +30,7 @@ const ref_h2(s) = FunctionSpaces.refinement_uniform(s, 2)
         coeffs_1 = [0.5, -1.0, 0.75]
         eval_1_1 = FunctionSpaces.evaluate(
             bsp_1, 1, Points.PointSet((LinRange(0, 0.5, 5)))
-        )[1][1][1][1]
+        )[1][1][1]
         for c in axes(eval_1_1, 2)
             eval_1_1[:, c] .*= coeffs_1[c]
         end
@@ -38,7 +38,7 @@ const ref_h2(s) = FunctionSpaces.refinement_uniform(s, 2)
 
         eval_2_1 = FunctionSpaces.evaluate(
             bsp_2, 1, Points.PointSet((LinRange(0, 1.0, 5)))
-        )[1][1][1][1]
+        )[1][1][1]
         coeffs_2_1 = eval_2_1 \ sol_1_1
         subdiv_2_1 = [
             1.0 0.0 0.0
@@ -49,17 +49,17 @@ const ref_h2(s) = FunctionSpaces.refinement_uniform(s, 2)
 
         eval_2_2 = FunctionSpaces.evaluate(
             bsp_2, 1, Points.PointSet((LinRange(0, 1.0, 5)))
-        )[1][1][1][1]
+        )[1][1][1]
         eval_1_2 = FunctionSpaces.evaluate(
             bsp_1, 1, Points.PointSet((LinRange(0.5, 1.0, 5)))
-        )[1][1][1][1]
+        )[1][1][1]
         for c in axes(eval_1_2, 2)
             eval_1_2[:, c] .*= coeffs_1[c]
         end
         sol_1_2 = sum(eval_1_2; dims=2)
         eval_2_2 = FunctionSpaces.evaluate(
             bsp_2, 2, Points.PointSet((LinRange(0, 1.0, 5)))
-        )[1][1][1][1]
+        )[1][1][1]
         coeffs_2_2 = eval_2_2 \ sol_1_2
         subdiv_2_2 = [
             0.5 0.5 0.0

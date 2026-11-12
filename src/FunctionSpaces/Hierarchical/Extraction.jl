@@ -27,18 +27,12 @@ Return `R` unchanged for the untruncated hierarchical basis.
 _mod_refinement!(R::AbstractMatrix, ::Type{HB}, ::BitVector) = R
 
 """
-    _mod_coeffs_and_ids!(
-        E::AbstractMatrix, J::AbstractVector, I::AbstractVector, ::Type{HB}
-    )
+    _mod_coeffs_and_ids!(T::AbstractMatrix, I::AbstractVector, ::Type{HB})
 
-Return the extraction coefficients, permutation vector, and hierarchical basis ids unchanged
-for the untruncated hierarchical basis.
+Return the multilevel refinement matrix `T` and hierarchical basis ids `I` unchanged for the
+untruncated hierarchical basis.
 """
-function _mod_coeffs_and_ids!(
-    E::AbstractMatrix, J::AbstractVector, I::AbstractVector, ::Type{HB}
-)
-    return E, J, I
-end
+_mod_coeffs_and_ids!(T::AbstractMatrix, I::AbstractVector, ::Type{HB}) = T, I
 
 """
     _mod_refinement!(R::AbstractMatrix, ::Type{THB}, active_indices::BitVector)
@@ -55,48 +49,21 @@ function _mod_refinement!(R::AbstractMatrix, ::Type{THB}, active_indices::BitVec
 end
 
 """
-    _mod_coeffs_and_ids!(
-        E::AbstractMatrix, J::AbstractVector, I::AbstractVector, ::Type{THB}
-    )
+    _mod_coeffs_and_ids!(T::AbstractMatrix, I::AbstractVector, ::Type{THB})
 
-Remove fully truncated basis functions from the scalar extraction matrix `E` and apply the
-same filtering to the permutation `J` and hierarchical ids `I`.
+Remove the columns of the multilevel refinement matrix `T` of fully truncated basis
+functions, together with their hierarchical ids in `I`.
 """
-function _mod_coeffs_and_ids!(
-    E::AbstractMatrix, J::AbstractVector, I::AbstractVector, ::Type{THB}
-)
-    keep = trues(size(E, 2))
-    @inbounds for b in axes(E, 2)
-        # Remove fully trimmed basis functions
+function _mod_coeffs_and_ids!(T::AbstractMatrix, I::AbstractVector, ::Type{THB})
+    keep = trues(size(T, 2))
+    @inbounds for b in axes(T, 2)
         # NOTE: An exact comparison is intended. Truncation zeroes the rows of active
         # children exactly, so fully truncated basis functions have exactly zero
         # coefficients.
-        keep[b] = !all(iszero, @view E[:, b])
+        keep[b] = !all(iszero, @view T[:, b])
     end
 
-    return E[:, keep], J[keep], I[keep]
-end
-
-function _mod_coeffs_and_ids!(
-    E::NTuple{num_components, AbstractMatrix},
-    J::NTuple{num_components, AbstractVector},
-    I::AbstractVector,
-    ::Type{THB},
-) where {num_components}
-    keep_components = map(m -> falses(size(m, 2)), E)
-    for c in eachindex(E), b in axes(E[c], 2)
-        keep_components[c][b] = any(!iszero, @view E[c][:, b])
-    end
-
-    E = ntuple(c -> E[c][:, keep_components[c]], num_components)
-    J = ntuple(c -> J[c][:, keep_components[c]], num_components)
-
-    keep_global = trues(length(I))
-    for b in eachindex(keep_global)
-        keep_global[b] = any(c -> I[b] in J[c], 1:num_components)
-    end
-
-    return E, J, I[keep_global]
+    return T[:, keep], I[keep]
 end
 
 ############################################################################################
@@ -182,17 +149,44 @@ Return a bit vector marking which basis functions supported on the element index
 """
 function get_active_indices(basis::Hierarchical.Hierarchy, level::Int, level_id::Int)
     space = Hierarchical.get_set(basis, level)
+
+    return _get_active_indices(basis, level, get_basis_indices(space, level_id))
+end
+
+"""
+    get_active_indices(
+        basis::Hierarchical.Hierarchy, level::Int, level_id::Int, component_id::Int
+    )
+
+Return a bit vector marking which basis functions whose `component_id`-th component is
+non-zero on the element indexed by `level` and `level_id` are active in `basis`.
+"""
+function get_active_indices(
+    basis::Hierarchical.Hierarchy, level::Int, level_id::Int, component_id::Int
+)
+    space = Hierarchical.get_set(basis, level)
+
+    return _get_active_indices(
+        basis, level, get_basis_indices(space, level_id, component_id)
+    )
+end
+
+function _get_active_indices(
+    basis::Hierarchical.Hierarchy, level::Int, local_indices::AbstractVector{Int}
+)
+    # NOTE: The `local_indices` may refer to the multi- or component-wise indices.
     active_set = Hierarchical.get_level_set(basis, level)
-    # All basis indices from that level supported on the element
-    local_indices = get_basis_indices(space, level_id)
     active_indices = BitVector(undef, length(local_indices))
-    for (i, B) in enumerate(local_indices)
-        # 1 if active, 0 otherwise
-        active_indices[i] = B in active_set
+    for (i, b) in enumerate(local_indices)
+        active_indices[i] = b in active_set
     end
 
     return active_indices
 end
+
+############################################################################################
+#                                        Extraction                                        #
+############################################################################################
 
 """
     build_extraction_operator(
@@ -201,33 +195,33 @@ end
 
 Build the element-wise extraction operator for `basis`, applying the truncation rules
 selected by the basis type `B`.
+
+The extraction operator has the block pattern of the level-wise spaces, which are assumed to
+share it. On an element of level `L`, each block `(ci, co)` is the corresponding block of
+the level-`L` space multiplied by the multilevel refinement matrix of output component `co`.
+See [`_build_multilevel_refinement`](@ref).
 """
 function build_extraction_operator(
     geometry, basis::Hierarchical.Hierarchy, ::Type{B}
 ) where {B <: BasisType}
-    # Initialise parameters
     spaces = Hierarchical.get_sets(basis)
+    first_space = first(spaces)
+    block_pattern = get_block_pattern(first_space)
     num_elements = Geometry.get_num_elements(geometry)
     num_basis = Hierarchical.get_num_objects(basis)
-    num_components = get_num_components(first(spaces))
-    extraction_coefficients = Vector{NTuple{num_components, Matrix{Float64}}}(
+    num_components = get_num_components(first_space)
+    extraction_coefficients = Vector{NTuple{length(block_pattern), Matrix{Float64}}}(
         undef, num_elements
     )
-    basis_indices = Vector{Indices{num_components, Vector{Int}, Vector{Int}}}(
-        undef, num_elements
-    )
-
-    # TODO: NC should be removed once the extraction becomes properly multi-component.
-    # Currently waiting for an update to multi-component spaces.
-    NC = Val(num_components)
+    basis_indices = Vector{Indices{num_components, Vector{Int}}}(undef, num_elements)
     Threads.@threads for element_id in eachindex(extraction_coefficients, basis_indices)
-        E, I = build_local_extraction(geometry, basis, B, NC, element_id)
+        E, I = build_local_extraction(geometry, basis, B, block_pattern, element_id)
         extraction_coefficients[element_id] = E
         basis_indices[element_id] = I
     end
 
-    return ExtractionOperator(
-        extraction_coefficients, basis_indices, num_elements, num_basis
+    return ExtractionOperator{get_num_input_components(first_space)}(
+        block_pattern, extraction_coefficients, basis_indices, num_elements, num_basis
     )
 end
 
@@ -236,326 +230,153 @@ end
         geometry::Geometry.HierarchicalGeometry,
         basis::Hierarchical.Hierarchy,
         ::Type{B},
-        ::Val{1},
-        element_id,
-    ) where {B <: BasisType}
+        block_pattern::NTuple{num_blocks, Tuple{Int, Int}},
+        element_id::Int,
+    ) where {B <: BasisType, num_blocks}
 
-Build extraction coefficients and hierarchical basis ids for one element of a scalar space.
+Build the extraction coefficient blocks, in the order of `block_pattern`, and the
+hierarchical basis indices on element `element_id`.
+
+The rows of each block `(ci, co)` are the local basis functions of input component `ci` of
+the element's level space, and its columns are the active (and, for `THB`, not fully
+truncated) hierarchical basis functions whose `co`-th component is non-zero on the element.
 """
 function build_local_extraction(
     geometry::Geometry.HierarchicalGeometry,
     basis::Hierarchical.Hierarchy,
     ::Type{B},
-    ::Val{1}, # FIX: only one component
-    element_id,
-) where {B <: BasisType}
+    block_pattern::NTuple{num_blocks, Tuple{Int, Int}},
+    element_id::Int,
+) where {B <: BasisType, num_blocks}
     level, level_id = Geometry.convert_to_level_and_level_id(geometry, element_id)
-    # Construct extraction matrix with only active basis function from element level
-    spaces = Hierarchical.get_sets(basis)
-    child_space = spaces[level]
-    child_indices = get_basis_indices(child_space, level_id)
+    space = Hierarchical.get_set(basis, level)
+    level_blocks = get_extraction_blocks(space, level_id)
     ancestor_level, ancestors = _get_coarsest_level_with_ancestors(
         geometry, basis, element_id
     )
-    # No coarser basis functions are supported on the element
+    num_components = get_num_components(space)
     if ancestor_level == level
-        child_active_ids = get_active_indices(basis, level, level_id)
-        # Drop inactive basis functions
-        basis_indices = map(
-            s -> Hierarchical.convert_to_hier_id(basis, level, s),
-            view(child_indices, child_active_ids),
+        # No coarser basis functions are supported on the element, so we only need to drop
+        # the inactive basis functions of the element's level.
+        active_ids = ntuple(
+            co -> get_active_indices(basis, level, level_id, co), num_components
         )
-        extraction_coefficients = get_extraction_coefficients(child_space, level_id)
-        # Avoid slicing an full matrix
-        if all(child_active_ids)
-            E = (extraction_coefficients,)
-        else
-            E = (extraction_coefficients[:, child_active_ids],)
+        component_indices = ntuple(num_components) do co
+            local_indices = view(get_basis_indices(space, level_id, co), active_ids[co])
+
+            return map(b -> Hierarchical.convert_to_hier_id(basis, level, b), local_indices)
         end
-
-        I = Indices(basis_indices, (collect(1:length(basis_indices)),))
-
-        return E, I
+        blocks = map(block_pattern, level_blocks) do (_, co), E
+            return _select_active_columns(E, active_ids[co])
+        end
+    else
+        refinements = ntuple(num_components) do co
+            return _build_multilevel_refinement(
+                basis, B, level, level_id, ancestor_level, ancestors, co
+            )
+        end
+        component_indices = map(last, refinements)
+        blocks = map(block_pattern, level_blocks) do (_, co), E
+            return convert(Matrix{Float64}, E * first(refinements[co]))
+        end
     end
 
-    # After this point, there _are_ ancestor basis functions supported on the element
+    return blocks, Indices(union(component_indices...), component_indices)
+end
 
-    # We get all ancestors active indices to figure out the full size of
-    # extraction_coefficients and basis_indices, to avoid having to enlarge this data
-    # multiple times.
-    # The reverse traversal propagates each ancestor's refinement and indices into the
-    # pre-allocated extraction coefficients in order.
+"""
+    _select_active_columns(E, active_ids::BitVector)
+
+Return the columns of the level extraction block `E` marked by `active_ids` as a
+`Matrix{Float64}`. `E` may be a `LinearAlgebra.UniformScaling`, in which case it is a square
+block of size `length(active_ids)`.
+"""
+function _select_active_columns(E, active_ids::BitVector)
+    E = convert(Matrix{Float64}, _as_extraction_matrix(E, length(active_ids)))
+    # Avoid slicing a full matrix.
+    all(active_ids) && return E
+
+    return E[:, active_ids]
+end
+
+"""
+    _build_multilevel_refinement(
+        basis::Hierarchical.Hierarchy,
+        ::Type{B},
+        level::Int,
+        level_id::Int,
+        ancestor_level::Int,
+        ancestors,
+        component_id::Int,
+    ) where {B <: BasisType}
+
+Build the multilevel refinement matrix `T` of output component `component_id` on the element
+indexed by `level` and `level_id`, together with the hierarchical ids of its columns.
+
+The rows of `T` are the level-`level` basis functions whose `component_id`-th component is
+non-zero on the element. Its columns express the active basis functions of all levels from
+`ancestor_level` to `level` in terms of those rows: first the active functions of `level`
+(identity columns), followed by the active functions of each coarser level, obtained by
+chaining the (possibly truncated) scaling matrices. Since the `component_id`-th component of
+a parent is the scaled sum of the `component_id`-th components of its children, only the
+children with a non-zero `component_id`-th component on the element are needed.
+"""
+function _build_multilevel_refinement(
+    basis::Hierarchical.Hierarchy,
+    ::Type{B},
+    level::Int,
+    level_id::Int,
+    ancestor_level::Int,
+    ancestors,
+    component_id::Int,
+) where {B <: BasisType}
+    child_indices = get_basis_indices(
+        Hierarchical.get_set(basis, level), level_id, component_id
+    )
+    child_active_ids = get_active_indices(basis, level, level_id, component_id)
+    # Refinement happens in reverse order over the levels, so we reverse the ancestors.
+    # As such, the first entry corresponds to `level-1`.
+    ancestor_iterator = Iterators.reverse(@view ancestors[ancestor_level:end])
+    # We get all ancestors active indices first to know the full size of `T` and `ids`,
+    # instead of enlarging them once per level.
     num_ancestors = level - ancestor_level
     ancestor_active_ids = Vector{BitVector}(undef, num_ancestors)
     cum_num_active = Vector{Int}(undef, num_ancestors + 2)
     cum_num_active[1] = 0
-    child_active_ids = get_active_indices(basis, level, level_id)
-    cum_num_active[2] = sum(child_active_ids)
-    # Refinement happens in reverse order over the levels, so we reverse the ancestors.
-    # As such, the first entry corresponds to `level-1`.
-    ancestor_iterator = Iterators.reverse(@view ancestors[ancestor_level:end])
+    cum_num_active[2] = count(child_active_ids)
     for (i, e) in enumerate(ancestor_iterator)
-        # The ancestor count decrements the finest level
-        l = level - i
-        ancestor_active_ids[i] = get_active_indices(basis, l, e)
-        cum_num_active[i + 2] = cum_num_active[i + 1] + sum(ancestor_active_ids[i])
+        ancestor_active_ids[i] = get_active_indices(basis, level - i, e, component_id)
+        cum_num_active[i + 2] = cum_num_active[i + 1] + count(ancestor_active_ids[i])
     end
 
-    num_active = last(cum_num_active)
-    E = get_extraction_coefficients(child_space, level_id)
-    extraction_coefficients = Matrix{Float64}(undef, size(E, 1), num_active)
-    basis_indices = Vector{Int}(undef, num_active)
-    # Slot the child level information into the correct place (current element)
-    ids_range = (cum_num_active[1] + 1):cum_num_active[2]
-    @views extraction_coefficients[:, ids_range] .= E[:, child_active_ids]
-    for (i, b) in enumerate(view(child_indices, child_active_ids))
-        basis_indices[i] = Hierarchical.convert_to_hier_id(basis, level, b)
+    num_rows = length(child_indices)
+    T = zeros(Float64, num_rows, last(cum_num_active))
+    ids = Vector{Int}(undef, last(cum_num_active))
+    for (j, i) in enumerate(findall(child_active_ids))
+        T[i, j] = 1.0
+        ids[j] = Hierarchical.convert_to_hier_id(basis, level, child_indices[i])
     end
 
-    # Initialise the refinement matrix as an identity matrix
-    R = Matrix(LinearAlgebra.I, length(child_indices), length(child_indices))
+    R = Matrix{Float64}(LinearAlgebra.I, num_rows, num_rows)
     scalings = Hierarchical.get_scalings(basis)
     for (i, e) in enumerate(ancestor_iterator)
         l = level - i
         scal = scalings[l]
-        # Retrieve local scaling matrix
-        parent_indices = get_basis_indices(Hierarchical.get_parent(scal), e)
+        parent_indices = get_basis_indices(Hierarchical.get_parent(scal), e, component_id)
         curr_R = Hierarchical.view_scaling_matrix(scal, child_indices, parent_indices)
-        # Modify curr_R based on basis type
-        parent_active_ids = get_active_indices(basis, l, e)
         curr_R = _mod_refinement!(curr_R, B, child_active_ids)
         # Propagate previous refinements
         R *= curr_R
-        # Add active indices and coefficients
+        parent_active_ids = ancestor_active_ids[i]
         ids_range = (cum_num_active[i + 1] + 1):cum_num_active[i + 2]
-        @views LinearAlgebra.mul!(
-            extraction_coefficients[:, ids_range], E, R[:, parent_active_ids]
-        )
+        @views T[:, ids_range] .= R[:, parent_active_ids]
         for (j, b) in enumerate(view(parent_indices, parent_active_ids))
-            basis_indices[cum_num_active[i + 1] + j] = Hierarchical.convert_to_hier_id(
-                basis, l, b
-            )
+            ids[cum_num_active[i + 1] + j] = Hierarchical.convert_to_hier_id(basis, l, b)
         end
 
         # We are iterating in reverse, so the next children are the current parents
         child_indices, child_active_ids = parent_indices, parent_active_ids
     end
 
-    # Modify coefficients data based on basis type
-    # BUG: Does not handle permutation
-    extraction_coefficients, _, basis_indices = _mod_coeffs_and_ids!(
-        extraction_coefficients, collect(1:length(basis_indices)), basis_indices, B
-    )
-    # TODO: Waiting for multi-component extraction overhaul. 
-    # https://github.com/MantisFEM/Mantis.jl/discussions/421
-    permutations = collect(1:length(basis_indices))
-
-    return (extraction_coefficients,), Indices(basis_indices, (permutations,))
-end
-
-"""
-    build_local_extraction(
-        geometry::Geometry.HierarchicalGeometry,
-        basis::Hierarchical.Hierarchy,
-        ::Type{B},
-        ::Val{num_components},
-        element_id,
-    ) where {num_components, B <: BasisType}
-
-Build component-wise extraction coefficients, local component permutations, and
-hierarchical basis ids for one element of a multi-component space.
-"""
-function build_local_extraction(
-    geometry::Geometry.HierarchicalGeometry,
-    basis::Hierarchical.Hierarchy,
-    ::Type{B},
-    ::Val{num_components},
-    element_id,
-) where {num_components, B <: BasisType}
-    # TODO: Waiting for multi-component extraction overhaul. 
-    # https://github.com/MantisFEM/Mantis.jl/discussions/421
-    level, level_id = Geometry.convert_to_level_and_level_id(geometry, element_id)
-    # Construct extraction matrix with only active basis function from element level
-    spaces = Hierarchical.get_sets(basis)
-    child_space = spaces[level]
-    child_indices = get_basis_indices(child_space, level_id)
-    ancestor_level, ancestors = _get_coarsest_level_with_ancestors(
-        geometry, basis, element_id
-    )
-    component_extractions = ntuple(
-        c -> get_extraction(child_space, level_id, c), num_components
-    )
-    child_active_ids = get_active_indices(basis, level, level_id)
-    # No coarser basis functions are supported on the element
-    if ancestor_level == level
-        # Drop inactive basis functions
-        basis_indices = map(
-            s -> Hierarchical.convert_to_hier_id(basis, level, s),
-            view(child_indices, child_active_ids),
-        )
-        if all(child_active_ids)
-            E = map(first, component_extractions)
-            J = map(c -> collect(last(c)), component_extractions)
-        else
-            local_indices = [
-                child_active_ids[i] ? i : 0 for i in eachindex(child_active_ids)
-            ]
-            active_permutations = ntuple(
-                c -> child_active_ids[last(component_extractions[c])], num_components
-            )
-            # NOTE: A copy is intended. `E` is stored in the extraction operator, so a view
-            # would keep the full level extraction matrix alive and change the stored type.
-            E = ntuple(
-                c -> first(component_extractions[c])[:, active_permutations[c]],
-                num_components,
-            )
-            J = ntuple(c -> local_indices[active_permutations[c]], num_components)
-        end
-
-        I = Indices(basis_indices, J)
-
-        return E, I
-    end
-
-    # After this point, there _are_ ancestor basis functions supported on the element
-
-    active_permutations = ntuple(
-        c -> child_active_ids[last(component_extractions[c])], num_components
-    )
-    ancestor_iterator, ancestor_active_ids, cum_num_active = get_ancestor_active(
-        level, active_permutations, ancestors, ancestor_level, basis
-    )
-    num_active = map(last, cum_num_active)
-    local_indices = zeros(Int, length(child_active_ids))
-    id = 1
-    for (i, is_active) in enumerate(child_active_ids)
-        if is_active
-            local_indices[i] = id
-            id += 1
-        end
-    end
-
-    extraction_coefficients = ntuple(
-        c -> Matrix{Float64}(
-            undef,
-            size(first(component_extractions[c]), 1),
-            length(active_permutations[c]) + num_active[c],
-        ),
-        num_components,
-    )
-    permutations = ntuple(
-        c -> Vector{Int}(undef, sum(active_permutations[c]) + num_active[c]), num_components
-    )
-    E = map(first, component_extractions)
-
-    basis_indices = Vector{Int}(undef, maximum(num_active))
-    # Copy the child level information
-    for c in 1:num_components
-        ids_range = (cum_num_active[c][1] + 1):cum_num_active[c][2]
-        @views extraction_coefficients[c][:, ids_range] .= E[c][:, active_permutations[c]]
-        @views permutations[c][ids_range] .= local_indices[last(component_extractions[c])[active_permutations[c]]]
-    end
-    for (i, b) in enumerate(view(child_indices, child_active_ids))
-        basis_indices[i] = Hierarchical.convert_to_hier_id(basis, level, b)
-    end
-
-    # Initialise the refinement matrix as an identity matrix
-    R = Matrix(LinearAlgebra.I, length(child_indices), length(child_indices))
-    scalings = Hierarchical.get_scalings(basis)
-    for (i, e) in enumerate(ancestor_iterator)
-        l = level - i
-        scal = scalings[l]
-        # Retrieve local scaling matrix
-        parent_indices = get_basis_indices(Hierarchical.get_parent(scal), e)
-        curr_R = Hierarchical.view_scaling_matrix(scal, child_indices, parent_indices)
-        # Modify curr_R based on basis type
-        parent_active_ids = ancestor_active_ids[i]
-        parent_local_indices = zeros(Int, length(parent_active_ids))
-        id = 1
-        for (i, is_active) in enumerate(parent_active_ids)
-            if is_active
-                local_indices[i] = id
-                id += 1
-            end
-        end
-        curr_R = _mod_refinement!(curr_R, B, child_active_ids)
-        # Propagate previous refinements
-        R *= curr_R
-        # BUG: This is incorrect
-        for c in 1:num_components
-            # Add active indices and coefficients
-            ids_range = (cum_num_active[c][i + 1] + 1):cum_num_active[c][i + 2]
-            @views LinearAlgebra.mul!(
-                extraction_coefficients[c][:, ids_range], E[c], R[:, parent_active_ids]
-            )
-            @views permutations[c][ids_range] .=
-                parent_local_indices[c] .+ cum_num_active[c][i + 1]
-        end
-
-        for (j, b) in enumerate(view(parent_indices, parent_active_ids))
-            basis_indices[cum_num_active[i + 1] + j] = Hierarchical.convert_to_hier_id(
-                basis, l, b
-            )
-        end
-
-        # We are iterating in reverse, so next children are the current parents
-        child_indices = parent_indices
-        child_active_ids = parent_active_ids
-    end
-
-    # Modify coefficients based on basis type
-    extraction_coefficients, permutations, basis_indices = _mod_coeffs_and_ids!(
-        extraction_coefficients, permutations, basis_indices, B
-    )
-
-    return extraction_coefficients, Indices(basis_indices, permutations)
-end
-
-"""
-    get_ancestor_active(
-        level,
-        active_permutations::NTuple{num_components},
-        ancestors,
-        ancestor_level,
-        basis,
-    ) where {num_components}
-
-Collect active basis indices and cumulative per-component counts while walking the ancestors
-of an element from its coarsest supporting level toward the element level.
-"""
-function get_ancestor_active(
-    level, active_permutations::NTuple{num_components}, ancestors, ancestor_level, basis
-) where {num_components}
-    # We get all ancestors active indices to figure out the full size of
-    # extraction_coefficients and basis_indices, to avoid having to enlarge this data
-    # multiple times.
-    # The reverse traversal propagates each ancestor's refinement and indices into the
-    # pre-allocated extraction coefficients in order.
-    num_ancestors = level - ancestor_level
-    ancestor_active_ids = Vector{BitVector}(undef, num_ancestors)
-    cum_num_active = ntuple(_ -> Vector{Int}(undef, num_ancestors + 2), num_components)
-    for c in 1:num_components
-        cum_num_active[c][1] = 0
-        cum_num_active[c][2] = sum(active_permutations[c])
-    end
-    # Refinement happens in reverse order over the levels, so we reverse the ancestors.
-    # As such, the first entry corresponds to `level-1`.
-    ancestor_iterator = Iterators.reverse(@view ancestors[ancestor_level:end])
-    for (i, e) in enumerate(ancestor_iterator)
-        # The ancestor count decrements the finest level
-        l = level - i
-        component_extractions = ntuple(
-            c -> get_extraction(Hierarchical.get_set(basis, l), e, c), num_components
-        )
-        ancestor_active_ids[i] = get_active_indices(basis, l, e)
-        active_permutations = ntuple(
-            c -> ancestor_active_ids[i][last(component_extractions[c])], num_components
-        )
-        for c in 1:num_components
-            cum_num_active[c][i + 2] =
-                cum_num_active[c][i + 1] + sum(active_permutations[c])
-        end
-    end
-
-    return ancestor_iterator, ancestor_active_ids, cum_num_active
+    return _mod_coeffs_and_ids!(T, ids, B)
 end
