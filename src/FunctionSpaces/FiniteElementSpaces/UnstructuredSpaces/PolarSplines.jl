@@ -466,7 +466,7 @@ function PolarSplineSpace(
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
 ) where {num_components, PS <: NTuple{num_components, TensorProductSpace{2, 1}}}
-    geometry = DiscreteGeometry(degenerate_space, reshape(degenerate_control_points, :, 2))
+    geometry = FEGeometry(degenerate_space, reshape(degenerate_control_points, :, 2))
 
     return PolarSplineSpace(
         patch_spaces,
