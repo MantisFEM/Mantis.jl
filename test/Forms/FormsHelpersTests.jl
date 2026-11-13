@@ -23,6 +23,9 @@ end
 
 # In 1D, the 0-forms and 1-forms of an exact complex differ by the constant functions.
 is_exact_1d(complex) = get_num_basis(complex)[1] - get_num_basis(complex)[2] == 1
+# In 2D, the Euler characteristic of an exact complex on a square is one.
+is_exact_2d(complex) =
+    get_num_basis(complex)[1] - get_num_basis(complex)[2] + get_num_basis(complex)[3] == 1
 
 ############################################################################################
 #                                          Tests                                           #
@@ -91,10 +94,8 @@ is_exact_1d(complex) = get_num_basis(complex)[1] - get_num_basis(complex)[2] == 
         end
     end
 
-    @testset "Invalid Arguments" verbose = true begin
-        # TODO: Waiting for multi-component extraction overhaul.
-        # The 1-forms in 2D have 2 components.
-        @test_throws ArgumentError Forms.create_hierarchical_de_rham_complex(
+    @testset "2D" verbose = true begin
+        complex = Forms.create_hierarchical_de_rham_complex(
             (0.0, 0.0),
             (1.0, 1.0),
             (4, 4),
@@ -104,6 +105,23 @@ is_exact_1d(complex) = get_num_basis(complex)[1] - get_num_basis(complex)[2] == 
             FunctionSpaces.SelectionStandard,
             FunctionSpaces.THB,
         )
+        @test map(Forms.get_form_rank, complex) == (0, 1, 2)
+        @test map(FunctionSpaces.get_num_components, get_spaces(complex)) == (1, 2, 1)
+        @test shares_geometry(complex)
+        @test is_exact_2d(complex)
+
+        # Refining the lower-left 2x2 elements activates their 4x4 children on level 2,
+        # which has 8x8 elements.
+        complex = Forms.update_hierarchical_de_rham_complex(complex, [1, 2, 5, 6])
+        @test shares_geometry(complex)
+        @test sort.(get_level_ids(Geometry.get_hierarchy(get_geometry(complex)))) == [
+            [3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+            [1, 2, 3, 4, 9, 10, 11, 12, 17, 18, 19, 20, 25, 26, 27, 28],
+        ]
+        @test is_exact_2d(complex)
+    end
+
+    @testset "Invalid Arguments" verbose = true begin
         # The spaces of a tensor-product complex are not hierarchical.
         complex = Forms.create_tensor_product_bspline_de_rham_complex(
             (0.0,), (1.0,), (4,), (2,), (1,)

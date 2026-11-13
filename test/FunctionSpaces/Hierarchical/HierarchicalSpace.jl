@@ -113,3 +113,39 @@ end
         @test @expected expected e -> FunctionSpaces.get_basis_indices(space, e)
     end
 end
+
+@testset "DofPartition" verbose = true begin
+    # Cubic B-splines on 6 elements, so each level space has 1D divisions: the left
+    # boundary function, the interior functions and the right boundary function.
+    bsp_1 = FunctionSpaces.create_bspline_space(0.0, 1.0, 6, 3, 2)
+    scal_1 = FunctionSpaces.scaling_uniform(bsp_1, 2)
+    bsp_2 = get_child(scal_1)
+    geo_scal_1 = Geometry.scaling_uniform(
+        FunctionSpaces.get_geometry(bsp_1), FunctionSpaces.get_geometry(bsp_2), 2
+    )
+    num_basis_2 = FunctionSpaces.get_num_basis(bsp_2)
+
+    #=
+        x inactive
+        - active
+
+        Level 1: |xxxxxxx|-------|-------|-------|-------|xxxxxxx|
+        Level 2: |---|---|xxx|xxx|xxx|xxx|xxx|xxx|xxx|xxx|---|---|
+    =#
+    hgeo = Geometry.HierarchicalGeometry(
+        ActiveInfo([[2, 3, 4, 5], [1, 2, 11, 12]]), (geo_scal_1,)
+    )
+    for basis_type in (HB, THB)
+        space = FunctionSpaces.HierarchicalSpace(
+            hgeo, (scal_1,), SelectionStandard, basis_type
+        )
+        basis = FunctionSpaces.get_basis(space)
+        partition = only(FunctionSpaces.get_dof_partition(space))
+        @test length(partition) == 3
+        # Every basis function is in exactly one division.
+        @test sort(reduce(vcat, partition)) == 1:FunctionSpaces.get_num_basis(space)
+        # The boundary functions are the first and last functions of level 2.
+        @test partition[1] == [convert_to_hier_id(basis, 2, 1)]
+        @test partition[3] == [convert_to_hier_id(basis, 2, num_basis_2)]
+    end
+end
