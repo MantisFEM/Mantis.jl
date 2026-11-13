@@ -17,12 +17,12 @@ p = (2, 2) # Polynomial degrees.
 k = p .- 1 # Regularities. (Maximally smooth B-splines.)
 
 # Hierarchical parameters.
-truncate = true
-simplified = false
+selection_type = FunctionSpaces.SelectionStandard
+basis_type = FunctionSpaces.THB
 num_steps = 3 # Number of refinement steps.
 num_sub = (2, 2) # Number of subdivisions per dimension per step.
 dorfler_parameter = 0.2
-Lchains = true # Decide if Lchains are added to fix inexact refinements.
+qbox_size = (2, 2) # Refined elements are completed to whole qboxes of this size.
 eigenfunc = 1 # Eigenfunction to use for adaptive refinement.
 
 # Quadrature rules
@@ -50,7 +50,7 @@ function run_problems(
     num_steps::Int,
     dorfler_parameter::Float64,
     dΩₑ::Quadrature.StandardQuadrature{manifold_dim},
-    Lchains::Bool,
+    qbox_size::NTuple{manifold_dim, Int},
     eigenfunction::Int,
     num_eig::Int,
     scale_factors::NTuple{manifold_dim, Float64};
@@ -62,7 +62,7 @@ function run_problems(
         num_steps,
         dorfler_parameter,
         dΩₑ,
-        Lchains,
+        qbox_size,
         eigenfunction,
         num_eig,
         scale_factors;
@@ -81,16 +81,16 @@ function run_problems(
     return eigval_errors, eigfunc_errors
 end
 
-function runt_tests(eigval_errors)
-    for error in eigval_errors
-        @test isapprox(abs(error), 0.0; atol=2e-2)
+function run_tests(eigval_errors)
+    for err in eigval_errors
+        @test isapprox(abs(err), 0.0; atol=2e-2)
     end
 
     return nothing
 end
 
 R_complex = Forms.create_hierarchical_de_rham_complex(
-    starting_point, box_size, num_elements, p, k, num_sub, truncate, simplified
+    starting_point, box_size, num_elements, p, k, num_sub, selection_type, basis_type
 )
 eigval_errors, eigfunc_errors = run_problems(
     R_complex,
@@ -98,11 +98,11 @@ eigval_errors, eigfunc_errors = run_problems(
     num_steps,
     dorfler_parameter,
     dΩₑ,
-    Lchains,
+    qbox_size,
     eigenfunc,
     num_eig,
     scale_factors,
 )
-runt_tests(eigval_errors)
+run_tests(eigval_errors)
 
 end
