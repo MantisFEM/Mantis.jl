@@ -435,7 +435,7 @@ function is_partition_of_unity(space)
     xi = Points.PointSet((LinRange(0.0, 1.0, 5),))
     for element_id in 1:FunctionSpaces.get_num_elements(space)
         # Values of the basis functions on the element, one column per function.
-        values = FunctionSpaces.evaluate(space, element_id, xi)[1][1][1][1]
+        values = FunctionSpaces.evaluate(space, element_id, xi)[1][1][1]
         if !all(isapprox(1.0), sum(values; dims=2))
             return false
         end

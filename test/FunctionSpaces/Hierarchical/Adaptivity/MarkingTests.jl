@@ -174,6 +174,34 @@ end
         @test marking(7) == [5, 6, 7, 8]
     end
 
+    @testset "Tensor Product" verbose = true begin
+        # The same 4x2 elements and qboxes as in the 2D case.
+        space = FunctionSpaces.TensorProductSpace((
+            FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (1,), (0,)),
+            FunctionSpaces.create_bspline_space((0.0,), (1.0,), (2,), (1,), (0,)),
+        ))
+        marking = QBoxMarking(space, (2, 2), IdentityMarking())
+        expected = Dict(
+            1 => [1, 2, 5, 6],
+            2 => [1, 2, 5, 6],
+            5 => [1, 2, 5, 6],
+            6 => [1, 2, 5, 6],
+            3 => [3, 4, 7, 8],
+            4 => [3, 4, 7, 8],
+            7 => [3, 4, 7, 8],
+            8 => [3, 4, 7, 8],
+        )
+        @test @expected expected marking issetequal
+
+        # Heterogenous q-box size
+        marking = QBoxMarking(space, (4, 1), IdentityMarking())
+        @test marking(2) == [1, 2, 3, 4]
+        @test marking(7) == [5, 6, 7, 8]
+
+        # The number of elements is not a multiple of the qbox size.
+        @test_throws ArgumentError QBoxMarking(space, (3, 2), IdentityMarking())
+    end
+
     @testset "MaximumMarking" verbose = true begin
         # Only element 1 is marked by the element marking.
         marking = QBoxMarking(space_1d, (2,), MaximumMarking(errors, 1.0))

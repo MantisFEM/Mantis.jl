@@ -165,9 +165,10 @@ end
 
 Marks all elements in the same qbox as the elements marked by `element_marking`. A qbox is a
 block of `qbox_size[d]` consecutive elements in each dimension `d` of the parametric
-geometry of `space`, which must be a `CartesianGeometry` or a `HierarchicalGeometry` of
-`CartesianGeometry` levels. The number of elements in each dimension of each patch (and
-level) must be a multiple of the corresponding `qbox_size`.
+geometry of `space`, which must be a `CartesianGeometry`, a single-patch
+`TensorProductGeometry`, or a `HierarchicalGeometry` of such levels. The number of elements
+in each dimension of each patch (and level) must be a multiple of the corresponding
+`qbox_size`.
 
 For a `HierarchicalGeometry`, the qbox of an element is computed on its level, and the
 marked elements are given in hierarchical indexing. The hierarchy is assumed to be the
@@ -180,6 +181,7 @@ struct QBoxMarking{
     manifold_dim,
     G <: Union{
         Geometry.CartesianGeometry{manifold_dim},
+        Geometry.TensorProductGeometry{manifold_dim},
         Geometry.HierarchicalGeometry{manifold_dim},
     },
     M <: MarkingStrategy,
@@ -228,8 +230,8 @@ function check_qbox_size(geometry, qbox_size)
     return throw(
         ArgumentError(
             LazyString(
-                "The parametric geometry should be a CartesianGeometry or a ",
-                "HierarchicalGeometry. Got ",
+                "The parametric geometry should be a CartesianGeometry, a ",
+                "TensorProductGeometry or a HierarchicalGeometry. Got ",
                 typeof(geometry),
             ),
         ),
@@ -254,6 +256,37 @@ function check_qbox_size(geometry::Geometry.CartesianGeometry, qbox_size)
                 ),
             )
         end
+    end
+
+    return nothing
+end
+
+function check_qbox_size(geometry::Geometry.TensorProductGeometry, qbox_size)
+    if Geometry.get_num_patches(geometry) != 1
+        return throw(
+            ArgumentError(
+                LazyString(
+                    "Only single-patch tensor-product geometries are supported. Got ",
+                    Geometry.get_num_patches(geometry),
+                    " patches.",
+                ),
+            ),
+        )
+    end
+
+    num_elements = size(Geometry.get_lin_num_elements(geometry))
+    if length(num_elements) != length(qbox_size) || any(!iszero, num_elements .% qbox_size)
+        return throw(
+            ArgumentError(
+                LazyString(
+                    "The number of elements in each dimension should be a multiple of ",
+                    "the qbox size. Got ",
+                    num_elements,
+                    " elements and qbox size ",
+                    qbox_size,
+                ),
+            ),
+        )
     end
 
     return nothing
@@ -292,6 +325,17 @@ function get_qbox_elements(geometry::Geometry.CartesianGeometry, qbox_size, elem
     local_ids = Geometry.get_lin_num_elements(geometry, patch_id)[q_range...]
 
     return [Geometry.get_global_element_id(geometry, patch_id, id) for id in vec(local_ids)]
+end
+
+function get_qbox_elements(
+    geometry::Geometry.TensorProductGeometry, qbox_size, element_id::Int
+)
+    factor_ids = Tuple(Geometry.get_cart_num_elements(geometry)[element_id])
+    q_range = map(factor_ids, qbox_size) do factor_id, size
+        return qbox_range(qbox_id(factor_id, size), size)
+    end
+
+    return vec(Geometry.get_lin_num_elements(geometry)[q_range...])
 end
 
 function get_qbox_elements(
