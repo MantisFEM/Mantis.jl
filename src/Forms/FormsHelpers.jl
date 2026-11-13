@@ -737,3 +737,291 @@ function trace_basis_idxs(
     ]
     return basis_idxs
 end
+
+############################################################################################
+#                                    Component mixing                                      #
+############################################################################################
+
+# The components of a form evaluation can each have their own set of (global) basis indices,
+# see [`evaluate`](@ref). Operators that combine several components into a single output
+# component (e.g. `d`, `★`, `∧`) evaluate that output component on the union of the indices
+# of the combined components, and add the contribution of each component to the matching
+# columns. The helpers below implement this.
+
+"""
+    _field_indices(num_components::Int)
+
+Returns the (dummy) indices of an expression with expression rank 0 that has
+`num_components` components.
+
+# Returns
+- `::Vector{Vector{Vector{Int}}}`: `[[1]]` for each component.
+"""
+_field_indices(num_components::Int) = [[[1]] for _ in 1:num_components]
+
+"""
+    _merge_component_indices(
+        indices::Vector{Vector{Vector{Int}}},
+        components,
+        ::Val{expression_rank},
+    ) where {expression_rank}
+
+Merges the indices of the given `components` of a form evaluation, per expression.
+
+# Arguments
+- `indices::Vector{Vector{Vector{Int}}}`: The indices of a form evaluation, where
+    `indices[c][e]` are the global basis indices of expression `e` of component `c`. See
+    [`evaluate`](@ref).
+- `components`: Iterable with the ids of the components to merge.
+- `::Val{expression_rank}`: The number of expressions to merge. Should be constructed from a
+    type parameter, so that it is known at compile time.
+
+# Returns
+- `merged_indices::NTuple{expression_rank, Vector{Int}}`: For each expression, the sorted
+    union of the indices of the merged components.
+- `column_maps::Vector{NTuple{expression_rank, Vector{Int}}}`: For each component of
+    `indices` (not only the merged ones), and for each expression, the position in
+    `merged_indices` of each of the component's indices. The maps of components that are not
+    merged are empty.
+"""
+function _merge_component_indices(
+    indices::Vector{Vector{Vector{Int}}}, components, ::Val{expression_rank}
+) where {expression_rank}
+    # Sorting gives a canonical order, so equal sets give equal vectors, and allows the
+    # column maps to be found by binary search.
+    # This has the benefit of avoiding `find` which would return `Union{Nothing, Int}`,
+    # allowing us to use `searchsortedfirst` which always returns an `Int`.
+    merged_indices = ntuple(Val(expression_rank)) do expression_id
+        merged = Int[]
+        for component_id in components
+            append!(merged, indices[component_id][expression_id])
+        end
+
+        return sort!(unique!(merged))
+    end
+
+    column_maps = [ntuple(_ -> Int[], Val(expression_rank)) for _ in eachindex(indices)]
+    for component_id in components
+        column_maps[component_id] = ntuple(Val(expression_rank)) do expression_id
+            return [
+                searchsortedfirst(merged_indices[expression_id], index) for
+                index in indices[component_id][expression_id]
+            ]
+        end
+    end
+
+    return merged_indices, column_maps
+end
+
+"""
+    _allocate_merged(
+        num_points::Int, merged_indices::NTuple{expression_rank, Vector{Int}}
+    ) where {expression_rank}
+
+Allocates a zero array to store the evaluation of a component with the given merged indices.
+
+# Returns
+- `::Array{Float64, 1 + expression_rank}`: Zero array of size
+    `(num_points, length.(merged_indices)...)`.
+"""
+function _allocate_merged(
+    num_points::Int, merged_indices::NTuple{expression_rank, Vector{Int}}
+) where {expression_rank}
+    return zeros(Float64, num_points, map(length, merged_indices)...)
+end
+
+"""
+    _merged_to_indices(
+        merged_indices::NTuple{expression_rank, Vector{Int}}
+    ) where {expression_rank}
+
+Converts the merged indices of a component to the per-expression indices format of
+[`evaluate`](@ref). Expressions of rank 0 get the dummy indices `[[1]]`.
+"""
+function _merged_to_indices(
+    merged_indices::NTuple{expression_rank, Vector{Int}}
+) where {expression_rank}
+    if expression_rank == 0
+        return [[1]]
+    end
+
+    return collect(merged_indices)
+end
+
+_get_weight(weight::Number, ::Int) = weight
+_get_weight(weights::AbstractVector, point_id::Int) = weights[point_id]
+
+"""
+    _add_mapped!(
+        out::AbstractArray{Float64},
+        values::AbstractArray{Float64},
+        column_maps::NTuple{expression_rank, Vector{Int}},
+        weights,
+    ) where {expression_rank}
+
+Adds the evaluation `values` of a single component, scaled per point by `weights`, to the
+columns of `out` given by `column_maps`, i.e.
+`out[p, column_maps[1][j₁], …] += weights[p] * values[p, j₁, …]`.
+
+# Arguments
+- `out::AbstractArray{Float64}`: Array of the merged evaluation. Modified in-place.
+- `values::AbstractArray{Float64}`: Evaluation of the component to add.
+- `column_maps::NTuple{expression_rank, Vector{Int}}`: Column map of the component per
+    expression, see [`_merge_component_indices`](@ref).
+- `weights`: Either a number, or a vector with one weight per evaluation point.
+
+# Returns
+- `out::AbstractArray{Float64}`.
+"""
+function _add_mapped!(
+    out::AbstractArray{Float64},
+    values::AbstractArray{Float64},
+    column_maps::NTuple{expression_rank, Vector{Int}},
+    weights,
+) where {expression_rank}
+    basis_ids = CartesianIndices(ntuple(e -> length(column_maps[e]), Val(expression_rank)))
+    for basis_id in basis_ids
+        out_id = ntuple(e -> column_maps[e][basis_id[e]], Val(expression_rank))
+        for point_id in axes(values, 1)
+            out[point_id, out_id...] +=
+                _get_weight(weights, point_id) * values[point_id, Tuple(basis_id)...]
+        end
+    end
+
+    return out
+end
+
+"""
+    _add_mapped_product!(
+        out::AbstractArray{Float64},
+        sign::Int,
+        values_1::AbstractArray{Float64},
+        column_maps_1::NTuple{expression_rank_1, Vector{Int}},
+        values_2::AbstractArray{Float64},
+        column_maps_2::NTuple{expression_rank_2, Vector{Int}},
+    ) where {expression_rank_1, expression_rank_2}
+
+Adds the (outer) product of the evaluations of two components to the columns of `out` given
+by the column maps, i.e.
+`out[p, map₁(j₁)…, map₂(j₂)…] += sign * values_1[p, j₁…] * values_2[p, j₂…]`.
+
+# Returns
+- `out::AbstractArray{Float64}`.
+"""
+function _add_mapped_product!(
+    out::AbstractArray{Float64},
+    sign::Int,
+    values_1::AbstractArray{Float64},
+    column_maps_1::NTuple{expression_rank_1, Vector{Int}},
+    values_2::AbstractArray{Float64},
+    column_maps_2::NTuple{expression_rank_2, Vector{Int}},
+) where {expression_rank_1, expression_rank_2}
+    basis_ids_1 = CartesianIndices(
+        ntuple(e -> length(column_maps_1[e]), Val(expression_rank_1))
+    )
+    basis_ids_2 = CartesianIndices(
+        ntuple(e -> length(column_maps_2[e]), Val(expression_rank_2))
+    )
+    for basis_id_2 in basis_ids_2
+        out_id_2 = ntuple(e -> column_maps_2[e][basis_id_2[e]], Val(expression_rank_2))
+        for basis_id_1 in basis_ids_1
+            out_id_1 = ntuple(e -> column_maps_1[e][basis_id_1[e]], Val(expression_rank_1))
+            for point_id in axes(out, 1)
+                out[point_id, out_id_1..., out_id_2...] +=
+                    sign *
+                    values_1[point_id, Tuple(basis_id_1)...] *
+                    values_2[point_id, Tuple(basis_id_2)...]
+            end
+        end
+    end
+
+    return out
+end
+
+"""
+    _mix_components(
+        values::Vector{<:AbstractArray{Float64}},
+        indices::Vector{Vector{Vector{Int}}},
+        components,
+        weights,
+        ::Val{expression_rank},
+    ) where {expression_rank}
+
+Computes the linear combination `∑ᵢ weights[i] * values[components[i]]` of components of a
+form evaluation, on the union of the indices of these components.
+
+# Arguments
+- `values::Vector{<:AbstractArray{Float64}}`: The evaluation per component.
+- `indices::Vector{Vector{Vector{Int}}}`: The indices per component, see [`evaluate`](@ref).
+- `components`: Indexable collection with the ids of the components to combine.
+- `weights`: Indexable collection with the weight of each component in `components`. Each
+    weight is either a number or a vector with a weight per evaluation point.
+- `::Val{expression_rank}`: The expression rank, constructed from a type parameter.
+
+# Returns
+- `::Array{Float64, 1 + expression_rank}`: The combined evaluation.
+- `::Vector{Vector{Int}}`: The indices of the combined evaluation, per expression.
+"""
+function _mix_components(
+    values::Vector{<:AbstractArray{Float64}},
+    indices::Vector{Vector{Vector{Int}}},
+    components,
+    weights,
+    ::Val{expression_rank},
+) where {expression_rank}
+    merged_indices, column_maps = _merge_component_indices(
+        indices, components, Val(expression_rank)
+    )
+    mixed_values = _allocate_merged(size(values[first(components)], 1), merged_indices)
+    for i in eachindex(components, weights)
+        component_id = components[i]
+        _add_mapped!(
+            mixed_values, values[component_id], column_maps[component_id], weights[i]
+        )
+    end
+
+    return mixed_values, _merged_to_indices(merged_indices)
+end
+
+"""
+    _expand_to_merged(
+        values_1::AbstractArray{Float64},
+        indices_1::Vector{Vector{Int}},
+        values_2::AbstractArray{Float64},
+        indices_2::Vector{Vector{Int}},
+        ::Val{expression_rank},
+    ) where {expression_rank}
+
+Expands two evaluations with (possibly) different indices to the union of their indices, so
+that they can be combined entry-wise. Entries of an evaluation outside its own indices are
+zero.
+
+# Arguments
+- `values_1::AbstractArray{Float64}`, `values_2::AbstractArray{Float64}`: The evaluations.
+- `indices_1::Vector{Vector{Int}}`, `indices_2::Vector{Vector{Int}}`: The indices of each
+    evaluation, per expression.
+- `::Val{expression_rank}`: The number of expressions, constructed from a type parameter.
+
+# Returns
+- `::Array{Float64, 1 + expression_rank}`: The expanded `values_1`.
+- `::Array{Float64, 1 + expression_rank}`: The expanded `values_2`.
+- `::Vector{Vector{Int}}`: The merged indices, per expression.
+"""
+function _expand_to_merged(
+    values_1::AbstractArray{Float64},
+    indices_1::Vector{Vector{Int}},
+    values_2::AbstractArray{Float64},
+    indices_2::Vector{Vector{Int}},
+    ::Val{expression_rank},
+) where {expression_rank}
+    merged_indices, column_maps = _merge_component_indices(
+        [indices_1, indices_2], (1, 2), Val(expression_rank)
+    )
+    num_points = size(values_1, 1)
+    expanded_1 = _allocate_merged(num_points, merged_indices)
+    _add_mapped!(expanded_1, values_1, column_maps[1], 1.0)
+    expanded_2 = _allocate_merged(num_points, merged_indices)
+    _add_mapped!(expanded_2, values_2, column_maps[2], 1.0)
+
+    return expanded_1, expanded_2, _merged_to_indices(merged_indices)
+end

@@ -45,6 +45,11 @@ n_evaluation_points = Points.get_num_points(ξ_evaluation)
 # Element where to evaluate
 element_idx = 1
 
+# Global basis indices of component `component_id` of `space` on the element.
+function get_component_indices(space, component_id)
+    return collect(FunctionSpaces.get_basis_indices(space, element_idx, component_id))
+end
+
 # 0-forms
 zero_form_space_eval, zero_form_space_idx = Forms.evaluate(
     zero_form_space_2d, element_idx, ξ_evaluation
@@ -57,8 +62,8 @@ n_active_basis_0_form = FunctionSpaces.get_num_basis(TP_Space_2d, element_idx)
 @test size(zero_form_space_eval) == (1,)
 # Check that we get a matrix with the correct dimensions for the single component.
 @test size(zero_form_space_eval[1]) == (n_evaluation_points, n_active_basis_0_form)
-# Single vector component with as many indices as the active basis in the element.
-@test size(zero_form_space_idx[1]) == (n_active_basis_0_form,)
+# Single component with a single expression with the active basis in the element.
+@test zero_form_space_idx == [[get_component_indices(TP_Space_2d, 1)]]
 
 # 1-forms
 one_form_space_eval, one_form_space_idx = Forms.evaluate(
@@ -71,19 +76,18 @@ n_nonzero_basis_in_xi_1 = FunctionSpaces.get_num_basis(TP_Space_2d, element_idx)
 n_nonzero_basis_in_xi_2 = n_nonzero_basis_in_xi_1  # Because the component spaces are equal.
 
 @test size(one_form_space_eval) == (2,)  # check that we get two components
-@test all([
-    size(form_component) == (n_evaluation_points, n_active_basis_1_form) for
-    form_component in one_form_space_eval
-])  # check that we get a matrix with the correct dimensions per component
-# We should get one single vector with as many indices as the active basis in the element
-@test size(one_form_space_idx[1]) == (n_active_basis_1_form,)
-
-# check that for the first component the second set of basis are all zero (because the
-# underlying space is a direct sum space)
-@test sum(abs.(one_form_space_eval[1][:, (n_nonzero_basis_in_xi_1 + 1):end])) == 0.0
-# check that for the second component the first set of basis are all zero (because the
-# underlying space is a direct sum space)
-@test sum(abs.(one_form_space_eval[2][:, 1:n_nonzero_basis_in_xi_2])) == 0.0
+# Each component is only evaluated on the basis functions of its own component space,
+# because the underlying space is a direct sum space.
+@test size(one_form_space_eval[1]) == (n_evaluation_points, n_nonzero_basis_in_xi_1)
+@test size(one_form_space_eval[2]) == (n_evaluation_points, n_nonzero_basis_in_xi_2)
+@test one_form_space_idx == [
+    [get_component_indices(dsTP_1_form_2d, 1)], [get_component_indices(dsTP_1_form_2d, 2)]
+]
+# Together, the components contain all the active basis in the element.
+@test sort(vcat(one_form_space_idx[1][1], one_form_space_idx[2][1])) ==
+    sort(collect(FunctionSpaces.get_basis_indices(dsTP_1_form_2d, element_idx)))
+@test length(one_form_space_idx[1][1]) + length(one_form_space_idx[2][1]) ==
+    n_active_basis_1_form
 
 # top-forms
 top_form_space_eval, top_form_space_idx = Forms.evaluate(
@@ -97,7 +101,7 @@ n_active_basis_top_form = FunctionSpaces.get_num_basis(TP_Space_2d, element_idx)
 # check that we get a matrix with the correct dimensions for the single component
 @test size(top_form_space_eval[1]) == (n_evaluation_points, n_active_basis_top_form)
 # check that we get one single vector with as many indices as the active basis in the element
-@test size(top_form_space_idx[1]) == (n_active_basis_top_form,)
+@test top_form_space_idx == [[get_component_indices(TP_Space_2d, 1)]]
 
 # Exterior derivative
 
@@ -110,9 +114,9 @@ d_zero_form_space_eval, d_zero_form_space_idx = Forms.evaluate(
 # Test output
 n_active_basis_0_form = FunctionSpaces.get_num_basis(TP_Space_2d, element_idx)
 
-@test size(d_zero_form_space_eval) == (2,)  # check that we get three components (3D)
-# check that we get one single vector with as many indices as the active basis in the element
-@test size(d_zero_form_space_idx[1]) == (n_active_basis_0_form,)
+@test size(d_zero_form_space_eval) == (2,)  # check that we get two components (2D)
+# All components of the gradient are spanned by the basis of the 0-form.
+@test d_zero_form_space_idx == [[get_component_indices(TP_Space_2d, 1)] for _ in 1:2]
 @test all([
     size(form_component) == (n_evaluation_points, n_active_basis_0_form) for
     form_component in d_zero_form_space_eval
@@ -128,9 +132,16 @@ d_one_form_space_eval, d_one_form_space_idx = Forms.evaluate(
 # Test output
 n_active_basis_1_form = FunctionSpaces.get_num_basis(dsTP_1_form_2d, element_idx)
 
-@test size(d_one_form_space_eval) == (1,)  # check that we get three components (3D)
-# check that we get one single vector with as many indices as the active basis in the element
-@test size(d_one_form_space_idx[1]) == (n_active_basis_1_form,)
+@test size(d_one_form_space_eval) == (1,)  # check that we get one component (2D)
+# The curl mixes both components, so it is evaluated on the union of their indices.
+@test d_one_form_space_idx == [[
+    sort(
+        union(
+            get_component_indices(dsTP_1_form_2d, 1),
+            get_component_indices(dsTP_1_form_2d, 2),
+        ),
+    ),
+]]
 @test all([
     size(form_component) == (n_evaluation_points, n_active_basis_1_form) for
     form_component in d_one_form_space_eval
@@ -211,7 +222,7 @@ n_active_basis_0_form = FunctionSpaces.get_num_basis(dsTP_0_form_3d, element_idx
 
 @test size(zero_form_space_eval) == (1,)  # check that we get one components
 @test size(zero_form_space_eval[1]) == (n_evaluation_points, n_active_basis_0_form)   # check that we get a matrix with the correct dimensions for the single component
-@test size(zero_form_space_idx[1]) == (n_active_basis_0_form,) # check that we get one single vector with as many indices as the active basis in the element
+@test zero_form_space_idx == [[get_component_indices(dsTP_0_form_3d, 1)]]
 
 # 1-forms
 one_form_space_eval, one_form_space_idx = Forms.evaluate(
@@ -225,16 +236,17 @@ n_nonzero_basis_in_xi_2 = n_nonzero_basis_in_xi_1  # because we are using the sa
 n_nonzero_basis_in_xi_3 = n_nonzero_basis_in_xi_1  # because we are using the same spaces in the direct sum
 
 @test size(one_form_space_eval) == (3,)  # check that we get three components (3D)
+# Each component is only evaluated on the basis functions of its own component space,
+# because the underlying space is a direct sum space.
 @test all([
-    size(form_component) == (n_evaluation_points, n_active_basis_1_form) for
+    size(form_component) == (n_evaluation_points, n_nonzero_basis_in_xi_1) for
     form_component in one_form_space_eval
-])  # check that we get a matrix with the correct dimensions per component
-@test size(one_form_space_idx[1]) == (n_active_basis_1_form,)  # check that we get one single vector with as many indices as the active basis in the element
-
-@test sum(abs.(one_form_space_eval[1][:, (n_nonzero_basis_in_xi_1 + 1):end])) == 0.0  # check that for the first component the second  and third sets of basis are all zero (because the underlying space is a direct sum space)
-@test sum(abs.(one_form_space_eval[2][:, 1:n_nonzero_basis_in_xi_1])) == 0.0  # check that for the second component the first and third sets of basis are all zero (because the underlying space is a direct sum space)
-@test sum(abs.(one_form_space_eval[2][:, (2 * n_nonzero_basis_in_xi_1 + 1):end])) == 0.0
-@test sum(abs.(one_form_space_eval[3][:, 1:(2 * n_nonzero_basis_in_xi_1)])) == 0.0  # check that for the third component the first  and second sets of basis are all zero (because the underlying space is a direct sum space)
+])
+@test one_form_space_idx ==
+    [[get_component_indices(dsTP_1_form_3d, component_id)] for component_id in 1:3]
+@test sort(reduce(vcat, (only(idx) for idx in one_form_space_idx))) ==
+    sort(collect(FunctionSpaces.get_basis_indices(dsTP_1_form_3d, element_idx)))
+@test sum(length ∘ only, one_form_space_idx) == n_active_basis_1_form
 
 # 2-forms
 two_form_space_eval, two_form_space_idx = Forms.evaluate(
@@ -248,16 +260,15 @@ n_nonzero_basis_in_xi_2 = n_nonzero_basis_in_xi_1  # because we are using the sa
 n_nonzero_basis_in_xi_3 = n_nonzero_basis_in_xi_1  # because we are using the same spaces in the direct sum
 
 @test size(two_form_space_eval) == (3,)  # check that we get three components (3D)
+# Each component is only evaluated on the basis functions of its own component space,
+# because the underlying space is a direct sum space.
 @test all([
-    size(form_component) == (n_evaluation_points, n_active_basis_1_form) for
+    size(form_component) == (n_evaluation_points, n_nonzero_basis_in_xi_1) for
     form_component in two_form_space_eval
-])  # check that we get a matrix with the correct dimensions per component
-@test size(two_form_space_idx[1]) == (n_active_basis_2_form,)  # check that we get one single vector with as many indices as the active basis in the element
-
-@test sum(abs.(two_form_space_eval[1][:, (n_nonzero_basis_in_xi_1 + 1):end])) == 0.0  # check that for the first component the second  and third sets of basis are all zero (because the underlying space is a direct sum space)
-@test sum(abs.(two_form_space_eval[2][:, 1:n_nonzero_basis_in_xi_1])) == 0.0  # check that for the second component the first and third sets of basis are all zero (because the underlying space is a direct sum space)
-@test sum(abs.(two_form_space_eval[2][:, (2 * n_nonzero_basis_in_xi_1 + 1):end])) == 0.0
-@test sum(abs.(two_form_space_eval[3][:, 1:(2 * n_nonzero_basis_in_xi_1)])) == 0.0  # check that for the third component the first  and second sets of basis are all zero (because the underlying space is a direct sum space)
+])
+@test two_form_space_idx ==
+    [[get_component_indices(dsTP_2_form_3d, component_id)] for component_id in 1:3]
+@test sum(length ∘ only, two_form_space_idx) == n_active_basis_2_form
 
 # top-forms
 top_form_space_eval, top_form_space_idx = Forms.evaluate(
@@ -269,7 +280,7 @@ n_active_basis_top_form = FunctionSpaces.get_num_basis(dsTP_top_form_3d, element
 
 @test size(top_form_space_eval) == (1,)  # check that we get one components
 @test size(top_form_space_eval[1]) == (n_evaluation_points, n_active_basis_top_form)   # check that we get a matrix with the correct dimensions for the single component
-@test size(top_form_space_idx[1]) == (n_active_basis_top_form,) # check that we get one single vector with as many indices as the active basis in the element
+@test top_form_space_idx == [[get_component_indices(dsTP_top_form_3d, 1)]]
 
 # Exterior derivative
 
@@ -283,7 +294,8 @@ d_zero_form_space_eval, d_zero_form_space_idx = Forms.evaluate(
 n_active_basis_0_form = FunctionSpaces.get_num_basis(dsTP_0_form_3d, element_idx)
 
 @test size(d_zero_form_space_eval) == (3,)  # check that we get three components (3D)
-@test size(d_zero_form_space_idx[1]) == (n_active_basis_0_form,)  # check that we get one single vector with as many indices as the active basis in the element
+# All components of the gradient are spanned by the basis of the 0-form.
+@test d_zero_form_space_idx == [[get_component_indices(dsTP_0_form_3d, 1)] for _ in 1:3]
 @test all([
     size(form_component) == (n_evaluation_points, n_active_basis_0_form) for
     form_component in d_zero_form_space_eval
@@ -300,11 +312,18 @@ d_one_form_space_eval, d_one_form_space_idx = Forms.evaluate(
 n_active_basis_1_form = FunctionSpaces.get_num_basis(dsTP_1_form_3d, element_idx)
 
 @test size(d_one_form_space_eval) == (3,)  # check that we get three components (3D)
-@test size(d_one_form_space_idx[1]) == (n_active_basis_1_form,)  # check that we get one single vector with as many indices as the active basis in the element
-@test all([
-    size(form_component) == (n_evaluation_points, n_active_basis_1_form) for
-    form_component in d_one_form_space_eval
-])  # check that we get a matrix with the correct dimensions per component
+# Component i of the curl mixes components j and k of the 1-form, with (i, j, k) a cyclic
+# permutation of (1, 2, 3), so it is evaluated on the union of their indices.
+for (i, j, k) in ((1, 2, 3), (2, 3, 1), (3, 1, 2))
+    merged_indices = sort(
+        union(
+            get_component_indices(dsTP_1_form_3d, j),
+            get_component_indices(dsTP_1_form_3d, k),
+        ),
+    )
+    @test d_one_form_space_idx[i] == [merged_indices]
+    @test size(d_one_form_space_eval[i]) == (n_evaluation_points, length(merged_indices))
+end
 @test isapprox(sum(sum.(d_zero_form_space_eval)), 0.0, atol=1e-12)
 
 # 2-forms
@@ -316,8 +335,10 @@ d_two_form_space_eval, d_two_form_space_idx = Forms.evaluate(
 # Test output
 n_active_basis_two_form = FunctionSpaces.get_num_basis(dsTP_2_form_3d, element_idx)
 
-@test size(d_two_form_space_eval) == (1,)  # check that we get three components (3D)
-@test size(d_two_form_space_idx[1]) == (n_active_basis_2_form,)  # check that we get one single vector with as many indices as the active basis in the element
+@test size(d_two_form_space_eval) == (1,)  # check that we get one component (3D)
+# The divergence mixes all components, so it is evaluated on all active basis functions.
+@test d_two_form_space_idx ==
+    [[sort(collect(FunctionSpaces.get_basis_indices(dsTP_2_form_3d, element_idx)))]]
 @test all([
     size(form_component) == (n_evaluation_points, n_active_basis_2_form) for
     form_component in d_two_form_space_eval

@@ -241,6 +241,120 @@ function test_combinations_3d(complex, q_rule)
     return nothing
 end
 
+# Oriented basis of the components of a `form_rank`-form, in the order used by Mantis.
+function get_component_basis(manifold_dim::Int, form_rank::Int)
+    if form_rank == 0
+        return [Int[]]
+    elseif form_rank == manifold_dim
+        return [collect(1:manifold_dim)]
+    elseif form_rank == 1
+        return [[i] for i in 1:manifold_dim]
+    end
+
+    # 2-forms in 3D: dξ²∧dξ³, dξ³∧dξ¹, dξ¹∧dξ².
+    return [[2, 3], [3, 1], [1, 2]]
+end
+
+# Sign of the permutation that sorts `indices` (which must be distinct).
+function get_permutation_sign(indices::Vector{Int})
+    num_inversions = 0
+    for i in eachindex(indices), j in eachindex(indices)
+        if i < j && indices[i] > indices[j]
+            num_inversions += 1
+        end
+    end
+
+    return iseven(num_inversions) ? 1 : -1
+end
+
+# Wedge of the evaluations of a `form_rank_1`-form and a `form_rank_2`-form, computed
+# independently of `Forms.Wedge` from dξᴵ ∧ dξᴶ = sign(I, J) dξᴷ, with K the sorted I ∪ J.
+function compute_reference_wedge(
+    α_eval, β_eval, manifold_dim::Int, form_rank_1::Int, form_rank_2::Int
+)
+    basis_1 = get_component_basis(manifold_dim, form_rank_1)
+    basis_2 = get_component_basis(manifold_dim, form_rank_2)
+    basis_wedge = get_component_basis(manifold_dim, form_rank_1 + form_rank_2)
+    wedge_eval = [zeros(length(α_eval[1])) for _ in basis_wedge]
+    for (i, I) in enumerate(basis_1), (j, J) in enumerate(basis_2)
+        if !isempty(intersect(I, J))
+            continue
+        end
+
+        K = vcat(I, J)
+        k = findfirst(B -> sort(B) == sort(K), basis_wedge)
+        sign = get_permutation_sign(K) * get_permutation_sign(basis_wedge[k])
+        wedge_eval[k] .+= sign .* α_eval[i] .* β_eval[j]
+    end
+
+    return wedge_eval
+end
+
+# Contracts every basis dimension `e` of a component evaluation with the coefficients of the
+# basis functions given by `indices[e]`.
+function contract_with_coefficients(values, indices, coefficients)
+    expression_rank = length(coefficients)
+    if expression_rank == 0
+        return vec(values)
+    end
+
+    result = zeros(size(values, 1))
+    for basis_id in CartesianIndices(size(values)[2:end])
+        weight = prod(coefficients[e][indices[e][basis_id[e]]] for e in 1:expression_rank)
+        result .+= weight .* values[:, Tuple(basis_id)...]
+    end
+
+    return result
+end
+
+# Checks the values of the wedge of all combinations of form ranks against a reference
+# computed from form fields. Form spaces are checked by contracting their evaluation with
+# the coefficients of the fields, which also checks the indices of every component.
+function test_wedge_values(
+    complex, dΩ::Q
+) where {manifold_dim, Q <: Quadrature.AbstractGlobalQuadratureRule{manifold_dim}}
+    quad_nodes = Quadrature.get_nodes(Quadrature.get_element_quadrature_rule(dΩ, 1))
+    num_elements = Forms.get_num_elements(complex[1])
+    for form_rank_1 in 0:manifold_dim, form_rank_2 in 0:(manifold_dim - form_rank_1)
+        ϵ¹ = complex[form_rank_1 + 1]
+        ϵ² = complex[form_rank_2 + 1]
+        coefficients_1 = sin.(1:Forms.get_num_basis(ϵ¹))
+        coefficients_2 = cos.(1:Forms.get_num_basis(ϵ²))
+        α = Forms.FormField(ϵ¹, coefficients_1, "α")
+        β = Forms.FormField(ϵ², coefficients_2, "β")
+        wedges = (
+            (Forms.Wedge(α, β), ()),
+            (Forms.Wedge(ϵ¹, β), (coefficients_1,)),
+            (Forms.Wedge(α, ϵ²), (coefficients_2,)),
+            (Forms.Wedge(ϵ¹, ϵ²), (coefficients_1, coefficients_2)),
+        )
+        for element_id in (1, num_elements)
+            α_eval, _ = Forms.evaluate(α, element_id, quad_nodes)
+            β_eval, _ = Forms.evaluate(β, element_id, quad_nodes)
+            reference = compute_reference_wedge(
+                α_eval, β_eval, manifold_dim, form_rank_1, form_rank_2
+            )
+            for (wedge, coefficients) in wedges
+                wedge_eval, wedge_indices = Forms.evaluate(wedge, element_id, quad_nodes)
+                @test length(wedge_eval) == length(reference)
+                for component_id in eachindex(reference)
+                    @test isapprox(
+                        contract_with_coefficients(
+                            wedge_eval[component_id],
+                            wedge_indices[component_id],
+                            coefficients,
+                        ),
+                        reference[component_id];
+                        atol=1e-10,
+                    )
+                end
+            end
+        end
+    end
+
+    return nothing
+end
+
 ############################################################################################
 ##                                       Variables setup                                  ##
 ############################################################################################
@@ -282,11 +396,13 @@ dΩ₂ = Quadrature.StandardQuadrature(
     @testset "CartesianGeometry" begin
         test_inner_prod_equality(cart_complex_2d, dΩ₂)
         test_combinations_2d(cart_complex_2d, dΩ₂)
+        test_wedge_values(cart_complex_2d, dΩ₂)
     end
 
     @testset "MappedGeometry" begin
         test_inner_prod_equality(curv_complex_2d, dΩ₂)
         test_combinations_2d(curv_complex_2d, dΩ₂)
+        test_wedge_values(curv_complex_2d, dΩ₂)
     end
 end
 
@@ -344,11 +460,13 @@ dΩ₃ = Quadrature.StandardQuadrature(
     @testset "CartesianGeometry" begin
         test_inner_prod_equality(cart_complex_3d, dΩ₃)
         test_combinations_3d(cart_complex_3d, dΩ₃)
+        test_wedge_values(cart_complex_3d, dΩ₃)
     end
 
     @testset "MappedGeometry" begin
         test_inner_prod_equality(curv_complex_3d, dΩ₃)
         test_combinations_3d(curv_complex_3d, dΩ₃)
+        test_wedge_values(curv_complex_3d, dΩ₃)
     end
 end
 

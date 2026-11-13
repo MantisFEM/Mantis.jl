@@ -13,5 +13,8 @@ end
 @testset "ConstantFormSpaces" verbose = true begin
     include("ConstantFormSpaceTests.jl")
 end
+@testset "ComponentMixing" verbose = true begin
+    include("ComponentMixingTests.jl")
+end
 
 end

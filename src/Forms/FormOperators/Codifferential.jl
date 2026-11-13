@@ -155,10 +155,11 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 function _evaluate_codifferential(
@@ -176,10 +177,11 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 ############################################################################################
@@ -196,7 +198,7 @@ function _evaluate_codifferential(
     )
     T = eltype(fem_evals[1][1][1][1])
     # n_coderivative_form_components = 1
-    n_basis_functions = length(form_basis_indices[1])
+    n_basis_functions = length(form_basis_indices[1][1])
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
     codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
@@ -233,11 +235,10 @@ function _evaluate_codifferential(
 ) where {FS <: FormSpace{1, 0}, F <: ExteriorDerivative{1, 1, 1, FS}}
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, we do not have to scale the derivatives.
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(
-        get_fe_space(form_space), element_id, xi, 2
-    )
+    fem_evals = FunctionSpaces.evaluate(get_fe_space(form_space), element_id, xi, 2)
+    form_basis_indices = _get_form_basis_indices(get_form(form_space), element_id)
     T = eltype(fem_evals[1][1][1][1])
-    n_basis_functions = length(form_basis_indices)
+    n_basis_functions = length(form_basis_indices[1][1])
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
     codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
@@ -267,7 +268,7 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, [form_basis_indices]
+    return codiff_eval, form_basis_indices
 end
 
 # 2D 1-forms.
@@ -278,11 +279,7 @@ function _evaluate_codifferential(
     fem_evals, form_basis_indices = _evaluate_form_in_canonical_coordinates(
         form_space, element_id, xi, 1
     )
-    T = eltype(fem_evals[1][1][1][1])
-    n_basis_functions = length(form_basis_indices[1])
     n_evaluation_points = Points.get_num_points(xi)
-    # Preallocate memory for output array
-    codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
     # Compute the metric terms, including derivative of the metric.
     J, inv_g, g, sqrt_g, (dgdu, dgdv), (dinv_g_du, dinv_g_dv), (dsqrt_g_du, dsqrt_g_dv), Hs = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
@@ -291,33 +288,46 @@ function _evaluate_codifferential(
     # α^1 = α¹ du + α² dv
     # d*α¹ = β⁰
     # sign: (-1)^{n(k+1)+1}, n = manifold_dim, k = form_rank. 1-forms -> always -1.
-    sign = -one(T)
+    # Grouping the terms per component αᶜ gives
+    # δα¹ = sign * ∑ᶜ [∂u αᶜ g¹ᶜ + ∂v αᶜ g²ᶜ + αᶜ (∂u g¹ᶜ + ∂v g²ᶜ + (g¹ᶜ ∂u√g + g²ᶜ ∂v√g)/√g)].
+    sign = -1.0
     idx_du = FunctionSpaces.get_derivative_idx((1, 0))
     idx_dv = FunctionSpaces.get_derivative_idx((0, 1))
-    for b in axes(codiff_eval[1], 2)
-        for i in axes(codiff_eval[1], 1)
-            one_div_sqrtg = one(T) / sqrt_g[i]
-            codiff_eval[1][i, b] =
+    merged_indices, column_maps = _merge_component_indices(
+        form_basis_indices, (1, 2), Val(1)
+    )
+    codiff_eval = _allocate_merged(n_evaluation_points, merged_indices)
+    value_weights = Vector{Float64}(undef, n_evaluation_points)
+    du_weights = Vector{Float64}(undef, n_evaluation_points)
+    dv_weights = Vector{Float64}(undef, n_evaluation_points)
+    for component_id in 1:2
+        for i in 1:n_evaluation_points
+            value_weights[i] =
                 sign * (
-                    fem_evals[2][idx_du][1][i, b] * inv_g[i][1, 1] +  # ∂u α¹ * g¹¹
-                    fem_evals[1][1][1][i, b] * dinv_g_du[i][1, 1] +  # α¹ * ∂u g¹¹
-                    fem_evals[2][idx_du][2][i, b] * inv_g[i][1, 2] +  # ∂u α² * g¹²
-                    fem_evals[1][1][2][i, b] * dinv_g_du[i][1, 2] +  # α² * ∂u g¹²
-                    fem_evals[2][idx_dv][1][i, b] * inv_g[i][2, 1] +  # ∂v α¹ * g²¹
-                    fem_evals[1][1][1][i, b] * dinv_g_dv[i][2, 1] +  # α¹ * ∂v g²¹
-                    fem_evals[2][idx_dv][2][i, b] * inv_g[i][2, 2] +  # ∂v α² * g²²
-                    fem_evals[1][1][2][i, b] * dinv_g_dv[i][2, 2] +  # α² * ∂v g²²
-                    one_div_sqrtg * (
-                        fem_evals[1][1][1][i, b] * inv_g[i][1, 1] * dsqrt_g_du[i] +  # α¹ * g¹¹ * ∂u sqrt(g)
-                        fem_evals[1][1][2][i, b] * inv_g[i][1, 2] * dsqrt_g_du[i] +  # α² * g¹² * ∂u sqrt(g)
-                        fem_evals[1][1][1][i, b] * inv_g[i][2, 1] * dsqrt_g_dv[i] +  # α¹ * g²¹ * ∂v sqrt(g)
-                        fem_evals[1][1][2][i, b] * inv_g[i][2, 2] * dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
-                    )
+                    dinv_g_du[i][1, component_id] +
+                    dinv_g_dv[i][2, component_id] +
+                    (
+                        inv_g[i][1, component_id] * dsqrt_g_du[i] +
+                        inv_g[i][2, component_id] * dsqrt_g_dv[i]
+                    ) / sqrt_g[i]
                 )
+            du_weights[i] = sign * inv_g[i][1, component_id]
+            dv_weights[i] = sign * inv_g[i][2, component_id]
         end
+
+        component_map = column_maps[component_id]
+        _add_mapped!(
+            codiff_eval, fem_evals[1][1][component_id], component_map, value_weights
+        )
+        _add_mapped!(
+            codiff_eval, fem_evals[2][idx_du][component_id], component_map, du_weights
+        )
+        _add_mapped!(
+            codiff_eval, fem_evals[2][idx_dv][component_id], component_map, dv_weights
+        )
     end
 
-    return codiff_eval, form_basis_indices
+    return [codiff_eval], [_merged_to_indices(merged_indices)]
 end
 
 # Specialised version for the exterior derivative of 0-forms to 1-forms in 2D.
@@ -330,11 +340,10 @@ function _evaluate_codifferential(
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, the basis functions we do not have to
     # scale the derivatives.
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(
-        get_fe_space(form_space), element_id, xi, 2
-    )
+    fem_evals = FunctionSpaces.evaluate(get_fe_space(form_space), element_id, xi, 2)
+    form_basis_indices = _get_form_basis_indices(get_form(form_space), element_id)
     T = eltype(fem_evals[1][1][1][1])
-    n_basis_functions = length(form_basis_indices)
+    n_basis_functions = length(form_basis_indices[1][1])
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
     codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
@@ -375,5 +384,5 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, [form_basis_indices]
+    return codiff_eval, form_basis_indices
 end

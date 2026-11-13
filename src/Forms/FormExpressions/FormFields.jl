@@ -194,12 +194,10 @@ function evaluate(
     for form_component_idx in 1:n_form_components
         form_eval[form_component_idx] =
             form_basis_eval[form_component_idx] *
-            form_field_coefficients[form_basis_indices[1]]
+            form_field_coefficients[form_basis_indices[form_component_idx][1]]
     end
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges
-    return form_eval, [[1]]
+    return form_eval, _field_indices(n_form_components)
 end
 
 function evaluate(
@@ -234,9 +232,7 @@ function _evaluate(
     x = Geometry.evaluate(get_geometry(form_field), element_idx, xi)
     form_eval = get_expression(form_field)(x)
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges
-    return form_eval, [[1]]
+    return form_eval, _field_indices(1)
 end
 
 function _evaluate(
@@ -254,9 +250,7 @@ function _evaluate(
     form_eval = get_expression(form_field)(x)
     form_eval[1][:] .*= LinearAlgebra.det.(J)
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow
-    # multi-indexed expressions, like wedges
-    return form_eval, [[1]]
+    return form_eval, _field_indices(1)
 end
 
 function _evaluate(
@@ -286,6 +280,5 @@ function _evaluate(
         form_pullback[j] = a[:, j]
     end
 
-    # We need to wrap form_basis_indices in [] to return a vector of vector to allow multi-indexed expressions, like wedges
-    return form_pullback, [[1]]
+    return form_pullback, _field_indices(manifold_dim)
 end

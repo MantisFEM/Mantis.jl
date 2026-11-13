@@ -218,9 +218,11 @@ function evaluate(
     )
     weights = Quadrature.get_weights(element_quad_rule)
 
-    form_eval, basis_indices = evaluate(
+    form_eval, form_indices = evaluate(
         form, global_element_id, Quadrature.get_nodes(element_quad_rule)
     )
+    # Only top forms are integrated, which have a single component.
+    basis_indices = form_indices[1]
     num_basis_indices = ntuple(i -> length(basis_indices[i]), max(expression_rank, 1))
     integral_vals = zeros(num_basis_indices)
     integral_vals = add_integral_contribution!(
