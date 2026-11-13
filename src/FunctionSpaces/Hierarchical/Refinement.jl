@@ -154,6 +154,13 @@ function refinement_uniform(
     return refinement_uniform(parent, ntuple(_ -> num_subdivions, num_components))
 end
 
+# Resolves the ambiguity with the univariate `AbstractFESpace` method.
+function refinement_uniform(
+    parent::DirectSumSpace{1, num_components}, num_subdivions::NTuple{1, Int}
+) where {num_components}
+    return refinement_uniform(parent, ntuple(_ -> num_subdivions, num_components))
+end
+
 ############################################################################################
 #                                     Degree-Elevation                                     #
 ############################################################################################

@@ -95,6 +95,83 @@ function test_thb(space, expected)
     return nothing
 end
 
+function uniform_scalings(space, num_subdivisions, num_scalings)
+    scaling = FunctionSpaces.scaling_uniform(space, num_subdivisions)
+    num_scalings == 1 && return (scaling,)
+    child_scalings = uniform_scalings(get_child(scaling), num_subdivisions, num_scalings - 1)
+
+    return (scaling, child_scalings...)
+end
+
+# Maps the basis function `basis_id` of the hierarchy of direct sums to the corresponding
+# basis function of the direct sum of hierarchies.
+function direct_sum_basis_id(hier_of_ds, ds_of_hier, basis_id)
+    basis = FunctionSpaces.get_basis(hier_of_ds)
+    level, level_id = Hierarchical.convert_to_level_and_level_id(basis, basis_id)
+    level_offsets = FunctionSpaces.get_dof_offsets(Hierarchical.get_set(basis, level))
+    component_id = findlast(<(level_id), level_offsets)
+    component_space = FunctionSpaces.get_component_spaces(ds_of_hier)[component_id]
+    component_basis_id = Hierarchical.convert_to_hier_id(
+        FunctionSpaces.get_basis(component_space),
+        level,
+        level_id - level_offsets[component_id],
+    )
+
+    return component_basis_id + FunctionSpaces.get_dof_offsets(ds_of_hier, component_id)
+end
+
+# Compares the hierarchy of direct sums of `ds` with the direct sum of the hierarchies of the
+# components of `ds`. Both should match up to a renumbering of the basis functions.
+function test_direct_sum(geometry, ds, num_subdivisions, ::Type{B}) where {B}
+    num_scalings = Geometry.get_num_levels(geometry) - 1
+    hier_of_ds = FunctionSpaces.HierarchicalSpace(
+        geometry,
+        geometry,
+        uniform_scalings(ds, num_subdivisions, num_scalings),
+        SelectionStandard,
+        B,
+    )
+    component_spaces = map(FunctionSpaces.get_component_spaces(ds)) do space
+        scalings = uniform_scalings(space, num_subdivisions, num_scalings)
+
+        return FunctionSpaces.HierarchicalSpace(
+            geometry, geometry, scalings, SelectionStandard, B
+        )
+    end
+    ds_of_hier = FunctionSpaces.DirectSumSpace(component_spaces)
+
+    num_basis = FunctionSpaces.get_num_basis(hier_of_ds)
+    @test num_basis == FunctionSpaces.get_num_basis(ds_of_hier)
+    basis_map = map(b -> direct_sum_basis_id(hier_of_ds, ds_of_hier, b), 1:num_basis)
+    @test sort(basis_map) == 1:num_basis
+    for e in 1:FunctionSpaces.get_num_elements(hier_of_ds)
+        @test sort(basis_map[get_basis_indices(hier_of_ds, e)]) ==
+            sort(get_basis_indices(ds_of_hier, e))
+        level, level_id = Geometry.convert_to_level_and_level_id(geometry, e)
+        level_space = Hierarchical.get_set(FunctionSpaces.get_basis(hier_of_ds), level)
+        for (c, component_space) in enumerate(component_spaces)
+            basis_ids = basis_map[get_basis_indices(hier_of_ds, e, c)]
+            expected_basis_ids = get_basis_indices(ds_of_hier, e, c)
+            @test sort(basis_ids) == sort(expected_basis_ids)
+            perm = indexin(expected_basis_ids, basis_ids)
+            # The level-wise direct sums evaluate their component spaces, so they have
+            # identity extraction blocks, and the extraction of the level-wise component
+            # space is missing.
+            level_coeffs = get_extraction_coefficients(
+                FunctionSpaces.get_component_spaces(level_space)[c], level_id
+            )
+            @test level_coeffs * get_extraction_coefficients(hier_of_ds, e, c, c)[:, perm] ≈
+                get_extraction_coefficients(component_space, e)
+        end
+    end
+
+    for b in 1:num_basis
+        @test sort(get_support(hier_of_ds, b)) == sort(get_support(ds_of_hier, basis_map[b]))
+    end
+
+    return nothing
+end
+
 ############################################################################################
 #                                          Tests                                           #
 ############################################################################################
@@ -494,6 +571,72 @@ end
             # )
             @test_skip test_thb(space, DATA[:uni_2d_p2_thb_polar_vector])
             # if PLOT; plot(space, "polar-vector-thb"); end
+        end
+    end
+end
+
+@testset "Direct Sum <-> Hierarchical Correspondence" verbose = true begin
+    @testset "Uniform 1D" verbose = true begin
+        # Level Geometries
+        geo_l1 = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5),))
+        geo_scal_1 = Geometry.scaling_uniform(geo_l1, 2)
+        geo_scal_2 = Geometry.scaling_uniform(get_child(geo_scal_1), 2)
+
+        # Same geometries as in the "Uniform 1D" tests.
+        active_1 = ActiveInfo([[1, 2], [5, 6], [13, 14, 15, 16]])
+        active_2 = ActiveInfo([[1, 2], [6], [9, 10, 13, 14, 15, 16]])
+
+        # FESpaces
+        bsp_p1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (1,), (0,))
+        bsp_p2 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (2,), (1,))
+        ds = FunctionSpaces.DirectSumSpace((bsp_p1, bsp_p2))
+
+        for (g, active) in enumerate((active_1, active_2)), B in (HB, THB)
+            @testset "$(nameof(B)) Geometry $g" verbose = true begin
+                hgeo = Geometry.HierarchicalGeometry(
+                    TreeHierarchy(active, geo_scal_1, geo_scal_2)
+                )
+                test_direct_sum(hgeo, ds, (2,), B)
+            end
+        end
+    end
+
+    @testset "Uniform 2D" verbose = true begin
+        # FESpaces
+        num_els = (5, 5)
+        function tp(p)
+            return FunctionSpaces.TensorProductSpace(
+                ntuple(
+                    d -> FunctionSpaces.create_bspline_space(
+                        (0.0,), (1.0,), (num_els[d],), (p,), (p - 1,)
+                    ),
+                    2,
+                ),
+            )
+        end
+        ds = FunctionSpaces.DirectSumSpace((tp(2), tp(3)))
+
+        # Level Geometries
+        geo_l1 = FunctionSpaces.get_parametric_geometry(ds)
+        geo_l2 = FunctionSpaces.get_parametric_geometry(
+            FunctionSpaces.refinement_uniform(ds, (2, 2))
+        )
+        geo_scal_1 = Geometry.scaling_uniform(geo_l1, geo_l2, (2, 2))
+
+        # Same geometry as in the "Uniform 2D" tests.
+        l1_active = collect((num_els[1] + 1):(num_els[1] * 4))
+        l2_active = mapreduce(
+            e -> collect(get_children(geo_scal_1, e)),
+            vcat,
+            setdiff(1:Geometry.get_num_elements(geo_l1), l1_active),
+        )
+        active_info = ActiveInfo([l1_active, l2_active])
+        hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, geo_scal_1))
+
+        for B in (HB, THB)
+            @testset "$(nameof(B))" verbose = true begin
+                test_direct_sum(hgeo, ds, (2, 2), B)
+            end
         end
     end
 end
