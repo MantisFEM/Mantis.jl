@@ -209,4 +209,49 @@ end
     @test sort.(Hierarchical.get_level_ids(basis)) == [[1, 2, 4, 5], [5, 6], [6, 7, 8]]
 end
 
+@testset "Direct sum" verbose = true begin
+    # Geometries
+    geo_l1 = Geometry.CartesianGeometry((LinRange(0.0, 1.0, 5),))
+    geo_scal_1 = Geometry.scaling_uniform(geo_l1, 2)
+    geo_scal_2 = Geometry.scaling_uniform(Hierarchical.get_child(geo_scal_1), 2)
+    active = Hierarchical.ActiveInfo([[1, 4], [5, 6], [5, 6, 7, 8]])
+    hierarchy = Hierarchical.TreeHierarchy(active, geo_scal_1, geo_scal_2)
+    hgeo = Geometry.HierarchicalGeometry(hierarchy)
+
+    # FESpaces
+    function uniform_scalings(space, num_subdivisions)
+        scal_1 = FunctionSpaces.scaling_uniform(space, num_subdivisions)
+        scal_2 = FunctionSpaces.scaling_uniform(Hierarchical.get_child(scal_1), num_subdivisions)
+
+        return (scal_1, scal_2)
+    end
+
+    bsp_p1 = FunctionSpaces.create_bspline_space(0.0, 1.0, 4, 1, 0)
+    bsp_p2 = FunctionSpaces.create_bspline_space(0.0, 1.0, 4, 2, 1)
+    ds = FunctionSpaces.DirectSumSpace((bsp_p1, bsp_p2))
+    ds_scalings = uniform_scalings(ds, (2,))
+    component_scalings = map(s -> uniform_scalings(s, 2), (bsp_p1, bsp_p2))
+
+    # The active basis of the hierarchy of direct sums is that of each component hierarchy,
+    # with the level-wise ids shifted by the offsets of the level-wise direct sum spaces.
+    for selection_type in (SelectionStandard, SelectionSimple)
+        ds_basis = FunctionSpaces.create_basis(hgeo, ds_scalings, selection_type)
+        component_bases = map(
+            scalings -> FunctionSpaces.create_basis(hgeo, scalings, selection_type),
+            component_scalings,
+        )
+        @test Hierarchical.get_num_objects(ds_basis) ==
+            sum(Hierarchical.get_num_objects, component_bases)
+        for l in 1:Hierarchical.get_num_levels(ds_basis)
+            ds_space = Hierarchical.get_set(ds_basis, l)
+            expected = mapreduce(vcat, 1:2) do c
+                level_ids = Hierarchical.get_level_ids(component_bases[c], l)
+
+                return level_ids .+ FunctionSpaces.get_dof_offsets(ds_space, c)
+            end
+            @test sort(Hierarchical.get_level_ids(ds_basis, l)) == sort(expected)
+        end
+    end
+end
+
 end
