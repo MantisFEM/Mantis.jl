@@ -418,11 +418,6 @@ B-spline space of differential `k`‑forms without refinement. All the spaces sh
 elements of the coarsest level by `num_subdivisions`, and is empty until refined with
 [`update_hierarchical_de_rham_complex`](@ref).
 
-!!! note
-    Only complexes where all form spaces have a single component are supported, which
-    currently restricts this routine to `manifold_dim = 1`. Multi-component hierarchical
-    spaces are waiting for the multi-component extraction overhaul.
-
 See also [`create_tensor_product_bspline_de_rham_complex`](@ref) and
 [`FunctionSpaces.HierarchicalSpace`](@ref).
 
@@ -462,49 +457,39 @@ function create_hierarchical_de_rham_complex(
     # next, create all univariate FEM spaces corresponding to directional-one forms
     fem_spaces[2] = map(FunctionSpaces.get_derivative_space, fem_spaces[1])
 
-    # Build the tensor-product FEM spaces of all the forms on the coarsest level.
-    tp_spaces = ntuple(manifold_dim + 1) do k
+    # Build the FEM spaces of all the forms on the coarsest level.
+    level_spaces = ntuple(manifold_dim + 1) do k
         k = k - 1 # Because form ranks range from 0 to manifold_dim.
         # Get k-form basis indices, these also inform the directional degree-deficits.
         k_form_basis_idxs = get_basis_index_combinations(manifold_dim, k)
-        if length(k_form_basis_idxs) > 1
-            # TODO: Waiting for multi-component extraction overhaul.
-            # https://github.com/MantisFEM/Mantis.jl/discussions/421
-            return throw(
-                ArgumentError(
-                    LazyString(
-                        "Hierarchical de Rham complexes with multi-component form ",
-                        "spaces are not supported yet. Got ",
-                        length(k_form_basis_idxs),
-                        " components for the ",
-                        k,
-                        "-forms in ",
-                        manifold_dim,
-                        " dimensions.",
-                    ),
-                ),
-            )
+        num_form_components = length(k_form_basis_idxs)
+        # Generate tuple with all the k-form finite element spaces.
+        k_form_fem_spaces = ntuple(num_form_components) do component
+            # By default, use direction-zero forms...
+            fem_space_idxs = ones(Int, manifold_dim)
+            # ...unless the basis index is present in the k-form basis indices.
+            fem_space_idxs[k_form_basis_idxs[component]] .= 2
+            # Build the tensor-product FEM space from its factor spaces.
+            tp_factor_spaces = ntuple(manifold_dim) do dim
+                return fem_spaces[fem_space_idxs[dim]][dim]
+            end
+
+            return FunctionSpaces.TensorProductSpace(tp_factor_spaces)
+        end
+        if num_form_components == 1
+            return k_form_fem_spaces[1]
         end
 
-        # By default, use direction-zero forms...
-        fem_space_idxs = ones(Int, manifold_dim)
-        # ...unless the basis index is present in the k-form basis indices.
-        fem_space_idxs[first(k_form_basis_idxs)] .= 2
-        # Build the tensor-product FEM space from its factor spaces.
-        tp_factor_spaces = ntuple(manifold_dim) do dim
-            return fem_spaces[fem_space_idxs[dim]][dim]
-        end
-
-        return FunctionSpaces.TensorProductSpace(tp_factor_spaces)
+        return FunctionSpaces.DirectSumSpace(k_form_fem_spaces)
     end
 
     # The spaces of all forms share the same hierarchical geometry. Its coarsest level is
     # fully active, while its finest level is empty until the complex is refined.
     basis_scalings = map(
-        space -> FunctionSpaces.scaling_uniform(space, num_subdivisions), tp_spaces
+        space -> FunctionSpaces.scaling_uniform(space, num_subdivisions), level_spaces
     )
     geometry_scaling = Geometry.scaling_uniform(
-        FunctionSpaces.get_parametric_geometry(first(tp_spaces)),
+        FunctionSpaces.get_parametric_geometry(first(level_spaces)),
         FunctionSpaces.get_parametric_geometry(get_child(first(basis_scalings))),
         num_subdivisions,
     )
@@ -586,13 +571,11 @@ function update_hierarchical_de_rham_complex(
     spaces = map(get_fe_space, complex)
     for space in spaces
         if !(space isa FunctionSpaces.HierarchicalSpace)
-            # TODO: Waiting for multi-component extraction overhaul.
-            # https://github.com/MantisFEM/Mantis.jl/discussions/421
             return throw(
                 ArgumentError(
                     LazyString(
-                        "All the spaces of the complex should be single-component ",
-                        "hierarchical spaces. Got ",
+                        "All the spaces of the complex should be hierarchical spaces. ",
+                        "Got ",
                         Base.typename(typeof(space)).wrapper,
                     ),
                 ),

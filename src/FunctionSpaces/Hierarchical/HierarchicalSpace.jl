@@ -321,6 +321,37 @@ function get_max_local_dim(space::HierarchicalSpace)
     return maximum(e -> length(get_basis_indices(space, e)), 1:get_num_elements(space))
 end
 
+"""
+    get_dof_partition(space::HierarchicalSpace)
+
+Return the d.o.f. partition of `space`, in hierarchical indexing. Each division contains the
+active basis functions of all levels that are in the same division of their level space.
+See [`get_dof_partition(space::AbstractFESpace)`](@ref).
+"""
+function get_dof_partition(space::HierarchicalSpace)
+    basis = get_basis(space)
+    level_partitions = map(get_dof_partition, Hierarchical.get_sets(basis))
+    dof_partition = [
+        [Int[] for _ in eachindex(patch_partition)] for
+        patch_partition in first(level_partitions)
+    ]
+    for (level, level_partition) in enumerate(level_partitions)
+        level_set = Hierarchical.get_level_set(basis, level)
+        for (patch, patch_partition) in enumerate(level_partition)
+            for (division, level_dofs) in enumerate(patch_partition)
+                for level_dof in level_dofs
+                    if level_dof in level_set
+                        hier_id = Hierarchical.convert_to_hier_id(basis, level, level_dof)
+                        push!(dof_partition[patch][division], hier_id)
+                    end
+                end
+            end
+        end
+    end
+
+    return dof_partition
+end
+
 ############################################################################################
 #                                          Update                                          #
 ############################################################################################

@@ -190,7 +190,7 @@ end
         num_steps::Int,
         dorfler_parameter::Float64,
         dΩₑ::Quadrature.StandardQuadrature{manifold_dim},
-        Lchains::Bool,
+        qbox_size::NTuple{manifold_dim, Int},
         eigenfunction::Int,
         num_eig::Int,
         scale_factors::NTuple{manifold_dim, Float64};
@@ -208,7 +208,8 @@ problem for an adaptive loop.
 - `dorfler_parameter::Float64`: The Dörfler marking parameter.
 - `dΩₑ::Quadrature.StandardQuadrature{manifold_dim}`: The quadrature rule to use for the
     error estimation.
-- `Lchains::Bool`: Whether to use L-chains for the refinement.
+- `qbox_size::NTuple{manifold_dim, Int}`: The size of the qboxes, see
+    [`FunctionSpaces.QBoxMarking`](@ref). Use ones to refine without qboxes.
 - `eigenfunction::Int`: The index of the eigenfunction to use for the error estimation.
 - `num_eig::Int`: The number of eigenvalues and eigenfunctions to compute.
 - `scale_factors::NTuple{manifold_dim, Float64}`: The scaling factors for the geometry.
@@ -224,7 +225,7 @@ function solve_maxwell_eig(
     num_steps::Int,
     dorfler_parameter::Float64,
     dΩₑ::Quadrature.StandardQuadrature{manifold_dim},
-    Lchains::Bool,
+    qbox_size::NTuple{manifold_dim, Int},
     eigenfunction::Int,
     num_eig::Int,
     scale_factors::NTuple{manifold_dim, Float64};
@@ -247,29 +248,20 @@ function solve_maxwell_eig(
             println("Solving the problem on step $step...")
         end
 
-        # TODO: Waiting for multi-component extraction overhaul. This adaptive loop still
-        # uses the marking and L-chain routines from the old `AdaptiveRefinement` module,
-        # which is disabled. Once 1-forms can be hierarchical, port it to the new marking
-        # strategies (e.g. `DorflerMarking` and `SupportMarking`), and pass the marked
-        # hierarchical elements to `Forms.update_hierarchical_de_rham_complex`.
-        # https://github.com/MantisFEM/Mantis.jl/discussions/421
-        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
-        dorfler_marking = FunctionSpaces.get_dorfler_marking(
-            err_per_element, dorfler_parameter
+        # Mark the elements with the largest errors, extended by the supports of the
+        # 0-forms on them and completed to whole qboxes.
+        H⁰ = Forms.get_fe_space(complex[1])
+        marking = FunctionSpaces.QBoxMarking(
+            H⁰,
+            qbox_size,
+            FunctionSpaces.SupportMarking(
+                H⁰,
+                err_per_element,
+                FunctionSpaces.DorflerMarking(err_per_element, dorfler_parameter),
+            ),
         )
-        marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            H⁰, dorfler_marking
-        )
-        if Lchains
-            domains = FunctionSpaces.update_domains_with_lchains!(
-                H⁰, marked_elements_per_level
-            )
-            complex = Forms.update_hierarchical_de_rham_complex(complex, domains)
-        else
-            complex = Forms.update_hierarchical_de_rham_complex(
-                complex, marked_elements_per_level
-            )
-        end
+        marked_elements = marking(1:length(err_per_element))
+        complex = Forms.update_hierarchical_de_rham_complex(complex, marked_elements)
 
         geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
