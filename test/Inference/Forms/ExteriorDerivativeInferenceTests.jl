@@ -30,6 +30,7 @@ for form in forms
     @test_opt Forms.get_label(extder)
     @test_opt Forms.get_form(extder)
     @test_opt Forms.get_form_space_tree(extder)
+    @test_opt Forms.get_source_location(extder)
     @test_opt Forms.get_geometry(extder)
     @test_opt Forms.get_num_elements(extder)
     @test_opt Forms.get_estimated_nnz_per_elem(extder)

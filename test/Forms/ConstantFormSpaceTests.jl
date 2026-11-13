@@ -27,6 +27,9 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(
         canonical_qrule, Geometry.get_num_elements(geom)
     )
+    dΩ = Mantis.Quadrature.StandardQuadrature(
+        canonical_qrule, Geometry.get_num_elements(geom)
+    )
 
     # Setup the form spaces, evaluate and check the results
     ξ = Points.TensorProductPoints(
@@ -36,7 +39,9 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
         if form_rank ∉ Set([0, manifold_dim])
             @test_throws ArgumentError Forms.ConstantFormSpace(form_rank, geom, "c")
         else
-            form_space = Forms.ConstantFormSpace(form_rank, geom, "a")
+            form_space = Forms.FormPullback(
+                Forms.ConstantFormSpace(form_rank, geom, "a"), Forms.Canonical
+            )
 
             # Check number of basis functions
             @test Forms.get_num_basis(form_space) == 1
@@ -136,6 +141,9 @@ function test_mapped(num_quad_points_per_dim::Int)
     dΩ = Mantis.Quadrature.StandardQuadrature(
         canonical_qrule, Geometry.get_num_elements(mapped_geometry)
     )
+    dΩ = Mantis.Quadrature.StandardQuadrature(
+        canonical_qrule, Geometry.get_num_elements(mapped_geometry)
+    )
 
     # Setup the form spaces, evaluate and check the results
     ξ = Points.TensorProductPoints(
@@ -147,7 +155,9 @@ function test_mapped(num_quad_points_per_dim::Int)
                 form_rank, mapped_geometry, "c"
             )
         else
-            form_space = Forms.ConstantFormSpace(form_rank, mapped_geometry, "a")
+            form_space = Forms.FormPullback(
+                Forms.ConstantFormSpace(form_rank, mapped_geometry, "a"), Forms.Canonical
+            )
 
             # Check number of basis functions
             @test Forms.get_num_basis(form_space) == 1

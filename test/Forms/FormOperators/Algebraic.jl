@@ -20,9 +20,15 @@ xi = Points.TensorProductPoints(([0.0, 0.5, 1.0], [0.1, 0.2, 0.86]))
 W0, W1, W2 = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, section_spacesW, regularity_2d
 )
+W0 = Forms.FormPullback(W0, Forms.Canonical)
+W1 = Forms.FormPullback(W1, Forms.Canonical)
+W2 = Forms.FormPullback(W2, Forms.Canonical)
 X0, X1, X2 = Forms.create_tensor_product_bspline_de_rham_complex(
     starting_point_2d, box_size_2d, num_elements_2d, section_spacesX, regularity_2d
 )
+X0 = Forms.FormPullback(X0, Forms.Canonical)
+X1 = Forms.FormPullback(X1, Forms.Canonical)
+X2 = Forms.FormPullback(X2, Forms.Canonical)
 # Create FormFields for testing
 w0_c = 1.0
 w1_c = 1.0
