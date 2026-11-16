@@ -8,7 +8,7 @@ include("data/ExtractionTests/data.jl")
 
 const PLOT = false
 if PLOT
-    using GLMakie, Makie
+    using GLMakie
 end
 
 ref_space_h2(s) = FunctionSpaces.refinement_uniform(s, 2)
@@ -78,7 +78,9 @@ function plot(space::FunctionSpaces.AbstractFESpace{1})
     return nothing
 end
 
-function test_hb(space, expected)
+function test_hb(
+    space::FunctionSpaces.AbstractFESpace{manifold_dim, 1}, expected
+) where {manifold_dim}
     @test @expected expected.coeffs e -> get_extraction_coefficients(space, e) isapprox
     @test @expected expected.basis e -> get_basis_indices(space, e)
     @test @expected expected.support b -> get_support(space, b)
@@ -86,8 +88,39 @@ function test_hb(space, expected)
     return nothing
 end
 
-function test_thb(space, expected)
+function test_hb(
+    space::FunctionSpaces.AbstractFESpace{manifold_dim, num_components}, expected
+) where {manifold_dim, num_components}
+    for c in 1:num_components
+        @test @expected expected.coeffs[c] e -> get_extraction_coefficients(space, e, c) isapprox
+        @test @expected expected.basis_comp[c] e -> get_basis_indices(space, e, c)
+    end
+
+    @test @expected expected.basis e -> get_basis_indices(space, e)
+    @test @expected expected.support b -> get_support(space, b)
+
+    return nothing
+end
+
+function test_thb(
+    space::FunctionSpaces.AbstractFESpace{manifold_dim, 1}, expected
+) where {manifold_dim}
     @test @expected expected.coeffs e -> get_extraction_coefficients(space, e) isapprox
+    @test @expected expected.basis e -> get_basis_indices(space, e)
+    @test @expected expected.support b -> get_support(space, b)
+    @test @expected partition_of_unity_dict(space) e -> partition_of_unity(space, e)
+
+    return nothing
+end
+
+function test_thb(
+    space::FunctionSpaces.AbstractFESpace{manifold_dim, num_components}, expected
+) where {manifold_dim, num_components}
+    for c in 1:num_components
+        @test @expected expected.coeffs[c] e -> get_extraction_coefficients(space, e, c) isapprox
+        @test @expected expected.basis[c] e -> get_basis_indices(space, e, c)
+    end
+
     @test @expected expected.basis e -> get_basis_indices(space, e)
     @test @expected expected.support b -> get_support(space, b)
     @test @expected partition_of_unity_dict(space) e -> partition_of_unity(space, e)
@@ -98,7 +131,9 @@ end
 function uniform_scalings(space, num_subdivisions, num_scalings)
     scaling = FunctionSpaces.scaling_uniform(space, num_subdivisions)
     num_scalings == 1 && return (scaling,)
-    child_scalings = uniform_scalings(get_child(scaling), num_subdivisions, num_scalings - 1)
+    child_scalings = uniform_scalings(
+        get_child(scaling), num_subdivisions, num_scalings - 1
+    )
 
     return (scaling, child_scalings...)
 end
@@ -166,7 +201,8 @@ function test_direct_sum(geometry, ds, num_subdivisions, ::Type{B}) where {B}
     end
 
     for b in 1:num_basis
-        @test sort(get_support(hier_of_ds, b)) == sort(get_support(ds_of_hier, basis_map[b]))
+        @test sort(get_support(hier_of_ds, b)) ==
+            sort(get_support(ds_of_hier, basis_map[b]))
     end
 
     return nothing
@@ -538,8 +574,6 @@ end
     end
 
     @testset "Polar Splines (Vector)" verbose = true begin
-        # TODO: Waiting for multi-component extraction overhaul. 
-        # https://github.com/MantisFEM/Mantis.jl/discussions/421
         p = 2
         polar_geo, geo_coeffs = FunctionSpaces.create_polar_geometry_data(
             num_els, (p, p), (p - 1, p - 1)
@@ -555,22 +589,36 @@ end
             Hierarchical.get_relations(geo_scal_1),
         )
         pgeo = Geometry.HierarchicalGeometry(
-            TreeHierarchy(active_info, pscal; check_tree=false)
+            TreeHierarchy(active_info, pscal; check_tree=true)
+        )
+        param_scal = Scaling(
+            FunctionSpaces.get_parametric_geometry(P1),
+            FunctionSpaces.get_parametric_geometry(get_child(scaling)),
+            Hierarchical.get_relations(geo_scal_1),
+        )
+        param_geo = Geometry.HierarchicalGeometry(
+            TreeHierarchy(active_info, param_scal; check_tree=false)
         )
         @testset "HB" verbose = true begin
-            # space = FunctionSpaces.HierarchicalSpace(
-            #     pgeo, hgeo, (scaling,), SelectionStandard, HB
-            # )
-            @test_skip test_hb(space, DATA[:uni_2d_p2_hb_polar_vector])
-            # if PLOT; plot(space, "polar-vector-hb"); end
+            space = FunctionSpaces.HierarchicalSpace(
+                pgeo, param_geo, (scaling,), SelectionStandard, HB
+            )
+            test_hb(space, DATA[:uni_2d_p2_hb_polar_vector])
+            if PLOT
+                plot(space, "polar-vector-hb")
+            end
         end
 
         @testset "THB" verbose = true begin
-            # space = FunctionSpaces.HierarchicalSpace(
-            #     pgeo, hgeo, (scaling,), SelectionStandard, THB
-            # )
-            @test_skip test_thb(space, DATA[:uni_2d_p2_thb_polar_vector])
-            # if PLOT; plot(space, "polar-vector-thb"); end
+            space = FunctionSpaces.HierarchicalSpace(
+                pgeo, param_geo, (scaling,), SelectionStandard, THB
+            )
+            # NOTE: We don't test the partition of unity property here since vector polar
+            # splines are computed with a scaling for the exterior derivative.
+            test_hb(space, DATA[:uni_2d_p2_thb_polar_vector])
+            if PLOT
+                plot(space, "polar-vector-thb")
+            end
         end
     end
 end
