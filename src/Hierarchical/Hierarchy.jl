@@ -3,13 +3,16 @@
 ############################################################################################
 
 """
-    AbstractHierarchy{L, S}
+    AbstractHierarchy{S}
 
 Supertype for all hierarchies. A hierarchy is a collection of sets, each set corresponding
 to a level, such that at each level there is scaling information relating parents and
 children, and information about which objects are active.
+
+# Type Parameters
+- `S`: The concrete type shared by all scalings of the hierarchy.
 """
-abstract type AbstractHierarchy{L, S} end
+abstract type AbstractHierarchy{S} end
 
 """
     get_scalings(hierarchy::AbstractHierarchy)
@@ -33,19 +36,23 @@ Return the active object information associated with `hierarchy`.
 get_active_info(hierarchy::AbstractHierarchy) = hierarchy.active_info
 
 """
-    get_num_levels(::AbstractHierarchy{L}) where {L}
+    get_num_levels(hierarchy::AbstractHierarchy)
 
 Return the number of hierarchical levels of the given hierarchy.
 """
-get_num_levels(::AbstractHierarchy{L}) where {L} = L
+get_num_levels(hierarchy::AbstractHierarchy) = get_num_levels(get_active_info(hierarchy))
 
 """
-    get_descendants(hierarchy::AbstractHierarchy{L}, id::Int; last_level=L) where {L}
+    get_descendants(
+        hierarchy::AbstractHierarchy, id::Int; last_level=get_num_levels(hierarchy)
+    )
 
 Return all the descendants of object `id`, up-to and including `last_level` (defaults to the
 number of levels of the hierarchy.)
 """
-function get_descendants(hierarchy::AbstractHierarchy{L}, id::Int; last_level=L) where {L}
+function get_descendants(
+    hierarchy::AbstractHierarchy, id::Int; last_level=get_num_levels(hierarchy)
+)
     level, level_id = convert_to_level_and_level_id(hierarchy, id)
     num_descendants = last_level - level
     num_descendants < 1 && (return Int[])
@@ -79,20 +86,73 @@ Return the sets of all levels of `hierarchy`, i.e. the sets of its scalings.
 get_sets(hierarchy::AbstractHierarchy) = get_sets(get_scalings(hierarchy))
 
 """
-    _warn_stability(sets)
+    _check_concrete_scalings(scalings::AbstractVector{<:AbstractScaling})
 
-Warn if `sets` is not a homogeneously-typed tuple, since runtime indexing into such a tuple
-is type unstable.
+Throw an `ArgumentError` if the element type of `scalings` is not concrete.
+
+Scalings with different parent or child types, or built from different relation methods
+(each function has its own type), have different concrete types.
 """
-function _warn_stability(sets)
-    # STABILITY: We issue this warning because heterogeneously-typed tuples make runtime
-    # indexing unstable, as the output type is unknown.
-    if !(sets isa NTuple)
-        @warn LazyString(
-            "The sets provided in scalings do not form a homogeneously-typed tuple. ",
-            "Type-stability will be affected. ",
-            "Got type ",
-            typeof(sets),
+function _check_concrete_scalings(scalings::AbstractVector{<:AbstractScaling})
+    if !isconcretetype(eltype(scalings))
+        throw(
+            ArgumentError(
+                LazyString(
+                    "All scalings must have the same concrete type. Got element type ",
+                    eltype(scalings),
+                ),
+            ),
+        )
+    end
+
+    return nothing
+end
+
+"""
+    _check_consecutive_scalings(scalings::AbstractVector{<:AbstractScaling})
+
+Throw an `ArgumentError` if the child set of a scaling is not the parent set of the next
+scaling (they must be the same object in memory).
+"""
+function _check_consecutive_scalings(scalings::AbstractVector{<:AbstractScaling})
+    for l in 1:(length(scalings) - 1)
+        if !(get_child(scalings[l]) === get_parent(scalings[l + 1]))
+            throw(
+                ArgumentError(
+                    LazyString(
+                        "Consecutive scalings must have matching child/parent objects. ",
+                        "Failed at level ",
+                        l,
+                    ),
+                ),
+            )
+        end
+    end
+
+    return nothing
+end
+
+"""
+    _check_num_levels(active_info::ActiveInfo, scalings::AbstractVector{<:AbstractScaling})
+
+Throw an `ArgumentError` if the number of levels of `active_info` is not one more than the
+number of `scalings`, since each scaling relates two consecutive levels.
+"""
+function _check_num_levels(
+    active_info::ActiveInfo, scalings::AbstractVector{<:AbstractScaling}
+)
+    if length(scalings) + 1 != get_num_levels(active_info)
+        throw(
+            ArgumentError(
+                LazyString(
+                    "Number of levels in `active_info` does not match number of scalings. ",
+                    "Got ",
+                    get_num_levels(active_info),
+                    " levels and ",
+                    length(scalings),
+                    " scalings.",
+                ),
+            ),
         )
     end
 
@@ -221,28 +281,23 @@ convert_to_hier_id(hierarchy::AbstractHierarchy, level::Int, level_id::Int) =
 
 """
     refine(
-        hierarchy::AbstractHierarchy{L},
+        hierarchy::AbstractHierarchy,
         level::Int,
         remove::Vector{Int},
         scaling::AbstractScaling,
-    ) where {L}
+    )
 
 Return a refined version of `hierarchy` by deactivating the objects in `remove` and
-activating their children.
+activating their children. If `level` is the finest level, a new level is created using
+`scaling`.
 
 See also [`update`](@ref).
 """
 function refine(
-    hierarchy::AbstractHierarchy{L},
-    level::Int,
-    remove::Vector{Int},
-    scaling::AbstractScaling,
-) where {L}
-    # STABILITY: obtaining the relevant scaling here is inherently unstable. Either the
-    # level already exists, in which case we have to index `scalings[level]`, or the level
-    # is new and we have to use the provided `scaling`.  Nonetheless, `add` should be
-    # correctly inferred as a `Vector{Int}`.
-    relevant_scaling = (level == L ? scaling : get_scaling(hierarchy, level))
+    hierarchy::AbstractHierarchy, level::Int, remove::Vector{Int}, scaling::AbstractScaling
+)
+    is_finest = level == get_num_levels(hierarchy)
+    relevant_scaling = is_finest ? scaling : get_scaling(hierarchy, level)
     add = mapreduce(p -> collect(get_children(relevant_scaling, p)), vcat, remove)
 
     return update(hierarchy, level, remove, add, scaling)
@@ -259,10 +314,7 @@ end
 
 Similar to [`update(active_info::ActiveInfo, level::Int, remove::Vector{Int},
 add::Vector{Int})`](@ref), but if a new level needs to be added, then `scaling` is appended
-to the scalings of the hierarchy.
-
-!!! warning
-    This is type unstable since the output type depends on the runtime value of `level`.
+to the scalings of the hierarchy. The scalings of `hierarchy` are not modified.
 """
 function update(
     hierarchy::H,
@@ -272,154 +324,57 @@ function update(
     scaling::AbstractScaling,
 ) where {H <: AbstractHierarchy}
     active_info = update(get_active_info(hierarchy), level, remove, add)
-    # STABILITY: This method is type unstable. See method's comments
-    scalings = _add_scaling(hierarchy, scaling, active_info)
+    scalings = get_scalings(hierarchy)
+    if get_num_levels(active_info) > get_num_levels(hierarchy)
+        scalings = vcat(scalings, scaling)
+    end
+
     # This gets the name of the concrete type `H`
     constructor = Base.typename(H).wrapper
 
-    return constructor(active_info, scalings...)
+    return constructor(active_info, scalings)
 end
-
-"""
-    add_scaling(hierarchy::AbstractHierarchy, scaling::AbstractScaling)
-
-Return the scalings of `hierarchy` with `scaling` appended.
-"""
-function add_scaling(hierarchy::AbstractHierarchy, scaling::AbstractScaling)
-    return (get_scalings(hierarchy)..., scaling)
-end
-
-"""
-    _add_scaling(
-        hierarchy::H, scaling::AbstractScaling, active_info::ActiveInfo
-    ) where {L, H <: AbstractHierarchy{L}}
-
-Return the scalings of `hierarchy`, with `scaling` appended if `active_info` has more levels
-than `hierarchy`.
-
-!!! warning
-    This is type unstable since the output type depends on the runtime number of levels of
-    `active_info`. The method is not inlined to act as a function barrier.
-"""
-@noinline function _add_scaling(
-    hierarchy::H, scaling::AbstractScaling, active_info::ActiveInfo
-) where {L, H <: AbstractHierarchy{L}}
-    # STABILITY: This operation is inherently type unstable as it depends on the runtime
-    # value of `get_num_levels(active_info)`. However, it is limited to 2 options:
-    #     1. NTuple{L, <: AbstractScaling}
-    #     2. NTuple{L+1, <: AbstractScaling}
-    #
-    # The `@noinline` hopefully stops this instability from propagating. `update` callers
-    # should barrier `update` as much as possible. 
-    # See the example below this method.
-
-    scalings = get_scalings(hierarchy)
-    if get_num_levels(active_info) > L
-        # The new scaling needs to be added
-        scalings = (scalings..., scaling)
-    end
-
-    return scalings
-end
-
-#= 
-
-This method does _not_ barrier `update`, so `last_obj` will be `Union{SomeType{L,...},
-SomeType{L+1,...}}`. As a consequence, `n` can not infer `L` or `L+1` from the `Union` type,
-resulting in `n::Any`, and an output of `::Val`.
-
-function nbarrier(hierarchy, scaling)
-    hierarchy = update(hierarchy, 1, Int[], Int[], scaling)
-    obj = get_sets(hierarchy)
-    last_obj = last(obj)
-    n = first(typeof(last_obj).parameters)
-
-    return Val(n)
-end
-
-
-This method barriers `update` correctly. As before, `update` gets inferred as
-`Union{AbstractHierarchy{L,...}, AbstractHierarchy{L+1,...}}`. However, since this
-immediately dispatched to the type stable `_wbarrier`, each branch of the `Union` gets
-correctly inferred as `Val{L}` and `Val{L+1}`, and so the output type is `Union{Val{L},
-Val{L+1}}`.
-
-function wbarrier(hierarchy, scaling)
-    hierarchy = update(hierarchy, 1, Int[], Int[], scaling)
-    return _wbarrier(hierarchy)
-end
-
-function _wbarrier(hierarchy)
-    obj = get_sets(hierarchy)
-    last_obj = last(obj)
-    n = first(typeof(last_obj).parameters)
-
-    return Val(n)
-end
-
-=#
 
 ############################################################################################
 #                                        Hierarchy                                         #
 ############################################################################################
 
 """
-    Hierarchy{L, S} <: AbstractHierarchy{L, S}
+    Hierarchy{S} <: AbstractHierarchy{S}
 
 Stores a hierarchical construction consisting of a sequence of scaling relations together
 with the active objects on each level.
 
-The scaling on level `l` relates the objects on level `l-1` to those on level `l`, while the
+The scaling on level `l` relates the objects on level `l` to those on level `l+1`, while the
 associated `ActiveInfo` specifies which objects are active on each level.
 
 # Fields
 - `active_info::ActiveInfo`: See [`ActiveInfo`](@ref).
-- `scalings::S`: A tuple of `L-1` abstract scalings; see [`AbstractScaling`](@ref).
+- `scalings::Vector{S}`: One scaling per pair of consecutive levels; see
+    [`AbstractScaling`](@ref).
 
 # Type Parameters
-- `L`: The number of hierarchical levels.
-- `S`: The type of the tuple of scalings.
+- `S`: The concrete type shared by all scalings.
 """
-struct Hierarchy{L, S} <: AbstractHierarchy{L, S}
+struct Hierarchy{S} <: AbstractHierarchy{S}
     active_info::ActiveInfo
-    scalings::S
+    scalings::Vector{S}
 
+    """
+        Hierarchy(active_info::ActiveInfo, scalings::Vector{S}) where {S <: AbstractScaling}
+
+    Throws an `ArgumentError` if `S` is not concrete, if consecutive scalings do not share
+    their child/parent sets, or if the number of levels of `active_info` is not
+    `length(scalings) + 1`.
+    """
     function Hierarchy(
-        active_info::ActiveInfo, scalings::Vararg{AbstractScaling, LS}
-    ) where {LS}
-        for i in 1:(LS - 1)
-            if !(get_child(scalings[i]) === get_parent(scalings[i + 1]))
-                throw(
-                    ArgumentError(
-                        LazyString(
-                            "Consecutive scalings must have matching child/parent objects. ",
-                            "Failed at level ",
-                            i,
-                        ),
-                    ),
-                )
-            end
-        end
+        active_info::ActiveInfo, scalings::Vector{S}
+    ) where {S <: AbstractScaling}
+        _check_concrete_scalings(scalings)
+        _check_consecutive_scalings(scalings)
+        _check_num_levels(active_info, scalings)
 
-        # Each scaling corresponds to two consecutive levels
-        L = LS + 1
-        if L != get_num_levels(active_info)
-            throw(
-                ArgumentError(
-                    LazyString(
-                        "Number of levels in `active_info` does not match number of scalings. ",
-                        " Got ",
-                        get_num_levels(active_info),
-                        " and ",
-                        LS,
-                    ),
-                ),
-            )
-        end
-
-        _warn_stability(get_sets(scalings))
-
-        return new{L, typeof(scalings)}(active_info, scalings)
+        return new{S}(active_info, scalings)
     end
 end
 
@@ -428,7 +383,7 @@ end
 ############################################################################################
 
 """
-    TreeHierarchy{L, S} <: AbstractHierarchy{L, S}
+    TreeHierarchy{S} <: AbstractHierarchy{S}
 
 Hierarchy meant for single-parent objects; essentially a tree. Useful for creating, for
 example, a hierarchical geometry, where it is _not_ meaningful to have both a parent and its
@@ -438,73 +393,46 @@ See also [`Hierarchy`](@ref).
 
 # Fields
 - `active_info::ActiveInfo`: See [`ActiveInfo`](@ref).
-- `scalings::S`:  See [`AbstractScaling`](@ref).
+- `scalings::Vector{S}`:  See [`AbstractScaling`](@ref).
 - `tree_ids::Vector{Set{Int}}`: Collection of level-wise indices indicating whether a
     given object is either active or has active children. In general, this is _not_ the same
     as the active level-wise indices. For a hierarchical geometry, these are used, for
     example, to select the active basis functions of the hierarchical spaces built on it.
+
+# Type Parameters
+- `S`: The concrete type shared by all scalings.
 """
-struct TreeHierarchy{L, S} <: AbstractHierarchy{L, S}
+struct TreeHierarchy{S} <: AbstractHierarchy{S}
     active_info::ActiveInfo
-    scalings::S
+    scalings::Vector{S}
     tree_ids::Vector{Set{Int}}
 
     """
         TreeHierarchy(
-            active_info::ActiveInfo, scalings::Vararg{AbstractScaling, LS}; check_tree=true
-        ) where {LS}
+            active_info::ActiveInfo, scalings::Vector{S}; check_tree=true
+        ) where {S <: AbstractScaling}
 
     Similar to the constructor for `Hierarchy`, with the default option of checking whether a
     tree-like structure is satisfied.
 
     # Arguments
     - `active_info::ActiveInfo`: See [`ActiveInfo`](@ref).
-    - `scalings::Vararg{AbstractScaling, LS}`: See [`AbstractScaling`](@ref).
+    - `scalings::Vector{S}`: See [`AbstractScaling`](@ref).
 
     # Keyword arguments
     - `check_tree=true`: Checks whether `active_info` satisfies a tree-like structure for
         the given `scalings`. Enabled by default.
     """
     function TreeHierarchy(
-        active_info::ActiveInfo, scalings::Vararg{AbstractScaling, LS}; check_tree=true
-    ) where {LS}
-        for l in 1:(LS - 1)
-            if !(get_child(scalings[l]) === get_parent(scalings[l + 1]))
-                throw(
-                    ArgumentError(
-                        LazyString(
-                            "Consecutive scalings must have matching child/parent objects. ",
-                            "Failed at level ",
-                            l,
-                        ),
-                    ),
-                )
-            end
-        end
-
-        # Each scaling corresponds to two levels
-        L = LS + 1
-        if L != get_num_levels(active_info)
-            throw(
-                ArgumentError(
-                    LazyString(
-                        "Number of levels in `active_info` does not match ",
-                        "number of scalings. Got ",
-                        get_num_levels(active_info),
-                        " and ",
-                        L,
-                        " respectively.",
-                    ),
-                ),
-            )
-        end
-
-        tree_ids = _tree_ids(scalings, active_info)
+        active_info::ActiveInfo, scalings::Vector{S}; check_tree=true
+    ) where {S <: AbstractScaling}
+        _check_concrete_scalings(scalings)
+        _check_consecutive_scalings(scalings)
+        _check_num_levels(active_info, scalings)
         check_tree && _check_tree(scalings, active_info)
+        tree_ids = _tree_ids(scalings, active_info)
 
-        _warn_stability(get_sets(scalings))
-
-        return new{L, typeof(scalings)}(active_info, scalings, tree_ids)
+        return new{S}(active_info, scalings, tree_ids)
     end
 end
 

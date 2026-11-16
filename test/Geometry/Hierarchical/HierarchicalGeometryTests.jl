@@ -19,7 +19,7 @@ relations_1d = Relations(
 )
 scaling_1d = Scaling(geo_l1_1d, geo_l2_1d, relations_1d)
 
-hierarchy_1d = TreeHierarchy(active_1d, scaling_1d)
+hierarchy_1d = TreeHierarchy(active_1d, [scaling_1d])
 hgeo_1d = Geometry.HierarchicalGeometry(hierarchy_1d)
 
 # 2D
@@ -27,7 +27,7 @@ geo_l1_2d = Geometry.TensorProductGeometry((geo_l1_1d, geo_l1_1d))
 geo_l2_2d = Geometry.TensorProductGeometry((geo_l2_1d, geo_l2_1d))
 scaling_2d = Scaling(geo_l1_2d, geo_l2_2d, (scaling_1d, scaling_1d))
 active_info = ActiveInfo([[1, 2, 3], [11, 12, 15, 16]])
-hierarchy_2d = TreeHierarchy(active_info, scaling_2d)
+hierarchy_2d = TreeHierarchy(active_info, [scaling_2d])
 
 hgeo_2d = Geometry.HierarchicalGeometry(hierarchy_2d)
 
@@ -45,9 +45,11 @@ end
 ############################################################################################
 
 @testset "Getters" begin
-    # get_geometries returns the original tuple of level geometries.
-    @test Geometry.get_geometries(hgeo_1d) === (geo_l1_1d, geo_l2_1d)
-    @test Geometry.get_geometries(hgeo_2d) === (geo_l1_2d, geo_l2_2d)
+    # get_geometries returns the original level geometries.
+    @test all(splat(===), zip(Geometry.get_geometries(hgeo_1d), [geo_l1_1d, geo_l2_1d]))
+    @test all(splat(===), zip(Geometry.get_geometries(hgeo_2d), [geo_l1_2d, geo_l2_2d]))
+    @test length(Geometry.get_geometries(hgeo_1d)) == 2
+    @test length(Geometry.get_geometries(hgeo_2d)) == 2
 
     # get_active_elements returns the ActiveInfo object.
     @test Geometry.get_active_elements(hgeo_1d) === active_1d
@@ -240,7 +242,7 @@ end
     scal_1 = Geometry.scaling_uniform(geo_l1, (2, 2))
     scal_2 = Geometry.scaling_uniform(Hierarchical.get_child(scal_1), (2, 2))
     active_info = ActiveInfo([[1, 2, 3, 4], Int[]])
-    hierarchy = TreeHierarchy(active_info, scal_1)
+    hierarchy = TreeHierarchy(active_info, [scal_1])
     hgeo = Geometry.HierarchicalGeometry(hierarchy)
     # Updating requires providing a scaling since a new level _might_ need to be added.
     @test_throws MethodError hgeo = Geometry.update(hgeo, 1, [1], [42])
@@ -252,11 +254,11 @@ end
     hgeo = Geometry.refine(hgeo, 1, [4], scal_2)
     @test get_level_ids(Geometry.get_hierarchy(hgeo)) ==
         [[2, 3], [1, 2, 5, 6, 11, 12, 15, 16]]
-    @test get_scalings(Geometry.get_hierarchy(hgeo)) == (scal_1,)
+    @test get_scalings(Geometry.get_hierarchy(hgeo)) == [scal_1]
     hgeo = Geometry.refine(hgeo, 2, [16], scal_2)
     @test get_level_ids(Geometry.get_hierarchy(hgeo)) ==
         [[2, 3], [1, 2, 5, 6, 11, 12, 15], [55, 56, 63, 64]]
-    @test get_scalings(Geometry.get_hierarchy(hgeo)) == (scal_1, scal_2)
+    @test get_scalings(Geometry.get_hierarchy(hgeo)) == [scal_1, scal_2]
 end
 
 end

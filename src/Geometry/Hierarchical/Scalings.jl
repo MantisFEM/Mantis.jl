@@ -40,16 +40,9 @@ function child_to_parents_uniform(
     return throw(MethodError(child_to_parents_uniform, (geometry, num_subdivisions)))
 end
 
-# 1D Generic
+# Generic
 
-function parent_to_children_uniform(geometry::AbstractGeometry{1}, num_subdivisions::Int)
-    return parent_to_children_uniform(num_subdivisions)
-end
-
-function child_to_parents_uniform(::AbstractGeometry{1}, num_subdivisions::Int)
-    return child_to_parents_uniform(num_subdivisions)
-end
-
+# An `Int` is always converted to a tuple, so that both produce relations of the same type.
 function parent_to_children_uniform(
     geometry::AbstractGeometry{manifold_dim}, num_subdivisions::Int
 ) where {manifold_dim}
@@ -60,6 +53,16 @@ function child_to_parents_uniform(
     geometry::AbstractGeometry{manifold_dim}, num_subdivisions::Int
 ) where {manifold_dim}
     return child_to_parents_uniform(geometry, ntuple(_ -> num_subdivisions, manifold_dim))
+end
+
+# 1D Generic
+
+function parent_to_children_uniform(::AbstractGeometry{1}, num_subdivisions::NTuple{1, Int})
+    return parent_to_children_uniform(only(num_subdivisions))
+end
+
+function child_to_parents_uniform(::AbstractGeometry{1}, num_subdivisions::NTuple{1, Int})
+    return child_to_parents_uniform(only(num_subdivisions))
 end
 
 """
@@ -121,6 +124,19 @@ function _check_num_subdivsions(num_subdivisions::Int)
 end
 
 # CartesianGeometry
+
+# Disambiguates between the 1D generic and the Cartesian methods below.
+function parent_to_children_uniform(
+    ::CartesianGeometry{1, image_dim, 1}, num_subdivisions::NTuple{1, Int}
+) where {image_dim}
+    return parent_to_children_uniform(only(num_subdivisions))
+end
+
+function child_to_parents_uniform(
+    ::CartesianGeometry{1, image_dim, 1}, num_subdivisions::NTuple{1, Int}
+) where {image_dim}
+    return child_to_parents_uniform(only(num_subdivisions))
+end
 
 function parent_to_children_uniform(
     geometry::CartesianGeometry{manifold_dim, image_dim, 1},

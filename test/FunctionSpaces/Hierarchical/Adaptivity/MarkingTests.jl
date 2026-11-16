@@ -227,7 +227,7 @@ end
         bsp_l3 = Refinement(bsp_l2, ref_space_h2)()
         bsp_scal_1 = MatrixScaling(bsp_l1, bsp_l2, scal_space_h2)
         bsp_scal_2 = MatrixScaling(bsp_l2, bsp_l3, scal_space_h2)
-        scalings = (bsp_scal_1, bsp_scal_2)
+        scalings = [bsp_scal_1, bsp_scal_2]
 
         @testset "QBox Refinement" verbose = true begin
             #=
@@ -245,7 +245,7 @@ end
             =#
             active = ActiveInfo([[1, 2], [5, 6], [13, 14, 15, 16]])
             hgeo = Geometry.HierarchicalGeometry(
-                TreeHierarchy(active, geo_scal_1, geo_scal_2)
+                TreeHierarchy(active, [geo_scal_1, geo_scal_2])
             )
             space = FunctionSpaces.HierarchicalSpace(
                 hgeo, hgeo, scalings, SelectionStandard, HB
@@ -284,7 +284,7 @@ end
             =#
             active = ActiveInfo([[1, 2], [6], [9, 10, 13, 14, 15, 16]])
             hgeo = Geometry.HierarchicalGeometry(
-                TreeHierarchy(active, geo_scal_1, geo_scal_2)
+                TreeHierarchy(active, [geo_scal_1, geo_scal_2])
             )
             space = FunctionSpaces.HierarchicalSpace(
                 hgeo, hgeo, scalings, SelectionStandard, HB

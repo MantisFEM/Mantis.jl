@@ -164,29 +164,17 @@ Return the parents of the child object indexed by `id`.
 get_parents(scaling::AbstractScaling, id) = get_parents(get_relations(scaling), id)
 
 """
-    get_sets(scalings::S) where {LS, S <: NTuple{LS, AbstractScaling}}
+    get_sets(scalings::AbstractVector{<:AbstractScaling{P, C}}) where {P, C}
 
-Return a tuple whose length is the number of levels of all `scalings` combined, and each
-entry the the object set for that level. 
+Return a vector with the object set of each level spanned by `scalings`: the parent set of
+every scaling, followed by the child set of the last scaling, unless it has none (`C` is
+`Nothing`).
 """
-@generated function get_sets(scalings::S) where {LS, S <: NTuple{LS, AbstractScaling}}
-    ex = Expr(:tuple)
+function get_sets(scalings::AbstractVector{<:AbstractScaling{P, C}}) where {P, C}
+    sets = map(get_parent, scalings)
+    C === Nothing && return sets
 
-    # First set
-    push!(ex.args, :(get_parent(first(scalings))))
-
-    # Intermediate sets
-    for i in 2:LS
-        push!(ex.args, :(get_parent(scalings[$i])))
-    end
-
-    # Last set
-    type = last(S.parameters).parameters[2] # C in AbstractScaling{P, C, R}
-    if type !== Nothing
-        push!(ex.args, :(get_child(last(scalings))))
-    end
-
-    return ex
+    return vcat(sets, get_child(last(scalings)))
 end
 
 ############################################################################################

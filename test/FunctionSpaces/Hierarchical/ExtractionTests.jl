@@ -130,12 +130,12 @@ end
 
 function uniform_scalings(space, num_subdivisions, num_scalings)
     scaling = FunctionSpaces.scaling_uniform(space, num_subdivisions)
-    num_scalings == 1 && return (scaling,)
+    num_scalings == 1 && return [scaling]
     child_scalings = uniform_scalings(
         get_child(scaling), num_subdivisions, num_scalings - 1
     )
 
-    return (scaling, child_scalings...)
+    return vcat(scaling, child_scalings)
 end
 
 # Maps the basis function `basis_id` of the hierarchy of direct sums to the corresponding
@@ -236,7 +236,7 @@ end
         Final G: |-------|-------|---|---|-|-|-|-|
     =#
     active = ActiveInfo([[1, 2], [5, 6], [13, 14, 15, 16]])
-    hgeo1 = Geometry.HierarchicalGeometry(TreeHierarchy(active, geo_scal_1, geo_scal_2))
+    hgeo1 = Geometry.HierarchicalGeometry(TreeHierarchy(active, [geo_scal_1, geo_scal_2]))
 
     #=
         GEOMETRY 2
@@ -251,7 +251,7 @@ end
         Final G: |-------|-------|-|-|---|-|-|-|-|
     =#
     active = ActiveInfo([[1, 2], [6], [9, 10, 13, 14, 15, 16]])
-    hgeo2 = Geometry.HierarchicalGeometry(TreeHierarchy(active, geo_scal_1, geo_scal_2))
+    hgeo2 = Geometry.HierarchicalGeometry(TreeHierarchy(active, [geo_scal_1, geo_scal_2]))
     @testset "Linear" verbose = true begin
         # FESpaces
         bsp_l1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (4,), (1,), (0,))
@@ -259,7 +259,7 @@ end
         bsp_l3 = Refinement(bsp_l2, ref_space_h2)()
         bsp_scal_1 = MatrixScaling(bsp_l1, bsp_l2, scal_space_h2)
         bsp_scal_2 = MatrixScaling(bsp_l2, bsp_l3, scal_space_h2)
-        scalings = (bsp_scal_1, bsp_scal_2)
+        scalings = [bsp_scal_1, bsp_scal_2]
 
         @testset "HB" verbose = true begin
             @testset "Geometry 1" verbose = true begin
@@ -313,7 +313,7 @@ end
         bsp_l3 = Refinement(bsp_l2, ref_space_h2)()
         bsp_scal_1 = MatrixScaling(bsp_l1, bsp_l2, scal_space_h2)
         bsp_scal_2 = MatrixScaling(bsp_l2, bsp_l3, scal_space_h2)
-        scalings = (bsp_scal_1, bsp_scal_2)
+        scalings = [bsp_scal_1, bsp_scal_2]
 
         @testset "HB" verbose = true begin
             @testset "Geometry 1" verbose = true begin
@@ -383,7 +383,7 @@ end
     Final G: |-------|-------|-------|-------|-------|-------|-------|-------|
     =#
     active = ActiveInfo([[1, 2], [3, 4], [5, 6, 7, 8]])
-    hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active, geo_scal_1, geo_scal_1))
+    hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active, [geo_scal_1, geo_scal_1]))
 
     # FESpaces
     bsp_l1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (8,), (1,), (0,))
@@ -391,7 +391,7 @@ end
     bsp_l3 = Refinement(bsp_l2, ref_space_p1)()
     bsp_scal_1 = MatrixScaling(bsp_l1, bsp_l2, scal_space_p1)
     bsp_scal_2 = MatrixScaling(bsp_l2, bsp_l3, scal_space_p1)
-    scalings = (bsp_scal_1, bsp_scal_2)
+    scalings = [bsp_scal_1, bsp_scal_2]
 
     @testset "HB" verbose = true begin
         space = FunctionSpaces.HierarchicalSpace(
@@ -438,7 +438,7 @@ end
     Final G: |-------|-------|---|---|---|---|-|-|-|-|
     =#
     active = ActiveInfo([[1, 2], [5, 6, 7, 8], [17, 18, 19, 20]])
-    hgeo1 = Geometry.HierarchicalGeometry(TreeHierarchy(active, geo_scal_1, geo_scal_2))
+    hgeo1 = Geometry.HierarchicalGeometry(TreeHierarchy(active, [geo_scal_1, geo_scal_2]))
 
     #=
     GEOMETRY 2
@@ -453,7 +453,7 @@ end
     Final G: |-------|-------|-|-|-|-|---|---|---|---|
     =#
     active = ActiveInfo([[1, 2], [7, 8, 9, 10], [9, 10, 11, 12]])
-    hgeo2 = Geometry.HierarchicalGeometry(TreeHierarchy(active, geo_scal_1, geo_scal_2))
+    hgeo2 = Geometry.HierarchicalGeometry(TreeHierarchy(active, [geo_scal_1, geo_scal_2]))
 
     # FESpaces
     bsp_l1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (5,), (1,), (0,))
@@ -463,7 +463,7 @@ end
     bsp_l3 = Refinement(bsp_l22, ref_space_p1)()
     bsp_scal_1 = MatrixScaling((bsp_l1, bsp_l12, bsp_l2), scal_space_h2, scal_space_p1)
     bsp_scal_2 = MatrixScaling((bsp_l2, bsp_l22, bsp_l3), scal_space_h2, scal_space_p1)
-    scalings = (bsp_scal_1, bsp_scal_2)
+    scalings = [bsp_scal_1, bsp_scal_2]
 
     @testset "HB" verbose = true begin
         @testset "Geometry 1" verbose = true begin
@@ -524,7 +524,7 @@ end
     )
     marked_elements_per_level = [l1_active, l2_active]
     active_info = ActiveInfo(marked_elements_per_level)
-    hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, geo_scal_1))
+    hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, [geo_scal_1]))
     @testset "Polar Splines (Scalar)" verbose = true begin
         p = 2
         polar_geo, geo_coeffs = FunctionSpaces.create_polar_geometry_data(
@@ -540,7 +540,7 @@ end
             Hierarchical.get_relations(geo_scal_1),
         )
         pgeo = Geometry.HierarchicalGeometry(
-            TreeHierarchy(active_info, pscal; check_tree=false)
+            TreeHierarchy(active_info, [pscal]; check_tree=false)
         )
         # The level-wise parametric geometries have to be those of the level spaces.
         param_scal = Scaling(
@@ -549,12 +549,12 @@ end
             Hierarchical.get_relations(geo_scal_1),
         )
         param_geo = Geometry.HierarchicalGeometry(
-            TreeHierarchy(active_info, param_scal; check_tree=false)
+            TreeHierarchy(active_info, [param_scal]; check_tree=false)
         )
 
         @testset "HB" verbose = true begin
             space = FunctionSpaces.HierarchicalSpace(
-                pgeo, param_geo, (scaling,), SelectionStandard, HB
+                pgeo, param_geo, [scaling], SelectionStandard, HB
             )
             test_hb(space, DATA[:uni_2d_p2_hb_polar_scalar])
             if PLOT
@@ -564,7 +564,7 @@ end
 
         @testset "THB" verbose = true begin
             space = FunctionSpaces.HierarchicalSpace(
-                pgeo, param_geo, (scaling,), SelectionStandard, THB
+                pgeo, param_geo, [scaling], SelectionStandard, THB
             )
             test_thb(space, DATA[:uni_2d_p2_thb_polar_scalar])
             if PLOT
@@ -589,7 +589,7 @@ end
             Hierarchical.get_relations(geo_scal_1),
         )
         pgeo = Geometry.HierarchicalGeometry(
-            TreeHierarchy(active_info, pscal; check_tree=true)
+            TreeHierarchy(active_info, [pscal]; check_tree=true)
         )
         param_scal = Scaling(
             FunctionSpaces.get_parametric_geometry(P1),
@@ -597,11 +597,11 @@ end
             Hierarchical.get_relations(geo_scal_1),
         )
         param_geo = Geometry.HierarchicalGeometry(
-            TreeHierarchy(active_info, param_scal; check_tree=false)
+            TreeHierarchy(active_info, [param_scal]; check_tree=false)
         )
         @testset "HB" verbose = true begin
             space = FunctionSpaces.HierarchicalSpace(
-                pgeo, param_geo, (scaling,), SelectionStandard, HB
+                pgeo, param_geo, [scaling], SelectionStandard, HB
             )
             test_hb(space, DATA[:uni_2d_p2_hb_polar_vector])
             if PLOT
@@ -611,7 +611,7 @@ end
 
         @testset "THB" verbose = true begin
             space = FunctionSpaces.HierarchicalSpace(
-                pgeo, param_geo, (scaling,), SelectionStandard, THB
+                pgeo, param_geo, [scaling], SelectionStandard, THB
             )
             # NOTE: We don't test the partition of unity property here since vector polar
             # splines are computed with a scaling for the exterior derivative.
@@ -642,7 +642,7 @@ end
         for (g, active) in enumerate((active_1, active_2)), B in (HB, THB)
             @testset "$(nameof(B)) Geometry $g" verbose = true begin
                 hgeo = Geometry.HierarchicalGeometry(
-                    TreeHierarchy(active, geo_scal_1, geo_scal_2)
+                    TreeHierarchy(active, [geo_scal_1, geo_scal_2])
                 )
                 test_direct_sum(hgeo, ds, (2,), B)
             end
@@ -679,7 +679,7 @@ end
             setdiff(1:Geometry.get_num_elements(geo_l1), l1_active),
         )
         active_info = ActiveInfo([l1_active, l2_active])
-        hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, geo_scal_1))
+        hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, [geo_scal_1]))
 
         for B in (HB, THB)
             @testset "$(nameof(B))" verbose = true begin

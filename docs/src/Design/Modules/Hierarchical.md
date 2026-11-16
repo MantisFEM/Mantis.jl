@@ -236,12 +236,19 @@ created using the provided scaling.
 refine
 ```
 
-::: warning Refining is type unstable
+::: info Scalings share one concrete type
 
-The number of levels is a type parameter of a hierarchy. Since refining the
-finest level adds a level, the output type of [`refine`](@ref) and
-[`update`](@ref) depends on runtime values. Call such methods behind a function
-barrier, so that the instability does not propagate.
+A hierarchy stores its scalings in a `Vector` whose element type must be
+concrete, so all levels share the same scaling type. As a consequence, the type
+of a hierarchy does not depend on its number of levels, and [`refine`](@ref)
+and [`update`](@ref) are type stable, even when they add a level.
+
+Scalings whose parent or child sets have different types, or whose relations
+are built from different functions (every Julia function has its own type), have
+different types and are rejected when constructing a hierarchy. Relations that
+only differ in the data they capture, such as the scaling matrix of a
+[`MatrixScaling`](@ref) or the number of subdivisions of a uniform scaling,
+share the same type.
 
 :::
 
@@ -250,23 +257,18 @@ barrier, so that the instability does not propagate.
 We explain some internals related to constructing and updating hierarchies.
 However, this is considered an implementation detail.
 
-When a hierarchy is constructed, the following functions check that consecutive
-scalings form a type-stable hierarchy and, for a `TreeHierarchy`, that no active
-object has active descendants. They also compute the tree ids returned by
-[`get_tree_ids`](@ref).
+When a hierarchy is constructed, the following functions check that the
+scalings share one concrete type, that consecutive scalings share their
+child/parent sets, that the number of levels matches the number of scalings and,
+for a `TreeHierarchy`, that no active object has active descendants. They also
+compute the tree ids returned by [`get_tree_ids`](@ref).
 
 ```@docs
-_warn_stability
+_check_concrete_scalings
+_check_consecutive_scalings
+_check_num_levels
 _check_tree
 _tree_ids
-```
-
-When a hierarchy is updated, the following functions append a scaling for a
-newly created level.
-
-```@docs
-add_scaling
-_add_scaling
 ```
 
 :::
@@ -319,7 +321,7 @@ Since each element has a single parent, the elements form a `TreeHierarchy`. Its
 tree ids contain, for each level, the active elements and the refined elements
 with active children.
 ```@example HierarchicalExample
-hierarchy = TreeHierarchy(active_info, scaling)
+hierarchy = TreeHierarchy(active_info, [scaling])
 get_tree_ids(hierarchy)
 ```
 
@@ -415,7 +417,7 @@ We can now build the hierarchical space with both hierarchical B-splines,
 but on element `5` (element `9` of level 3), the hierarchical B-splines include
 the coarser functions `2` and `6`,
 ```@example HierarchicalExample
-scalings = (scaling_1, scaling_2)
+scalings = [scaling_1, scaling_2]
 hb = FunctionSpaces.HierarchicalSpace(
     hgeo, scalings, FunctionSpaces.SelectionStandard, FunctionSpaces.HB
 )
