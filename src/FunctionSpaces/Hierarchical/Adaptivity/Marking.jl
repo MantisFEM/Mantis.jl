@@ -104,9 +104,8 @@ end
 """
     DorflerMarking(errors::AbstractVector{<:Real}, cutoff::Real)
 
-Dörfler marking. Marks a minimal set of objects `M` such that `sum(errors[M] .^ 2) >= cutoff
-* sum(errors .^ 2)`, where `cutoff` is between 0 and 1.
-Objects with the largest errors are marked first.
+Dörfler marking. Marks a minimal set of objects `M` such that `sum(errors[M] .^ 2) >= cutoff * sum(errors .^ 2)`,
+where `cutoff` is between 0 and 1. Objects with the largest errors are marked first.
 """
 struct DorflerMarking{E <: AbstractVector{<:Real}, C <: Real} <: MarkingStrategy
     errors::E

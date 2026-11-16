@@ -86,7 +86,7 @@ end
 
     # Appending a scaling of a different type when refining is also rejected.
     hierarchy = Hierarchy(ActiveInfo([[1], Int[]]), [scaling0])
-    @test_throws ArgumentError Hierarchical.refine(hierarchy, 2, Int[], scaling1)
+    @test_throws ArgumentError Hierarchical.refine(hierarchy, 2, [4], scaling1)
 end
 
 @testset "Incorrect number of levels" verbose = true begin
