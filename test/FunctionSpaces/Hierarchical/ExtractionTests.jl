@@ -527,11 +527,11 @@ end
     hgeo = Geometry.HierarchicalGeometry(TreeHierarchy(active_info, [geo_scal_1]))
     @testset "Polar Splines (Scalar)" verbose = true begin
         p = 2
-        polar_geo, geo_coeffs = FunctionSpaces.create_polar_geometry_data(
+        polar_geo, geo_coeffs, para_geo = FunctionSpaces.create_polar_geometry_data(
             num_els, (p, p), (p - 1, p - 1)
         )
         P1 = FunctionSpaces.create_scalar_polar_spline_space(
-            num_els, (p, p), (p - 1, p - 1), polar_geo; geom_coeffs_tp=geo_coeffs
+            num_els, (p, p), (p - 1, p - 1), polar_geo, para_geo; geom_coeffs_tp=geo_coeffs
         )
         scaling = FunctionSpaces.scaling_uniform(P1, (2, 2))
         pscal = Scaling(
@@ -575,12 +575,12 @@ end
 
     @testset "Polar Splines (Vector)" verbose = true begin
         p = 2
-        polar_geo, geo_coeffs = FunctionSpaces.create_polar_geometry_data(
+        polar_geo, geo_coeffs, para_geo = FunctionSpaces.create_polar_geometry_data(
             num_els, (p, p), (p - 1, p - 1)
         )
         section_spaces = (FunctionSpaces.Bernstein(p), FunctionSpaces.Bernstein(p))
         P1 = FunctionSpaces.create_vector_polar_spline_space(
-            num_els, (p, p), (p - 1, p - 1), polar_geo; geom_coeffs_tp=geo_coeffs
+            num_els, (p, p), (p - 1, p - 1), polar_geo, para_geo; geom_coeffs_tp=geo_coeffs
         )
         scaling = FunctionSpaces.scaling_uniform(P1, (2, 2))
         pscal = Scaling(

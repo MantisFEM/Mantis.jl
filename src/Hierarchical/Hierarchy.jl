@@ -70,7 +70,8 @@ function get_descendants(
         descendants[i] = mapreduce(
             d -> get_children(get_scaling(hierarchy, level + i - 1), d),
             vcat,
-            descendants[i - 1],
+            descendants[i - 1];
+            init=Int[],
         )
         unique!(descendants[i])
     end
@@ -298,7 +299,9 @@ function refine(
 )
     is_finest = level == get_num_levels(hierarchy)
     relevant_scaling = is_finest ? scaling : get_scaling(hierarchy, level)
-    add = mapreduce(p -> collect(get_children(relevant_scaling, p)), vcat, remove)
+    add = mapreduce(
+        p -> collect(get_children(relevant_scaling, p)), vcat, remove; init=Int[]
+    )
 
     return update(hierarchy, level, remove, add, scaling)
 end

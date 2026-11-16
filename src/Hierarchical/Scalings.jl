@@ -348,7 +348,7 @@ struct MatrixScaling{P, C, R, M} <: AbstractScaling{P, C, R}
                         "Incompatible scaling matrix. ",
                         "The number of rows in `scaling_matrix` must equal the dimension of
                         `child`. ",
-                        "Got",
+                        "Got ",
                         size(scaling_matrix, 1),
                         " and ",
                         child_dim,
@@ -364,7 +364,7 @@ struct MatrixScaling{P, C, R, M} <: AbstractScaling{P, C, R}
                         "Incompatible scaling matrix. ",
                         "The number of columns in `scaling_matrix` must equal the dimension
                         of `parent`. ",
-                        "Got",
+                        "Got ",
                         size(scaling_matrix, 2),
                         " and ",
                         parent_dim,
@@ -537,12 +537,11 @@ parent object. In particular, the non-zero rows for a given column `j` dictate t
 of parent object `j`, and vice-versa.
 """
 function Relations(scaling_matrix::AbstractMatrix)
-    # We choose to compute all the parent-child relations in advance and then store, as
-    # oppose to computing them on-the-fly.
+    # NOTE: We choose to compute all the parent-child relations in advance and then store,
+    # as oppose to computing them on-the-fly.
     # This has the advantage that we only compute them once, but the downside that relations
     # that might be unnecessary are also computed (and stored.)
-    # TODO: Might be reasonable at some point to provide a choice between the two options
-    # above.
+    # Might be reasonable at some point to provide a choice between the two options above.
     parent_to_children_vec = Vector{Vector{Int}}(undef, size(scaling_matrix, 2))
     child_to_parents_vec = Vector{Vector{Int}}(undef, size(scaling_matrix, 1))
 

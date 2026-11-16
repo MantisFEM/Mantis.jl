@@ -751,7 +751,7 @@ function create_polar_geometry_data(
     geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
     geometry = DiscreteGeometry(tp_space, reshape(geom_coeffs_tp, :, 2))
 
-    return geometry, geom_coeffs_tp, get_geometry(tp_space)
+    return geometry, geom_coeffs_tp, get_parametric_geometry(tp_space)
 end
 
 """
