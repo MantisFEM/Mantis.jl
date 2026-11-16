@@ -221,7 +221,9 @@ end
     # FESpaces
     function uniform_scalings(space, num_subdivisions)
         scal_1 = FunctionSpaces.scaling_uniform(space, num_subdivisions)
-        scal_2 = FunctionSpaces.scaling_uniform(Hierarchical.get_child(scal_1), num_subdivisions)
+        scal_2 = FunctionSpaces.scaling_uniform(
+            Hierarchical.get_child(scal_1), num_subdivisions
+        )
 
         return (scal_1, scal_2)
     end
