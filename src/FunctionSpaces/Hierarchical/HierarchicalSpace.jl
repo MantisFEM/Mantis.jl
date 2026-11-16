@@ -7,9 +7,9 @@ include("Extraction.jl")
 ############################################################################################
 
 """
-    HierarchicalBasis{L, H, S, B}
+    HierarchicalBasis{H, S, B}
 
-An active hierarchical basis: a hierarchy of `L` level-wise function spaces, together with
+An active hierarchical basis: a hierarchy of level-wise function spaces, together with
 the algorithm used to select the active basis functions and the hierarchical basis
 representation.
 
@@ -23,7 +23,7 @@ representation.
   ::Type{B})`: Selects the active basis of `scalings` on `geometry` with `S`.
 """
 struct HierarchicalBasis{
-    L, H <: Hierarchical.Hierarchy{L}, S <: SelectionAlgorithm, B <: BasisType
+    H <: Hierarchical.Hierarchy, S <: SelectionAlgorithm, B <: BasisType
 }
     hierarchy::H
     selection_type::Type{S}
@@ -106,12 +106,12 @@ struct HierarchicalSpace{manifold_dim, num_components, num_patches, G, GP, HB, E
 end
 
 """
-    _check_block_patterns(spaces::Tuple, extraction_op::ExtractionOperator)
+    _check_block_patterns(spaces::AbstractVector, extraction_op::ExtractionOperator)
 
 Throw an `ArgumentError` if the block pattern of any level-wise space in `spaces` differs
 from the block pattern of `extraction_op`. See [`get_block_pattern`](@ref).
 """
-function _check_block_patterns(spaces::Tuple, extraction_op::ExtractionOperator)
+function _check_block_patterns(spaces::AbstractVector, extraction_op::ExtractionOperator)
     block_pattern = get_block_pattern(extraction_op)
     for (l, space) in enumerate(spaces)
         if get_block_pattern(space) != block_pattern
@@ -440,8 +440,6 @@ function update(
     curr_L = get_num_levels(space)
     next_L = Geometry.get_num_levels(parametric_geometry)
     curr_scalings = get_scalings(get_basis(space))
-    # WARNING: This method is type unstable. It's okay here as we immediately call the
-    # `HierarchicalSpace` constructor which is type stable.
     scalings = _update_scalings(curr_scalings, scaling, curr_L, next_L)
 
     # NOTE: The choice here is to recompute the space entirely, instead of trying to reuse
@@ -471,20 +469,18 @@ function update(
 end
 
 function _update_scalings(
-    curr_scalings::NTuple{LS, Hierarchical.AbstractScaling},
+    curr_scalings::Vector{<:Hierarchical.AbstractScaling},
     scaling::Hierarchical.AbstractScaling,
     curr_L::Int,
     next_L::Int,
-) where {LS}
-    # STABILITY: This method is type unstable and should have a barrier immediately after
-    # being called.
+)
     level_diff = next_L - curr_L
     if level_diff == 1
-        next_scalings = (curr_scalings..., scaling)
+        next_scalings = vcat(curr_scalings, scaling)
     elseif level_diff == 0
         next_scalings = curr_scalings
     elseif level_diff == -1
-        next_scalings = front(curr_scalings)
+        next_scalings = curr_scalings[1:(end - 1)]
     else
         return throw(
             ArgumentError(

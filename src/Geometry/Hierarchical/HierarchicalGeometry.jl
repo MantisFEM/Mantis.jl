@@ -15,7 +15,7 @@ See also [`Hierarchical.Hierarchy`](@ref) and [`TreeHierarchy`](@ref).
     level, and how they are related.
 
 # Constructors
-- [`HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings)`](@ref)
+- [`HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings::Vector{<:Hierarchical.AbstractScaling})`](@ref)
 """
 struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, H} <:
        AbstractGeometry{manifold_dim, image_dim, num_patches}
@@ -45,7 +45,7 @@ struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, H} <:
         image_dim = get_image_dim(first_geo)
         num_patches = get_num_patches(first_geo)
         # Check if the remaining geometries match
-        for geo in Base.tail(geometries)
+        for geo in @view geometries[2:end]
             md = get_manifold_dim(geo)
             id = get_image_dim(geo)
             np = get_num_patches(geo)
@@ -103,12 +103,16 @@ struct HierarchicalGeometry{manifold_dim, image_dim, num_patches, H} <:
 end
 
 """
-    HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings...)
+    HierarchicalGeometry(
+        active_info::Hierarchical.ActiveInfo, scalings::Vector{<:Hierarchical.AbstractScaling}
+    )
 
 Helper constructor from active element information and scalings.
 """
-function HierarchicalGeometry(active_info::Hierarchical.ActiveInfo, scalings)
-    return HierarchicalGeometry(Hierarchical.TreeHierarchy(active_info, scalings...))
+function HierarchicalGeometry(
+    active_info::Hierarchical.ActiveInfo, scalings::Vector{<:Hierarchical.AbstractScaling}
+)
+    return HierarchicalGeometry(Hierarchical.TreeHierarchy(active_info, scalings))
 end
 
 """
@@ -121,7 +125,7 @@ get_hierarchy(geometry::HierarchicalGeometry) = geometry.hierarchy
 """
 	get_geometries(geometry::HierarchicalGeometry)
 
-Returns the tuple of level-wise geometries defining the hierarchical `geometry`.
+Returns the level-wise geometries defining the hierarchical `geometry`.
 """
 function get_geometries(geometry::HierarchicalGeometry)
     return Hierarchical.get_sets(get_hierarchy(geometry))

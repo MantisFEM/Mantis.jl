@@ -30,9 +30,9 @@ const SelectionStandard = FunctionSpaces.SelectionStandard
     )
 
     for basis_type in (HB, THB)
-        hgeo = Geometry.HierarchicalGeometry(geo_active, (geo_scal_1, geo_scal_2))
+        hgeo = Geometry.HierarchicalGeometry(geo_active, [geo_scal_1, geo_scal_2])
         hier_space = FunctionSpaces.HierarchicalSpace(
-            hgeo, hgeo, (scal_1, scal_2), SelectionStandard, basis_type
+            hgeo, hgeo, [scal_1, scal_2], SelectionStandard, basis_type
         )
         basis = FunctionSpaces.get_basis(hier_space)
 
@@ -79,16 +79,16 @@ end
     geo_scal_1 = Geometry.scaling_uniform(
         FunctionSpaces.get_geometry(bsp_1), FunctionSpaces.get_geometry(bsp_2), 2
     )
-    hgeo = Geometry.HierarchicalGeometry(geo_active, (geo_scal_1,))
+    hgeo = Geometry.HierarchicalGeometry(geo_active, [geo_scal_1])
 
     for basis_type in (HB, THB)
         basis = FunctionSpaces.HierarchicalBasis(
-            hgeo, (scal_1,), SelectionStandard, basis_type
+            hgeo, [scal_1], SelectionStandard, basis_type
         )
         @test FunctionSpaces.get_selection_type(basis) == SelectionStandard
         @test FunctionSpaces.get_basis_type(basis) == basis_type
         @test FunctionSpaces.get_num_levels(basis) == 2
-        hierarchy = FunctionSpaces.create_basis(hgeo, (scal_1,), SelectionStandard)
+        hierarchy = FunctionSpaces.create_basis(hgeo, [scal_1], SelectionStandard)
         # NOTE: we sort because the ordering of the basis is an implementation detail
         @test sort.(get_level_ids(FunctionSpaces.get_hierarchy(basis))) ==
             sort.(get_level_ids(hierarchy))
@@ -106,7 +106,7 @@ end
             e in 1:FunctionSpaces.get_num_elements(space)
         )
         space = FunctionSpaces.HierarchicalSpace(
-            hgeo, (scal_1,), SelectionStandard, basis_type
+            hgeo, [scal_1], SelectionStandard, basis_type
         )
         @test FunctionSpaces.get_geometry(space) === hgeo
         @test FunctionSpaces.get_parametric_geometry(space) === hgeo
@@ -133,11 +133,11 @@ end
         Level 2: |---|---|xxx|xxx|xxx|xxx|xxx|xxx|xxx|xxx|---|---|
     =#
     hgeo = Geometry.HierarchicalGeometry(
-        ActiveInfo([[2, 3, 4, 5], [1, 2, 11, 12]]), (geo_scal_1,)
+        ActiveInfo([[2, 3, 4, 5], [1, 2, 11, 12]]), [geo_scal_1]
     )
     for basis_type in (HB, THB)
         space = FunctionSpaces.HierarchicalSpace(
-            hgeo, (scal_1,), SelectionStandard, basis_type
+            hgeo, [scal_1], SelectionStandard, basis_type
         )
         basis = FunctionSpaces.get_basis(space)
         partition = only(FunctionSpaces.get_dof_partition(space))

@@ -551,11 +551,11 @@ function create_hierarchical_de_rham_complex(
         num_subdivisions,
     )
     active_elements = ActiveInfo([collect(1:prod(num_elements)), Int[]])
-    geometry = Geometry.HierarchicalGeometry(active_elements, (geometry_scaling,))
+    geometry = Geometry.HierarchicalGeometry(active_elements, [geometry_scaling])
 
     form_spaces = ntuple(manifold_dim + 1) do k
         hierarchical_space = FunctionSpaces.HierarchicalSpace(
-            geometry, (basis_scalings[k],), S, B
+            geometry, [basis_scalings[k]], S, B
         )
 
         return FormSpace(k - 1, hierarchical_space, "ω_$(k - 1)")

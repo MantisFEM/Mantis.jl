@@ -89,7 +89,7 @@ geo_scal_2 = Geometry.scaling_uniform(geo_l2, geo_l3, 2)
 
 active = Hierarchical.ActiveInfo([[1, 2], [7, 8, 9, 10], [9, 10, 11, 12]])
 hgeo = Geometry.HierarchicalGeometry(
-    Hierarchical.TreeHierarchy(active, geo_scal_1, geo_scal_2)
+    Hierarchical.TreeHierarchy(active, [geo_scal_1, geo_scal_2])
 )
 
 bsp_l1 = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (5,), (1,), (0,))
@@ -103,7 +103,7 @@ bsp_scal_1 = Hierarchical.MatrixScaling(
 bsp_scal_2 = Hierarchical.MatrixScaling(
     (bsp_l2, bsp_l22, bsp_l3), scal_space_h2, scal_space_p1
 )
-scalings = (bsp_scal_1, bsp_scal_2)
+scalings = [bsp_scal_1, bsp_scal_2]
 HB_Std1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelStd, HB)
 HB_Simp1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelSimp, HB)
 THB_Std1 = FunctionSpaces.HierarchicalSpace(hgeo, hgeo, scalings, SelStd, THB)

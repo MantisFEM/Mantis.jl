@@ -32,29 +32,29 @@ abstract type SelectionSimple <: SelectionAlgorithm end
 """
     create_basis(
         geometry::Geometry.HierarchicalGeometry,
-        scalings::NTuple{LS, Hierarchical.AbstractScaling},
+        scalings::Vector{<:Hierarchical.AbstractScaling},
         selection_type::Type{S},
-    ) where {LS, S <: SelectionAlgorithm}
+    ) where {S <: SelectionAlgorithm}
 
 Construct a hierarchical basis on `geometry` from the `scalings` between function spaces, using
 `selection_type` to determine the active basis functions at each level.
 """
 function create_basis(
     geometry::Geometry.HierarchicalGeometry,
-    scalings::NTuple{LS, Hierarchical.AbstractScaling},
+    scalings::Vector{<:Hierarchical.AbstractScaling},
     ::Type{S},
-) where {LS, S <: SelectionAlgorithm}
+) where {S <: SelectionAlgorithm}
     return throw(MethodError(create_basis, (geometry, scalings, S)))
 end
 
 """
-    _check_levels(geometry::Geometry.HierarchicalGeometry, spaces::Tuple)
+    _check_levels(geometry::Geometry.HierarchicalGeometry, spaces::AbstractVector)
 
 Throw an `ArgumentError` if `geometry` and `spaces` do not have the same number of levels,
 or if the geometry of a level is not the same object as the parametric geometry of the space
 on that level.
 """
-function _check_levels(geometry::Geometry.HierarchicalGeometry, spaces::Tuple)
+function _check_levels(geometry::Geometry.HierarchicalGeometry, spaces::AbstractVector)
     num_geometry_levels = Geometry.get_num_levels(geometry)
     num_space_levels = length(spaces)
     if num_geometry_levels != num_space_levels
@@ -95,11 +95,11 @@ end
 
 function create_basis(
     geometry::Geometry.HierarchicalGeometry,
-    scalings::NTuple{LS, Hierarchical.AbstractScaling},
+    scalings::Vector{<:Hierarchical.AbstractScaling},
     ::Type{SelectionStandard},
-) where {LS}
+)
     _check_levels(geometry, Hierarchical.get_sets(scalings))
-    L = LS + 1 # Number of levels. (1 Scaling has 2 levels.)
+    L = length(scalings) + 1 # Number of levels. (1 Scaling has 2 levels.)
     geometry_hierarchy = Geometry.get_hierarchy(geometry)
     level_sets = [Set(1:get_num_basis(Hierarchical.get_parent(first(scalings))))]
     foreach(_ -> push!(level_sets, Set{Int}()), 2:L)
@@ -131,19 +131,19 @@ function create_basis(
 
     active_info = Hierarchical.ActiveInfo(level_sets)
 
-    return Hierarchical.Hierarchy(active_info, scalings...)
+    return Hierarchical.Hierarchy(active_info, scalings)
 end
 
 # Simple
 
 function create_basis(
     geometry::Geometry.HierarchicalGeometry,
-    scalings::NTuple{LS, Hierarchical.AbstractScaling},
+    scalings::Vector{<:Hierarchical.AbstractScaling},
     ::Type{SelectionSimple},
-) where {LS}
+)
     _check_levels(geometry, Hierarchical.get_sets(scalings))
     # Number of levels. (1 Scaling has 2 levels.)
-    L = LS + 1
+    L = length(scalings) + 1
     geometry_hierarchy = Geometry.get_hierarchy(geometry)
     spaces = Hierarchical.get_sets(scalings)
     level_sets = [Set(1:get_num_basis(first(spaces)))]
@@ -173,5 +173,5 @@ function create_basis(
         level_ids, level_sets; check_unique=false, check_sets=true
     )
 
-    return Hierarchical.Hierarchy(active_info, scalings...)
+    return Hierarchical.Hierarchy(active_info, scalings)
 end

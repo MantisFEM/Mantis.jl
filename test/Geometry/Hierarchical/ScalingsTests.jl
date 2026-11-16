@@ -25,6 +25,24 @@ using Test
         end
     end
 
+    @testset "1D Cartesian" verbose = true begin
+        cart_1 = Geometry.create_cartesian_box((0.0,), (1.0,), (4,))
+        # `Int` and `NTuple{1, Int}` subdivisions produce scalings of the same type, so that
+        # they can be combined in a hierarchy.
+        scal_int = Geometry.scaling_uniform(cart_1, 2)
+        scal_tuple = Geometry.scaling_uniform(cart_1, (2,))
+        @test typeof(scal_int) == typeof(scal_tuple)
+        scal_next = Geometry.scaling_uniform(get_child(scal_int), 4)
+        @test typeof(scal_next) == typeof(scal_int)
+        for p in 1:4
+            @test collect(get_children(scal_int, p)) == collect(get_children(scal_tuple, p))
+            @test collect(get_children(scal_int, p)) == [2 * p - 1, 2 * p]
+        end
+        for c in 1:8
+            @test collect(get_parents(scal_int, c)) == [div(c + 1, 2)]
+        end
+    end
+
     @testset "2D" verbose = true begin
         cart_1d_1 = Geometry.create_cartesian_box((0.0,), (1.0,), (1,))
         cart_1d_2 = Geometry.create_cartesian_box((0.0,), (1.0,), (2,))

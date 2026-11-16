@@ -295,7 +295,7 @@ relations_1d = Hierarchical.Relations(
 )
 scaling_1d = Hierarchical.Scaling(geo_l1_1d, geo_l2_1d, relations_1d)
 hierarchy_1d = Hierarchical.TreeHierarchy(
-    Hierarchical.ActiveInfo([[1], [3, 4]]), scaling_1d
+    Hierarchical.ActiveInfo([[1], [3, 4]]), [scaling_1d]
 )
 hgeo_1d = Geometry.HierarchicalGeometry(hierarchy_1d)
 
