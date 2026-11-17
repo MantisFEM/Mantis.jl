@@ -232,6 +232,7 @@ To retrieve the underlying form, you can use one of the following functions.
 ```@docs
 get_form
 get_forms
+get_basis_form
 get_form_space_tree
 ```
 
