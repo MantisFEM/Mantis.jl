@@ -33,7 +33,10 @@ function subdivide_geometry(
         patch -> subdivide_geometry(patch_parent_geo[patch], num_subdivisions[patch]),
         num_patches,
     )
-    child_geo = Geometry.UnstructuredGeometry(patch_child_geo)
+    # Subdividing the elements within each patch leaves the patch connectivity untouched.
+    child_geo = Geometry.UnstructuredGeometry(
+        patch_child_geo, Geometry.get_topology(parent_geo)
+    )
 
     return child_geo
 end

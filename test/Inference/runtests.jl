@@ -2,6 +2,9 @@ module JETTests
 
 using Test
 
+@testset "Topology" begin
+    include("TopologyInferenceTests.jl")
+end
 @testset "TensorProducts" begin
     include("TensorProductsInferenceTests.jl")
 end

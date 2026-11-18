@@ -15,7 +15,8 @@ for example in readdir(examples_dir)
     if endswith(example, ".jl")
         path_to_example = joinpath(examples_dir, example)
 
-        push!(example_names, example[1:(end - 3)])  # Remove the file extension from the name.
+        # Remove the file extension from the name.
+        push!(example_names, example[1:(end - 3)])
 
         # Literate.notebook(path_to_example, joinpath(mantis_dir, "examples", "notebooks"))
 
@@ -47,11 +48,11 @@ Design = [
             "GeneralHelpers.md",
             "Hierarchy.md",
             "Geometry.md",
-            "Mesh.md",
             "Plot.md",
             "Points.md",
             "Quadrature.md",
             "TensorProducts.md",
+            "Topology.md",
             "TimeIntegrators.md",
         ],
     ),
@@ -108,11 +109,11 @@ makedocs(;
         Mantis.GeneralHelpers,
         Mantis.Geometry,
         Mantis.Hierarchy,
-        Mantis.Mesh,
         Mantis.Plot,
         Mantis.Points,
         Mantis.Quadrature,
         Mantis.TensorProducts,
+        Mantis.Topology,
         Mantis.TimeIntegrators,
     ],
     repo=Remotes.GitHub("MantisFEM", "Mantis.jl"),
