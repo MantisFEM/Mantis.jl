@@ -14,4 +14,8 @@ end
     include("AdaptiveRefinement/runtests.jl")
 end
 
+@testset verbose = true "FunctionSpaceHelpers" begin
+    include("FunctionSpaceHelpersTests.jl")
+end
+
 end

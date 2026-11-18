@@ -1,13 +1,28 @@
 """
     get_greville_points(
-        space::TensorProductSpace{manifold_dim, num_patches, num_spaces, T}
-    ) where {manifold_dim, num_patches, num_spaces, T <: NTuple{num_spaces, BSplineSpace}}
+        space::TensorProductSpace{
+            manifold_dim, num_patches, num_spaces, TensorProducts.TensorProduct{T, CI, LI}
+        },
+    ) where {
+        manifold_dim, num_patches, num_spaces, T <: NTuple{num_spaces, BSplineSpace}, CI, LI
+    }
 
 Compute the Greville points for a `TensorProductSpace` composed of `BSplineSpace`s.
+
+# Arguments
+- `space::TensorProductSpace`: The tensor-product space, whose factor spaces are all
+    `BSplineSpace`s.
+
+# Returns
+- `::NTuple{manifold_dim, Vector{Float64}}`: The Greville points in each direction.
 """
 function get_greville_points(
-    space::TensorProductSpace{manifold_dim, num_patches, num_spaces, T}
-) where {manifold_dim, num_patches, num_spaces, T <: NTuple{num_spaces, BSplineSpace}}
+    space::TensorProductSpace{
+        manifold_dim, num_patches, num_spaces, TensorProducts.TensorProduct{T, CI, LI}
+    },
+) where {
+    manifold_dim, num_patches, num_spaces, T <: NTuple{num_spaces, BSplineSpace}, CI, LI
+}
     factor_greville_points = map(get_greville_points, get_factor_spaces(space))
     greville_points = Vector{Vector{Float64}}(undef, manifold_dim)
     factor_manifold_dims = get_factor_manifold_dims(space)

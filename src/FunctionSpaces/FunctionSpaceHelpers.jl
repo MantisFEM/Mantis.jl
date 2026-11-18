@@ -435,6 +435,90 @@ function create_dim_wise_bspline_spaces(
     end
 end
 
+"""
+    create_bspline_space(
+        geometry::Geometry.AbstractGeometry{manifold_dim, image_dim, 1},
+        degrees::NTuple{manifold_dim, Int},
+        regularities::NTuple{manifold_dim, Int};
+        n_dofs_left::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
+        n_dofs_right::NTuple{manifold_dim, Int}=Tuple(ones(Int, manifold_dim)),
+    ) where {manifold_dim, image_dim}
+
+Create a B-spline space on a given single-patch `geometry`, for example a
+`Geometry.MappedGeometry`. The breakpoints of the space are those of the parametric geometry
+of `geometry` (see `Geometry.get_parametric_geometry`), and `geometry` becomes the physical
+geometry of the space. In each direction, the regularity is the same at all interior
+breakpoints and -1 at the end points, which gives an open knot vector.
+
+# Arguments
+- `geometry::Geometry.AbstractGeometry{manifold_dim, image_dim, 1}`: The physical geometry.
+    Its parametric geometry must be a `Geometry.CartesianGeometry`.
+- `degrees::NTuple{manifold_dim, Int}`: The polynomial degree in each direction.
+- `regularities::NTuple{manifold_dim, Int}`: The regularity at the interior breakpoints in
+    each direction.
+- `n_dofs_left::NTuple{manifold_dim, Int}`: The number of degrees of freedom on the left
+    boundary in each direction.
+- `n_dofs_right::NTuple{manifold_dim, Int}`: The number of degrees of freedom on the right
+    boundary in each direction.
+
+# Returns
+- `::BSplineSpace`: The B-spline space, if `manifold_dim == 1`.
+- `::TensorProductSpace`: The tensor-product B-spline space, if `manifold_dim > 1`.
+
+# Examples
+```julia
+# A space of quadratic, C¹ B-splines on a curvilinear square with 4 × 12 elements.
+geometry = Geometry.create_curvilinear_square((0.0, 0.0), (1.0, 1.0), (4, 12))
+space = create_bspline_space(geometry, (2, 2), (1, 1))
+```
+"""
+function create_bspline_space(
+    geometry::Geometry.AbstractGeometry{manifold_dim, image_dim, 1},
+    degrees::NTuple{manifold_dim, Int},
+    regularities::NTuple{manifold_dim, Int};
+    n_dofs_left::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+    n_dofs_right::NTuple{manifold_dim, Int}=ntuple(i -> 1, manifold_dim),
+) where {manifold_dim, image_dim}
+    parametric_geometry = Geometry.get_parametric_geometry(geometry)
+    spaces = ntuple(manifold_dim) do dim
+        breakpoints = Geometry.get_breakpoints_per_dim(parametric_geometry, 1, dim)
+        factor_geometry = Geometry.CartesianGeometry((breakpoints,))
+        regularity = [-1; fill(regularities[dim], length(breakpoints) - 2); -1]
+
+        return BSplineSpace(
+            factor_geometry,
+            factor_geometry,
+            Bernstein(degrees[dim]),
+            regularity,
+            n_dofs_left[dim],
+            n_dofs_right[dim],
+        )
+    end
+
+    return TensorProductSpace(spaces, geometry, parametric_geometry)
+end
+
+function create_bspline_space(
+    geometry::Geometry.AbstractGeometry{1, image_dim, 1},
+    degrees::NTuple{1, Int},
+    regularities::NTuple{1, Int};
+    n_dofs_left::NTuple{1, Int}=(1,),
+    n_dofs_right::NTuple{1, Int}=(1,),
+) where {image_dim}
+    parametric_geometry = Geometry.get_parametric_geometry(geometry)
+    breakpoints = Geometry.get_breakpoints_per_dim(parametric_geometry)
+    regularity = [-1; fill(regularities[1], length(breakpoints) - 2); -1]
+
+    return BSplineSpace(
+        geometry,
+        parametric_geometry,
+        Bernstein(degrees[1]),
+        regularity,
+        n_dofs_left[1],
+        n_dofs_right[1],
+    )
+end
+
 ################################################################################
 # Polar spline helpers
 ################################################################################

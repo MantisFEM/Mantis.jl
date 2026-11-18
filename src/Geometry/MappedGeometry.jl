@@ -245,6 +245,14 @@ function get_mapping(
     return geometry.mapping[patch_id]
 end
 
+# The mapping deforms the base geometry, so a single-patch mapped geometry has the same
+# parametric geometry as its base geometry.
+function get_parametric_geometry(
+    geometry::MappedGeometry{manifold_dim, image_dim, 1, G, Map}
+) where {manifold_dim, image_dim, G <: AbstractGeometry, Map}
+    return get_parametric_geometry(get_base_geometry(geometry))
+end
+
 """
     get_base_patch_and_element_id(geometry::MappedGeometry, element_id::Int)
     get_base_patch_and_element_id(
