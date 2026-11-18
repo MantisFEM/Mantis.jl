@@ -265,27 +265,22 @@ function _plot(
                     :, I_ref
                 ]
 
-            elseif form_rank == 1
+            elseif form_rank == 1 || (form_rank == 2 && manifold_dim == 3)
+                # 1-forms are plotted as their vector proxy: the sharp followed by the
+                # push-forward. 2-forms in 3D are plotted as the vector proxy of their Hodge
+                # star, a 1-form.
+                vector_form = form_rank == 1 ? form : Forms.Hodge(form)
+                vector_proxy = Forms.evaluate_sharp_pushforward(vector_form, element_id, ξ)[1]
                 if range_dim == 2
                     point_data[:, vertex_offset .+ (1:n_vertices_per_subcell)] .= @view vcat(
-                        hcat(
-                            reduce.(
-                                +,
-                                Forms.evaluate_sharp_pushforward(form, element_id, ξ)[1],
-                                dims=2,
-                            )...,
-                        )',
+                        hcat(reduce.(+, vector_proxy, dims=2)...)',
                         zeros(1, n_vertices_per_subcell),
                     )[
                         :, I_ref
                     ]
                 elseif range_dim == 3
                     point_data[:, vertex_offset .+ (1:n_vertices_per_subcell)] .= @view hcat(
-                        reduce.(
-                            +,
-                            Forms.evaluate_sharp_pushforward(form, element_id, ξ)[1],
-                            dims=2,
-                        )...,
+                        reduce.(+, vector_proxy, dims=2)...
                     )'[
                         :, I_ref
                     ]
