@@ -1,0 +1,53 @@
+name: Release Notes
+
+# Run manually from the Actions tab, on `main`, once `dev` has been merged
+# into `main` and the version in Project.toml has been bumped. Drafts the
+# `@JuliaRegistrator register` comment with release notes listing the commits
+# marked `Release-note: yes` since the previous tag, and shows it in the run's
+# summary, ready to copy into a comment on the commit it names. TagBot later
+# publishes exactly these notes in the tag and the GitHub release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-notes:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Draft the Registrator comment
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$(git tag --points-at HEAD)" ]]; then
+            echo "HEAD is already tagged: nothing new to register." >&2
+            exit 1
+          fi
+          prev="$(git describe --tags --abbrev=0 HEAD)"
+          sha="$(git rev-parse HEAD)"
+          {
+            echo "@JuliaRegistrator register branch=main"
+            echo
+            echo "Release notes:"
+            echo
+            python3 .github/scripts/release-notes.py "$prev" HEAD
+          } > comment.md
+          cat comment.md
+          {
+            echo "## Registrator comment"
+            echo
+            echo "Copy the text below into a comment on commit"
+            echo "[\`${sha:0:8}\`](https://github.com/$REPO/commit/$sha)."
+            echo
+            echo '````markdown'
+            cat comment.md
+            echo '````'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -2,7 +2,7 @@ name: Commit Messages
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
 
 jobs:
   validate-commit-messages:
@@ -37,9 +37,39 @@ jobs:
             exit 0
           fi
 
+          # Only commits marked for the release notes must follow the
+          # commit-message rules; all commits are checked for misspelt markers.
           while IFS= read -r sha; do
             [[ -z "$sha" ]] && continue
             msg_file="$(mktemp)"
             git show -s --format=%B "$sha" > "$msg_file"
-            .github/scripts/commit-msg.sh "$msg_file"
+            python3 .github/scripts/check-release-note-marker.py "$msg_file"
+            if grep -qiE '^Release-note:[[:space:]]*yes[[:space:]]*$' "$msg_file"; then
+              .github/scripts/commit-msg.sh "$msg_file"
+            fi
           done <<< "$commit_shas"
+
+      # Merge commits are built from the PR title and description, so a
+      # marked PR's title becomes its entry in the release notes.
+      # - PRs into `dev` must carry the marker (except Dependabot's).
+      # - PRs into other branches (e.g. `main`) may carry it.
+      # - The title of every marked PR is checked like a commit title.
+      - name: Validate PR title and description
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$BODY" > "$RUNNER_TEMP/pr_body"
+          python3 .github/scripts/check-release-note-marker.py "$RUNNER_TEMP/pr_body"
+          if grep -qiE '^Release-note:[[:space:]]*yes[[:space:]]*$' "$RUNNER_TEMP/pr_body"; then
+            printf '%s\n' "$TITLE" > "$RUNNER_TEMP/pr_title"
+            .github/scripts/commit-msg.sh "$RUNNER_TEMP/pr_title"
+          elif [[ "$BASE" == "dev" && "$AUTHOR" != "dependabot[bot]" ]]; then
+            echo "ERROR: pull requests into dev must contain the line" >&2
+            echo "    Release-note: yes" >&2
+            echo "in their description." >&2
+            exit 1
+          fi
