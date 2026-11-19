@@ -887,7 +887,8 @@ function DiscreteGeometry(
     function evaluable_function(
         element_id::Int, xi::Points.AbstractPoints{manifold_dim}, num_derivatives::Int=0
     )
-        space_basis, basis_indices = evaluate(space, element_id, xi, num_derivatives)
+        space_basis = evaluate(space, element_id, xi, num_derivatives)
+        basis_indices = get_basis_indices(space, element_id)
         eval = Vector{Vector{Matrix{Float64}}}(undef, num_derivatives + 1) # 1 component
         num_points = Points.get_num_points(xi)
         for i in eachindex(eval)

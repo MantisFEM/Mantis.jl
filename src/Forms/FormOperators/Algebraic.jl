@@ -50,8 +50,10 @@ end
 Binary, algebraic transformation acting on two real-valued operators.
 
 !!! warning
-    The basis underlying each operator must compatible, this is checked. If not compatible
-    an ArgumentError is thrown.
+    Both operators must have the same form-space tree and the same quadrature rule, so that
+    their evaluations have the same basis indices. The quadrature rules are compared with
+    `===`, so they must share the same node and weight arrays in memory (e.g. by reusing the
+    same `dΩ`). Both are checked, and an `ArgumentError` is thrown otherwise.
 
 # Constructors
 - `BinaryOperatorTransformation(operator_1::O1, operator_2::O2, transformation::T )`:
@@ -92,6 +94,14 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
             throw(
                 ArgumentError(
                     "Both forms in the binary transformation must contain the same forms in their tree.",
+                ),
+            )
+        end
+
+        if !(get_quadrature_rule(operator_1) === get_quadrature_rule(operator_2))
+            throw(
+                ArgumentError(
+                    "Both operators in the binary transformation must use the same quadrature rule.",
                 ),
             )
         end
@@ -286,6 +296,15 @@ function get_operators(bin_trans::BinaryOperatorTransformation)
     return bin_trans.operator_1, bin_trans.operator_2
 end
 
+function get_quadrature_rule(una_trans::UnaryOperatorTransformation)
+    return get_quadrature_rule(get_operator(una_trans))
+end
+
+# Both operators have the same quadrature rule, see the inner constructor.
+function get_quadrature_rule(bin_trans::BinaryOperatorTransformation)
+    return get_quadrature_rule(first(get_operators(bin_trans)))
+end
+
 get_transformation(una_form::UnaryFormTransformation) = una_form.transformation
 get_geometry(una_trans::UnaryFormTransformation) = get_geometry(get_form(una_trans))
 get_label(una_form::UnaryFormTransformation) = una_form.label
@@ -378,13 +397,16 @@ end
 function evaluate(bin_trans::BinaryOperatorTransformation, element_id::Int)
     operator_1, operator_2 = get_operators(bin_trans)
     transformation = get_transformation(bin_trans)
-    eval_1, indices = evaluate(operator_1, element_id)
+    # Both operators have the same form-space tree and quadrature rule (see the inner
+    # constructor), so their evaluations have the same indices.
+    eval_1, indices_1 = evaluate(operator_1, element_id)
     eval_2, _ = evaluate(operator_2, element_id)
+
     for i in eachindex(eval_1, eval_2)
         eval_1[i] = transformation(eval_1[i], eval_2[i])
     end
 
-    return eval_1, indices
+    return eval_1, indices_1
 end
 
 function evaluate(
@@ -403,20 +425,92 @@ function evaluate(
 end
 
 function evaluate(
-    bin_trans::BinaryFormTransformation{manifold_dim},
+    bin_trans::BinaryFormTransformation{manifold_dim, form_rank, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, form_rank, expression_rank}
     form_1, form_2 = get_forms(bin_trans)
     transformation = get_transformation(bin_trans)
 
-    form_1_eval, indices = evaluate(form_1, element_id, xi)
-    form_2_eval, _ = evaluate(form_2, element_id, xi)
+    form_1_eval, indices_1 = evaluate(form_1, element_id, xi)
+    form_2_eval, indices_2 = evaluate(form_2, element_id, xi)
     for c in eachindex(form_1_eval, form_2_eval)
+        # Both forms can have different indices per component (e.g. α + ★★α), in which case
+        # they are combined on the union of their indices.
+        if indices_1[c] != indices_2[c]
+            form_1_eval[c], form_2_eval[c], indices_1[c] = _combine_evaluations(
+                form_1_eval[c],
+                indices_1[c],
+                form_2_eval[c],
+                indices_2[c],
+                Val(expression_rank),
+            )
+        end
+
         for i in eachindex(form_1_eval[c], form_2_eval[c])
             form_1_eval[c][i] = transformation(form_1_eval[c][i], form_2_eval[c][i])
         end
     end
 
-    return form_1_eval, indices
+    return form_1_eval, indices_1
+end
+
+############################################################################################
+#                                         Helpers                                          #
+############################################################################################
+
+"""
+    _combine_evaluations(
+        values_1::AbstractArray{Float64},
+        indices_1::Vector{Vector{Int}},
+        values_2::AbstractArray{Float64},
+        indices_2::Vector{Vector{Int}},
+        ::Val{expression_rank},
+    ) where {expression_rank}
+
+Expands two evaluations with (possibly) different indices to the union of their indices, so
+that they can be combined entry-wise. Entries of an evaluation outside its own indices are
+zero.
+
+# Arguments
+- `values_1::AbstractArray{Float64}`, `values_2::AbstractArray{Float64}`: The evaluations,
+    with the evaluation points along the first dimension.
+- `indices_1::Vector{Vector{Int}}`, `indices_2::Vector{Vector{Int}}`: The indices of each
+    evaluation, per expression.
+- `::Val{expression_rank}`: The number of expressions. Should be constructed from a type
+    parameter, so that it is known at compile time.
+
+# Returns
+- `::Array{Float64, 1 + expression_rank}`: The expanded `values_1`.
+- `::Array{Float64, 1 + expression_rank}`: The expanded `values_2`.
+- `::Vector{Vector{Int}}`: The combined indices, per expression.
+
+# Examples
+```jldoctest
+using Mantis
+
+Mantis.Forms._combine_evaluations([1.0 2.0 3.0], [[3, 5, 7]], [10.0 20.0], [[5, 8]], Val(1))
+
+# output
+
+([1.0 2.0 3.0 0.0], [0.0 10.0 0.0 20.0], [[3, 5, 7, 8]])
+```
+"""
+function _combine_evaluations(
+    values_1::AbstractArray{Float64},
+    indices_1::Vector{Vector{Int}},
+    values_2::AbstractArray{Float64},
+    indices_2::Vector{Vector{Int}},
+    ::Val{expression_rank},
+) where {expression_rank}
+    combined_indices, column_maps = _combine_indices(
+        [indices_1, indices_2], [1, 2], Val(expression_rank)
+    )
+    num_points = size(values_1, 1)
+    combined_1 = _allocate_indices(num_points, combined_indices)
+    _add_columns!(combined_1, values_1, column_maps[1], 1.0)
+    combined_2 = _allocate_indices(num_points, combined_indices)
+    _add_columns!(combined_2, values_2, column_maps[2], 1.0)
+
+    return combined_1, combined_2, _tuple_to_vec_indices(combined_indices)
 end

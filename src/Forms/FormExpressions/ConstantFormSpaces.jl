@@ -91,7 +91,7 @@ function evaluate(
     ::ConstantFormSpace{manifold_dim, 0}, ::Int, xi::Points.AbstractPoints{manifold_dim}
 ) where {manifold_dim}
     num_evaluation_points = Points.get_num_points(xi)
-    return [ones(Float64, num_evaluation_points, 1)], [[1]]
+    return [ones(Float64, num_evaluation_points, 1)], [[[1]]]
 end
 
 function evaluate(
@@ -104,5 +104,5 @@ function evaluate(
     form_eval = [ones(Float64, num_evaluation_points, 1)]
     form_eval[1][:] .*= sqrt_g
 
-    return form_eval, [[1]]
+    return form_eval, [[[1]]]
 end

@@ -1,6 +1,7 @@
 module RationalFESpacesTests
 
 using Mantis
+import LinearAlgebra
 using Test
 
 function basic_tests(bspline, answers)
@@ -47,9 +48,27 @@ basic_tests(
 
 for el in 1:1:FunctionSpaces.get_num_elements(Nurbs_univariate)
     # check Nurbs evaluation
-    Nurbs_eval, _ = FunctionSpaces.evaluate(Nurbs_univariate, el, x, 0)
+    Nurbs_eval = FunctionSpaces.evaluate(Nurbs_univariate, el, x, 0)
     # Positivity of the polynomials
     @test minimum(Nurbs_eval[1][1][1]) >= 0.0
+    # Partition of unity
+    @test all(isapprox.(sum(Nurbs_eval[1][1][1]; dims=2), 1.0))
+
+    # Single-component extraction framework: the rational basis functions are the local
+    # basis functions themselves.
+    @test FunctionSpaces.get_block_pattern(Nurbs_univariate) == ((1, 1),)
+    @test FunctionSpaces.get_extraction_blocks(Nurbs_univariate, el) == (LinearAlgebra.I,)
+    @test FunctionSpaces.get_extraction_coefficients(Nurbs_univariate, el) ==
+        LinearAlgebra.I
+    @test FunctionSpaces.get_extraction_coefficients(Nurbs_univariate, el, 1, 1) ==
+        LinearAlgebra.I
+    @test FunctionSpaces.get_basis_indices(Nurbs_univariate, el, 1) ==
+        FunctionSpaces.get_basis_indices(Nurbs_univariate, el)
+    @test_throws ArgumentError FunctionSpaces.get_basis_indices(Nurbs_univariate, el, 2)
+    @test FunctionSpaces.get_local_basis(Nurbs_univariate, el, x, 0) ==
+        FunctionSpaces.get_local_basis(Nurbs_univariate, el, x, 0, 1)
+    @test size(Nurbs_eval[1][1][1]) ==
+        (Points.get_num_points(x), FunctionSpaces.get_num_basis(Nurbs_univariate, el))
 end
 
 end

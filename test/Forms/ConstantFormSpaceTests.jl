@@ -57,11 +57,11 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
                 eval, inds = Forms.evaluate(form_space, element_id, ξ)
                 if form_rank == 0
                     @test eval == [reshape([1.0 for _ in 1:Points.get_num_points(ξ)], :, 1)]
-                    @test inds == [[1]]
+                    @test inds == [[[1]]]
                 elseif form_rank == manifold_dim
                     _, sqrt_g = Geometry.metric(geom, element_id, ξ)
                     @test isapprox(eval[1], reshape(sqrt_g, :, 1), atol=1e-12)
-                    @test inds == [[1]]
+                    @test inds == [[[1]]]
                 end
             end
 
@@ -75,7 +75,7 @@ function test_cartesian(manifold_dim::Int, num_quad_points_per_dim::Int)
                         @test d_eval[i] ==
                             reshape([0.0 for _ in 1:Points.get_num_points(ξ)], :, 1)
                     end
-                    @test d_inds == [[1]]
+                    @test d_inds == [[[1]] for _ in 1:manifold_dim]
                 end
             end
 
@@ -168,11 +168,11 @@ function test_mapped(num_quad_points_per_dim::Int)
                 eval, inds = Forms.evaluate(form_space, element_id, ξ)
                 if form_rank == 0
                     @test eval == [reshape([1.0 for _ in 1:Points.get_num_points(ξ)], :, 1)]
-                    @test inds == [[1]]
+                    @test inds == [[[1]]]
                 elseif form_rank == manifold_dim
                     _, sqrt_g = Geometry.metric(mapped_geometry, element_id, ξ)
                     @test isapprox(eval[1], reshape(sqrt_g, :, 1), atol=1e-12)
-                    @test inds == [[1]]
+                    @test inds == [[[1]]]
                 end
             end
 
@@ -186,7 +186,7 @@ function test_mapped(num_quad_points_per_dim::Int)
                         @test d_eval[i] ==
                             reshape([0.0 for _ in 1:Points.get_num_points(ξ)], :, 1)
                     end
-                    @test d_inds == [[1]]
+                    @test d_inds == [[[1]] for _ in 1:manifold_dim]
                 end
             end
 
