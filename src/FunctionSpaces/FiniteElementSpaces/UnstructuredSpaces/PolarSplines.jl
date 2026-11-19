@@ -473,6 +473,7 @@ function PolarSplineSpace(
         degenerate_control_points,
         degenerate_space,
         geometry,
+        get_geometry(degenerate_space),
         two_poles,
         zero_at_poles,
     )

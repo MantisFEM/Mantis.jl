@@ -472,7 +472,8 @@ function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int},
-    geometry;
+    geometry,
+    parametric_geo;
     geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
@@ -482,7 +483,8 @@ function create_scalar_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         zero_at_poles=zero_at_poles,
@@ -524,7 +526,8 @@ function create_scalar_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int},
-    geometry;
+    geometry,
+    parametric_geo;
     geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     zero_at_poles::Bool=false,
@@ -560,6 +563,7 @@ function create_scalar_polar_spline_space(
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
             geometry,
+            parametric_geo,
             two_poles,
             zero_at_poles,
         )
@@ -569,6 +573,7 @@ function create_scalar_polar_spline_space(
             geom_coeffs_tp,
             TensorProductSpace((GBθ_g, Br_g)),
             geometry,
+            parametric_geo,
             two_poles,
             zero_at_poles,
         )
@@ -605,7 +610,8 @@ function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     degrees::NTuple{2, Int},
     regularities::NTuple{2, Int},
-    geometry;
+    geometry,
+    parametric_geo;
     geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
@@ -614,7 +620,8 @@ function create_vector_polar_spline_space(
         num_elements,
         Bernstein.(degrees),
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         box_sizes=box_sizes,
@@ -651,7 +658,8 @@ function create_vector_polar_spline_space(
     num_elements::NTuple{2, Int},
     section_spaces::F,
     regularities::NTuple{2, Int},
-    geometry;
+    geometry,
+    parametric_geo;
     geom_coeffs_tp::Array{Float64, 3},
     two_poles::Bool=false,
     box_sizes::NTuple{2, Float64}=(1.0, 1.0),
@@ -676,6 +684,7 @@ function create_vector_polar_spline_space(
         geom_coeffs_tp,
         TensorProductSpace((GBθ_g, Br_g)),
         geometry,
+        parametric_geo,
         two_poles,
         false,
     )
@@ -741,7 +750,7 @@ function create_polar_geometry_data(
     geom_coeffs_tp, _, _ = _build_standard_degenerate_control_points(n_θ, n_r, R)
     geometry = DiscreteGeometry(tp_space, reshape(geom_coeffs_tp, :, 2))
 
-    return geometry, geom_coeffs_tp
+    return geometry, geom_coeffs_tp, get_geometry(tp_space)
 end
 
 """

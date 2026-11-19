@@ -20,14 +20,15 @@ n_r = num_elements_r * (deg_r + 1) - (num_elements_r - 1) * (regularity_r + 1)
 
 # build scalar polar spline space
 
-geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+geometry, geom_coeffs_tp, parametric_geometry = FunctionSpaces.create_polar_geometry_data(
     (num_elements_p, num_elements_r), (deg_p, deg_r), (regularity_p, regularity_r)
 )
 P_scalar = FunctionSpaces.create_scalar_polar_spline_space(
     (num_elements_p, num_elements_r),
     (deg_p, deg_r),
     (regularity_p, regularity_r),
-    geometry;
+    geometry,
+    parametric_geometry;
     geom_coeffs_tp,
 )
 
@@ -57,7 +58,8 @@ P_vector = FunctionSpaces.create_vector_polar_spline_space(
     (num_elements_p, num_elements_r),
     (deg_p, deg_r),
     (regularity_p, regularity_r),
-    geometry;
+    geometry,
+    parametric_geometry;
     geom_coeffs_tp,
 )
 
