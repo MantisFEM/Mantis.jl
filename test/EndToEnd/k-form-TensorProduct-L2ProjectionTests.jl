@@ -43,7 +43,7 @@ end
 function my_sol2(x::Matrix{Float64})
     # ∀i ∈ {1, 2, ..., n}: uᵢ = sin(ωx¹)sin(ωx²)...sin(ωxⁿ)
     y = @. sin(2.0 * pi * x)
-    return repeat([vec(prod(y; dims=2))], 2)
+    return [vec(prod(y; dims=2)), vec(prod(y; dims=2))]
 end
 function sinusoidal_solution(form::Forms.AbstractForm{2}, geo::Geometry.AbstractGeometry{2})
     form_rank = Forms.get_form_rank(form)
@@ -162,7 +162,6 @@ for (mesh_idx, (mesh, mesh_T)) in pairs(mesh_type)
                         sub_dir, "$p-$section_space-$mesh-$form_rank.txt"
                     )
                 end
-
                 @test all(
                     isapprox.(fₕ.coefficients, ref_coeffs, atol=atol * 20, rtol=rtol * 20)
                 )
