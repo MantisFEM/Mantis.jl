@@ -24,7 +24,7 @@ box_size_r = 1.0
 bθ = FunctionSpaces.GeneralizedTrigonometric(deg, Wt)
 br = FunctionSpaces.Bernstein(deg)
 
-polar_geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+polar_geometry, geom_coeffs_tp, parametric_geo = FunctionSpaces.create_polar_geometry_data(
     (num_elements_θ, num_elements_r),
     (deg, deg),
     (deg - 1, deg - 1);
@@ -34,7 +34,8 @@ polar_spline_space = FunctionSpaces.create_scalar_polar_spline_space(
     (num_elements_θ, num_elements_r),
     (deg, deg),
     (deg - 1, deg - 1),
-    polar_geometry;
+    polar_geometry,
+    parametric_geo;
     geom_coeffs_tp=geom_coeffs_tp,
     box_sizes=(box_size_θ, box_size_r),
 )
