@@ -632,7 +632,7 @@ function create_polar_spline_de_rham_complex(
     ##############################
     # Geometry
     ##############################
-    geometry, geom_coeffs_tp = FunctionSpaces.create_polar_geometry_data(
+    geometry, geom_coeffs_tp, parametric_geo = FunctionSpaces.create_polar_geometry_data(
         num_elements, section_spaces, regularities; R=R, box_sizes=box_sizes
     )
     # if refine
@@ -648,7 +648,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         zero_at_poles=false,
@@ -663,7 +664,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         box_sizes=box_sizes,
@@ -677,7 +679,8 @@ function create_polar_spline_de_rham_complex(
         num_elements,
         section_spaces,
         regularities,
-        geometry;
+        geometry,
+        parametric_geo;
         geom_coeffs_tp=geom_coeffs_tp,
         two_poles=two_poles,
         zero_at_poles=true,

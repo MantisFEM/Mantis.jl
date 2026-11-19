@@ -75,6 +75,10 @@ function get_element_lengths(geometry::DiscreteGeometry, element_id::Int)
     return get_element_length_function(geometry)(element_id)
 end
 
+function get_element_measure(geometry::DiscreteGeometry, element_id::Int)
+    return prod(get_element_lengths(geometry, element_id))
+end
+
 ############################################################################################
 #                                        Evaluation                                        #
 ############################################################################################

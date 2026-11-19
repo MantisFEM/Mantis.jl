@@ -47,7 +47,8 @@ function sinusoidal_solution(
     function my_sol(x::Matrix{Float64})
         # ∀i ∈ {1, 2, ..., n}: uᵢ = sin(ωx¹)sin(ωx²)...sin(ωxⁿ)
         y = @. sin(ω * x)
-        return repeat([vec(prod(y; dims=2))], n_form_components)
+        # return repeat([vec(prod(y; dims=2))], n_form_components)
+        return [vec(prod(y; dims=2)) for i in 1:n_form_components]
     end
     return Forms.AnalyticalFormField(form_rank, my_sol, geo, "f")
 end
@@ -65,9 +66,6 @@ for (p_idx, p) in enumerate(p⁰)
 
         # function space regularities
         regularities = degree .- 1
-
-        # number of elements at the coarsest refinement level
-        num_elements = (num_el_θ, num_el_r)
 
         # section spaces
         if section_space == FunctionSpaces.GeneralizedTrigonometric

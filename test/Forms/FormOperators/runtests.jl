@@ -2,7 +2,10 @@ module FormOperatorTests
 
 using Test
 
-@testset "Algebraic.jl" verbose = true begin
+@testset "Pullback" verbose = true begin
+    include("Pullback.jl")
+end
+@testset "Algebraic" verbose = true begin
     include("Algebraic.jl")
 end
 @testset "Codifferential" verbose = true begin
