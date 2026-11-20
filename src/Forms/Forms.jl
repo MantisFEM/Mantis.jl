@@ -1,7 +1,7 @@
 module Forms
 
 using ..Points
-using ..Hierarchy
+using ..Hierarchical
 using ..FunctionSpaces
 using ..Geometry
 using ..Quadrature

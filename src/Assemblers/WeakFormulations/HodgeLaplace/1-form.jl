@@ -100,7 +100,7 @@ end
         num_steps::Int,
         dorfler_parameter::Float64,
         dΩₑ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim},
-        Lchains::Bool;
+        qbox_size::NTuple{manifold_dim, Int};
         verbose::Bool=false
     ) where {manifold_dim, num_forms, C <: NTuple{num_forms, Forms.AbstractFormSpace}}
 
@@ -115,7 +115,8 @@ Returns the solution of the weak form of the 1-form Hodge Laplacian from an adap
 - `dorfler_parameter::Float64`: The parameter to use for the Dörfler marking.
 - `dΩₑ::Quadrature.AbstractGlobalQuadratureRule{manifold_dim}`: The quadrature rule to use
     for the error estimation.
-- `Lchains::Bool`: Whether to use L-chains for the refinement.
+- `qbox_size::NTuple{manifold_dim, Int}`: The size of the qboxes, see
+    [`FunctionSpaces.QBoxMarking`](@ref). Use ones to refine without qboxes.
 - `verbose::Bool=false`: Whether to print the progress of the adaptive loop.
 """
 function solve_one_form_hodge_laplacian(
@@ -125,7 +126,7 @@ function solve_one_form_hodge_laplacian(
     num_steps::Int,
     dorfler_parameter::Float64,
     dΩₑ::Quadrature.StandardQuadrature{manifold_dim},
-    Lchains::Bool,
+    qbox_size::NTuple{manifold_dim, Int},
     bc_type="";
     VERBOSE::Bool=false,
     EXPORT::Bool=false,
@@ -147,7 +148,7 @@ function solve_one_form_hodge_laplacian(
 
     if EXPORT
         Plot.export_form_fields_to_vtk(
-            (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-0"
+            (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-qbox-$(join(qbox_size, "x"))-step-0"
         )
     end
 
@@ -156,23 +157,20 @@ function solve_one_form_hodge_laplacian(
             println("Solving the problem on step $step...")
         end
 
-        H⁰ = FunctionSpaces.get_component_spaces(Forms.get_fe_space(complex[1]))[1]
-        dorfler_marking = FunctionSpaces.get_dorfler_marking(
-            err_per_element, dorfler_parameter
+        # Mark the elements with the largest errors, extended by the supports of the
+        # 0-forms on them and completed to whole qboxes.
+        H⁰ = Forms.get_fe_space(complex[1])
+        marking = FunctionSpaces.QBoxMarking(
+            H⁰,
+            qbox_size,
+            FunctionSpaces.SupportMarking(
+                H⁰,
+                err_per_element,
+                FunctionSpaces.DorflerMarking(err_per_element, dorfler_parameter),
+            ),
         )
-        marked_elements_per_level = FunctionSpaces.get_padding_per_level(
-            H⁰, dorfler_marking
-        )
-        if Lchains
-            domains = FunctionSpaces.update_domains_with_lchains!(
-                H⁰, marked_elements_per_level
-            )
-            complex = Forms.update_hierarchical_de_rham_complex(complex, domains)
-        else
-            complex = Forms.update_hierarchical_de_rham_complex(
-                complex, marked_elements_per_level
-            )
-        end
+        marked_elements = marking(1:length(err_per_element))
+        complex = Forms.update_hierarchical_de_rham_complex(complex, marked_elements)
 
         geo = Forms.get_geometry(complex[1])
         dΩₐ = Quadrature.StandardQuadrature(
@@ -194,7 +192,7 @@ function solve_one_form_hodge_laplacian(
 
         if EXPORT
             Plot.export_form_fields_to_vtk(
-                (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-L-chains-$(Lchains)-step-$(step)"
+                (δu¹, δu¹ₕ, u¹, u¹ₕ), "Example-qbox-$(join(qbox_size, "x"))-step-$(step)"
             )
         end
     end

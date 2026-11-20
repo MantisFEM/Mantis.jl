@@ -16,5 +16,8 @@ end
 @testset "ComponentMixing" verbose = true begin
     include("ComponentMixingTests.jl")
 end
+@testset "FormsHelpers" verbose = true begin
+    include("FormsHelpersTests.jl")
+end
 
 end

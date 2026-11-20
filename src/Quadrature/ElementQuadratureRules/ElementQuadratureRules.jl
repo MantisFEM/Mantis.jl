@@ -57,11 +57,9 @@ Represents a quadrature rule on a canonical element of dimension `manifold_dim`.
 # Type parameters
 - `manifold_dim`: Dimension of the domain
 
-# Inner Constructors
-- `CanonicalQuadratureRule(nodes::NTuple{manifold_dim, Vector{Float64}}, weights::Vector{Float64})`:
-    General constructor.
-
-# Outer Constructors
+# Constructors
+- `CanonicalQuadratureRule(nodes::NTuple{manifold_dim, Vector{Float64}},
+    weights::Vector{Float64})`: General constructor.
 - [`gauss_lobatto`](@ref).
 - [`gauss_legendre`](@ref).
 - [`clenshaw_curtis`](@ref).
