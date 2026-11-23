@@ -595,8 +595,9 @@ See [`get_derivative_idx`](@ref GeneralHelpers.get_derivative_idx) for more deta
 the order in which all the mixed derivatives of order `i-1` are stored.
 
 The evaluations are computed from the extraction coefficient blocks as
-`evaluations[i][j][co] = ∑ local_basis[i][j][ci] * get_extraction_coefficients(space, element_id, ci, co)`,
-where the sum runs over the blocks in [`get_block_pattern`](@ref).
+`evaluations[i][j][co] = ∑ local_basis[i][j][ci] * get_extraction_coefficients(space,
+element_id, block_id)`, where the sum runs over the blocks in [`get_block_pattern`](@ref),
+giving the correspondence between `block_id` and `(ci, co)`.
 
 # Arguments
 - `space::AbstractFESpace{manifold_dim, num_components, num_patches}`: Finite element space.
@@ -630,7 +631,6 @@ function evaluate(
     end
 
     # Evaluate the basis functions, accumulating the contribution of each block.
-    extraction_blocks = get_extraction_blocks(space, element_id)
     for (block_id, (input_component_id, output_component_id)) in
         enumerate(get_block_pattern(space))
         local_basis = get_local_basis(
@@ -644,7 +644,7 @@ function evaluate(
                 LinearAlgebra.mul!(
                     evaluations[der_order][der_idx][output_component_id],
                     local_basis[der_order][der_idx][1],
-                    extraction_blocks[block_id],
+                    get_extraction_coefficients(space, element_id, block_id),
                     1,
                     1,
                 )

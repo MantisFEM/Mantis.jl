@@ -98,14 +98,6 @@ struct BinaryOperatorTransformation{manifold_dim, O1, O2, T} <:
             )
         end
 
-        if !(get_quadrature_rule(operator_1) === get_quadrature_rule(operator_2))
-            throw(
-                ArgumentError(
-                    "Both operators in the binary transformation must use the same quadrature rule.",
-                ),
-            )
-        end
-
         return new{manifold_dim, O1, O2, T}(operator_1, operator_2, transformation)
     end
 
@@ -380,15 +372,6 @@ function get_operators(bin_trans::BinaryOperatorTransformation)
     return bin_trans.operator_1, bin_trans.operator_2
 end
 
-function get_quadrature_rule(una_trans::UnaryOperatorTransformation)
-    return get_quadrature_rule(get_operator(una_trans))
-end
-
-# Both operators have the same quadrature rule, see the inner constructor.
-function get_quadrature_rule(bin_trans::BinaryOperatorTransformation)
-    return get_quadrature_rule(first(get_operators(bin_trans)))
-end
-
 get_transformation(una_form::UnaryFormTransformation) = una_form.transformation
 get_geometry(una_trans::UnaryFormTransformation) = get_geometry(get_form(una_trans))
 get_label(una_form::UnaryFormTransformation) = una_form.label
@@ -447,7 +430,8 @@ function get_form_space_tree(bin_trans::BinaryOperatorTransformation)
         )
     end
 
-    # We can now safely return the tree of just one of the forms, since the trees are the same.
+    # We can now safely return the tree of just one of the forms, since the trees are the
+    # same.
     return tree_form_1
 end
 
@@ -456,8 +440,8 @@ function get_form_space_tree(una_trans::UnaryFormTransformation)
 end
 
 function get_form_space_tree(bin_trans::BinaryFormTransformation)
-    # Note that here we do not need to check if both trees are the same, since this is already
-    # done in the inner constructor of the BinaryFormTransformation struct.
+    # Note that here we do not need to check if both trees are the same, since this is
+    # already done in the inner constructor of the BinaryFormTransformation struct.
     tree_form_1 = get_form_space_tree(bin_trans.form_1)
 
     return tree_form_1
@@ -481,13 +465,29 @@ end
 function evaluate(bin_trans::BinaryOperatorTransformation, element_id::Int)
     operator_1, operator_2 = get_operators(bin_trans)
     transformation = get_transformation(bin_trans)
-    # Both operators have the same form-space tree and quadrature rule (see the inner
-    # constructor), so their evaluations have the same indices.
     eval_1, indices_1 = evaluate(operator_1, element_id)
-    eval_2, _ = evaluate(operator_2, element_id)
+    eval_2, indices_2 = evaluate(operator_2, element_id)
 
-    for i in eachindex(eval_1, eval_2)
-        eval_1[i] = transformation(eval_1[i], eval_2[i])
+    # Both forms can have different indices per component (e.g. α + ★★α), in which case
+    # they are combined on the union of their indices.
+    if indices_1 != indices_2
+        # Operator evaluations have no evaluation-point dimension, since we store a vector
+        # indexed by points, so a singleton one is added to reuse `_combine_evaluations`.
+        # We drop this dimension at the end.
+        eval_1, eval_2, indices_1 = _combine_evaluations(
+            reshape(eval_1, 1, size(eval_1)...),
+            indices_1,
+            reshape(eval_2, 1, size(eval_2)...),
+            indices_2,
+            Val(max(get_expression_rank(bin_trans), 1)),
+        )
+        eval_1 = dropdims(eval_1; dims=1)
+        eval_2 = dropdims(eval_2; dims=1)
+    end
+
+    # `eachindex` enforces the same number of points in the evaluation.
+    for p in eachindex(eval_1, eval_2)
+        eval_1[p] = transformation(eval_1[p], eval_2[p])
     end
 
     return eval_1, indices_1

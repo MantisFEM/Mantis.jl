@@ -82,8 +82,6 @@ end
         (nqrule + 1, nqrule + 1), Quadrature.gauss_legendre
     )
     dΩ_2 = Quadrature.StandardQuadrature(qrule_2, prod(num_elements_2d))
-    @test_throws ArgumentError int0 + ∫(w1 ∧ ★(x1), dΩ_2)
-    @test_throws ArgumentError (int0 + int1) - ∫(w2 ∧ ★(x2), dΩ_2)
     # A new rule that wraps the same canonical rule is compatible.
     dΩ_3 = Quadrature.StandardQuadrature(qrule, prod(num_elements_2d))
     @test isapprox(Forms.evaluate(int0 + ∫(w1 ∧ ★(x1), dΩ_3), 1)[1][1], int0_val + int1_val)

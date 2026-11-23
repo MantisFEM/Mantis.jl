@@ -439,6 +439,9 @@ space.
 function get_extraction_coefficients(
     extraction_op::ExtractionOperator{1, 1}, element_id::Int
 )
+    # By using only we guarantee that there is only one extraction block, since this method
+    # has no `block_id` parameter.
+    # This is already guaranteed by the constructor, but better safe than sorry.
     return only(get_extraction_blocks(extraction_op, element_id))
 end
 

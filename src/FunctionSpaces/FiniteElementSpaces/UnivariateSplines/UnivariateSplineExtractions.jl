@@ -72,7 +72,7 @@ function extract_bspline_to_section_space(
         end
     end
 
-    # Initialize extraction matrices for each element
+    # NOTE: Using `fill` is okay here since `I` is immutable and no aliasing occurs.
     E = fill(LinearAlgebra.I, nel)
 
     # Compute indices of supported basis functions on each element
@@ -101,7 +101,7 @@ function extract_bspline_to_section_space(
         end
     end
 
-    # Initialize extraction matrices for each element
+    # NOTE: Using `fill` is okay here since `I` is immutable and no aliasing occurs.
     E = fill(LinearAlgebra.I, nel)
 
     # Compute indices of supported basis functions on each element

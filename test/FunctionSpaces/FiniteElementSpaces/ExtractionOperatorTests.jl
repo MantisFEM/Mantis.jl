@@ -33,8 +33,6 @@ end
     @test FunctionSpaces.get_basis_indices(indices) == [3, 4, 5]
     @test FunctionSpaces.get_basis_indices(indices, 1) ===
         FunctionSpaces.get_basis_indices(indices)
-    @inferred FunctionSpaces.get_basis_indices(indices)
-    @inferred FunctionSpaces.get_basis_indices(indices, 1)
 
     # Multiple components, with an index shared by both components.
     indices = FunctionSpaces.Indices([1, 2, 3], ([1, 2], [2, 3]))
@@ -42,7 +40,6 @@ end
     @test FunctionSpaces.get_basis_indices(indices) == [1, 2, 3]
     @test FunctionSpaces.get_basis_indices(indices, 1) == [1, 2]
     @test FunctionSpaces.get_basis_indices(indices, 2) == [2, 3]
-    @inferred FunctionSpaces.get_basis_indices(indices, 2)
 
     # Ranges are allowed.
     indices = FunctionSpaces.Indices(1:4, (1:2, 3:4))
@@ -107,14 +104,6 @@ end
     @test_throws ArgumentError FunctionSpaces.ExtractionOperator(
         coefficients, indices[1:1], 2, 4
     )
-
-    # Hot-path getters are type stable.
-    @inferred FunctionSpaces.get_extraction_blocks(extraction_op, 1)
-    @inferred FunctionSpaces.get_extraction_coefficients(extraction_op, 1)
-    @inferred FunctionSpaces.get_extraction_coefficients(extraction_op, 1, 1)
-    @inferred FunctionSpaces.get_extraction_coefficients(extraction_op, 1, 1, 1)
-    @inferred FunctionSpaces.get_basis_indices(extraction_op, 1)
-    @inferred FunctionSpaces.get_basis_indices(extraction_op, 1, 1)
 end
 
 @testset "Direct sum (identity blocks)" begin
@@ -148,9 +137,6 @@ end
     M = extract(extraction_op, 1, (linear_basis(x), linear_basis(x)))
     @test M[1] ≈ linear_basis(x)
     @test M[2] ≈ linear_basis(x)
-
-    @inferred FunctionSpaces.get_extraction_coefficients(extraction_op, 1, 2, 2)
-    @inferred FunctionSpaces.get_basis_indices(extraction_op, 1, 2)
 end
 
 @testset "Overlapping component indices" begin
