@@ -14,5 +14,8 @@ end
 @testset "TensorProductQuadrature" begin
     include("TensorProductTests.jl")
 end
+@testset "ImmersedQuadrature" begin
+    include("ImmersedQuadratureTests.jl")
+end
 
 end

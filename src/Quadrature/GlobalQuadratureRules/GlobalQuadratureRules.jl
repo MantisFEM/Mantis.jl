@@ -68,3 +68,4 @@ end
 
 # specific implementations
 include("./StandardQuadrature.jl")
+include("ImmersedQuadrature.jl")
