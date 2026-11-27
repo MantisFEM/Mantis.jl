@@ -18,10 +18,6 @@ end
     include("UnstructuredGeometryTests.jl")
 end
 
-@testset "HierarchicalGeometry" verbose = true begin
-    include("HierarchicalGeometryTests.jl")
-end
-
 @testset "Metric" begin
     include("MetricTests.jl")
 end
@@ -30,6 +26,10 @@ end
 end
 @testset "EvaluationMask" verbose = true begin
     include("EvaluationMask/runtests.jl")
+end
+
+@testset "Hierarchical" verbose = true begin
+    include("Hierarchical/runtests.jl")
 end
 
 end

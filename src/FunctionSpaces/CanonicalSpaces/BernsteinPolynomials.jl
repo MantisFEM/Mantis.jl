@@ -136,3 +136,8 @@ function extract_monomial_to_bernstein(polynomial::Bernstein)
 
     return T
 end
+
+function get_basis_integrals(polynomial::Bernstein)
+    p = get_polynomial_degree(polynomial)
+    return [1.0 / (p + 1) for _ in 0:p]
+end

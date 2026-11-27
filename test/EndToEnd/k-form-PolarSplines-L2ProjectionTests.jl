@@ -26,17 +26,15 @@ p⁰ = [2, 3]
 # type of section spaces to use
 θ = 2 * pi
 α = 5.0
+# FIX: The commented-out sections spaces below require methods for the corresponding types
+# of the function `get_basis_integrals`.
 section_space_type = [
-    FunctionSpaces.GeneralizedTrigonometric,
-    FunctionSpaces.GeneralizedExponential,
+    # FunctionSpaces.GeneralizedTrigonometric,
+    # FunctionSpaces.GeneralizedExponential,
     FunctionSpaces.Bernstein,
 ]
 # print info?
 verbose = false
-# tolerance for zero values
-zero_tol = 1e-12
-# tolerance for convergence rates
-rate_tol = 2e-1
 
 # exact solution for the problem
 function sinusoidal_solution(
