@@ -107,20 +107,10 @@ function evaluate(
 end
 
 ############################################################################################
-#                                     Abstract method                                      #
-############################################################################################
-
-function _evaluate_hodge(
-    form::AbstractForm{manifold_dim, form_rank, expression_rank},
-    element_id::Int,
-    xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, form_rank, expression_rank}
-    return throw(MethodError(_evaluate_hodge, (form, element_id, xi)))
-end
-
-############################################################################################
 #                                       Combinations                                       #
 ############################################################################################
+
+# Single-component
 
 # 0-forms (manifold_dim)
 function _evaluate_hodge(
@@ -131,11 +121,9 @@ function _evaluate_hodge(
     _, sqrt_g = Geometry.metric(get_geometry(form), element_id, xi)
     form_eval, form_indices = evaluate(form, element_id, xi)
     # ⋆α₁⁰ = α₁⁰√det(gᵢⱼ) dξ₁∧…∧dξₙ.
-    for id in eachindex(IndexCartesian(), form_eval[1])
-        form_eval[1][id] *= sqrt_g[id[1]]
-    end
+    hodge_eval = [form_eval[1] .* sqrt_g]
 
-    return form_eval, form_indices
+    return hodge_eval, form_indices
 end
 
 # n-forms (manifold_dim)
@@ -147,103 +135,171 @@ function _evaluate_hodge(
     _, sqrt_g = Geometry.metric(get_geometry(form), element_id, xi)
     form_eval, form_indices = evaluate(form, element_id, xi)
     # ⋆α₁ⁿdξ₁∧…∧dξₙ = α₁ⁿ(√det(gᵢⱼ))⁻¹.
-    for id in eachindex(IndexCartesian(), form_eval[1])
-        form_eval[1][id] *= (1 / sqrt_g[id[1]])
-    end
-
-    return form_eval, form_indices
-end
-
-# 1-forms (2 dimensions)
-function _evaluate_hodge(
-    form::AbstractForm{2, 1, expression_rank}, element_id::Int, xi::Points.AbstractPoints{2}
-) where {expression_rank}
-    inv_g, _, sqrt_g = Geometry.inv_metric(get_geometry(form), element_id, xi)
-    form_eval, form_indices = evaluate(form, element_id, xi)
-    # Because we restrict ourselves to expression with rank 0 or 1, we can
-    # extract the first set of indices (only set), for higher ranks, we need
-    # to change this
-    mat_size = (size(form_eval[1], 1), size(form_eval[1], 2))
-    hodge_eval = [zeros(mat_size) for _ in 1:2]
-    # ⋆(α₁¹dξ₁+α₂¹dξ₂) = [-(α₁¹g²¹+α₂¹g²²)dξ₁ + (α₁¹g¹¹+α₂¹g¹²)dξ₂]√det(gᵢⱼ).
-    for id in CartesianIndices(mat_size)
-        for component in 1:2
-            # First: -(α₁¹g²¹+α₂¹g²²)dξ₁
-            hodge_eval[1][id] += -form_eval[component][id] * inv_g[id[1]][2, component]
-            # Second: (α₁¹g¹¹+α₂¹g¹²)dξ₂
-            hodge_eval[2][id] += form_eval[component][id] * inv_g[id[1]][1, component]
-        end
-
-        hodge_eval[1][id] *= sqrt_g[id[1]]
-        hodge_eval[2][id] *= sqrt_g[id[1]]
-    end
+    hodge_eval = [form_eval[1] ./ sqrt_g]
 
     return hodge_eval, form_indices
 end
 
-# 1-forms (3 dimensions)
-function _evaluate_hodge(
-    form::AbstractForm{3, 1, expression_rank}, element_id::Int, xi::Points.AbstractPoints{3}
-) where {expression_rank}
-    inv_g, _, sqrt_g = Geometry.inv_metric(get_geometry(form), element_id, xi)
-    form_eval, form_indices = evaluate(form, element_id, xi)
-    # Because we restrict ourselves to expression with rank 0 or 1, we can
-    # extract the first set of indices (only set), for higher ranks, we need
-    # to change this
-    mat_size = (size(form_eval[1], 1), size(form_eval[1], 2))
-    hodge_eval = [zeros(mat_size) for _ in 1:3]
-    # Compute the Hodge-⋆ following the analytical expression
-    # ⋆(α₁¹dξ₁+α₂¹dξ₂+α₃¹dξ₃) =
-    # [(α₁¹g¹¹+α₂¹g¹²+α₃¹g¹³)dξ₂∧dξ₃ + (α₁¹g²¹+α₂¹g²²+α₃¹g²³)dξ₃∧dξ₁
-    #     + (α₁¹g³¹+α₂¹g³²+α₃¹g³³)dξ₁∧dξ₂]√det(gᵢⱼ).
-    #
-    # First: (α₁¹g¹¹+α₂¹g¹²+α₃¹g¹³)dξ₂∧dξ₃  --> component 1
-    # Second: (α₁¹g²¹+α₂¹g²²+α₃¹g²³)dξ₃∧dξ₁ --> component 2
-    # Third: (α₁¹g³¹+α₂¹g³²+α₃¹g³³)dξ₁∧dξ₂  --> component 3
-    for id in CartesianIndices(mat_size)
-        for h_component in 1:3
-            for x_component in 1:3
-                hodge_eval[h_component][id] +=
-                    form_eval[x_component][id] * inv_g[id[1]][h_component, x_component]
-            end
+# Multi-component
 
-            hodge_eval[h_component][id] *= sqrt_g[id[1]]
-        end
-    end
+"""
+    _hodge_rows(::Val{manifold_dim}, ::Val{form_rank}) where {manifold_dim, form_rank}
 
-    return hodge_eval, form_indices
+Returns, for each component `i` of the Hodge-⋆ of a `form_rank`-form with multiple
+components, the row of the metric term `M` used by that component. Together with
+[`_hodge_signs`](@ref) and [`_hodge_metric_terms`](@ref), component `i` of ⋆α is
+
+`signs[i] * ∑ⱼ M[rows[i], j] αⱼ * s`.
+
+The supported combinations are 1-forms in 2D and 3D, and 2-forms in 3D:
+```
+⋆(α₁dξ₁ + α₂dξ₂) = [-(α₁g²¹ + α₂g²²)dξ₁ + (α₁g¹¹ + α₂g¹²)dξ₂]√det(gᵢⱼ)
+
+⋆(α₁dξ₁ + α₂dξ₂ + α₃dξ₃) =
+    [(α₁g¹¹ + α₂g¹² + α₃g¹³)dξ₂∧dξ₃ + (α₁g²¹ + α₂g²² + α₃g²³)dξ₃∧dξ₁
+     + (α₁g³¹ + α₂g³² + α₃g³³)dξ₁∧dξ₂]√det(gᵢⱼ)
+
+⋆(α₁dξ₂∧dξ₃ + α₂dξ₃∧dξ₁ + α₃dξ₁∧dξ₂) =
+    [(α₁g₁₁ + α₂g₁₂ + α₃g₁₃)dξ₁ + (α₁g₂₁ + α₂g₂₂ + α₃g₂₃)dξ₂
+     + (α₁g₃₁ + α₂g₃₂ + α₃g₃₃)dξ₃]/√det(gᵢⱼ)
+```
+The last one is the inverse of the 3D 1-form case. Other combinations throw an
+`ArgumentError`.
+
+# Returns
+- `::NTuple{binomial(manifold_dim, form_rank), Int}`: The row per component of ⋆α.
+"""
+_hodge_rows(::Val{manifold_dim}, ::Val{form_rank}) where {manifold_dim, form_rank} = throw(
+    ArgumentError(
+        LazyString(
+            "Combination manifold_dim=",
+            manifold_dim,
+            " and form_rank=",
+            form_rank,
+            " not supported",
+        ),
+    ),
+)
+
+"""
+    _hodge_signs(::Val{manifold_dim}, ::Val{form_rank}) where {manifold_dim, form_rank}
+
+Returns the sign of each component of the Hodge-⋆ of a `form_rank`-form with multiple
+components. See [`_hodge_rows`](@ref) for the details.
+
+# Returns
+- `::NTuple{binomial(manifold_dim, form_rank), Float64}`: The sign per component of ⋆α.
+"""
+function _hodge_signs end
+
+# 1-forms in 2D.
+_hodge_rows(::Val{2}, ::Val{1}) = (2, 1)
+_hodge_signs(::Val{2}, ::Val{1}) = (-1.0, 1.0)
+# 1- and 2-forms in 3D.
+_hodge_rows(::Val{3}, ::Union{Val{1}, Val{2}}) = (1, 2, 3)
+_hodge_signs(::Val{3}, ::Union{Val{1}, Val{2}}) = (1.0, 1.0, 1.0)
+
+"""
+    _hodge_metric_terms(
+        geometry::Geometry.AbstractGeometry, ::Val{form_rank}, element_id, xi
+    ) where {form_rank}
+
+Returns the metric terms with which the components of a `form_rank`-form are combined into
+the components of its Hodge-⋆; see [`_hodge_rows`](@ref). These are
+- 1-forms (2D and 3D): `M = g⁻¹` and `s = √det(gᵢⱼ)`.
+- 2-forms in 3D: `M = g` and `s = 1/√det(gᵢⱼ)`.
+
+# Returns
+- `M::Vector{<:AbstractMatrix}`: The (inverse) metric tensor per evaluation point.
+- `s::Vector{Float64}`: The scaling per evaluation point.
+"""
+function _hodge_metric_terms(
+    geometry::Union{Geometry.AbstractGeometry{2}, Geometry.AbstractGeometry{3}},
+    ::Val{1},
+    element_id,
+    xi,
+)
+    inv_g, _, sqrt_g = Geometry.inv_metric(geometry, element_id, xi)
+
+    return inv_g, sqrt_g
 end
 
-# 2-forms (3 dimensions)
+function _hodge_metric_terms(
+    geometry::Geometry.AbstractGeometry{3}, ::Val{2}, element_id, xi
+)
+    g, sqrt_g = Geometry.metric(geometry, element_id, xi)
+
+    return g, 1 ./ sqrt_g
+end
+
 function _evaluate_hodge(
-    form::AbstractForm{3, 2, expression_rank}, element_id::Int, xi::Points.AbstractPoints{3}
-) where {expression_rank}
-    # The Hodge-⋆ of a 2-form in 3D is the inverse of the Hodge-⋆ of a 1-form in 3D
-    # Therefore we can use the metric tensor instead of the inverse metric tensor
-    # and use the same expression as for the Hodge-⋆ of 1-forms but now using the
-    # metric tensor instead of the inverse of the metric tensor.
-    g, sqrt_g = Geometry.metric(get_geometry(form), element_id, xi)
+    form::AbstractForm{manifold_dim, form_rank, expression_rank},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+) where {manifold_dim, form_rank, expression_rank}
     form_eval, form_indices = evaluate(form, element_id, xi)
-    mat_size = (size(form_eval[1], 1), size(form_eval[1], 2))
-    hodge_eval = [zeros(mat_size) for _ in 1:3]
-
-    # Compute the Hodge-⋆ following the analytical expression
-    # ⋆(α₁dξ²∧dξ³+α₂dξ³∧dξ¹+α₃dξ¹∧dξ²) =
-    # [(α₁g₁₁+α₂¹g₁₂+α₃¹g₁₃)dξ₁ + (α₁g₂₁+α₂g₂₂+α₃g₂₃)dξ₂ + (α₁g₃₁+α₂g₃₂+α₃g₃₃)dξ₃]/√det(gᵢⱼ).
-    #
-    # First: (α₁g₁₁+α₂¹g₁₂+α₃¹g₁₃)dξ₁  --> component 1
-    # Second: (α₁g₂₁+α₂g₂₂+α₃g₂₃)dξ₂   --> component 2
-    # Third: (α₁g₃₁+α₂g₃₂+α₃g₃₃)dξ₃    --> component 3
-    for id in CartesianIndices(mat_size)
-        for h_component in 1:3
-            for x_component in 1:3
-                hodge_eval[h_component][id] +=
-                    form_eval[x_component][id] * g[id[1]][h_component, x_component]
-            end
-
-            hodge_eval[h_component][id] /= sqrt_g[id[1]]
+    geometry = get_geometry(form)
+    rows = _hodge_rows(Val(manifold_dim), Val(form_rank))
+    signs = _hodge_signs(Val(manifold_dim), Val(form_rank))
+    component_term, scaling_term = _hodge_metric_terms(
+        geometry, Val(form_rank), element_id, xi
+    )
+    num_components = binomial(manifold_dim, form_rank)
+    hodge_eval = Vector{Array{Float64, 1 + expression_rank}}(undef, num_components)
+    hodge_indices = Vector{Vector{Vector{Int}}}(undef, num_components)
+    combined_indices, column_maps = _combine_indices(
+        form_indices, 1:num_components, Val(expression_rank)
+    )
+    for component_id in 1:num_components
+        weights = _hodge_weights(
+            component_term,
+            scaling_term,
+            rows[component_id],
+            signs[component_id],
+            num_components,
+        )
+        hodge_eval[component_id] = _allocate_indices(get_num_points(xi), combined_indices)
+        for c in 1:num_components
+            _add_columns!(
+                hodge_eval[component_id], form_eval[c], column_maps[c], weights[c]
+            )
         end
+        hodge_indices[component_id] = _tuple_to_vec_indices(combined_indices)
     end
 
-    return hodge_eval, form_indices
+    return hodge_eval, hodge_indices
+end
+
+"""
+    _hodge_weights(
+        component_term::AbstractVector,
+        scaling_term::AbstractVector,
+        row::Int,
+        sign::Float64,
+        num_components::Int,
+    )
+
+Computes, for each component `c` of the input form, the point-wise weight
+`sign * component_term[p][row, c] * scaling_term[p]` with which it contributes to a component
+of its Hodge-⋆. The `component_term` and `scaling_term` are given by
+[`_hodge_metric_terms`](@ref), and the `row` and `sign` by [`_hodge_rows`](@ref) and
+[`_hodge_signs`](@ref).
+
+# Returns
+- `::Vector{Vector{Float64}}`: The weights per input component and per evaluation point.
+"""
+function _hodge_weights(
+    component_term::AbstractVector,
+    scaling_term::AbstractVector,
+    row::Int,
+    sign::Float64,
+    num_components::Int,
+)
+    weights = [Vector{Float64}(undef, length(scaling_term)) for _ in 1:num_components]
+    for c in 1:num_components, point_id in eachindex(scaling_term)
+        weights[c][point_id] =
+            sign * component_term[point_id][row, c] * scaling_term[point_id]
+    end
+
+    return weights
 end

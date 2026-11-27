@@ -99,8 +99,9 @@ vector-field are defined in reference, curvilinear coordinates.
 - `::Vector{Matrix{Float64}}`: Each component of the vector, corresponding to each ∂ᵢ,
     stores the sharp evaluation. The size of each matrix is (number of evaluation
     points)x(number of basis functions).
-- `::Vector{Vector{Int}}`: Each component of the vector, corresponding to each ∂ᵢ, stores
-    the indices of the evaluated basis functions.
+- `::Vector{Vector{Vector{Int}}}`: The (dummy) indices per component, see
+    [`evaluate`](@ref). Since the sharp is only defined for expressions of rank 0, these
+    are always `[[1]]`.
 """
 function evaluate(
     sharp::Sharp{manifold_dim}, element_id::Int, xi::Points.AbstractPoints{manifold_dim}

@@ -2,10 +2,10 @@
 #                                    AbstractPullbacks                                     #
 ############################################################################################
 function evaluate(
-    form::AbstractPullback{manifold_dim, form_rank},
+    form::AbstractPullback{manifold_dim, form_rank, expression_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim, form_rank}
+) where {manifold_dim, form_rank, expression_rank}
     evaluations, basis_indices = Forms.evaluate(get_form(form), element_id, xi)
 
     source = get_source_location(get_form(form)) # source of the original form
@@ -18,16 +18,96 @@ function evaluate(
     )
     geometry = get_geometry(form, source)
     jacobian = Geometry.jacobian(geometry, element_id, xi)
-    pullback!(
+
+    return _pullback(
         evaluations,
+        basis_indices,
         jacobian,
         Val(form_rank),
         Val(num_source_components),
         Val(num_dest_components),
+        Val(expression_rank),
         get_pullback_type(form),
     )
+end
 
-    return evaluations, basis_indices
+# 0-forms are not modified by the form pullback.
+function _pullback(
+    evaluations,
+    indices,
+    J,
+    ::Val{0},
+    ::Val{num_source_components},
+    ::Val{num_destination_components},
+    ::Val{expression_rank},
+    ::Type{PB},
+) where {
+    num_source_components,
+    num_destination_components,
+    expression_rank,
+    PB <: AbstractFormPullback,
+}
+    return evaluations, indices
+end
+
+# Each component of the pulled-back k-form is a point-wise linear combination of the source
+# components (weights given by the cofactor matrix). Since the source components can have
+# different basis indices, each destination component lives on the union of the indices of
+# the source components that contribute to it.
+function _pullback(
+    evaluations,
+    indices,
+    J,
+    ::Val{form_rank},
+    ::Val{num_source_components},
+    ::Val{num_destination_components},
+    ::Val{expression_rank},
+    ::Type{PB},
+) where {
+    form_rank,
+    num_source_components,
+    num_destination_components,
+    expression_rank,
+    PB <: AbstractFormPullback,
+}
+    # Only combine the source components with a non-zero contribution, so that, e.g.,
+    # diagonal jacobians (Parametric -> Canonical) keep the indices of each component.
+    uses = zeros(Bool, num_destination_components, num_source_components)
+    for p in eachindex(J)
+        C = _cofactor_matrix(J[p], Val(form_rank))
+        for j in 1:num_destination_components, i in 1:num_source_components
+            uses[j, i] |= !iszero(C[j, i])
+        end
+    end
+
+    T = eltype(eltype(evaluations))
+    num_points = length(J)
+    pb_evals = Vector{Array{T, 1 + expression_rank}}(undef, num_destination_components)
+    pb_indices = Vector{Vector{Vector{Int}}}(undef, num_destination_components)
+    column_maps = Vector{Vector{NTuple{expression_rank, Vector{Int}}}}(
+        undef, num_destination_components
+    )
+    for j in 1:num_destination_components
+        components = [i for i in 1:num_source_components if uses[j, i]]
+        combined_indices, column_maps[j] = _combine_indices(
+            indices, components, Val(expression_rank)
+        )
+        pb_evals[j] = _allocate_indices(num_points, combined_indices; T=T)
+        pb_indices[j] = _tuple_to_vec_indices(combined_indices)
+    end
+
+    for p in eachindex(J)
+        C = _cofactor_matrix(J[p], Val(form_rank))
+        for j in 1:num_destination_components, i in 1:num_source_components
+            uses[j, i] || continue
+            column_map = column_maps[j][i]
+            local_basis = map(e -> 1:length(e), column_map)
+            view(pb_evals[j], p, column_map...) .+=
+                C[j, i] .* view(evaluations[i], p, local_basis...)
+        end
+    end
+
+    return pb_evals, pb_indices
 end
 
 ############################################################################################
@@ -91,7 +171,7 @@ struct FormPullback{manifold_dim, form_rank, expression_rank, D, S, F, L} <:
         # We only have one direction for the mappings, so
         # canonical -> parametric -> physical
         # meaning that the pullback will go from right to left. Pulling back the other way
-        # around will fail, because the pullback! methods have not been implemented.
+        # around will fail, because the `_pullback` methods have not been implemented.
         if (D <: Parametric && S <: Canonical) ||
             (D <: Physical && (S <: Canonical || S <: Parametric))
             throw(
@@ -128,9 +208,9 @@ struct FormPullback{manifold_dim, form_rank, expression_rank, D, S, F, L} <:
     end
 end
 
-# Trait type to allow the `pullback!`-methods to specialise on the type of the pullback.
-# This will enable the specialisation for this `pullback!`-methods, and it will prevent
-# overspecialisation which would happen if the `pullback!`-methods accepted a full pullback
+# Trait type to allow the `_pullback`-methods to specialise on the type of the pullback.
+# This will enable the specialisation for this `_pullback`-methods, and it will prevent
+# overspecialisation which would happen if the `_pullback`-methods accepted a full pullback
 # type.
 get_pullback_type(::FormPullback) = AbstractFormPullback
 
@@ -201,110 +281,6 @@ function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3}, ::Val{3})
     return StaticArrays.SMatrix{1, 1}(StaticArrays.det(J))
 end
 
-# The pullback! functions cover outputs of FESpace (T = Matrix{<:Real}), FormSpace
-# (T = Matrix{<:Real}) and FormField (T = Vector{<:Real}) in one go, since only one
-# derivative evaluation can be provided in one go.
-# 0-forms don't need to modify the evaluations.
-function pullback!(
-    evaluations::Vector{T},
-    J::Vector{S},
-    ::Val{0},
-    ::Val{num_source_components},
-    ::Val{num_destination_components},
-    ::Type{PB},
-) where {
-    T,
-    S <: StaticArrays.SMatrix,
-    num_source_components,
-    num_destination_components,
-    PB <: AbstractFormPullback,
-}
-    return evaluations
-end
-
-# k-forms
-function pullback!(
-    evaluations::Vector{T},
-    J::Vector{S},
-    ::Val{form_rank},
-    ::Val{num_source_components},
-    ::Val{num_destination_components},
-    ::Type{PB},
-) where {
-    T,
-    S <: StaticArrays.SMatrix,
-    form_rank,
-    num_source_components,
-    num_destination_components,
-    PB <: AbstractFormPullback,
-}
-    ET = eltype(T)
-    for p in axes(evaluations[1], 1) # loop over the points
-        # For 1-forms: C = J^T, so C[j, i] = ∂Φᵢ/∂ξⱼ
-        # For 2-forms: C = det_{J,I}(J^T)
-        C = _cofactor_matrix(J[p], Val(form_rank))
-
-        for b in axes(evaluations[1], 2) # loop of the number of basis
-            # Get the input evaluations at point p for basis b, before overwriting.
-            evals_pb = ntuple(i -> evaluations[i][p, b], num_source_components)
-            # Now we can safely overwrite the evaluations.
-            # We first zero the value to ensure that the later sum is correct.
-            for i in 1:num_source_components
-                evaluations[i][p, b] = zero(ET)
-            end
-            # Now we can write to the evaluations as if they were the output components.
-            for j in 1:num_destination_components
-                for i in 1:num_source_components
-                    evaluations[j][p, b] += C[j, i] * evals_pb[i]
-                end
-            end
-        end
-    end
-
-    # We keep only the output components that were used.
-    resize!(evaluations, num_destination_components)
-
-    return evaluations
-end
-# Physical -> Canonical
-function _cofactor_matrix(J::StaticArrays.SMatrix{3, 3})
-    return StaticArrays.SMatrix{3, 3}(
-        J[2, 2] * J[3, 3] - J[2, 3] * J[3, 2],
-        J[3, 2] * J[1, 3] - J[3, 3] * J[1, 2],
-        J[1, 2] * J[2, 3] - J[1, 3] * J[2, 2],
-        J[2, 3] * J[3, 1] - J[2, 1] * J[3, 3],
-        J[3, 3] * J[1, 1] - J[3, 1] * J[1, 3],
-        J[1, 3] * J[2, 1] - J[1, 1] * J[2, 3],
-        J[2, 1] * J[3, 2] - J[2, 2] * J[3, 1],
-        J[3, 1] * J[1, 2] - J[3, 2] * J[1, 1],
-        J[1, 1] * J[2, 2] - J[1, 2] * J[2, 1],
-    )
-end
-function pullback!(
-    evaluations::Vector{T},
-    form::FormPullback{3, 2, expression_rank, D, S},
-    element_id::Int,
-    xi::Points.AbstractPoints{3},
-) where {expression_rank, T, D <: Canonical, S <: Physical}
-    geometry = get_geometry(form)
-    J = Geometry.jacobian(geometry, element_id, xi)
-
-    for p in axes(evaluations[1], 1)
-        C = _cofactor_matrix(J[p])
-
-        for b in axes(evaluations[1], 2)
-            e1 = evaluations[1][p, b]
-            e2 = evaluations[2][p, b]
-            e3 = evaluations[3][p, b]
-            for k in 1:3
-                evaluations[k][p, b] = e1 * C[1, k] + e2 * C[2, k] + e3 * C[3, k]
-            end
-        end
-    end
-
-    return evaluations
-end
-
 ############################################################################################
 #                                 Component-wise pullbacks                                 #
 ############################################################################################
@@ -364,6 +340,25 @@ end
 
 get_pullback_type(::ComponentWisePullback) = AbstractComponentWisePullback
 
+function _pullback(
+    evaluations,
+    indices,
+    J,
+    ::Val{form_rank},
+    ::Val{num_source_components},
+    ::Val{num_destination_components},
+    ::Val{expression_rank},
+    ::Type{PB},
+) where {
+    form_rank,
+    num_source_components,
+    num_destination_components,
+    expression_rank,
+    PB <: AbstractComponentWisePullback,
+}
+    return evaluations, indices
+end
+
 # Creating the pullback to a destination that is already the source does nothing. This
 # method prevents the nesting of more and more of such pullbacks. This way, other
 # operators can simply propagate pullbacks without adding noise.
@@ -391,23 +386,4 @@ function ComponentWisePullback(
     ComponentWisePullback{manifold_dim, form_rank, expression_rank, Parametric, Physical},
 }
     return ComponentWisePullback(get_form(form), Canonical)
-end
-
-# The ComponentWisePullback works the same irrespective of the source and destination.
-function pullback!(
-    evaluations::Vector{T},
-    J::Vector{S},
-    ::Val{form_rank},
-    ::Val{num_source_components},
-    ::Val{num_destination_components},
-    ::Type{PB},
-) where {
-    T,
-    S <: StaticArrays.SMatrix,
-    form_rank,
-    num_source_components,
-    num_destination_components,
-    PB <: AbstractComponentWisePullback,
-}
-    return evaluations
 end

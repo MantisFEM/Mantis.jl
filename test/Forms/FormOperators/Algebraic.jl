@@ -77,6 +77,14 @@ end
     int2_val = w2_c * x2_c
     # Error barriers: incompatible spaces
     @test_throws ArgumentError int3 + int4
+    # Error barriers: quadrature rules that do not share the same nodes and weights in memory
+    qrule_2 = Quadrature.tensor_product_rule(
+        (nqrule + 1, nqrule + 1), Quadrature.gauss_legendre
+    )
+    dΩ_2 = Quadrature.StandardQuadrature(qrule_2, prod(num_elements_2d))
+    # A new rule that wraps the same canonical rule is compatible.
+    dΩ_3 = Quadrature.StandardQuadrature(qrule, prod(num_elements_2d))
+    @test isapprox(Forms.evaluate(int0 + ∫(w1 ∧ ★(x1), dΩ_3), 1)[1][1], int0_val + int1_val)
     # Addition
     @test isapprox(Forms.evaluate(int0 + int1, 1)[1][1], int0_val + int1_val)
     @test isapprox(Forms.evaluate(int1 + int2, 1)[1][1], int1_val + int2_val)

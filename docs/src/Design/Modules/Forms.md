@@ -177,6 +177,11 @@ In ``\mathbb{R}^3``, the exterior derivative embodies the well-known gradient (w
 ExteriorDerivative
 d
 ```
+Each component of the exterior derivative of a form with multiple components is a signed sum of first derivatives of its components. These terms are given by `_d_terms`, and the exterior derivative of a `FormSpace` with multiple components is evaluated by a single generic method.
+```@docs
+_d_terms
+_first_derivative_idx
+```
 
 ### [Wedge](@id FormsWedge)
 The wedge-operator is a generalisation of products. 
@@ -186,12 +191,24 @@ As mentioned before, this operator is skew-symmetric, that is, ``\alpha^k \wedge
 Wedge
 ∧
 ```
+Each component of the wedge is a signed sum of products of one component of each form. These terms are given by `_wedge_terms`, and the wedge is evaluated by a single generic method.
+```@docs
+_wedge_terms
+_evaluate_wedge
+```
 
 ### [Hodge](@id FormsHodge)
 The Hodge-star operator is a metric-dependent operator, which maps `k`-forms to `manifold_dim-k` forms.
 ```@docs
 Hodge
 ★
+```
+Each component of the Hodge-star of a form with multiple components is a weighted sum of all its components, with weights given by a row of the (inverse) metric tensor. The rows, signs, and metric terms are given by `_hodge_rows`, `_hodge_signs`, and `_hodge_metric_terms`, and the Hodge-star is evaluated by a single generic method. The resulting point-wise weights are computed by `_hodge_weights`.
+```@docs
+_hodge_rows
+_hodge_signs
+_hodge_metric_terms
+_hodge_weights
 ```
 
 ### [Codifferential](@id FormsCodifferential)
@@ -208,6 +225,25 @@ These operations are implemented as `UnaryFormTransformation` or `BinaryFormTran
 ```@docs
 UnaryFormTransformation
 BinaryFormTransformation
+```
+
+### [Internals: Combining components with different indices](@id FormsInternalComponentMixing)
+!!! note "Internal behaviour"
+    We explain how operators combine components of forms. However, this is considered an implementation detail.
+
+Since every component of a form can have its own basis indices, operators that combine several components into one (such as the exterior derivative, the Hodge-star, the wedge, or the sum of two forms) evaluate the resulting component on the (sorted) union of the indices of the combined components. 
+For example, if the components of a ``1``-form in 3D have the basis indices `[1, 2]`, `[2, 3, 4]`, and `[5, 6]`, then the ``\mathrm{d}\xi^1 \wedge \mathrm{d}\xi^2``-component of its exterior derivative is evaluated on the indices `[1, 2, 3, 4]`, and the ``\mathrm{d}\xi^2 \wedge \mathrm{d}\xi^3``-component on `[2, 3, 4, 5, 6]`. 
+The contribution of each combined component is then added to the matching columns.
+The following internal functions implement this.
+```@docs
+_combine_indices
+_allocate_indices
+_tuple_to_vec_indices
+_add_columns!
+_add_outer_product!
+_combine_evaluations
+_field_indices
+_combine_codifferential_terms
 ```
 
 ## [Operators returning a vector](@id FormsOperationsToVectors)

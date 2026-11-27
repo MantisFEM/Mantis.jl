@@ -174,28 +174,45 @@ Then given ``(f, g) \in A\oplus B``, we have ``(f, g)(x) = [f(x), g(x)]^T``.
 
 :::
 
+### Multi-component extraction
+
+For a multi-component space, the canonical bases are grouped per *input component*,
+``\boldsymbol{B}_1, \dots, \boldsymbol{B}_{n_i}``, and the space has *output components*
+``\boldsymbol{M}_1, \dots, \boldsymbol{M}_{n_o}``. On element ``e``, the extraction
+coefficients form a block matrix that maps the former to the latter:
+
+```math
+\left[\boldsymbol{M}_1 \cdots \boldsymbol{M}_{n_o}\right]
+=
+\left[\boldsymbol{B}_1 \cdots \boldsymbol{B}_{n_i}\right]
+\begin{bmatrix}
+\boldsymbol{E}_{11} & \cdots & \boldsymbol{E}_{1n_o} \\
+\vdots & \ddots & \vdots \\
+\boldsymbol{E}_{n_i1} & \cdots & \boldsymbol{E}_{n_in_o}
+\end{bmatrix},
+\qquad\text{i.e.}\qquad
+\boldsymbol{M}_{c_o} = \sum_{c_i} \boldsymbol{B}_{c_i} \boldsymbol{E}_{c_i c_o}.
+```
+
+The number of input components does not have to match the number of output components. In
+many spaces most blocks are zero. For the direct-sum space above, for instance, only the
+diagonal blocks ``\boldsymbol{E}_{11}`` and ``\boldsymbol{E}_{22}`` are non-zero: each
+component space only contributes to its own component. `Mantis` therefore only stores the
+structurally non-zero blocks.
+
 ### `Indices`
 
 On a given element, not all global basis functions are supported — only those whose support
 has a non-empty intersection with the element. The `Indices` struct tracks which global
-basis functions are active on an element, and in what order they appear when the canonical
-basis is evaluated. Concretely, it stores:
+basis functions are active on an element. Concretely, it stores:
 
 - `I`: a vector of *global* indices ``[i_1, i_2, \dots]`` identifying the basis functions
-  that are supported on the element. This is used to assemble element contributions into the
-  global system.
-- `J`: an `NTuple` with one entry per component of the space. Each entry is a permutation
-  that encodes how the *local* basis functions are arranged into the *global* bases at a
-  given element and component.
-  
-::: details Permutation `J`
-
-The permutation operator `J` is useful when defining multi-component spaces that can not be
-written as direct-sum spaces. In these cases, it is necessary to define how the *local*
-bases from a given component contribute to the *global, multi-component* basis — possibly
-contributing to multiple components.
-
-:::
+  that have at least one non-zero component on the element. This is used to assemble element
+  contributions into the global system.
+- `I_c`: an `NTuple` with one entry per output component. Entry ``c_o`` holds the global
+  indices of the basis functions whose ``c_o``-th component is non-zero on the element, and
+  determines the order of the columns of the blocks ``\boldsymbol{E}_{c_i c_o}``. Each entry
+  is a subset of `I`, and a basis function can be part of several components.
 
 You can find the full details at [`FunctionSpaces.Indices`](@ref).
 
@@ -203,14 +220,12 @@ You can find the full details at [`FunctionSpaces.Indices`](@ref).
 
 The `ExtractionOperator` aggregates all element-level data for a function space:
 
-- `extraction_coefficients`: a length-`num_elements` vector. Each entry is an
-  `NTuple{num_components}` of matrices: one matrix ``\boldsymbol{E}_e^{(k)}`` per
-  component ``k``. The matrix encodes how a canonical basis ``\boldsymbol{B}_e`` is
-  linearly combined to form the local basis on element ``e`` for component ``k``:
-  ```math
-  \boldsymbol{N}_e^{(k)} = \boldsymbol{B}_e\,\boldsymbol{E}_e^{(k)}.
-  ```
-  Remember: It is possible that a permutation with `J` occurs.
+- `block_pattern`: an `NTuple` of `(input, output)` component pairs, one for each
+  structurally non-zero block. The pattern is the same on all elements; for the direct-sum
+  space above it is `((1, 1), (2, 2))`.
+- `extraction_coefficients`: a length-`num_elements` vector. Each entry is an `NTuple` with
+  the non-zero blocks ``\boldsymbol{E}_{c_i c_o}`` of that element, in the order of
+  `block_pattern`. All blocks have the same type, which keeps their evaluation type stable.
 - `basis_indices`: a length-`num_elements` vector of `Indices` objects, one per element.
 - `num_elements`: the total number of elements.
 - `num_basis`: the global dimension of the function space — or number of degrees of freedom.
@@ -220,37 +235,41 @@ You can find the full details at [`FunctionSpaces.ExtractionOperator`](@ref).
 ### Interface
 
 To avoid having to directly access fields of `ExtractionOperator`, `Mantis` provides a small
-set of “getters”:
+set of “getters”. Spaces that do not store an `ExtractionOperator` (such as
+`TensorProductSpace` or `DirectSumSpace`) implement the same methods.
 
 | Method | Returns |
 |:---------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------|
-| [`FunctionSpaces.get_extraction(space, element_id, component_id)`](@ref) | `(E_e, J)` — the extraction coefficient matrix and permutation indices for element `element_id` and component `component_id` |
-| [`FunctionSpaces.get_extraction_coefficients(space, element_id, component_id)`](@ref) | ``\boldsymbol{E}_e^{(k)}`` |
+| [`FunctionSpaces.get_block_pattern(space)`](@ref) | the `(input, output)` component pairs of the non-zero blocks |
+| [`FunctionSpaces.get_extraction_blocks(space, element_id)`](@ref) | all non-zero blocks on the element, in the order of the block pattern |
+| [`FunctionSpaces.get_extraction_coefficients(space, element_id, input_component_id, output_component_id)`](@ref) | the block ``\boldsymbol{E}_{c_i c_o}``; throws if the block is structurally zero |
+| [`FunctionSpaces.get_extraction_coefficients(space, element_id)`](@ref) | the only block of a single-component space |
 | [`FunctionSpaces.get_basis_indices(space, element_id)`](@ref) | global index vector `I` for that element |
-| [`FunctionSpaces.get_basis_permutation(space, element_id, component_id)`](@ref) | local permutation `J` for that element and component |
+| [`FunctionSpaces.get_basis_indices(space, element_id, component_id)`](@ref) | global index vector `I_c[component_id]` for that element |
 | [`FunctionSpaces.get_num_basis(space)`](@ref) | total number of degrees of freedom |
 | [`FunctionSpaces.get_num_basis(space, element_id)`](@ref) | number of basis functions supported on an element |
 
+Component ids are never optional for multi-component spaces. Single-component spaces have
+dedicated methods without a component id instead.
 
 ### Putting it together
 
 To evaluate the global basis on element `element_id` at a set of points `xi`, `Mantis`
 executes the following steps (see [`FunctionSpaces.evaluate`](@ref) for the details):
 
-- __Get support indices__: `I = get_basis_indices(space, element_id)` identifies the
-   columns of the global evaluation matrix that this element contributes to.
-- __Loop over components__: For each component ``k``:
-    - Retrieve the stored ``(\boldsymbol{E}_e^{(k)},\, J^{(k)}) =
-      \texttt{get\_extraction}(\ldots)``.
-    - Evaluate the canonical basis ``\boldsymbol{B}_e`` on the reference element.
-    - Compute the local basis evaluations via the matrix product
-      ``\boldsymbol{B}_e\,\boldsymbol{E}_e^{(k)}``.
-    - Place the result into the columns selected by ``J^{(k)}``.
-- __Return__: The evaluated global bases with the global support indices `I`.
+- __Allocate__: For each output component ``c_o``, allocate a matrix with one column per
+  basis function in `get_basis_indices(space, element_id, c_o)`.
+- __Loop over blocks__: For each `(c_i, c_o)` in `get_block_pattern(space)`:
+    - Evaluate the canonical basis ``\boldsymbol{B}_{c_i}`` on the reference element.
+    - Add the matrix product ``\boldsymbol{B}_{c_i}\,\boldsymbol{E}_{c_i c_o}`` to the
+      evaluation of output component ``c_o``.
+- __Return__: The evaluated global bases per component. The corresponding global indices are
+  available through `get_basis_indices(space, element_id, c_o)`.
 
 This design keeps the canonical-basis evaluations element-agnostic (they are computed once
 on a canonical domain) while all element-specific information is encoded in the
-`ExtractionOperator` data structure.
+`ExtractionOperator` data structure. Moreover, each component only stores the evaluations of
+the basis functions that are non-zero in that component.
 
 ### Example: inspecting the extraction operator
 
@@ -307,24 +326,28 @@ We can confirm this in the next figure:
 DisplayAs.Text(DisplayAs.PNG(Mantis.Plot.plot_basis(bsp))) #hide
 ```
 
-Now we start by looking at what `FunctionSpaces.get_extraction` gives us for the first
-element.
+A B-spline space is a single-component space, so it has a single extraction block per
+element:
+
 ```@example ExtCoeffs
-E₁, J₁ = FunctionSpaces.get_extraction(bsp, 1);
+FunctionSpaces.get_block_pattern(bsp)
+```
+
+Now we start by looking at what `FunctionSpaces.get_extraction_coefficients` gives us for
+the first element.
+```@example ExtCoeffs
+E₁ = FunctionSpaces.get_extraction_coefficients(bsp, 1);
 @show E₁ #hide
-@show J₁ #hide
 nothing #hide
 ```
 
 This is telling us the extraction coefficients at the first element are just an identity
-matrix, and that the permutation is trivial — the bases are in the correct order. This is
-not a very exciting scenario, so let's look at the third element
+matrix. This is not a very exciting scenario, so let's look at the third element
 
 ```@example ExtCoeffs
-E₃, J₃ = FunctionSpaces.get_extraction(bsp, 3)
+E₃ = FunctionSpaces.get_extraction_coefficients(bsp, 3)
 bk = deepcopy(E₃) #hide
 @show E₃ #hide
-@show J₃ #hide
 # To avoid floating point approximations #hide
 E₃[1,1] = 0.5 #hide
 E₃[1,2] = 0.5 #hide
@@ -397,6 +420,36 @@ FunctionSpaces.get_basis_indices(bsp, 3)
 
 We can see that the basis functions supported on this element are the ones labelled
 `[4,5,6]`; this is what we expected from the labels in the plots.
+
+### Example: a multi-component space
+
+Let us now combine two B-spline spaces into a direct-sum space.
+
+```@example ExtCoeffs
+B = FunctionSpaces.create_bspline_space((0.0,), (1.0,), (1,), (1,), (0,))
+D = FunctionSpaces.DirectSumSpace((B, B))
+FunctionSpaces.get_block_pattern(D)
+```
+
+Each component space only contributes to its own component, so only the diagonal blocks are
+stored. On the first element, the basis functions of the first component are
+
+```@example ExtCoeffs
+FunctionSpaces.get_basis_indices(D, 1, 1)
+```
+
+and those of the second component are
+
+```@example ExtCoeffs
+FunctionSpaces.get_basis_indices(D, 1, 2)
+```
+
+The evaluation of each component only contains the basis functions of that component:
+
+```@example ExtCoeffs
+D_eval = FunctionSpaces.evaluate(D, 1, Points.PointSet(LinRange(0, 1, 4)))
+D_eval[1][1][2]
+```
 
 ## [Conclusion](@id ExtCoeffs-Conclusion)
 

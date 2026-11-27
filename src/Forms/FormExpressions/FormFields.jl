@@ -205,31 +205,34 @@ get_geometry(form_field::AnalyticalFormField) = form_field.geometry
 ############################################################################################
 
 function evaluate(
-    form_field::FormField{manifold_dim, form_rank, FS},
+    form::FormField{manifold_dim, form_rank, FS},
     element_idx::Int,
     xi::Points.AbstractPoints{manifold_dim},
 ) where {manifold_dim, form_rank, FS}
-    n_form_components = binomial(manifold_dim, form_rank)
-    form_basis_eval, form_basis_indices = evaluate(get_form(form_field), element_idx, xi)
+    n_form_components = get_num_components(Val(manifold_dim), Val(form_rank))
+    form_basis_eval, form_basis_indices = evaluate(get_form(form), element_idx, xi)
     TT = eltype(eltype(form_basis_eval))
     form_eval = Vector{Vector{TT}}(undef, n_form_components)
-    form_field_coefficients = get_coefficients(form_field)
-    for form_component_idx in 1:n_form_components
-        form_eval[form_component_idx] =
-            form_basis_eval[form_component_idx] *
-            form_field_coefficients[form_basis_indices[1]]
+    coefficients = get_coefficients(form)
+    for component_id in 1:n_form_components
+        form_eval[component_id] =
+            form_basis_eval[component_id] *
+            coefficients[form_basis_indices[component_id][1]]
     end
 
-    return form_eval, [[1]]
+    return form_eval, _field_indices(n_form_components)
 end
 
 function evaluate(
-    form::AnalyticalFormField{manifold_dim},
+    form::AnalyticalFormField{manifold_dim, form_rank},
     element_id::Int,
     xi::Points.AbstractPoints{manifold_dim},
-) where {manifold_dim}
+) where {manifold_dim, form_rank}
     x = Geometry.evaluate(get_geometry(form), element_id, xi)
     evaluations = get_expression(form)(x)
+    n_form_components = get_num_components(
+        Val(get_dim(form, get_source_location(form))), Val(form_rank)
+    )
 
-    return evaluations, [[1]]
+    return evaluations, _field_indices(n_form_components)
 end

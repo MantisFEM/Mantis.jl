@@ -172,10 +172,11 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 function _evaluate_codifferential(
@@ -193,10 +194,10 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1]]
+        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 function _evaluate_codifferential(
@@ -217,10 +218,11 @@ function _evaluate_codifferential(
 
     d_form_eval = Vector{Vector{T}}(undef, n_derivative_components)
     for component_id in eachindex(d_form_eval)
-        d_form_eval[component_id] = evals[component_id] * coefficients[indices[1]]
+        d_form_eval[component_id] =
+            evals[component_id] * coefficients[indices[component_id][1]]
     end
 
-    return d_form_eval, [[1]]
+    return d_form_eval, _field_indices(n_derivative_components)
 end
 
 ############################################################################################
@@ -239,6 +241,100 @@ end
 #                                        Form Space                                        #
 ############################################################################################
 
+function _pullback_one_form_and_derivatives(
+    form_space::FormSpace{manifold_dim, 1},
+    element_id::Int,
+    xi::Points.AbstractPoints{manifold_dim},
+    pullback::FormPullback,
+) where {manifold_dim}
+    source = get_source_location(form_space) # source of the original form
+    # Pulling back the derivatives (instead of differentiating the pulled-back form) misses
+    # the (∂C)α terms, which do not cancel in the codifferential. They vanish only if the
+    # pullback is constant on the element, which holds for Parametric -> Canonical.
+    if source <: Physical
+        throw(
+            ArgumentError(
+                LazyString(
+                    "The codifferential of a 1-form with source location Physical is not ",
+                    "implemented, since the derivatives of the pullback are not accounted ",
+                    "for.",
+                ),
+            ),
+        )
+    end
+
+    fe_space = get_fe_space(form_space)
+    fe_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
+    fe_indices = [
+        [FunctionSpaces.get_basis_indices(fe_space, element_id, component)] for
+        component in eachindex(fe_evals[1][1])
+    ]
+
+    # source of the pullback = destination of original form
+    dest = get_source_location(pullback)
+    val_form_rank = Val(1)
+    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
+    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
+    pbt = get_pullback_type(pullback)
+    jacobian = Geometry.jacobian(get_geometry(form_space, source), element_id, xi)
+
+    α, form_indices = _pullback(
+        fe_evals[1][1], fe_indices, jacobian, val_form_rank, nsc, ndc, Val(1), pbt
+    )
+    ∂α = ntuple(Val(manifold_dim)) do direction
+        der_idx = _first_derivative_idx(Val(manifold_dim), direction)
+        return first(
+            _pullback(
+                fe_evals[2][der_idx],
+                fe_indices,
+                jacobian,
+                val_form_rank,
+                nsc,
+                ndc,
+                Val(1),
+                pbt,
+            ),
+        )
+    end
+
+    return α, ∂α, form_indices
+end
+
+"""
+    _combine_codifferential_terms(terms, form_indices, num_points::Int)
+
+Combines the components of a 1-form (and of its derivatives) into the single component of
+its codifferential, on the union of the indices of the components.
+
+# Arguments
+- `terms`: Iterable of `(evaluations, weights)`, where `evaluations[c]` is the evaluation of
+    component `c` and `weights[c]` its weight per evaluation point.
+- `form_indices::Vector{Vector{Vector{Int}}}`: The indices of each component.
+- `num_points::Int`: The number of evaluation points.
+
+# Returns
+- `::Vector{Matrix{Float64}}`: The (single component) evaluation of the codifferential.
+- `::Vector{Vector{Vector{Int}}}`: Its indices.
+"""
+function _combine_codifferential_terms(terms, form_indices, num_points::Int)
+    combined_indices, column_maps = _combine_indices(
+        form_indices, eachindex(form_indices), Val(1)
+    )
+    codiff_eval = _allocate_indices(num_points, combined_indices)
+    for (evaluations, weights) in terms
+        for component in eachindex(evaluations)
+            _add_columns!(
+                codiff_eval,
+                evaluations[component],
+                column_maps[component],
+                weights[component],
+            )
+        end
+    end
+
+    return [codiff_eval], [_tuple_to_vec_indices(combined_indices)]
+end
+
 # 1D 1-forms.
 # Note that the expression rank in the pullback can be both 0 and 1, despite the fact that
 # the input form is a FormSpace. This is because it may originally have been a FormField,
@@ -250,17 +346,11 @@ function _evaluate_codifferential(
     xi::Points.AbstractPoints{1},
     pullback::FormPullback,
 )
-    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fe_space = get_fe_space(form_space)
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
-    T = eltype(fem_evals[1][1][1][1])
-    # n_coderivative_form_components = 1
-    n_basis_functions = length(form_basis_indices)
-    n_evaluation_points = Points.get_num_points(xi)
-    # Preallocate memory for output array
-    codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
+    α, (∂ᵤα,), form_indices = _pullback_one_form_and_derivatives(
+        form_space, element_id, xi, pullback
+    )
     # Compute the metric terms, including derivative of the metric.
-    J, inv_g, g, sqrt_g, (dgdu,), (dinv_g_du,), (dsqrt_g_du,), Hs = Geometry.metric_derivatives(
+    _, _, _, sqrt_g, _, _, (dsqrt_g_du,), _ = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
     # Compute the codifferential.
@@ -268,34 +358,13 @@ function _evaluate_codifferential(
     # *d*α¹ = (1/sqrt(det(g))) * (α¹ d/dx(1/sqrt(det(g))) + (1/sqrt(det(g)))d/dx(α¹))
     # Note that d/dx(1/sqrt(det(g))) = - (d/dx(sqrt(g)))/(sqrt(g)^2)
     # sign: (-1)^{n(k+1)+1}, n = manifold_dim, k = form_rank. 1-forms -> always -1.
-    sign = -one(T)
-    idx_du = FunctionSpaces.get_derivative_idx((1,))
+    sign = -1.0
+    w_α = [[-sign * dsqrt_g_du[i] / sqrt_g[i]^3 for i in eachindex(sqrt_g)]]
+    w_∂ᵤα = [[sign / sqrt_g[i]^2 for i in eachindex(sqrt_g)]]
 
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(1)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # The jacobian computed in metric_derivatives is the one for the source location.
-    pullback!(fem_evals[1][1], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[2][idx_du], J, val_form_rank, nsc, ndc, pbt)
-
-    for b in axes(codiff_eval[1], 2)
-        for i in axes(codiff_eval[1], 1)
-            inv_sqrtg = one(T) / sqrt_g[i]
-            codiff_eval[1][i, b] =
-                sign *
-                inv_sqrtg *
-                (
-                    -fem_evals[1][1][1][i, b] * dsqrt_g_du[i] / (sqrt_g[i] ^ 2) +  # - α¹ * (d/dx(sqrt(g)))/(sqrt(g)^2)
-                    fem_evals[2][idx_du][1][i, b] * inv_sqrtg  # ∂u α¹ * 1 / sqrt(g)
-                )
-        end
-    end
-
-    return codiff_eval, [form_basis_indices]
+    return _combine_codifferential_terms(
+        ((α, w_α), (∂ᵤα, w_∂ᵤα)), form_indices, Points.get_num_points(xi)
+    )
 end
 
 # 1D 1-forms where the 1-form is the exterior derivative of a 0-form (Laplacian).
@@ -304,13 +373,12 @@ function _evaluate_codifferential(
     element_id::Int,
     xi::Points.AbstractPoints{1},
 ) where {F <: FormPullback}
-    pullback = get_form(form_space)
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, we do not have to scale the derivatives.
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(
-        get_fe_space(form_space), element_id, xi, 2
-    )
-    T = eltype(fem_evals[1][1][1][1])
+    fe_space = get_fe_space(form_space)
+    fem_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 2)
+    form_basis_indices = FunctionSpaces.get_basis_indices(fe_space, element_id, 1)
+    T = eltype(fem_evals[1][1][1])
     n_basis_functions = length(form_basis_indices)
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
@@ -329,17 +397,6 @@ function _evaluate_codifferential(
     idx_du = FunctionSpaces.get_derivative_idx((1,))
     idx_duu = FunctionSpaces.get_derivative_idx((2,))
 
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(0)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # The jacobian computed in metric_derivatives is the one for the source location.
-    pullback!(fem_evals[2][idx_du], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[3][idx_duu], J, val_form_rank, nsc, ndc, pbt)
-
     for b in axes(codiff_eval[1], 2)
         for i in axes(codiff_eval[1], 1)
             inv_sqrtg = one(T) / sqrt_g[i]
@@ -353,7 +410,7 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, [form_basis_indices]
+    return codiff_eval, [[form_basis_indices]]
 end
 
 # 2D 1-forms.
@@ -365,62 +422,35 @@ function _evaluate_codifferential(
     xi::Points.AbstractPoints{2},
     pullback::FormPullback,
 )
-    # Evaluate derivatives of the basis functions. We need derivatives up to order 1.
-    fe_space = get_fe_space(form_space)
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(fe_space, element_id, xi, 1)
-    T = eltype(fem_evals[1][1][1][1])
-    n_basis_functions = length(form_basis_indices)
-    n_evaluation_points = Points.get_num_points(xi)
-    # Preallocate memory for output array
-    codiff_eval = [zeros(T, n_evaluation_points, n_basis_functions)]
+    α, (∂ᵤα, ∂ᵥα), form_indices = _pullback_one_form_and_derivatives(
+        form_space, element_id, xi, pullback
+    )
     # Compute the metric terms, including derivative of the metric.
-    J, inv_g, g, sqrt_g, (dgdu, dgdv), (dinv_g_du, dinv_g_dv), (dsqrt_g_du, dsqrt_g_dv), Hs = Geometry.metric_derivatives(
+    _, inv_g, _, sqrt_g, _, (dinv_g_du, dinv_g_dv), (dsqrt_g_du, dsqrt_g_dv), _ = Geometry.metric_derivatives(
         get_geometry(form_space), element_id, xi
     )
     # Compute the coderivative.
     # α^1 = α¹ du + α² dv
-    # d*α¹ = β⁰
+    # d*α¹ = β⁰ = sign * (∂ᵢ(gⁱʲ αⱼ) + gⁱʲ αⱼ ∂ᵢ sqrt(g) / sqrt(g))
     # sign: (-1)^{n(k+1)+1}, n = manifold_dim, k = form_rank. 1-forms -> always -1.
-    sign = -one(T)
-    idx_du = FunctionSpaces.get_derivative_idx((1, 0))
-    idx_dv = FunctionSpaces.get_derivative_idx((0, 1))
+    sign = -1.0
+    points = eachindex(sqrt_g)
+    w_α = [
+        [
+            sign * (
+                dinv_g_du[i][1, c] +
+                dinv_g_dv[i][2, c] +
+                (inv_g[i][1, c] * dsqrt_g_du[i] + inv_g[i][2, c] * dsqrt_g_dv[i]) /
+                sqrt_g[i]
+            ) for i in points
+        ] for c in 1:2
+    ]
+    w_∂ᵤα = [[sign * inv_g[i][1, c] for i in points] for c in 1:2]
+    w_∂ᵥα = [[sign * inv_g[i][2, c] for i in points] for c in 1:2]
 
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(1)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # The jacobian computed in metric_derivatives is the one for the source location.
-    pullback!(fem_evals[1][1], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[2][idx_du], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[2][idx_dv], J, val_form_rank, nsc, ndc, pbt)
-
-    for b in axes(codiff_eval[1], 2)
-        for i in axes(codiff_eval[1], 1)
-            one_div_sqrtg = one(T) / sqrt_g[i]
-            codiff_eval[1][i, b] =
-                sign * (
-                    fem_evals[2][idx_du][1][i, b] * inv_g[i][1, 1] +  # ∂u α¹ * g¹¹
-                    fem_evals[1][1][1][i, b] * dinv_g_du[i][1, 1] +  # α¹ * ∂u g¹¹
-                    fem_evals[2][idx_du][2][i, b] * inv_g[i][1, 2] +  # ∂u α² * g¹²
-                    fem_evals[1][1][2][i, b] * dinv_g_du[i][1, 2] +  # α² * ∂u g¹²
-                    fem_evals[2][idx_dv][1][i, b] * inv_g[i][2, 1] +  # ∂v α¹ * g²¹
-                    fem_evals[1][1][1][i, b] * dinv_g_dv[i][2, 1] +  # α¹ * ∂v g²¹
-                    fem_evals[2][idx_dv][2][i, b] * inv_g[i][2, 2] +  # ∂v α² * g²²
-                    fem_evals[1][1][2][i, b] * dinv_g_dv[i][2, 2] +  # α² * ∂v g²²
-                    one_div_sqrtg * (
-                        fem_evals[1][1][1][i, b] * inv_g[i][1, 1] * dsqrt_g_du[i] +  # α¹ * g¹¹ * ∂u sqrt(g)
-                        fem_evals[1][1][2][i, b] * inv_g[i][1, 2] * dsqrt_g_du[i] +  # α² * g¹² * ∂u sqrt(g)
-                        fem_evals[1][1][1][i, b] * inv_g[i][2, 1] * dsqrt_g_dv[i] +  # α¹ * g²¹ * ∂v sqrt(g)
-                        fem_evals[1][1][2][i, b] * inv_g[i][2, 2] * dsqrt_g_dv[i]  # α² * g²² * ∂v sqrt(g)
-                    )
-                )
-        end
-    end
-
-    return codiff_eval, [form_basis_indices]
+    return _combine_codifferential_terms(
+        ((α, w_α), (∂ᵤα, w_∂ᵤα), (∂ᵥα, w_∂ᵥα)), form_indices, Points.get_num_points(xi)
+    )
 end
 
 # Specialised version for the exterior derivative of 0-forms to 1-forms in 2D.
@@ -430,14 +460,13 @@ function _evaluate_codifferential(
     element_id::Int,
     xi::Points.AbstractPoints{2},
 ) where {F <: FormPullback}
-    pullback = get_form(form_space)
     # Evaluate derivatives of the basis functions. We need derivatives up to order 2. Since
     # we are evaluating the laplacian of 0-forms, the basis functions we do not have to
     # scale the derivatives.
-    fem_evals, form_basis_indices = FunctionSpaces.evaluate(
-        get_fe_space(form_space), element_id, xi, 2
-    )
-    T = eltype(fem_evals[1][1][1][1])
+    fe_space = get_fe_space(form_space)
+    fem_evals = FunctionSpaces.evaluate(fe_space, element_id, xi, 2)
+    form_basis_indices = FunctionSpaces.get_basis_indices(fe_space, element_id, 1)
+    T = eltype(fem_evals[1][1][1])
     n_basis_functions = length(form_basis_indices)
     n_evaluation_points = Points.get_num_points(xi)
     # Preallocate memory for output array
@@ -456,20 +485,6 @@ function _evaluate_codifferential(
     idx_duu = FunctionSpaces.get_derivative_idx((2, 0))
     idx_dvv = FunctionSpaces.get_derivative_idx((0, 2))
     idx_duv = FunctionSpaces.get_derivative_idx((1, 1))
-
-    source = get_source_location(form_space) # source of the original form
-    # source of the pullback = destination of original form
-    dest = get_source_location(pullback)
-    val_form_rank = Val(0)
-    nsc = Val(get_num_components(Val(get_dim(form_space, source)), val_form_rank))
-    ndc = Val(get_num_components(Val(get_dim(form_space, dest)), val_form_rank))
-    pbt = get_pullback_type(pullback)
-    # The jacobian computed in metric_derivatives is the one for the source location.
-    pullback!(fem_evals[2][idx_du], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[2][idx_dv], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[3][idx_duu], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[3][idx_dvv], J, val_form_rank, nsc, ndc, pbt)
-    pullback!(fem_evals[3][idx_duv], J, val_form_rank, nsc, ndc, pbt)
 
     for b in axes(codiff_eval[1], 2)
         for i in 1:n_evaluation_points
@@ -494,5 +509,5 @@ function _evaluate_codifferential(
         end
     end
 
-    return codiff_eval, [form_basis_indices]
+    return codiff_eval, [[form_basis_indices]]
 end
