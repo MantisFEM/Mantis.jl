@@ -53,9 +53,6 @@ function _construction_checks(
     input_points::NTuple{manifold_dim, AbstractVector{<:Number}}
 ) where {manifold_dim}
     iszero(manifold_dim) && throw(ArgumentError("Empty argument tuple."))
-    input_num_points = map(length, input_points)
-    any(iszero, input_num_points) &&
-        throw(ArgumentError("Number of points must be non-empty."))
 
     return nothing
 end

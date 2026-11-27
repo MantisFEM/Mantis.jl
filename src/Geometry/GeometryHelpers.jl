@@ -194,3 +194,97 @@ function affine_map(
 
     return mapped_xi
 end
+
+############################################################################################
+#                                     Immersed Methods                                     #
+############################################################################################
+
+function create_immersed_geometry(
+    background_geometry::AbstractGeometry, active_elements::Vector{Int}
+)
+    active_info = Hierarchical.ActiveInfo([active_elements, Int[]])
+    scaling = Hierarchical.Scaling(background_geometry)
+
+    return HierarchicalGeometry(active_info, [scaling])
+end
+
+function create_immersed_geometry(
+    background_geometry::AbstractGeometry,
+    level_set::Function;
+    inside_tol=1e-14,
+    num_facet_points=5,
+)
+    active_elements, _ = active_element_identification(
+        background_geometry,
+        level_set;
+        inside_tol=inside_tol,
+        num_facet_points=num_facet_points,
+    )
+
+    return create_immersed_geometry(background_geometry, active_elements)
+end
+
+function level_set_identification(
+    background_geometry::AbstractGeometry{manifold_dim},
+    level_set::Function;
+    inside_tol=1e-14,
+    num_facet_points=5,
+) where {manifold_dim}
+    active_elements = Int[]
+    cut_elements = Bool[]
+    # We can re-use the same vectors to check the if vertices and edges are inside the
+    # domain.
+    vertex_checks = zeros(Bool, 2^manifold_dim)
+    facet_points = ntuple(_ -> zeros(num_facet_points), manifold_dim)
+    for element_id in 1:get_num_elements(background_geometry)
+        vertices = get_element_vertices(background_geometry, element_id)
+        for (count, vertex) in enumerate(Iterators.product(vertices...))
+            vertex_checks[count] = level_set(vertex) < inside_tol
+        end
+
+        # If any vertex of the element is inside the domain, then that element is
+        # necessarily active.
+        # Else, we still need to check whether any of the facets are cut, to avoid
+        # incorrectly marking elements as inactive when a curve misses any of the vertices.
+        # This is checked only up to a certain resolution, dictated by `num_facet_points`.
+        if any(vertex_checks)
+            push!(active_elements, element_id)
+            push!(cut_elements, !all(vertex_checks))
+        else
+            cut = false
+            for dim in 1:manifold_dim
+                # We first generate the facet points points covering the two facets
+                # orthogonal to `dim`, vertices[d] for d == dim, and a range of
+                # `num_facet_points` otherwise.
+                for d in 1:manifold_dim
+                    if d == dim
+                        facet_points[d][1] = vertices[d][1]
+                        facet_points[d][2] = vertices[d][2]
+                    else
+                        facet_points[d] .= LinRange(
+                            vertices[d][1], vertices[d][2], num_facet_points
+                        )
+                    end
+                end
+                # Then we check if any point of the facet lies inside the curve.
+                for facet_point in Iterators.product(
+                    (
+                        d == dim ? view(facet_points[d], 1:2) : facet_points[d] for
+                        d in 1:manifold_dim
+                    )...,
+                )
+                    if level_set(facet_point) < inside_tol
+                        push!(active_elements, element_id)
+                        push!(cut_elements, true)
+                        cut = true
+                        break
+                    end
+                end
+
+                cut && break
+            end
+        end
+    end
+
+    return active_elements, cut_elements
+end
